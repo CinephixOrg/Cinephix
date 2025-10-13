@@ -1,0 +1,722 @@
+[
+  {
+    "genre_ids": [
+      37,
+      10759
+    ],
+    "id": 31179,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Lone Ranger is an American western television series that ran from 1949 to 1957, starring Clayton Moore with Jay Silverheels as Tonto. The live-action series initially featured Gerald Mohr as the episode narrator. Fred Foy served as both narrator and announcer of the radio series from 1948 to its finish and became announcer of the television version when story narration was dropped there. This was by far the highest-rated television program on the ABC network in the early 1950s and its first true \"hit\".",
+    "poster_path": "/sAQSKgrYC0l5kQbLk8QXINAK6F4.jpg",
+    "first_air_date": "1949-09-15",
+    "name": "The Lone Ranger"
+  },
+  {
+    "genre_ids": [
+      10765,
+      80,
+      18,
+      10764
+    ],
+    "id": 24684,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Lights Out was an extremely popular American old-time radio program, an early example of a network series devoted mostly to horror and the supernatural, predating Suspense and Inner Sanctum. Versions of Lights Out aired on different networks, at various times, from January 1934 to the summer of 1947 and the series eventually made the transition to television.\n\nIn 1946, NBC Television brought Lights Out to TV in a series of four specials, broadcast live and produced by Fred Coe, who also contributed three of the scripts. NBC asked Cooper to write the script for the premiere, \"First Person Singular\", which is told entirely from the point of view of an unseen murderer who kills his obnoxious wife and winds up being executed. Variety gave this first episode a rave review (\"undoubtedly one of the best dramatic shows yet seen on a television screen\"), but Lights Out did not become a regular NBC-TV series until 1949.",
+    "poster_path": "/sUX5J7lS6FnCFvUOqXCYyQPp0f9.jpg",
+    "first_air_date": "1949-07-19",
+    "name": "Lights Out"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 18538,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "An anthology series adapted from the radio program of the same name. Like the radio program, many scripts were adaptations of literary classics by well-known authors. Classic authors such as Edgar Allan Poe, Agatha Christie, and Charles Dickens all had stories adapted for the series, while contemporary authors such as Roald Dahl and Gore Vidal also contributed.",
+    "poster_path": "/9h8qVuMWqm7ptN7xati8GKYqnwJ.jpg",
+    "first_air_date": "1949-01-06",
+    "name": "Suspense"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 26183,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "BAFTA presents awards for film, television and games, including children's entertainment, at a number of annual ceremonies across the UK and in Los Angeles, USA.",
+    "poster_path": "/l6MwmK9oNnPbHEJFLJb8RbZiHsg.jpg",
+    "first_air_date": "1949-05-29",
+    "name": "The BAFTA Awards"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 11035,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Fireside Theater is an American anthology drama series that ran on NBC from 1949 to 1958, and was the first successful filmed series on American television. Stories were low budget and often based on public domain stories or written by freelance writers such as Rod Serling. While it was panned by critics, it remained in the top ten most popular shows for most of its run. It predated the other major pioneer of filmed TV in America, I Love Lucy, by two years.",
+    "poster_path": null,
+    "first_air_date": "1949-04-05",
+    "name": "Fireside Theater"
+  },
+  {
+    "genre_ids": [],
+    "id": 28464,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "An annual awards  ceremony honoring the best in U.S. prime time television programming as chosen by the Academy of Television Arts & Sciences.",
+    "poster_path": "/guW6wHjF0eVOfsS7NEfq2ZWSLDm.jpg",
+    "first_air_date": "1949-01-25",
+    "name": "The Emmy Awards"
+  },
+  {
+    "genre_ids": [],
+    "id": 11012,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A Woman to Remember is a soap opera which ran on the DuMont Television Network from February 21, 1949 to July 15, 1949. The show initially ran in daytime, but starting May 2, aired Monday through Friday from 7:30 to 7:45 pm ET.\n\nJohn Haggart served as creator and writer, and Bob Steele was producer and director. The show followed Captain Video and His Video Rangers and had no sponsor.",
+    "poster_path": null,
+    "first_air_date": "1949-02-21",
+    "name": "A Woman to Remember"
+  },
+  {
+    "genre_ids": [],
+    "id": 11505,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Martin Kane, Private Eye was an early radio series and television crime series sponsored by United States Tobacco Company.",
+    "poster_path": "/zVcXekcf6LefEAtHlRsc1HpC1NL.jpg",
+    "first_air_date": "1949-09-01",
+    "name": "Martin Kane, Private Eye"
+  },
+  {
+    "genre_ids": [
+      99,
+      10768
+    ],
+    "id": 9411,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/xxKrTSor974OhPF8y2bcTqefjhS.jpg",
+    "first_air_date": "1949-05-05",
+    "name": "Crusade in Europe"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11274,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Riley worked in an aircraft plant in California, but viewers usually saw him at home, cheerfully disrupting life with his malapropisms and ill timed intervention into minor problems. His stock answer to every turn of fate became a catch phrase: 'What a revoltin' development this is!\"",
+    "poster_path": "/qcqJ5KNzA85DsnjmWeIlgUX10us.jpg",
+    "first_air_date": "1949-10-04",
+    "name": "The Life of Riley"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 289055,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/fNPo28OqWttjzc52AMIvf2Q1FCp.jpg",
+    "first_air_date": "1949-10-09",
+    "name": "Le jour du Seigneur"
+  },
+  {
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 7891,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Man Against Crime, one of the first television programs about private eyes, ran on CBS, the DuMont Television Network and NBC from October 7, 1949 to August 26, 1956. The show was created by Lawrence Klee and Paul Alter and was broadcast live until 1952. It was also directed by Paul Alter. The series was one of the few television programs ever to have been simulcast on more than one network: the program aired on both NBC and DuMont during the 1953-1954 television season.",
+    "poster_path": "/valMFoVuCteM3sr6hgXmEFtdemW.jpg",
+    "first_air_date": "1949-10-07",
+    "name": "Man Against Crime"
+  },
+  {
+    "genre_ids": [],
+    "id": 18694,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-10-06",
+    "name": "The Ed Wynn Show"
+  },
+  {
+    "genre_ids": [
+      99,
+      18
+    ],
+    "id": 18023,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Based on a popular radio series, each show tells a different reporter's Big Story, a true story selected from newspapers across the United States. Comments from the actual reporter open and close each show but the permanent narrator drives the plot line and a featured actor dramatizes the reporter's role.",
+    "poster_path": "/aTB1RsVhHxch2mO4NdGMVpdG0DS.jpg",
+    "first_air_date": "1949-09-16",
+    "name": "The Big Story"
+  },
+  {
+    "genre_ids": [
+      9648
+    ],
+    "id": 21080,
+    "origin_country": [],
+    "overview": "Hands of Murder was an American mystery/anthology series that aired on the DuMont Television Network.",
+    "poster_path": null,
+    "first_air_date": "1949-09-30",
+    "name": "Hands of Murder"
+  },
+  {
+    "genre_ids": [
+      18,
+      10751
+    ],
+    "id": 12218,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Mama was a weekly Maxwell House and Post-sponsored CBS television comedy-drama series from July 1, 1949 until March 17, 1957.",
+    "poster_path": null,
+    "first_air_date": "1949-07-01",
+    "name": "Mama"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 11109,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Goldbergs is a comedy-drama broadcast from 1929 to 1946 on American radio, and from 1949 to 1956 on American television. It was adapted into a 1948 play, Me and Molly, a 1950 film The Goldbergs, and a 1973 Broadway musical, Molly.",
+    "poster_path": "/f389aPM586V6N55gSNM6DUuQbxU.jpg",
+    "first_air_date": "1949-03-28",
+    "name": "The Goldbergs"
+  },
+  {
+    "genre_ids": [
+      80,
+      18,
+      9648
+    ],
+    "id": 26310,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Clock is a 30-minute American anthology television series based upon the American Broadcasting Company radio series which ran from 1946–48. The half-hour series mostly consisted of original dramas concerning murder, mayhem or insanity. Series narrator Larry Semon was the only regular; each week a new set of guest stars were featured. The title of the series was derived from a clock which was a major plot element in each story. The show's musical theme was \"The Sands of Time\". Ninety-one episodes aired from 1949 to 1952, most of them on NBC, except for the final season which aired on ABC. Courtesy of Wikipedia.",
+    "poster_path": null,
+    "first_air_date": "1949-05-16",
+    "name": "The Clock"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 11432,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Voice of Firestone is a long-running radio and television program of classical music. The show featured leading singers in selections from opera and operetta. Originally titled The Firestone Hour, it was first broadcast on the NBC Radio network on December 3, 1928 and was later also shown on television starting in 1949. The program was last broadcast in 1963.",
+    "poster_path": "/571GoqDIRYl1izo4Saz2imReYuu.jpg",
+    "first_air_date": "1949-09-05",
+    "name": "The Voice of Firestone"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 21190,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Silver Theatre is a television series that was broadcast on the CBS television network from 1949 to 1950. It was a live anthology series consisting of dramatic teleplays about romance. It was sponsored by the International Silver Company.",
+    "poster_path": null,
+    "first_air_date": "1949-10-03",
+    "name": "The Silver Theatre"
+  },
+  {
+    "genre_ids": [],
+    "id": 7381,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Plainclothesman was an American crime drama series broadcast on the now defunct DuMont Television Network.",
+    "poster_path": null,
+    "first_air_date": "1949-10-12",
+    "name": "The Plainclothesman"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 17931,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Your Show Time is an American anthology drama series that debuted as a midseason replacement on NBC Television in January 1949. Hosted and narrated by Arthur Shields, the series ran until July 1949.",
+    "poster_path": null,
+    "first_air_date": "1949-01-21",
+    "name": "Your Show Time"
+  },
+  {
+    "genre_ids": [],
+    "id": 24021,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-01-28",
+    "name": "Adventures In Jazz"
+  },
+  {
+    "genre_ids": [],
+    "id": 22601,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Starring Boris Karloff (also known as The Boris Karloff Mystery Playhouse) is an American radio and television anthology series broadcast for 13 weeks, September–December 1949, on the ABC network. Boris Karloff was the host and occasional star, with music by organist George Henninger. Produced and directed by Charles Warburton, the series adapted short stories of mystery and suspense.",
+    "poster_path": null,
+    "first_air_date": "1949-09-22",
+    "name": "Starring Boris Karloff"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 21924,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-09-29",
+    "name": "The Front Page"
+  },
+  {
+    "genre_ids": [],
+    "id": 28372,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-06-04",
+    "name": "Cavalcade of Stars"
+  },
+  {
+    "genre_ids": [],
+    "id": 9978,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Arthur Godfrey and His Friends is an American television variety show hosted by Arthur Godfrey. The hour-long series aired on CBS Television from January 1949 to June 1957, then again as a half-hour show from September 1958 to April 1959.\n\nMany of Godfrey's musical acts were culled from Arthur Godfrey's Talent Scouts, which was airing on CBS at the same time. Among the more popular of his singers were Frank Parker, Marion Marlowe, Janette Davis, Julius La Rosa, Haleloke, The McGuire Sisters, Carmel Quinn, Pat Boone, Miyoshi Umeki and The Chordettes. The show was live, and Godfrey often did away with the script and improvised. He refused to participate in commercials for products he did not believe in.",
+    "poster_path": null,
+    "first_air_date": "1949-01-12",
+    "name": "Arthur Godfrey and His Friends"
+  },
+  {
+    "genre_ids": [],
+    "id": 10691,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Admiral Broadway Revue is an American variety show that ran from January 28 to June 3, 1949. The show was broadcast live on Fridays, 8-9 pm Eastern Time. and was broadcast simultaneously on both NBC and the DuMont networks.",
+    "poster_path": null,
+    "first_air_date": "1949-01-28",
+    "name": "The Admiral Broadway Revue"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 26138,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Hartmans is an American television sitcom that aired live on NBC on Sunday nights from February 27 to April 24, 1949. The series stars Paul and Grace Hartman, a married couple who performed together on the vaudeville circuit and on the Broadway stage.",
+    "poster_path": null,
+    "first_air_date": "1949-02-27",
+    "name": "The Hartmans"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 21078,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Famous Jury Trials is a dramatized court show that first appeared on radio, followed by television, and then in the movies. The series enjoyed a long, successful run in radio programming from 1936 through 1949, then on television from 1949 through 1952, and finally in a movie in 1971. On television, it aired on the now-defunct DuMont Television Network.",
+    "poster_path": null,
+    "first_air_date": "1949-10-12",
+    "name": "Famous Jury Trials"
+  },
+  {
+    "genre_ids": [],
+    "id": 23750,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-01-28",
+    "name": "Alice Pearce"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 46736,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Wesley is an early American sitcom that aired live on CBS from May 8, 1949 to August 30, 1949.",
+    "poster_path": null,
+    "first_air_date": "1949-05-08",
+    "name": "Wesley"
+  },
+  {
+    "genre_ids": [],
+    "id": 25804,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Family Affairs was the first television serial broadcast by BBC Television.",
+    "poster_path": null,
+    "first_air_date": "1949-10-29",
+    "name": "Family Affairs"
+  },
+  {
+    "genre_ids": [],
+    "id": 14016,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "ABC Barn Dance is an early country and Western music show on American television, a spin-off of the popular radio program National Barn Dance. It also included some folk music. The show aired on Monday nights from February 21–November 14, 1949 on ABC-TV. Originally broadcast from 8:30–9 p.m. Eastern Time, it was moved to 9 p.m. and then to 9:30 p.m.\n\nFilmed at the Eighth Street Theater in Chicago, Illinois, the weekly variety show was hosted by Hal O'Halloran and Jack Stillwell. Several of the radio program's performers appeared, including the Sage Riders, Lulu Belle and Scotty, Cousin Tifford, Bob Atcher, the DeZurik Sisters and Holly Swanson.",
+    "poster_path": null,
+    "first_air_date": "1949-02-21",
+    "name": "ABC Barn Dance"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 7713,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Colgate Theatre is a 30-minute dramatic television anthology series telecast on NBC during 1949 and 1958 for a total of 50 episodes. The first edition, a live anthology, was telecast on Sunday nights at 8:30pm through the summer of 1950. The second series [Tuesdays, 9:30pm] consisted of filmed pilot episodes of unsold series, and was a last-minute replacement for the game series Dotto, which was ended during August 1958, due to accusations that it was rigged. It served as a filler for the sponsor until The George Burns Show premiered on October 14, 1958.",
+    "poster_path": null,
+    "first_air_date": "1949-01-03",
+    "name": "Colgate Theatre"
+  },
+  {
+    "genre_ids": [],
+    "id": 12104,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "These Are My Children is a short-lived American television soap opera which ran on NBC from January 31, 1949 to February 25, 1949. The show was broadcast live from Chicago, Illinois, airing fifteen minutes a day, five days a week, at 5:00 p.m. EST.\n\nThese Are My Children was the first soap opera to air on a major television network. Created by Irna Phillips and directed by Norman Felton, the show was based in large part on Phillips' early radio soaps Today's Children and Painted Dreams. Children centered on an Irish widow, Mrs. Henehan and her struggles to run a boarding house as well as help her three children and new daughter-in-law Jean. Critics were not impressed; Television World ended their review with: \"There is no place on television for this type of program, a blank screen is preferable.\"",
+    "poster_path": null,
+    "first_air_date": "1949-01-31",
+    "name": "These Are My Children"
+  },
+  {
+    "genre_ids": [],
+    "id": 22155,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-05-23",
+    "name": "The Cliff Edwards Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 24770,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-03-01",
+    "name": "Backstage with Barry Wood"
+  },
+  {
+    "genre_ids": [
+      16,
+      10759,
+      10762,
+      10751
+    ],
+    "id": 251635,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Two children named Jim and Judy enter their television for adventures.",
+    "poster_path": null,
+    "first_air_date": "1949-09-01",
+    "name": "Jim and Judy in Teleland"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 21188,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Leave It to the Girls is an American radio and television talk show, created by Martha Rountree, and broadcast, in various forms, from the 1940s through the 1980s.",
+    "poster_path": null,
+    "first_air_date": "1949-04-27",
+    "name": "Leave It to the Girls"
+  },
+  {
+    "genre_ids": [],
+    "id": 7339,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Armed Forces Hour is an early American television program originally broadcast on NBC and later on the now defunct DuMont Television Network. The series ran from 1949 to 1951. Despite the title of the series, it was a half-hour program.\n\nThe Armed Forces Hour was a television program \"culled from the estimated 500 million feet of film\" archived at the U.S. Department of Defense. Production was supervised by Major Robert Keim and Lieutenant Benjamin Greenberg.\n\nAfter a one-season run on NBC, the network cancelled the series in 1950. However, on February 4, 1951, the series started again on the DuMont Television Network, with the last DuMont episode airing on May 6, 1951.",
+    "poster_path": null,
+    "first_air_date": "1949-10-30",
+    "name": "The Armed Forces Hour"
+  },
+  {
+    "genre_ids": [],
+    "id": 13959,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Let There Be Stars was an early television series which aired on the ABC television network in 1949. It was a high-budget show for its time, and used new production techniques such as \"Teleparencies\", transparencies which could be displayed in the background, faded in or out or dissolved, and changed on the fly.\n\nThe idea of the program was to highlight up-and-coming actors and actresses who had been found by a talent scout working to cast new performers in Broadway shows.\n\nThe first program got a rave review from Variety magazine, but quality dropped off, and the show only lasted a little more than a month, from October 16, 1949 through November 27.\n\nThe 1st, 2nd, 3rd, 4th, 5th, 6th and 7th episodes are stored at the Paley Center for Media. The archive also has a \"rough rehearsal kinescope\" of one of the episodes.",
+    "poster_path": null,
+    "first_air_date": "1949-09-21",
+    "name": "Let There Be Stars"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11420,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Herb Shriner Show was the title of two different American television series shown in prime time by CBS during the late 1940s and 1950s. A similar program, also hosted by Herb Shriner, was Herb Shriner Time, which was aired by ABC as part of its 1951-52 lineup.\n\nThe first Herb Shriner Show was essentially a continuation of what Shriner had previously done on radio. It was aired by CBS five nights a week from 7:55 to 8:00 P.M. Eastern time and consisted solely of Shriner's folksy monologues, which had already earned him comparisons to Will Rogers. This program was seen only from November 1949 until February 1950.\n\nHerb Shriner Time was a half-hour format aired by ABC on Thursday nights at 9 PM Eastern from October 1951 to April 1952. In addition to the comedy monologues, this format provided time for guest stars, and also allowed for Shriner to play his harmonica and act in comedy sketches.",
+    "poster_path": "/125Wx8L3d5l7jmcEbPwbxiyHfNV.jpg",
+    "first_air_date": "1949-11-07",
+    "name": "The Herb Shriner Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 3877,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Al Morgan Show is an American variety program broadcast on the DuMont Television Network from 1949 to 1951. The series starred pianist and songwriter Al Morgan and featured the Billy Chandler Trio. The show aired Mondays at 8:30 pm ET.\n\nUnlike most DuMont offerings which were broadcast from the network's studios in New York City, the series was broadcast from WGN-TV in Chicago.",
+    "poster_path": null,
+    "first_air_date": "1949-09-05",
+    "name": "The Al Morgan Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 44700,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Mystery Chef is an American cooking show that aired daily on NBC from March 1, 1949 to June 29, 1949. It was one of NBC's first daytime programs.",
+    "poster_path": null,
+    "first_air_date": "1949-03-01",
+    "name": "The Mystery Chef"
+  },
+  {
+    "genre_ids": [],
+    "id": 30080,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-03-23",
+    "name": "Blues By Bargy"
+  },
+  {
+    "genre_ids": [],
+    "id": 22756,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-01-16",
+    "name": "Music In Velvet"
+  },
+  {
+    "genre_ids": [],
+    "id": 22054,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-10-17",
+    "name": "Cities Service Band Of America"
+  },
+  {
+    "genre_ids": [],
+    "id": 283374,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Robert L. Ripley sitting in a \"living room\" recounting tales of strange stories. Ripley died on 27 May and was replaced by Robert St. John who continued to November 1949. The second season, beginning in January 1950, was a dramatic anthology series based on Ripley's stories and featured guest players every week.",
+    "poster_path": "/uilxE0HiRSjE9Smkdh04SKHv95P.jpg",
+    "first_air_date": "1949-03-01",
+    "name": "Believe It or Not"
+  },
+  {
+    "genre_ids": [],
+    "id": 25068,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-03-18",
+    "name": "Campus Corner"
+  },
+  {
+    "genre_ids": [],
+    "id": 27198,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-08-01",
+    "name": "Capitol Capers"
+  },
+  {
+    "genre_ids": [],
+    "id": 13986,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "And Everything Nice is an American fashion-theme television program broadcast on the now defunct DuMont Television Network. The series ran from 1949 to 1950. The was hosted by Maxine Barrat.",
+    "poster_path": null,
+    "first_air_date": "1949-03-08",
+    "name": "And Everything Nice"
+  },
+  {
+    "genre_ids": [],
+    "id": 29363,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-01-03",
+    "name": "NBC Presents"
+  },
+  {
+    "genre_ids": [],
+    "id": 28054,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-05-08",
+    "name": "Hold It Please"
+  },
+  {
+    "genre_ids": [],
+    "id": 27751,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-07-25",
+    "name": "Academy Theatre"
+  },
+  {
+    "genre_ids": [],
+    "id": 24302,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-03-10",
+    "name": "Broadway Spotlight"
+  },
+  {
+    "genre_ids": [],
+    "id": 272425,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Theatrical collection September 1949 - January 1959",
+    "poster_path": null,
+    "first_air_date": "1949-09-28",
+    "name": "The Nearsighted Mister Magoo"
+  },
+  {
+    "genre_ids": [],
+    "id": 27999,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1949-11-26",
+    "name": "Chicago Jazz"
+  },
+  {
+    "genre_ids": [],
+    "id": 14189,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Big Story is an American radio and television crime drama which dramatized the true stories of real-life newspaper reporters. The only continuing character was the narrator, Bob Sloane.",
+    "poster_path": null,
+    "first_air_date": "1949-09-16",
+    "name": "The Big Story"
+  },
+  {
+    "genre_ids": [],
+    "id": 105866,
+    "origin_country": [],
+    "overview": "An early American family-oriented situation comedy series broadcast live on ABC. A few episodes were recorded on kinescope. The series began November 3, 1949 — a month after the radio hit The Life of Riley had moved to television on NBC — and ended on June 19, 1952.The Ruggles was also one of the first shows to originate from Hollywood rather than New York City, where most radio programs had been produced.",
+    "poster_path": null,
+    "first_air_date": "1949-11-03",
+    "name": "The Rugles"
+  }
+]

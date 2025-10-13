@@ -1,0 +1,5189 @@
+[
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 4583,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Derrick was a German TV series produced by Telenova Film und Fernsehproduktion in association with ZDF, ORF and SRG between 1974 and 1998 about Detective Chief Inspector Stephan Derrick and his loyal assistant Inspector Harry Klein, who solve murder cases in Munich and surroundings.",
+    "poster_path": "/5HPuyO4V3rcoMgPZmgcdKJrdXUI.jpg",
+    "first_air_date": "1974-10-20",
+    "name": "Derrick"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 3562,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "PBS' premier science series helps viewers of all ages explore the science behind the headlines. Along the way, NOVA demystifies science and technology, and highlights the people involved in scientific pursuits.",
+    "poster_path": "/giUBXYnDAaJgNqA6iE3BMVE2EHp.jpg",
+    "first_air_date": "1974-03-03",
+    "name": "NOVA"
+  },
+  {
+    "genre_ids": [
+      37,
+      18,
+      10751
+    ],
+    "id": 1781,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "When the big woods of Wisconsin becomes a difficult spot for hunting, Charles Ingalls reluctantly decides to move his family, pioneering west. Their life on the farm in Walnut Grove, Minnesota, in the 1870s and 1880s is full of adventure, tragedy, and triumph. Based on the books of Laura Ingalls Wilder.",
+    "poster_path": "/eVpvlqKZfEVsBOttNFTUyfPoA6K.jpg",
+    "first_air_date": "1974-09-11",
+    "name": "Little House on the Prairie"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 3845,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "In 1950s Milwaukee the Cunningham family must contend with Fonzie, a motorcycle riding Casanova.",
+    "poster_path": "/sepIwNPCEhkKvFOQSjXK6tekkjR.jpg",
+    "first_air_date": "1974-01-15",
+    "name": "Happy Days"
+  },
+  {
+    "genre_ids": [
+      80,
+      18,
+      9648
+    ],
+    "id": 954,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Cranky but likable L.A. PI Jim Rockford pulls no punches (but takes plenty of them). An ex-con sent to the slammer for a crime he didn't commit, Rockford takes on cases others don't want, aided by his tough old man, his lawyer girlfriend and some shady associates from his past.",
+    "poster_path": "/fniHEsTeqHMg41GlCYJxZVgtn7H.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "The Rockford Files"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10759,
+      18
+    ],
+    "id": 1663,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Follow the adventures of Steve Austin, cybernetically enhanced astronaut turned secret agent, employed by the OSI, under the command of Oscar Goldman and supervised by the scientist who created his cybernetics, Rudy Wells. Steve uses the superior strength and speed provided by his bionic arm and legs, and the enhanced vision provided by his artificial eye, to fight enemy agents, aliens, mad scientists, and a wide variety of other villains.",
+    "poster_path": "/8AgBpRXvrjnLpZ6RpkmpUvjPXPi.jpg",
+    "first_air_date": "1974-01-18",
+    "name": "The Six Million Dollar Man"
+  },
+  {
+    "genre_ids": [
+      10759,
+      80,
+      18
+    ],
+    "id": 10020,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Sergeant “Pepper\"” Anderson, an undercover cop for the Criminal Conspiracy Unit of the Los Angeles Police Department, poses undercover from mob girl to prostitute.",
+    "poster_path": "/eKqO6PMfSW4YUJYhZrB82TSjwor.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "Police Woman"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 244224,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Marcello Mastroianni, Isabelle Adjani, Alain Delon, Martin Scorsese, Woody Allen... the biggest stars in cinema were welcomed by Christian Defaye on his show Spécial cinéma. Between intimate confessions from actors and immersion in the world of the greatest filmmakers, Christian Defaye took viewers on a journey into the fascinating world of cinema for nearly thirty years.",
+    "poster_path": "/jONImBKU4sK9mBcK5cx7a4R4h5v.jpg",
+    "first_air_date": "1974-09-25",
+    "name": "Spécial cinéma"
+  },
+  {
+    "genre_ids": [
+      16,
+      18,
+      10751
+    ],
+    "id": 29452,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "After becoming an orphan, Heidi is forced to live with her grandfather Öhi who lives in the mountain Alps. However he is a very bitter man who only accepts to take her in by force. Heidi's kindness may be able to open Öhi's heart. Along with Peter the goat carer and the crippled Klara, Heidi has a lot of adventures.",
+    "poster_path": "/jVI5WYnITj1KfF2wFZWR0EezyH3.jpg",
+    "first_air_date": "1974-01-06",
+    "name": "Heidi, Girl of the Alps"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 30504,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "A one-hour anthology television series of one-off contemporary and classic dramas produced by the BBC.",
+    "poster_path": "/5hkYEnIuKZRSIwvVhWAKgIFv0UJ.jpg",
+    "first_air_date": "1974-03-13",
+    "name": "Playhouse"
+  },
+  {
+    "genre_ids": [],
+    "id": 118927,
+    "origin_country": [],
+    "overview": "Dinah's show premiered 9 September 1974 and continued through to 4 September 1981. She started out the 70's with Dinah's Place which usually featured one guest and was more of a home oriented show about cooking, crafts and occasionally music. This format lasted until May of 1974. When the show came back in October of 1974 the format had changed drastically to a variety talk show which was called Dinah. and went on until 1981. This show was also known as \"Dinah and Friends\" during the summer of 1976.",
+    "poster_path": "/7TFUuq8CfK8U3YJoYUwzRaG8IDF.jpg",
+    "first_air_date": "1974-10-21",
+    "name": "Dinah!"
+  },
+  {
+    "genre_ids": [
+      10762,
+      35
+    ],
+    "id": 62967,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "The children's humorous film magazine \"Yeralash\" is a one-of-a-kind work of cinematography that ironically approaches the solution of everyday problems, focusing on the views and needs of modern society, allowing different generations to achieve mutual understanding.",
+    "poster_path": "/fDmlDQuIw0OfSUMbfJjiIOadCjT.jpg",
+    "first_air_date": "1974-07-01",
+    "name": "Yeralash"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 48450,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-11-19",
+    "name": "3 nach 9"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 83598,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": "/4XTSuukIkXpWKQA2BK3kr89hN60.jpg",
+    "first_air_date": "1974-01-14",
+    "name": "Die Montagsmaler"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 154,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Good Times is an American sitcom that originally aired from February 8, 1974, until August 1, 1979, on the CBS television network. It was created by Eric Monte and Mike Evans, and developed by Norman Lear, the series' primary executive producer. Good Times is a spin-off of Maude, which is itself a spin-off of All in the Family along with The Jeffersons.\n\nThe series is set in Chicago. The first two seasons were taped at CBS Television City in Hollywood. In the fall of 1975, the show moved to Metromedia Square, where Norman Lear's own production company was housed.",
+    "poster_path": "/zZlaGU4RJMhTKFxmQ6RAEYNjM0l.jpg",
+    "first_air_date": "1974-02-08",
+    "name": "Good Times"
+  },
+  {
+    "genre_ids": [
+      16,
+      18,
+      10759
+    ],
+    "id": 13339,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Space Battleship Yamato is a Japanese science fiction anime series featuring an eponymous spacecraft. It is also known to English-speaking audiences as Space Cruiser Yamato; an English-dubbed and heavily edited version of the series was broadcast on North American and Australian television as Star Blazers. The first two seasons of this version were broadcast in Greece in 1981-82 as Διαστημόπλοιο Αργώ. An Italian-language version was also broadcast under the name Star Blazers in Italy, and a Portuguese-language version was successfully shown in Brazil under the title Patrulha Estelar and Viaje a la Ultima Galaxia or Astronave Intrepido in Spain and Latin America.\n\nIt is a seminal series in the history of anime, marking a turn towards more complex serious works and influencing works such as Mobile Suit Gundam and Neon Genesis Evangelion; Hideaki Anno has ranked Yamato his favorite anime and credited it with sparking his interest in anime.\n\nYamato was the first anime series or movie to win the Seiun Award, a feat not repeated until the 1985 Nausicaä of the Valley of the Wind.",
+    "poster_path": "/3Zzgx624eyFOmZxvmETLGlZTg20.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "Space Battleship Yamato"
+  },
+  {
+    "genre_ids": [
+      16,
+      10759,
+      10765
+    ],
+    "id": 9148,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "After Koji Kabuto and Sayaka Yumi leave to the USA, it's up to the rash orphan Tetsuya Tsurugi to pilot the next Mazinger robot: the Great Mazinger. Under the direction of Dr. Kenzo Kabuto and helped by his adoptive sister Jun Honou, Tetsuya battles the Miccene Empire.",
+    "poster_path": "/7nGqtwa4Ll4gscabYN7uGCFQdPa.jpg",
+    "first_air_date": "1974-09-08",
+    "name": "Great Mazinger"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 81084,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "There are seven young brothers and sisters who grow up peacefully supported by the love and care of their parents. As a token of gratitude, the children present a trip to the couple on their wedding anniversary. This heartfelt deed, however, causes a terrible misfortune as their parents are killed while on their travels. Though it is certainly a shocking tragedy to the youngsters, they cannot be left in sorrow for a long time. Rather they have to make efforts to stand on their own feet in a body without depending on anybody else. So, their strenuous and daring living starts anew helping one another with brotherly affection, and their sincere attitude and lively activities gradually win admiration and encouragement from people of the community.",
+    "poster_path": "/dVdunPBAIWxOEUia36vVhrxsVTx.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "The Song of Tentomushi"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 645,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/7nVSlqyqtlXuTiEYjku7fzWYav5.jpg",
+    "first_air_date": "1974-09-09",
+    "name": "Rhoda"
+  },
+  {
+    "genre_ids": [],
+    "id": 109691,
+    "origin_country": [
+      "HK"
+    ],
+    "overview": "《民間傳奇》adapted dozens of famous Chinese folk tales, dramas, and myth legends, such as \"The Butterfly Lovers\" and \"Chang'e Flying to the Moon\". These stories show the joys and sorrows of ancient Chinese people, and celebrate the righteous and kind while condemning evil. The endings are not always perfect, but justice eventually prevails and evil-doers get what they deserve. The show is a classic in Chinese TV history, often broadcasted during holidays, and remains unsurpassed to this day.",
+    "poster_path": "/yg6vIhkazFq1ac6993Taw1TQ3eI.jpg",
+    "first_air_date": "1974-11-04",
+    "name": "Chinese Folklore"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 10944,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "After being shot in the line of duty, Harry Orwell was forced to retire from the San Diego Police Department. To supplement his police pension, Harry runs a private detective agency out of his beach house... The series starred David Janssen and was executive produced by Jerry Thorpe.",
+    "poster_path": "/xqZ2gDR9NOXsPkD9hPB1j8ywsxY.jpg",
+    "first_air_date": "1974-09-12",
+    "name": "Harry O"
+  },
+  {
+    "genre_ids": [
+      16,
+      10759,
+      10765
+    ],
+    "id": 9148,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "After Koji Kabuto and Sayaka Yumi leave to the USA, it's up to the rash orphan Tetsuya Tsurugi to pilot the next Mazinger robot: the Great Mazinger. Under the direction of Dr. Kenzo Kabuto and helped by his adoptive sister Jun Honou, Tetsuya battles the Miccene Empire.",
+    "poster_path": "/7nGqtwa4Ll4gscabYN7uGCFQdPa.jpg",
+    "first_air_date": "1974-09-08",
+    "name": "Great Mazinger"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10765
+    ],
+    "id": 5157,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Ultraman Leo is an Ultra foreign to the Land of Light, instead hailing from the fallen Planet L77 of the Leo constellation, where he and his brother Astra were royalty. After his planet was destroyed by Alien Magma and his twin Giras kaiju, Leo traveled to Earth, intending to make it a second home. While there, he blended into human society as Gen Ohtori, and became a gym instructor at a fitness club for children. But, when the Alien Magma that destroyed L77 came to conquer Earth, he was forced to take action. Leo met Ultraseven during his initial fight against Alien Magma, and became the first Ultra Crusader of Earth to not hail from the Land of Light. Unlike most of the previous Ultras to visit Earth, Leo's fighting style specializes in martial arts giving him far greater physical abilities than any other known Ultras. Despite his foreign origins, he, along with Astra, were readily accepted into the pantheon of the Ultra Brothers. During his tenure on Earth, Leo and Seven became very close, and it was for this reason that Seven would eventually entrust the training of his son Ultraman Zero to Leo and Astra.",
+    "poster_path": "/ycyDo1LF5UyEaQUkBybDRj87av0.jpg",
+    "first_air_date": "1974-04-12",
+    "name": "Ultraman Leo"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 81084,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "There are seven young brothers and sisters who grow up peacefully supported by the love and care of their parents. As a token of gratitude, the children present a trip to the couple on their wedding anniversary. This heartfelt deed, however, causes a terrible misfortune as their parents are killed while on their travels. Though it is certainly a shocking tragedy to the youngsters, they cannot be left in sorrow for a long time. Rather they have to make efforts to stand on their own feet in a body without depending on anybody else. So, their strenuous and daring living starts anew helping one another with brotherly affection, and their sincere attitude and lively activities gradually win admiration and encouragement from people of the community.",
+    "poster_path": "/dVdunPBAIWxOEUia36vVhrxsVTx.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "The Song of Tentomushi"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 11667,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Petrocelli is an American legal drama which ran for two seasons on NBC from September 11, 1974 to March 31, 1976.\n\nTony Petrocelli is an Italian-American Harvard-educated lawyer who gave up the big money and frenetic pace of major-metropolitan life to practice in a sleepy city in the American Southwest. He and wife Maggie live in a trailer in the country while waiting for their new house to be built, and travel around in a beat-up old pickup truck. For a quiet rural area, Petrocelli seems to have no trouble running into his share of murderers to defend.",
+    "poster_path": "/4YffWt26OAnYG7aeB1O1Z1QeXBb.jpg",
+    "first_air_date": "1974-09-11",
+    "name": "Petrocelli"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10765,
+      18,
+      10766
+    ],
+    "id": 34341,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Majokko Megu-chan is a magical girl anime series. The manga was created by Tomo Inoue and Akio Narita, while the 72-episode anime series was produced by Toei Animation between 1974 and 1975. This series is considered an important forerunner of the present day magical girl genre, as the series' characterization and general structure exerted considerable influence over future shows in the same genre. Most notably, several of the show's recurring motifs were recycled in Toei's Sailor Moon, AIC's Pretty Sammy, and Wedding Peach.",
+    "poster_path": "/gJ434mcyBvyN0gQY5t27hBV1kvA.jpg",
+    "first_air_date": "1974-04-01",
+    "name": "Little Meg the Witch Girl"
+  },
+  {
+    "genre_ids": [
+      18,
+      9648,
+      10765
+    ],
+    "id": 5084,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Kolchak: The Night Stalker is an American television series that aired on ABC during the 1974–1975 season. It featured a fictional Chicago newspaper reporter who investigated mysterious crimes with unlikely causes, particularly those that law enforcement authorities would not follow up. These often involved the supernatural or even science fiction, including fantastic creatures.",
+    "poster_path": "/lgP91rWAjgqvA7IzwG3R96sAU8K.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "Kolchak: The Night Stalker"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 16730,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "An annual American music awards show. Unlike the Grammys, which are awarded on the basis of votes by members of the Recording Academy, the AMAs are determined by a poll of the public and music buyers.",
+    "poster_path": "/lMfGSoq6otbyu7orszqAH4s9TQU.jpg",
+    "first_air_date": "1974-02-19",
+    "name": "American Music Awards"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 645,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/7nVSlqyqtlXuTiEYjku7fzWYav5.jpg",
+    "first_air_date": "1974-09-09",
+    "name": "Rhoda"
+  },
+  {
+    "genre_ids": [],
+    "id": 109691,
+    "origin_country": [
+      "HK"
+    ],
+    "overview": "《民間傳奇》adapted dozens of famous Chinese folk tales, dramas, and myth legends, such as \"The Butterfly Lovers\" and \"Chang'e Flying to the Moon\". These stories show the joys and sorrows of ancient Chinese people, and celebrate the righteous and kind while condemning evil. The endings are not always perfect, but justice eventually prevails and evil-doers get what they deserve. The show is a classic in Chinese TV history, often broadcasted during holidays, and remains unsurpassed to this day.",
+    "poster_path": "/yg6vIhkazFq1ac6993Taw1TQ3eI.jpg",
+    "first_air_date": "1974-11-04",
+    "name": "Chinese Folklore"
+  },
+  {
+    "genre_ids": [
+      35,
+      10762
+    ],
+    "id": 992,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Tiswas was a Saturday morning children's British television series which ran from 5 January 1974 to 3 April 1982 and was produced for the ITV network by ATV Network Limited.\n\nIt was created by ATV continuity announcer Peter Tomlinson following a test period in 1973 when he tried out a few competitions and daft stuff between the programmes.",
+    "poster_path": "/4Mvn20rwGOtpX3ZrIyTrEbN5KMu.jpg",
+    "first_air_date": "1974-01-05",
+    "name": "Tiswas"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 209119,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "A woman who lost her memory after experiencing the atomic bombing of Hiroshima.",
+    "poster_path": "/3iQijzhTU8BkEz9ZhF8uaSxQQ6a.jpg",
+    "first_air_date": "1974-04-01",
+    "name": "Hatoko no umi"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 84765,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Blind masseur Zatôichi travels from town to town gambling, drinking, and fighting off the local gangs.",
+    "poster_path": "/3arVXKAQRVTUpV8rpI4RHFoHSTC.jpg",
+    "first_air_date": "1974-10-03",
+    "name": "Zatoichi Monogatari"
+  },
+  {
+    "genre_ids": [
+      10765,
+      16,
+      10759
+    ],
+    "id": 45485,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "From deep within the Earth's surface, the Dinosaur Kingdom make their move to wipe out mankind and conquer the planet with their mechanical dinosaurs. After a prototype Getter Robo is shot down by a mechanical dinosaur, the Saotome Research Institute decides to use the real Getter Robo, which is combat-capable. Due to a lack of pilots in the institute, Ryo Nagare goes to his college to persuade martial artist Musashi Tomoe and outcast Hayato Jin to join him and pilot the Getter Machines to combat the new threat and protect mankind.",
+    "poster_path": "/fAEFm8jc69KJVktku96OzhdJpyU.jpg",
+    "first_air_date": "1974-04-04",
+    "name": "Getter Robo"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 244649,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/whPsX9nfrwF5V2qNwrP2Tlp7RPP.jpg",
+    "first_air_date": "1974-01-21",
+    "name": "Supermanoela"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 106570,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-09-05",
+    "name": "Der große Preis"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 103484,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/8eqtXUvONDxXQUntwsVT1xpNtyP.jpg",
+    "first_air_date": "1974-10-04",
+    "name": "Rockpalast"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10759,
+      18,
+      16
+    ],
+    "id": 7768,
+    "origin_country": [
+      "JP",
+      "US"
+    ],
+    "overview": "Star Blazers is an American animated television series adaptation of the Japanese anime series, Space Battleship Yamato I, II, and III. Star Blazers was first broadcast in the United States in 1979. Significantly, it was the first popular English-translated anime that had an overarching plot and storyline that required the episodes to be shown in order. It dealt with somewhat more mature themes than other productions aimed at the same target audience at the time. As a result, it paved the way for future arc-based, plot-driven anime translations.",
+    "poster_path": "/NBucqNuYmB2AsyR3iYwddBr1ti.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "Star Blazers"
+  },
+  {
+    "genre_ids": [
+      10751,
+      35
+    ],
+    "id": 133533,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": "/hyISnppQ1JNgzIU0rO9X0B1rUBa.jpg",
+    "first_air_date": "1974-01-07",
+    "name": "Kaynanalar"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 281673,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/zSjCWPKwz9S8RMQZ3qquRYnCY7a.jpg",
+    "first_air_date": "1974-09-09",
+    "name": "Ídolo de Pano"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 1935,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Chico and the Man is an American sitcom which ran on NBC for four seasons, from September 13, 1974, to July 21, 1978. It stars Jack Albertson as Ed Brown, the cantankerous owner of a run down garage in an East Los Angeles barrio, and Freddie Prinze as Chico Rodriguez, an upbeat, optimistic Chicano young man who comes in looking for a job. It was the first U.S. television series set in a Mexican-American neighborhood.",
+    "poster_path": "/qP5KgCttoSaR0lBOGNA7kY7UdGR.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "Chico and the Man"
+  },
+  {
+    "genre_ids": [
+      10766,
+      35
+    ],
+    "id": 282637,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/r0aiqNBkeXOSHnOrLhSeQ5FIhds.jpg",
+    "first_air_date": "1974-02-05",
+    "name": "O Machão"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10759,
+      18
+    ],
+    "id": 19,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Two astronauts and a sympathetic chimp friend are fugitives in a future Earth dominated by a civilization of humanoid apes. \n\nBased on the 1968 Planet of the Apes film and its sequels, which were inspired by the novel of the same name by Pierre Boulle.",
+    "poster_path": "/zxo5Vrd0oXgm9ZCz4r7Q3L8veWg.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "Planet of the Apes"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2292,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Porridge is a British situation comedy broadcast on BBC1 from 1974 to 1977, running for three series, two Christmas specials and a feature film also titled Porridge. Written by Dick Clement and Ian La Frenais, it stars Ronnie Barker and Richard Beckinsale as two inmates at the fictional HMP Slade in Cumberland. \"Doing porridge\" is British slang for serving a prison sentence, porridge once being the traditional breakfast in UK prisons.\n\nThe series was followed by a 1978 sequel, Going Straight, which established that Fletcher would not be going back to prison again. Porridge was voted number seven in a 2004 BBC poll of the 100 greatest British sitcoms.",
+    "poster_path": "/qSoHitLrJLNALUAcG4XHhqd1v0F.jpg",
+    "first_air_date": "1974-09-05",
+    "name": "Porridge"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762
+    ],
+    "id": 10106,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Penrod Pooch leaps into action as Hong Kong Phooey to fight villains.",
+    "poster_path": "/ozPPRJZu1BkoMyu3ffpHsgdTfUe.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Hong Kong Phooey"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 82087,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-12-22",
+    "name": "Hobbythek"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 208663,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "In this TV series of the hit 1973 film, Volcanic eruptions and earthquakes shake Japan. Firestorms burn beautiful Japanese cities to the ground. A weather survey group discovers that the Japanese Archipelago is moving towards the Japanese Trench, which if left to continue on its collision course, would bring the whole island of Japan under the sea!",
+    "poster_path": "/5dlmnKCENtXNkJwnWUesECbO1AK.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "Submersion of Japan"
+  },
+  {
+    "genre_ids": [
+      35,
+      10765
+    ],
+    "id": 237405,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Ganbare!! Robocon (がんばれ!!ロボコン, Ganbare!! Robokon, Do Your Best!! Robocon) is a Japanese tokusatsu comedy family robot television series created by Shotaro Ishinomori and produced by Toei. It ran from October 4, 1974, to March 25, 1977, on NET TV. Moero!! Robocon (燃えろ!!ロボコン, Moero!! Robokon, Burn!! Robocon) ran from January 31, 1999 (a week after the finale of Tetsuwan Tantei Robotack) to January 23, 2000 (a week before the premiere of Kamen Rider Kuuga). The story follows Robocon, a student of Gantz' Robot Academy who lives amongst humans and aids them as part of his studies. Though Robocon is a screw up, he makes efforts to establish a good image for robots in the eyes of humans they cross paths with. On December 10, 1999, Toei released the direct to video movie Moero!! Robocon vs. Ganbare!! Robocon (燃えろ!!ロボコンVSがんばれ!!ロボコン, Moero!! Robokon tai Ganbare!! Robokon) where the Robocon of the 90s meets the original Robocon from the 70s.",
+    "poster_path": "/v9czq6NMUA4BCTaxWKEBbEQDVZW.jpg",
+    "first_air_date": "1974-10-04",
+    "name": "Ganbare!! Robocon"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 53467,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/dKz85Ecr9AuXOaKf0wBtEjzhruJ.jpg",
+    "first_air_date": "1974-04-27",
+    "name": "Am laufenden Band"
+  },
+  {
+    "genre_ids": [
+      16,
+      10765,
+      10759
+    ],
+    "id": 45078,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "It is the year 2074. In a world threatened by aliens... an unlikely hero emerges! Ken Izumi may look like an ordinary 10-year-old boy, but he secretly possesses weapons, armor, and accessories that transform him into the superheroic Chargeman Ken. Ken protects his mom, dad, little sister Caron, robot pal Barican, and the rest of mankind from the diabolical Juralians, shape-shifting alien invaders bent on terrorizing the earth. The only thing standing between the fragile human race and conquest by the Juralians is Chargeman Ken and his unquenchable thirst for fiery, atomic justice!",
+    "poster_path": "/8k9NShgGHGwvZKn080DCC9FjBRE.jpg",
+    "first_air_date": "1974-04-01",
+    "name": "Chargeman Ken!"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 20131,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Within These Walls is a British television drama programme created and written by David Butler. Produced by London Weekend Television for ITV, broadcast between 1974 and 1978, the series portrays life in HMP Stone Park, a fictional women's prison.\n\nUnlike the later women-in-prison series Prisoner and Bad Girls, Within These Walls tended to centre its storylines around the staff rather than the inmates. Plots typically revolve around well-groomed, genteel governor Faye Boswell's attempts to liberalise the regime while managing her private life.",
+    "poster_path": "/oq8j0e2As0LPbUAp8LUVzcWFtgM.jpg",
+    "first_air_date": "1974-01-04",
+    "name": "Within These Walls"
+  },
+  {
+    "genre_ids": [
+      10766,
+      9648
+    ],
+    "id": 282588,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/uL0VmShNpURBeIdK5bBMGz3S0tP.jpg",
+    "first_air_date": "1974-07-01",
+    "name": "Corrida do Ouro"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 148,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Movin' On is an American drama series that ran for two seasons, between 1974 and 1976. It originally appeared on the NBC television network. The pilot episode for the series was known as In Tandem.",
+    "poster_path": "/4etNCiq5Vbjd4tms3UE6icS27dp.jpg",
+    "first_air_date": "1974-09-12",
+    "name": "Movin' On"
+  },
+  {
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 44829,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/x1pYwPfYbcgzFwrvEzAt4fIreDn.jpg",
+    "first_air_date": "1974-04-02",
+    "name": "Dame Oyaji"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 14311,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Manhunter is an American crime drama that was part of CBS' lineup for the 1974–1975 television season. The series was produced by Quinn Martin and starred Ken Howard as Dave Barret, a 1930s-era private investigator from Idaho. The series was executive produced by Quinn Martin.",
+    "poster_path": "/iOEcdiX2KXJlW7KFZuu9TWBL5Xr.jpg",
+    "first_air_date": "1974-09-11",
+    "name": "The Manhunter"
+  },
+  {
+    "genre_ids": [
+      10762,
+      16
+    ],
+    "id": 12549,
+    "origin_country": [
+      "US",
+      "GB"
+    ],
+    "overview": "Mr Men and Little Miss aired in both the United Kingdom and the United States. In the United Kingdom, the program was fully animated, and the characters were voiced by British voice actors Geoffrey Palmer, Gordon Peters, and Jill Shilling. The show was narrated by Geoffrey Palmer. In the United States, the voices were dubbed into North American English by Canadian voice actors and the program had live-action segments between animated segments.",
+    "poster_path": "/tKUHRqSzKyW4RknX4ZCNzbmZ8z4.jpg",
+    "first_air_date": "1974-12-31",
+    "name": "Mr. Men and Little Miss"
+  },
+  {
+    "genre_ids": [
+      10766,
+      35
+    ],
+    "id": 278390,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/aELegBhZkOCBz9Sn8F0mkuXRIZX.jpg",
+    "first_air_date": "1974-07-01",
+    "name": "A Barba Azul"
+  },
+  {
+    "genre_ids": [
+      10766,
+      80,
+      18,
+      9648
+    ],
+    "id": 244547,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/aNXQBreULxiGvvczhnk1zabkySF.jpg",
+    "first_air_date": "1974-11-04",
+    "name": "O Rebu"
+  },
+  {
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 62139,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "A comedy about the wacky adventures of Giatrus and his tribe of the first human beings on the planet. ",
+    "poster_path": "/bPDIjvM6E0yKLmKgKilhvN896O9.jpg",
+    "first_air_date": "1974-10-05",
+    "name": "First Human Gatorus"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 2920,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Class of '74 was a secondary school-based, daily soap opera produced by the Reg Grundy Organisation and screened on the Seven Network in Australia starting March 1974. The main characters were a mix of teachers and other school personnel, and students. The series was aimed at a teenage audience. Each episode was 30 minutes; five episodes each week were broadcast, stripped across week nights in an early evening timeslot. The series was renamed Class of '75 for its second and final year. It also switched from black and white to colour during its second year on air.",
+    "poster_path": null,
+    "first_air_date": "1974-03-18",
+    "name": "Class of..."
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13872,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "\"Fall of Eagles\" is a 13-part British television drama aired by the BBC in 1974. The series portrays historical events from 1848 to 1918, dealing with the collapse of the ruling dynasties of Austria-Hungary (the Habsburgs), Germany (the Hohenzollerns) and Russia (the Romanovs).",
+    "poster_path": "/qPb1TDtnomsdKLJ4L5NfXXeMGm1.jpg",
+    "first_air_date": "1974-03-15",
+    "name": "Fall of Eagles"
+  },
+  {
+    "genre_ids": [
+      10751,
+      35
+    ],
+    "id": 32165,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "CBS gave the group a television variety show (entitled Tony Orlando and Dawn) from the summer of 1974, after The Sonny and Cher Comedy Hour ended its run, until December 1976. The show was in the same vein as its predecessor (with sketches featuring sarcastic back-and-forth banter between Orlando, Hopkins and Vincent, similar to the sarcastic dialogue between Sonny and Cher) and became a Top 20 hit.\n\nThey are most famous for \"Tie a Yellow Ribbon\" &amp;  \"Knock Three Times\"!",
+    "poster_path": "/s7qPVkdkQYDwDnHlAGXPzGWA6Uk.jpg",
+    "first_air_date": "1974-12-04",
+    "name": "Tony Orlando and Dawn"
+  },
+  {
+    "genre_ids": [],
+    "id": 15178,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A live-action, recurring skit on the PBS children's television series The Electric Company. Episodes featured the Marvel Comics character Spider-Man, provided to the Children's Television Workshop free of charge, and was played by puppeteer and dancer Danny Seagren.\n\nStories involved the masked superhero foiling mischievous characters who were involved in petty criminal activities. The cast of The Electric Company played the roles of the various characters in each story, with another serving as narrator. In many of these sketches, viewers were addressed as \"true believers.\"\n\nUnlike other live-action and cartoon productions of Spider-Man, this version of the web-slinging hero did not speak out loud, instead communicating only with word balloons, in order to encourage young viewers to practice their reading skills because he was drawn without a mouth. He also never appeared out of his costume as Peter Parker and, given the series' budget limitations, used his web-shooters sparingly.",
+    "poster_path": "/cSHETWKC1JPQ3cNmpMCx9vMPoBs.jpg",
+    "first_air_date": "1974-10-21",
+    "name": "Spidey Super Stories"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 15244,
+    "origin_country": [
+      "YU"
+    ],
+    "overview": "\"The Written Off\" is a famous Serbian TV miniseries, that was very popular in former Yugoslavia, originally airing in 1974. Due to its popularity, Radio Television of Serbia has shown reruns of the series ten times, the last re-run starting in 2012. The series has achieved something of a cult status among its audience and still attracts an estimated 3 million viewers with its last rerun. Idea of series derives from exploits of freedom fighters in Belgrade during World War II, and all the characters and events are fictitious.",
+    "poster_path": "/2oAJirPQSNQc7lm8qX2lhLxuI5U.jpg",
+    "first_air_date": "1974-12-22",
+    "name": "The Written Off"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 26351,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Paul Sand in Friends and Lovers is a 1974-1975 United States comedic television series starring Paul Sand which centers around a musician in Boston, Massachusetts, and his personal relationships. It was Sand's only starring role in a television series. The show aired from September 14, 1974, to January 4, 1975.",
+    "poster_path": null,
+    "first_air_date": "1974-09-14",
+    "name": "Paul Sand in Friends and Lovers"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2544,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Set in a seedy bedsit, the cowardly landlord Rigsby has his conceits debunked by his long suffering tenants.",
+    "poster_path": "/1f0Jyqy4sVNn5rf36n4ldcltLN7.jpg",
+    "first_air_date": "1974-09-02",
+    "name": "Rising Damp"
+  },
+  {
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 24251,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Adventures of sexy & sassy black undercover cop Christie Love.",
+    "poster_path": "/ejvOqyHoPW9BVehvKphDKgOzu13.jpg",
+    "first_air_date": "1974-01-22",
+    "name": "Get Christie Love!"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 199004,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Set in the Edo period,  Kanou Toshu studied medicine in Nagasaki and lives on the outskirts of Senju-juku . He is also a master of the Mugai Ryu sword style. Although he has skills in medicine, he is also a big drinker and often drinks all day and falls asleep, or drinks at night and does not go home. He does not charge for treatment and medicine costs from poor patients such as tradesmen and farmers, but occasionally he'll buy their produce or drink with them. When he senses injustice by the rich and powerful, he takes matters into his own hands and doles out justice as he sees fit.",
+    "poster_path": "/jwvHnF3neAtoTyDX5C8G47M6XSs.jpg",
+    "first_air_date": "1974-01-10",
+    "name": "Swordsman With the Torn Umbrella"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18,
+      37
+    ],
+    "id": 282638,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/8zPUEKHGx8UvqdyPAMOpaxlQuB7.jpg",
+    "first_air_date": "1974-02-05",
+    "name": "Os Inocentes"
+  },
+  {
+    "genre_ids": [],
+    "id": 5969,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The FNS Music Festival is an annual music show on the produced by Fuji Network System and Fuji Television.",
+    "poster_path": "/rrgZxKSEkF1UFFfzdp3cPeTAtuC.jpg",
+    "first_air_date": "1974-07-18",
+    "name": "FNS Music Festival"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648,
+      18
+    ],
+    "id": 30283,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Father Brown was a Catholic priest who doubled as an amateur detective in order to solve mysteries.",
+    "poster_path": "/4lIESBYiG3dF0qWAuVBMPlNFYSZ.jpg",
+    "first_air_date": "1974-09-26",
+    "name": "Father Brown"
+  },
+  {
+    "genre_ids": [
+      10766
+    ],
+    "id": 1773,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "How to Survive a Marriage is an American soap opera which aired on the NBC television network from January 7, 1974 to April 17, 1975. The serial was created by Anne Howard Bailey, with much input from then-NBC Vice President Lin Bolen. The show's working title was From This Moment and was an in-house NBC production.",
+    "poster_path": null,
+    "first_air_date": "1974-01-07",
+    "name": "How to Survive a Marriage"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 9767,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Clifton Curtis has got it made—he runs a successful business he inherited from his late father and he's lucky with the the ladies—but he still lives with his Mama. She rules the roost and dispenses advice to everyone who'll listen—no one at Oscar's Barbershop is spared from Mama's wisdom. And they wouldn't have it any other way.",
+    "poster_path": "/bKErPpM3yDHuXjKaOx72THwQyLG.jpg",
+    "first_air_date": "1974-09-04",
+    "name": "That's My Mama"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18,
+      10765
+    ],
+    "id": 278438,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Robotics scientist Keitaro Jin and his son Keisuke become caught up in a campaign of terror by an evil organization known as \"G.O.D.\". They are attacked and the professor's technology gets stolen, but before Keitaro dies, he performs surgery on his son, using the last of his robotics technology to transform Keisuke into the \"X-Rider\". To avenge his father's death and ensure the safety of the entire world, Keisuke uses this technology as he battles the monstrous minions of G.O.D.’s Japan branch.",
+    "poster_path": "/zFQejfh1rpPdSoM8fbp7KcToFqH.jpg",
+    "first_air_date": "1974-02-16",
+    "name": "Kamen Rider X"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2794,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Middle-aged, middle-class couple Terry and June Fletcher expect to settle down in domestic bliss when their children leave home and they are left with a quiet, peaceful house. Their peace, however, is short-lived when ditzy Aunt Lucy decides she’s moving in.",
+    "poster_path": "/vDL2f0lGZnxhcNE4Aj3wHHK0GOO.jpg",
+    "first_air_date": "1974-05-07",
+    "name": "Happy Ever After"
+  },
+  {
+    "genre_ids": [
+      35,
+      10768
+    ],
+    "id": 425,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The comic adventures of a group of misfits who form an extremely bad concert party touring the hot and steamy jungles of Burma entertaining the troops during World War II.",
+    "poster_path": "/xASZd2y6irrDdl2a8SgzffzMo0l.jpg",
+    "first_air_date": "1974-01-03",
+    "name": "It Ain't Half Hot Mum"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 48421,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "Janosik was a television series that aired in Poland in 1974. It is about a famous Polish highlander outlaw who in folk legends steals money and goods from the rich and helps out the poor.\n\nThe series was directed by Jerzy Passendorfer.\n\nThere are 13 1-hour episodes.",
+    "poster_path": "/aPvPkM1VGBPGiPCJYoEAYbTawAc.jpg",
+    "first_air_date": "1974-07-26",
+    "name": "Janosik"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10759
+    ],
+    "id": 10444,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The live-action adventures of Captain Marvel! By uttering a single magic word young Billy Batson transforms himself into the world's mightiest mortal, Captain Marvel. The acronym of the first letters of the names of the six elders who train Billy with their respective special gifts: Solomon, wisdom; Hercules, strength; Atlas, stamina; Zeus, power; Achilles, courage; and Mercury, speed, in a word ... SHAZAM!",
+    "poster_path": "/484HcXXzCTTDYofP8XnIZmCrzE0.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Shazam!"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 2982,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The New Adventures of Gilligan is an animated series produced by Filmation and was aired on ABC during the 1974–1977 seasons. In 1977, the show entered syndication as part of an anthology series entitled The Groovie Goolies and Friends.",
+    "poster_path": "/xq3ez23ZGFKHmNXQdI8WTXn1Epa.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "The New Adventures of Gilligan"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 10704,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Kodiak is a short lived, half-hour adventure program that aired Friday evenings at 8:00 p.m Eastern time on ABC during the 1974-1975 television season. The show revolved around the main character of Cal \"Kodiak\" McKay, an Alaska State Trooper. Kodiak, always accompanied by his Eskimo sidekick Abraham Lincoln Imhook, used his four-wheel drive truck to track down desperate killers through 50,000 miles of Alaska backcountry. The show was broadcast against NBC's mega-hit Sanford and Son. Kodiak couldn't lure viewers in to watch and was cancelled after the first episode, although a total of four episodes were aired. The show was filmed in Bend, Oregon Using the Old Skyliners Ski Lodge as the primary Meeting Place.",
+    "poster_path": "/gmJ3BrBG7bsuXBbbXAkPk60en4H.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "Kodiak"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 8819,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Onigawara, the director of the International Secret Police Agency, looked forward to making Takeshi a top-notch criminal investigator. Takeshi was given training, which turned him into an all-around sportsman as well as martial arts expert. However, Takeshi's attitude toward crime-fighting was so incompatible with Onigawara's, that he disowned him. For a while Takeshi investigated crime alone; then he became a private detective's assistant and general handyman. Secretly, however, Takeshi obtained from a scientist a new artificial polymer, polymet, that was far stronger than steel. With this polymet Takeshi transformed himself into Hurricane Polymar, an invincible costumed hero.",
+    "poster_path": "/yLWm1sNEeCgcmo1BpHpxuXW5eyy.jpg",
+    "first_air_date": "1974-10-04",
+    "name": "Hurricane Polymar"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13308,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "This sprawling BBC saga follows an aristocratic family through three generations of power, wealth, intrigue, and scandal in Victorian England. Based on Anthony Trollope’s “political” novels .",
+    "poster_path": "/A3CSYg9fOpBU02P3HZpo8WV4t1x.jpg",
+    "first_air_date": "1974-01-19",
+    "name": "The Pallisers"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 96187,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/uCE8adCp0GbkWVI3NR3RSfbC9vZ.jpg",
+    "first_air_date": "1974-07-22",
+    "name": "Un curé de choc"
+  },
+  {
+    "genre_ids": [
+      10751,
+      35
+    ],
+    "id": 133533,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": "/hyISnppQ1JNgzIU0rO9X0B1rUBa.jpg",
+    "first_air_date": "1974-01-07",
+    "name": "Kaynanalar"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 68299,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Chobin is a cute little alien prince from another planet, who crash landed on earth. Looking for his mother, he has a magical bracelet that will help him on his quest.",
+    "poster_path": "/znoOa9xwqoKAx5EBMSybHwJ6u8i.jpg",
+    "first_air_date": "1974-04-05",
+    "name": "Starchild Chobin"
+  },
+  {
+    "genre_ids": [],
+    "id": 107864,
+    "origin_country": [
+      "HK"
+    ],
+    "overview": "",
+    "poster_path": "/yUAmSuNSwA1mZycbXpup454dX0P.jpg",
+    "first_air_date": "1974-01-21",
+    "name": "The Fatal Irony"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10762,
+      10765
+    ],
+    "id": 20378,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Denjin Zaborger, translated as Electroid Zaborger 7, was a Japanese tokusatsu television series that aired in 1974, produced by P Productions, it was their last Tokusatsu series of the 1970s.\n\nDenjin Zaborger stars Akira Yamaguchi as secret agent Yutaka Daimon. The robot Denjin Zaborger has no personality at all, its Akira Yamaguchi as the wild warrior Yutaka Daimon who gives the series its heart.\n\nA movie remake titled Karate-Robo Zaborgar was released in 2011.",
+    "poster_path": "/AdESRs53hk91Jova74RrfMRA0yW.jpg",
+    "first_air_date": "1974-04-06",
+    "name": "Electroid Zaborger 7"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 12791,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Six resistance fighters, known by their animal-based code names, fought during World War II. Their efforts came to a stop when one of their number, \"the Wolf\", betrayed them to the Gestapo. In their interrogation, one of their number, Claude Roget, the husband of Manouche was shot before her eyes. Thirty years later, Thomas Devon spots the Wolf in his shop. The surviving members of the Zoo Gang drop what they are doing and rendezvous for vengeance. The series follows the adventures of the remaining gang of four resistance fighters reunited 30 years later to scam habitual con artists and criminals in order to take their money and use it for good causes. Despite their ages, they put their skills and experience to use to raise enough money to construct a hospital in the memory of Claude. The gang is aided by the son of Manouche and Claude, an inspector in the French police.",
+    "poster_path": "/tcWYWKWfcGu2OwKkodj03f1Trlv.jpg",
+    "first_air_date": "1974-04-05",
+    "name": "The Zoo Gang"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 6102,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Run, Joe, Run was a Saturday morning television program that aired on NBC from 1974 to 1976. It centered around Joe, a German Shepherd in the military's K-9 Corp., and his master, Sergeant Will Corey. One day, during training, Joe was falsely accused of attacking his master, a crime for which the dog would be put to sleep as punishment. However, he escaped before being killed and a $200 bounty was put on his head.\n\nSgt. Corey believed Joe was innocent and also pursued him, hoping to find Joe before the authorities did. While on the run, Joe helped people he encountered.\n\nDuring the show's second season, Sgt. Corey, having never found Joe, was called back to duty. Joe then teamed with a hiker, Josh McCoy, and continued to help others, all the while still on the run.\n\nThe show was considered as a cross between Lassie and The Fugitive. Like The Fugitive, and later, The Incredible Hulk, it centered around a falsely accused person running from authorities and helping out people he meets along the way. The show was produced by William P. D'Angelo Productions, who also produced the NBC young adult drama, Westwind.",
+    "poster_path": "/4JS5Z8eVWTPqnmpjB1nvkBr5oYS.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Run, Joe, Run"
+  },
+  {
+    "genre_ids": [],
+    "id": 23318,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "An annual awards ceremony in recognition of excellence in American daytime television programming.",
+    "poster_path": "/uBbdeUjskJa0ASfcO1B3JBb20tC.jpg",
+    "first_air_date": "1974-05-28",
+    "name": "The Daytime Emmy Awards"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 5994,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Tattletales is an American game show which first aired on the CBS daytime schedule on February 18, 1974. It was hosted by Bert Convy, with several announcers, including Jack Clark, Gene Wood, Johnny Olson and John Harlan, providing the voiceover at various times.\n\nThe show's premise involved questions asked about celebrity couples' personal lives and was based on He Said, She Said, a syndicated Goodson-Todman show that aired during the 1969—1970 season.",
+    "poster_path": "/p11p4nDyqhdezipD0mmM5TLSrqo.jpg",
+    "first_air_date": "1974-02-18",
+    "name": "Tattletales"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 14259,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Swiss Family Robinson is a 1974-1975 Canadian television drama series, based on Johann David Wyss' novel The Swiss Family Robinson.\n\nThe series consisted of 26 30-minute episodes, and diverged somewhat from the original novel. Only one season was produced, due to the development of a Swiss Family Robinson series in 1975 by ABC in the United States. This situation precluded sales of the Canadian series to the lucrative American market. Reruns, however, continued to be syndicated in Canada for many years, with stations often scheduling the program as part of their Saturday morning line-up.",
+    "poster_path": "/cvRshpyaN7wpnbwOBVYDWHvvg2C.jpg",
+    "first_air_date": "1974-08-12",
+    "name": "Swiss Family Robinson"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 2982,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The New Adventures of Gilligan is an animated series produced by Filmation and was aired on ABC during the 1974–1977 seasons. In 1977, the show entered syndication as part of an anthology series entitled The Groovie Goolies and Friends.",
+    "poster_path": "/xq3ez23ZGFKHmNXQdI8WTXn1Epa.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "The New Adventures of Gilligan"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 33508,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Napoleon and Love was a 1974 British television series originally aired on ITV and lasting for 9 episodes from 5 March to 30 April 1974. The series starred Ian Holm in the title role as Napoleon I and depicts his relationships with the women who featured in his life as a backdrop to his rise and fall.",
+    "poster_path": "/ry0sa0GdDTqLMZOSeYsJdQldqan.jpg",
+    "first_air_date": "1974-03-05",
+    "name": "Napoleon and Love"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 85403,
+    "origin_country": [
+      "KR"
+    ],
+    "overview": "To celebrate the end of the year, the hottest actors, producers, and writers gather at the MBC Drama Awards. In 2018, there were many dramas that captured the heart of the viewers. What will be the show that has been loved the most by viewers? Who will be the best actor of 2018?",
+    "poster_path": "/gljzv2mnSDxLJf9fTTfn50wmQW.jpg",
+    "first_air_date": "1974-12-02",
+    "name": "MBC Drama Awards"
+  },
+  {
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 24251,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Adventures of sexy & sassy black undercover cop Christie Love.",
+    "poster_path": "/ejvOqyHoPW9BVehvKphDKgOzu13.jpg",
+    "first_air_date": "1974-01-22",
+    "name": "Get Christie Love!"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 12413,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Chapi Chapo is a French short stop-motion series. Created by Italo Bettiol and Stephano Lonati, with music by François de Roubaix, it premiered in 1974 on RF Television and ran for 60 5-minute episodes.\n\nThe show aired on American television in the 1980s as part of Nickelodeon's Pinwheel.\n\nIt was named \"Chapi Chapo\" as a play-on-words with the French word, chapeaux, which means \"hats\". Both of the main characters wore oversized hats that matched their clothing. The one in red is Chapi and the one in blue is Chapo. Each episode ends with a little dance.",
+    "poster_path": "/pyRTEeeSKK4KgpbbZzJcpLUPg45.jpg",
+    "first_air_date": "1974-11-13",
+    "name": "Chapi Chapo"
+  },
+  {
+    "genre_ids": [],
+    "id": 15156,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Super Robot Mach Baron is a Japanese tokusatsu series that aired from October 7, 1974, to March 31, 1975. It was a sequel to Super Robot Red Baron.\n\nSomewhere in Asia, the series was adapted into a 86-minute feature film which used footage from the original series. That movie was also released in Spain and Germany.",
+    "poster_path": "/vfaFgJqiRTLeEwcn0HxqvAgT7Gm.jpg",
+    "first_air_date": "1974-10-07",
+    "name": "Super Robot Mach Baron"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 11842,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Rush was an Australian television series produced by the Australian Broadcasting Corporation between 1974 and 1976. The first 13 episodes were produced in 1974 and filmed in black and white. In 1976, 13 more episodes were produced, in colour, in conjunction with French production company Antenne 2. Each series featured a different cast with the exception of John Waters.",
+    "poster_path": "/akupvzWxxyaRMULiBgSLVnhC9KN.jpg",
+    "first_air_date": "1974-08-20",
+    "name": "Rush"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 10332,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Apple's Way is a television dramedy which aired on CBS from 1974-1975. It was created by Earl Hamner, Jr..",
+    "poster_path": null,
+    "first_air_date": "1974-02-10",
+    "name": "Apple's Way"
+  },
+  {
+    "genre_ids": [
+      10751,
+      16
+    ],
+    "id": 11008,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Wheelie and the Chopper Bunch is a 30-minute cartoon produced by Hanna-Barbera which aired for one season on NBC from September 7, 1974 to August 30, 1975. It aired on Saturday morning from 8:30-9:00 am, opposite the popular The Bugs Bunny Show. 39 six-minute installments of the show were made. In the 80s, repeats were shown on USA Cartoon Express and later resurfaced on Cartoon Network and Boomerang. Since the show aired on NBC, Wheelie sometimes \"imitated\" the network's trademark \"chimes\". This was the first and only Hanna-Barbera series that has no humans and animals in it.",
+    "poster_path": "/zkuB3OrJHICtcgjgue8gTYbYw2p.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Wheelie and the Chopper Bunch"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10759
+    ],
+    "id": 10444,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The live-action adventures of Captain Marvel! By uttering a single magic word young Billy Batson transforms himself into the world's mightiest mortal, Captain Marvel. The acronym of the first letters of the names of the six elders who train Billy with their respective special gifts: Solomon, wisdom; Hercules, strength; Atlas, stamina; Zeus, power; Achilles, courage; and Mercury, speed, in a word ... SHAZAM!",
+    "poster_path": "/484HcXXzCTTDYofP8XnIZmCrzE0.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Shazam!"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 26351,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Paul Sand in Friends and Lovers is a 1974-1975 United States comedic television series starring Paul Sand which centers around a musician in Boston, Massachusetts, and his personal relationships. It was Sand's only starring role in a television series. The show aired from September 14, 1974, to January 4, 1975.",
+    "poster_path": null,
+    "first_air_date": "1974-09-14",
+    "name": "Paul Sand in Friends and Lovers"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 42244,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A physician sues a novelist for publishing statements implicating the doctor in Nazi war crimes.",
+    "poster_path": "/Ar8eVMJ5arRf48wRCnAjJRm1PVS.jpg",
+    "first_air_date": "1974-04-29",
+    "name": "QB VII"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 40555,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Motiv Liebe is a German television series.",
+    "poster_path": "/9nhvrzizZhddc0sQRjxXMjQVwsx.jpg",
+    "first_air_date": "1974-03-19",
+    "name": "Motiv Liebe"
+  },
+  {
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 30794,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Paper Moon is a short-lived situation comedy which aired on ABC during the fall of 1974, starring Christopher Connelly and Jodie Foster in the roles of Moses Pray and his presumed daughter, Addie. The series is based on the 1973 Peter Bogdanovich film of the same name starring Ryan O'Neal and real-life daughter Tatum O'Neal, which was based on Joe David Brown's 1971 novel entitled Addie Pray.",
+    "poster_path": "/i87ywDMKZMKh1gAWwTkmAKAjExG.jpg",
+    "first_air_date": "1974-09-12",
+    "name": "Paper Moon"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2794,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Middle-aged, middle-class couple Terry and June Fletcher expect to settle down in domestic bliss when their children leave home and they are left with a quiet, peaceful house. Their peace, however, is short-lived when ditzy Aunt Lucy decides she’s moving in.",
+    "poster_path": "/vDL2f0lGZnxhcNE4Aj3wHHK0GOO.jpg",
+    "first_air_date": "1974-05-07",
+    "name": "Happy Ever After"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 15244,
+    "origin_country": [
+      "YU"
+    ],
+    "overview": "\"The Written Off\" is a famous Serbian TV miniseries, that was very popular in former Yugoslavia, originally airing in 1974. Due to its popularity, Radio Television of Serbia has shown reruns of the series ten times, the last re-run starting in 2012. The series has achieved something of a cult status among its audience and still attracts an estimated 3 million viewers with its last rerun. Idea of series derives from exploits of freedom fighters in Belgrade during World War II, and all the characters and events are fictitious.",
+    "poster_path": "/2oAJirPQSNQc7lm8qX2lhLxuI5U.jpg",
+    "first_air_date": "1974-12-22",
+    "name": "The Written Off"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 62213,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-02-20",
+    "name": "Sergeant Berry"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18,
+      10765
+    ],
+    "id": 278438,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Robotics scientist Keitaro Jin and his son Keisuke become caught up in a campaign of terror by an evil organization known as \"G.O.D.\". They are attacked and the professor's technology gets stolen, but before Keitaro dies, he performs surgery on his son, using the last of his robotics technology to transform Keisuke into the \"X-Rider\". To avenge his father's death and ensure the safety of the entire world, Keisuke uses this technology as he battles the monstrous minions of G.O.D.’s Japan branch.",
+    "poster_path": "/zFQejfh1rpPdSoM8fbp7KcToFqH.jpg",
+    "first_air_date": "1974-02-16",
+    "name": "Kamen Rider X"
+  },
+  {
+    "genre_ids": [
+      99,
+      10767
+    ],
+    "id": 59225,
+    "origin_country": [],
+    "overview": "Flick Flack was a Canadian television series broadcast by Global Television Network in 1974. The series featured interviews with motion picture industry personalities combined with excerpts from films. William Shatner was the regular series host. \"It was a TV show produced for Canadian TV. A handful of shows that aired every fortnight for a few months in the 70’s.\" @WilliamShatner · Sep 15, 2020",
+    "poster_path": "/1mXtts6qTqDxEjZKI84xHx7Z09q.jpg",
+    "first_air_date": "1974-01-07",
+    "name": "Flick Flack"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759,
+      10765,
+      80
+    ],
+    "id": 74627,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Battle between international criminal organizations and the secret team of international police formed against these organizations. An action drama incorporating element of children's hero program, Tokusatsu, such as characters with superhuman motor nerves and the appearance of super machines. \"Strada 5\" is the name of this secret team.",
+    "poster_path": "/ejMI5GV1pQhWcVHhpijOjfOm6fZ.jpg",
+    "first_air_date": "1974-04-05",
+    "name": "Blitz!! Strada 5"
+  },
+  {
+    "genre_ids": [
+      10762,
+      16
+    ],
+    "id": 64218,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Mr Men are a whole host of brightly colored characters that live in Misterland. All of them have names like Mr Happy, Mr Clumsy and Mr Greedy and their appearance and personality match their name. Based on the books by Roger Hargraves.",
+    "poster_path": "/yz8uMZgpxj7Hv8aNMRaSfgWGhFA.jpg",
+    "first_air_date": "1974-12-31",
+    "name": "Mr. Men"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 24079,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "American TV variety show hosted by singing group The Hudson Brothers. It ran from 1974-1975.",
+    "poster_path": "/h5vXvgEzyCwb2X5wy6sGYGh0Tj.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "The Hudson Brothers Razzle Dazzle Show"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10765,
+      18,
+      10762
+    ],
+    "id": 278477,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "A plane crashes in the Amazon rainforest, leaving young Daisuke Yamamoto stranded without his parents. Soon adopted by an Incan tribe under the name \"Amazon\", he becomes a wild child, living off the land. However, his village is massacred by the Ten-Faced Demon Gorgos, who searches for the powerful GiGi Armlet to take over the world with it. The last Inca, Elder Bago, gives Amazon the GiGi Armlet for safekeeping and uses his knowledge of Incan science and magic to perform a mystic ritual on Amazon and transform him into the powerful \"Kamen Rider Amazon\" before dying. Now in Japan, Amazon battles the evil organization Gedon, unaware of why they pursue him. Befriending Professor Kousaka's nephew and niece, Amazon learns of the GiGi Armlet's true nature and ultimately defeats Gedon, then the Garanda Empire.",
+    "poster_path": "/4QjrLtMtAxKejzKMERoghaHOlFO.jpg",
+    "first_air_date": "1974-10-19",
+    "name": "Kamen Rider Amazon"
+  },
+  {
+    "genre_ids": [
+      16,
+      10759
+    ],
+    "id": 204504,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/HBdVyHRMFHz4rr9XWy4C26vujg.jpg",
+    "first_air_date": "1974-10-04",
+    "name": "Jim Button"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 15081,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The adventures of two married game wardens in Kenya. George Adamson and Diana Muldaur live with their adopted lioness Elsa the Lioness, where they protect the animals in the surrounding area from all sorts of danger, both natural and human.",
+    "poster_path": "/9Q9AG7Y0YAxj3rEtXLfSMfl24Sj.jpg",
+    "first_air_date": "1974-09-09",
+    "name": "Born Free"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 107928,
+    "origin_country": [
+      "HK"
+    ],
+    "overview": "",
+    "poster_path": "/nqA15Kyq0Me7FFhxr4HwIWK7FvF.jpg",
+    "first_air_date": "1974-12-30",
+    "name": "The God of Aqua"
+  },
+  {
+    "genre_ids": [
+      10751,
+      18
+    ],
+    "id": 251817,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The drama is about the suffering of two families whose babies were mistaken for each other in the hospital.",
+    "poster_path": "/m1HOlMGXweVhsxOGe0UgxTQUMNr.jpg",
+    "first_air_date": "1974-04-03",
+    "name": "Wagako wa Tanin"
+  },
+  {
+    "genre_ids": [],
+    "id": 26771,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-10-06",
+    "name": "Tentou Mushi no Uta"
+  },
+  {
+    "genre_ids": [
+      10759,
+      16,
+      10751
+    ],
+    "id": 14365,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Devlin is an animated television series produced by Hanna-Barbera for ABC in 1974.",
+    "poster_path": "/lrE3tTJqRrkXFrAB1AZJAkPT3fz.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Devlin"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 263181,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Karl and Kristina Nilsson work on a farm in a cold and desolate area of 19th century rural Sweden. Growing privations, combined with increasing social and religious persecution, motivate the Nilssons and many of their neighbors to strike out for the United States. Following a treacherous ocean crossing and an equally grueling land passage, the emigrants find themselves in seemingly idyllic Minnesota.",
+    "poster_path": "/k6KjR20bCbQu7LF6WUwCYwmsZFs.jpg",
+    "first_air_date": "1974-12-01",
+    "name": "The Emigrants"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 10057,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The adventures of a futuristic version of the Partridge Family.",
+    "poster_path": "/1BDXR1st4Z5FmTQknZCg6CpSQPq.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Partridge Family 2200 A.D."
+  },
+  {
+    "genre_ids": [
+      9648,
+      18,
+      80
+    ],
+    "id": 63443,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "About the struggle between criminal investigators and the criminal world. Based on real events and documents, the film recreates the atmosphere of 1920s Russia, which was swept by a wave of violence... At the heart of the story is the fate and career of a young man who, together with his comrades, is about to make history in Soviet criminal investigation...",
+    "poster_path": "/2t0hs1PbUdvDCS4GNPpPyHMWQUt.jpg",
+    "first_air_date": "1974-11-10",
+    "name": "Born of Revolution"
+  },
+  {
+    "genre_ids": [
+      18,
+      35
+    ],
+    "id": 63965,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/bDPa7nu8Ys2w1FtyOty4Vb21fmi.jpg",
+    "first_air_date": "1974-11-26",
+    "name": "Münchner Geschichten"
+  },
+  {
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 17334,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Chopper One was a short-lived ABC drama/adventure television series in early 1974 depicting the activities of a California police helicopter team. The program aired in a half-hour time slot on Thursdays at 8 p.m. Eastern.\n\nIt aired adjacent to Firehouse, an action-drama series about a Los Angeles fire station. Chopper One was cancelled after six months and Firehouse ended in the following month.",
+    "poster_path": "/8z2IwdLZ9cPd5OGZVVtQa7rmROz.jpg",
+    "first_air_date": "1974-01-17",
+    "name": "Chopper One"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 7029,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "My Old Man was a popular but short-lived British comedy programme starring Clive Dunn as retired and embittered engine driver Sam Cobbett.  Set in London, England, Sam Cobbett is the last tenant to leave an old house on a council-condemned road. He goes to live with his daughter, her posh husband, and their young teenage son, in a flat nearby.",
+    "poster_path": "/jjp1IbaVkOEVCDbk8OlPOywZgWI.jpg",
+    "first_air_date": "1974-05-03",
+    "name": "My Old Man"
+  },
+  {
+    "genre_ids": [
+      10768,
+      18
+    ],
+    "id": 31014,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Lincoln (aka Sandburg's Lincoln) is an American six-part miniseries broadcast on NBC from September 6, 1974 to April 14, 1976.",
+    "poster_path": "/qLF0QYnrVDfC1biTCqMBMnZ6AuA.jpg",
+    "first_air_date": "1974-09-06",
+    "name": "Lincoln"
+  },
+  {
+    "genre_ids": [
+      80,
+      18,
+      35
+    ],
+    "id": 29306,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Zodiac was a six-part series transmitted by ITV in 1974. Starring Anton Rogers and Anouska Hempel as cynical detective David Gradley and his astrologer associate Esther Jones, the unusual astrological premise set this show apart from the humdrum detective dramas of the time. Little seen since its original broadcast, the series has garnered something of a cult status.",
+    "poster_path": "/jYrYXzJSpjbDSXeR0S0s33a3xru.jpg",
+    "first_air_date": "1974-02-25",
+    "name": "Zodiac"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 11709,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Valley of the Dinosaurs is an animated television series from the Australian studios of Hanna-Barbera that ran for 16 half-hour installments on CBS Saturday Morning from September 7, 1974 to September 4, 1976. Reruns are currently airing on the Boomerang network.",
+    "poster_path": "/f34mriDMMf9jvTE3asSXNx7BBac.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Valley of the Dinosaurs"
+  },
+  {
+    "genre_ids": [
+      10765
+    ],
+    "id": 41187,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Telerop 2009 – Es ist noch was zu retten is a German television series.",
+    "poster_path": "/yO44Pkg7K4ZKERv3K8XRaz6e7na.jpg",
+    "first_air_date": "1974-07-10",
+    "name": "Telerop 2009 – Es ist noch was zu retten"
+  },
+  {
+    "genre_ids": [
+      18,
+      10751
+    ],
+    "id": 114538,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Straty a nálezy"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 22314,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Lee Remick stars as Jennie Jerome, born in the United States in 1845, who eventually became Lady Randolph Churchill, and gave birth to Sir Winston Churchill in this seven-part, seven-hour biographical mini-series.",
+    "poster_path": "/irYu6TOGpH5PDZ00MuUoJExKseu.jpg",
+    "first_air_date": "1974-11-05",
+    "name": "Jennie: Lady Randolph Churchill"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 40977,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-27",
+    "name": "Kli-Kla-Klawitter"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 210584,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Toshinta Tomoe decides to join the high school judo club to follow the footsteps of his mother, Teruko, a former judo champion.",
+    "poster_path": "/bquAcRFsZdL7nNxfs5mkuSYdU07.jpg",
+    "first_air_date": "1974-04-01",
+    "name": "Judo Sanka"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 11386,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Amy Prentiss is an American police drama television series which aired on NBC. It is a spinoff of Ironside, and aired as part of the NBC Mystery Movie from 1974-1975.\n\nJessica Walter stars as Amy Prentiss, a relatively young investigator who becomes the first female Chief of Detectives for the San Francisco Police Department. Helen Hunt, in an early role, played Prentiss' pre-teen daughter, Jill. Four 2-hour episodes were aired.\n\nGuest stars in the series' brief run included William Shatner, Cameron Mitchell, Don Murray, Joyce Van Patten and Jamie Farr.",
+    "poster_path": null,
+    "first_air_date": "1974-12-01",
+    "name": "Amy Prentiss"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 47975,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Two teenage boys witness the murder of an old man, only for the old man to turn up alive after the boys notify the police.",
+    "poster_path": "/v6Yl0XERRWkd8vw9QsRZzXYxRjg.jpg",
+    "first_air_date": "1974-09-15",
+    "name": "Soldier and Me"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 41212,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Der kleine Doktor is a German television series.",
+    "poster_path": null,
+    "first_air_date": "1974-04-07",
+    "name": "Der kleine Doktor"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 110821,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Long-form adaptation of previous year's movie; due to a sudden tectonic shift, the country of Japan starts sinking.",
+    "poster_path": "/bZrsGF20ofxokIfHu4eBRvNykid.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "Japan Sinks"
+  },
+  {
+    "genre_ids": [
+      37
+    ],
+    "id": 14549,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Cowboys was a short-lived Western television series based on the 1972 motion picture of the same name starring John Wayne. It aired on the American Broadcasting Company television network from February 6 to May 8, 1974. The television show starred Jim Davis, Diana Douglas, Moses Gunn, A Martinez, Robert Carradine, and Clay O'Brien. David Dortort, best known for Bonanza and The High Chaparral, produced the series. The television show, like the movie, followed the exploits of seven boys who worked on a ranch in 1870s New Mexico. The Cowboys began as an hour-long series, but ABC decided to reduce running time to a half hour format.\n\nThe format change did not lead to increased viewers, and the show was the victim of early cancellation.\n\nGuest stars included Cal Bellini as Wa-Cha-Ka in \"The Indian Givers\", Kevin Hagen as Josh Redding in \"Death on a Fast Horse\", and Lurene Tuttle as Grandma Jesse in \"Many a Good Horse Dies\".",
+    "poster_path": null,
+    "first_air_date": "1974-02-06",
+    "name": "The Cowboys"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 223193,
+    "origin_country": [
+      "CH"
+    ],
+    "overview": "",
+    "poster_path": "/yqQT0550LiWRKgK0caU4qGvfOg3.jpg",
+    "first_air_date": "1974-01-11",
+    "name": "Les Enfants des autres"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 288111,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "The epic story of Moses, who led the Israelites out of slavery, parted the Red Sea and received the Ten Commandments on Mount Sinai. 6-part mini-series, recut later for theatrical release.",
+    "poster_path": "/hucMdzydBFZ2wp4dvMXtNNAr5JK.jpg",
+    "first_air_date": "1974-12-22",
+    "name": "Moses the Lawgiver"
+  },
+  {
+    "genre_ids": [
+      10751,
+      10759
+    ],
+    "id": 28179,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Adventures of two orphaned brothers, Tim and Taylor, whose parents were killed by a tornado in the Gulf of Mexico. The brothers meet Clancy, an old circus hand, who was driving a bus. Aboard the bus was a menagerie including a pig, a pelican and a sea lion named Salty. Clancy adopts the two boys and takes them to his home, a marina.",
+    "poster_path": "/v7H5SacuSKbc6INHjD56iBdlFYD.jpg",
+    "first_air_date": "1974-09-10",
+    "name": "Salty"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 128625,
+    "origin_country": [],
+    "overview": "The Dogfather was a parody of The Godfather, but with canines as part of the Italian organized crime syndicate.",
+    "poster_path": "/bBaw2ZgXMmFSWNpJhDmp4rYtPb2.jpg",
+    "first_air_date": "1974-06-26",
+    "name": "The Dogfather"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759,
+      35
+    ],
+    "id": 77650,
+    "origin_country": [
+      "YU"
+    ],
+    "overview": "The story follows a ten-year period before WW2 in a fictional town of Gradina, Serbia and its residents, which went through the turbulent events like the Great Depression and the rise of fascism. But the most important segment of the story revolves around rivalry between two city's football clubs - Radnicki and Gradjanski.",
+    "poster_path": "/oHAKWPX4hLiTmsmY5lB9Xai1XAh.jpg",
+    "first_air_date": "1974-04-17",
+    "name": "More Than a Game"
+  },
+  {
+    "genre_ids": [
+      10759,
+      80
+    ],
+    "id": 101017,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/dAZ7rolqJh0T5zlVy9QDbAekmOc.jpg",
+    "first_air_date": "1974-12-20",
+    "name": "Chéri-Bibi"
+  },
+  {
+    "genre_ids": [],
+    "id": 253359,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Akizuki Rokurōta was born as a child of Tokugawa Ieyasu, but since he is a twin with Tokugawa Iemitsu he is not allowed an official place within the Tokugawa family. Sent away as an adopted son, he continues his wandering journey. One day, he accidentally encounters Toyotomi Hideyori's son Toyotomi Hideya, his mother Katsura-no-miya Renko and their maidservant Sasaka, survivors of the Shogunate attack on Osaka Castle years before who are now fleeing from their refuge in Kyoto. The Tokugawa Shogunate and Yagyū clan are trying to capture or kill them, while on the other hand villains want to use them. Akizuki Rokurōta decides to protect them from both sides.",
+    "poster_path": "/mpo6xg2DGrvN7S3F0Gf3er0vRST.jpg",
+    "first_air_date": "1974-10-02",
+    "name": "Fateful Mountain Pass"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 15986,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Benjamin Franklin is a 1974 American television miniseries that chronicles the life of Benjamin Franklin. It was broadcast by CBS. It won the Emmy Award for Outstanding Limited Series.",
+    "poster_path": "/7v55uLRR2nMsX0BqYlpJR0ZfVJ9.jpg",
+    "first_air_date": "1974-11-21",
+    "name": "The Lives of Benjamin Franklin"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 4004,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Firehouse is an American drama/adventure series that aired on ABC television series in early 1974. Somewhat derivative of Emergency! and the recent best-selling novel Report From Engine Co. 82 by FDNY fireman Dennis Smith, the series was set in Los Angeles at a small inner-city fire station. The five-man crew of Engine Company 23 was led by Captain Spike Ryerson, played by James Drury, fresh from his starring role of nine years on the western series The Virginian. A dramatic series which focuses on Engine Company 23, a group of firemen who put their lives on the line by fighting fires each day. These men are constantly involved in such human dramas as rescuing an old man from a roaring inferno, confronting the landlord of a firetrap tenement and restoring life to a woman overcome by fumes.",
+    "poster_path": "/xW5W3KicOlH676mOO2APFwDVzEm.jpg",
+    "first_air_date": "1974-01-17",
+    "name": "Firehouse"
+  },
+  {
+    "genre_ids": [
+      10759,
+      80
+    ],
+    "id": 42956,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/j5NdYF3Tf7cTYgpoIzy3FgIbaT7.jpg",
+    "first_air_date": "1974-12-21",
+    "name": "Les Brigades du Tigre"
+  },
+  {
+    "genre_ids": [],
+    "id": 27865,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-09-14",
+    "name": "The New Land"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 230238,
+    "origin_country": [
+      "HK"
+    ],
+    "overview": "",
+    "poster_path": "/A3qOc2rAHlEkyEFVQ6gddQ2ZJpq.jpg",
+    "first_air_date": "1974-03-11",
+    "name": "啼笑因缘"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 204533,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The adventures of a witless boy who finds a time machine hidden in a cave near his house. The 5 minutes episodes aired during the morning television show \"Ohayo Kodomo\"",
+    "poster_path": null,
+    "first_air_date": "1974-04-05",
+    "name": "Little Tamageta, the Neighbor"
+  },
+  {
+    "genre_ids": [
+      18,
+      10751
+    ],
+    "id": 14049,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "La Petite patrie was a French Canadian television programme from Quebec. It was broadcast between 1974 and 1976.\n\nThis television serial of Claude Jasmin told the life of a district of Montreal formed by the quadrilateral of the streets Saint-Denis, Beaubien, St-Hubert and Bélanger the shortly after the war.\n\nThe main character and narrator of this television serial was Clément Germain, adolescent of 17 years who lived in this district with his family. Through the memories of Clément, viewers discovered this neighborhood during the years of Duplessis; with its trams, its ice deliverymen, its guénillou and its anglophone Chinese launderer among others. At that time, bread cost 5 cents, Maurice Richard was at the peak of his glory and the Rivoli theatre had not yet been replaced by a Jean-Coutu.",
+    "poster_path": "/rFBcCiC04Lf1Y2jkJ3Tg0eBopIQ.jpg",
+    "first_air_date": "1974-09-01",
+    "name": "La Petite Patrie"
+  },
+  {
+    "genre_ids": [],
+    "id": 294600,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Great Debate is a Canadian television series that featured debates between pairs of panelists over a given subject. It was first shown on Global Television Network in 1974, and later broadcast by CHCH-TV from Hamilton, Ontario. The series was produced intermittently until 1983.",
+    "poster_path": null,
+    "first_air_date": "1974-01-10",
+    "name": "The Great Debate"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 27324,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Incidents and mishaps propel Norman Wisdom into a series of extraordinary escapades in his final leading role on television.",
+    "poster_path": "/thAHHOhbnQK7VMTDjxQr111Cgig.jpg",
+    "first_air_date": "1974-04-09",
+    "name": "A Little Bit Of Wisdom"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 22836,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The lives of the Pankhurst women and their role in the Suffragette Movement.",
+    "poster_path": "/kdWo9qf0nRGwswCwLwhl21hj1MF.jpg",
+    "first_air_date": "1974-04-03",
+    "name": "Shoulder to Shoulder"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 213763,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-05-23",
+    "name": "Haldy"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10762,
+      80
+    ],
+    "id": 28496,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "",
+    "poster_path": "/sZz7kBBKsGCoWQhIJC6F7omOIlA.jpg",
+    "first_air_date": "1974-10-05",
+    "name": "Q&Q"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 62586,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/hYovCPbdsLs58NxFcaIkio9cI6v.jpg",
+    "first_air_date": "1974-08-22",
+    "name": "Der Herr Kottnik"
+  },
+  {
+    "genre_ids": [],
+    "id": 9926,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Sons and Daughters is a 9-episode 1974 CBS series launched from the pilot television movie called Senior Year. The show is set in California during the middle-1950s and portrayed the trials of life for two young people — Jeff, portrayed by 24-year-old Gary Frank and Anita, played by 17-year-old Glynnis O'Connor.\n\nThe program, which contained adult themes, was cancelled and replaced in December 1974 with a variety program starring singers Tony Orlando and Dawn. It was crushed in the ratings by Michael Landon's Little House on the Prairie, which ran in the same time slot on NBC.",
+    "poster_path": "/2lPZxNLogewIVxHOTyaS1RQgI9p.jpg",
+    "first_air_date": "1974-09-11",
+    "name": "Sons and Daughters"
+  },
+  {
+    "genre_ids": [
+      10765
+    ],
+    "id": 74907,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "The male protagonist falls in love with a very beautiful blonde woman and with a mysterious past who seems to be almost a ghost, a shadow.",
+    "poster_path": "/vVLRy1yM2XoJna8phKJsVRembMU.jpg",
+    "first_air_date": "1974-02-23",
+    "name": "I Have Met a Shadow"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 274204,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/4MwkPmTB73Rt9qUp8TxoFglvzv9.jpg",
+    "first_air_date": "1974-10-18",
+    "name": "Frost-Covered Trees"
+  },
+  {
+    "genre_ids": [],
+    "id": 75169,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "Miniseries about the early life of Garibaldi.",
+    "poster_path": "/1PouuCVUddgNwhngvVd8X7qJlm3.jpg",
+    "first_air_date": "1974-02-10",
+    "name": "Il giovane Garibaldi"
+  },
+  {
+    "genre_ids": [],
+    "id": 19870,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "Mio Mao, also known as Mio and Mao, is an Italian-British children's TV show produced by Misseri Studios, HiT Entertainment & Mad Mouse Productions, L+H Films, Cartoonito and Channel 5. The series was produced using Claymation animation.\n\nThe first series of Mio Mao was aired from 1974 to 1976. New episodes were produced in late 2005 in association with Channel 5, followed by yet another series of episodes in 2009. The music was composed by Piero Barbetti.\n\nIn the U.K., the episodes are narrated by Derek Griffiths and shown on Channel 5, and its sister channel, 5*. Although occasional episodes are listed separately in TV guides, many are also shown as part of Channel 5's Milkshake programme and Tiny Pop and Cartoonito. The show is now available through the Demand 5 online viewing service. In 1993, the program was shown in the UK. on Channel 4's early morning Take 5 line-up.\n\nCurrently the episodes are shown in the US on the BabyFirstTV and BabyTV channel.",
+    "poster_path": "/95Gb5yhtcFm6xthB0660ctNnwLl.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Mio Mao"
+  },
+  {
+    "genre_ids": [
+      10759,
+      80
+    ],
+    "id": 80416,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/ngd75X97zSVKJKDK1xOL2kEdDlI.jpg",
+    "first_air_date": "1974-12-14",
+    "name": "Hardness 10"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 41096,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Unter einem Dach is a German television series.",
+    "poster_path": "/4lbnu7pci1mE2VkT0F106kzs7FN.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Unter einem Dach"
+  },
+  {
+    "genre_ids": [
+      18,
+      37,
+      35
+    ],
+    "id": 7906,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Dirty Sally is an American comedy-drama Western series",
+    "poster_path": null,
+    "first_air_date": "1974-01-11",
+    "name": "Dirty Sally"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18,
+      16
+    ],
+    "id": 103352,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/8UlMM8wFRHw1lT9GmnU8opzeFXF.jpg",
+    "first_air_date": "1974-04-05",
+    "name": "The New Adventures of Hutch the Honeybee"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 87417,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/bIt5FbErzogV1D8HTtb7eKXEHXO.jpg",
+    "first_air_date": "1974-04-30",
+    "name": "Krkonošská pohádka"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 15539,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The incredible life of novelist George Sand is explored with a particular focus on her romance with the famed musician Frédéric Chopin.",
+    "poster_path": "/t9QOLzeNizCs0g7FkcnZ9GMPclL.jpg",
+    "first_air_date": "1974-11-03",
+    "name": "Notorious Woman"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 10696,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Features the adventures of a family of Neanderthals during the Ice Age. Intended to be educational, and is based on the best then-current research about Neanderthal life, except where it has to be watered down for a young audience. A board game of the same title was produced by the US toy company Milton Bradley as a direct tie-in. Charlton Comics published a Korg comic book from May 1975 to November 1976. The series was written and drawn by Pat Boyette, and lasted for 9 issues. The American Museum of Natural History and The Los Angeles County Museum of Natural History served as consultants to the series.",
+    "poster_path": "/yyg4NHMW1kMkRw5T6b9rqkeOjEj.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "Korg: 70,000 B.C."
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 109969,
+    "origin_country": [
+      "HK"
+    ],
+    "overview": "",
+    "poster_path": "/8GlR4TH4BgeZ0densNjLEFOkOGc.jpg",
+    "first_air_date": "1974-12-30",
+    "name": "Murder of Passion"
+  },
+  {
+    "genre_ids": [],
+    "id": 28684,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A deputy sheriff in New Mexico finds his Navajo heritage at odds with his law-enforcement duties. Filmed in and around Albuquerque, the series lasted only 13 episodes.",
+    "poster_path": null,
+    "first_air_date": "1974-09-21",
+    "name": "Nakia"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 274118,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Sugiyama was undergoing training in Moses Lake, USA, for the Boeing 747 model transition training. After passing the exam and returning to Japan, he found that his wife Ayako had disappeared...",
+    "poster_path": "/aykFBwQdh7EN8MppgCHrUGRFPmL.jpg",
+    "first_air_date": "1974-04-05",
+    "name": "White Runway"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 33146,
+    "origin_country": [
+      "IE",
+      "GB"
+    ],
+    "overview": "A young man journeys from a difficult childhood to maturity, exploring social injustice, personal development, and the complexities of human relationships.\n\nA co-production with Time-Life Television Productions, the miniseries was first broadcast on BBC 1 in weekly parts from 1 December 1974 to 5 January 1975. It is the earliest BBC adaptation to exist in its entirety; the 1956 adaptation is completely lost, whilst only four of the 1966 adaptation's eight episodes are known to exist.",
+    "poster_path": "/fXYG6smhVcTfxgJ9rWSnA36D0Oi.jpg",
+    "first_air_date": "1974-12-01",
+    "name": "David Copperfield"
+  },
+  {
+    "genre_ids": [],
+    "id": 278308,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/k0V7QXHkwkB5Q2XVxfmm5GiPXZh.jpg",
+    "first_air_date": "1974-10-07",
+    "name": "プレイガールQ"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 65482,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-21",
+    "name": "Gemeinderätin Schumann"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 1476,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "...And Mother Makes Five is a British sitcom that aired on ITV from 1974 to 1976. Starring Wendy Craig, it is the sequel of ...And Mother Makes Three and aired for four series. ...And Mother Makes Five was written by Richard Waring, Brian Cooke and Johnnie Mortimer. Wendy Craig also wrote some episodes under the pseudonym Jonathan Marr. It was made for the ITV network by Thames Television.",
+    "poster_path": "/6OjLTJdEL9yo3c8qzf7LQhln66Z.jpg",
+    "first_air_date": "1974-05-01",
+    "name": "...And Mother Makes Five"
+  },
+  {
+    "genre_ids": [],
+    "id": 129410,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "British television drama anthology series of single plays.",
+    "poster_path": "/qtHHRxU22G3kuSbNMDtLS8GWLP3.jpg",
+    "first_air_date": "1974-05-28",
+    "name": "Armchair Cinema"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 77277,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "In 1822, Toussaint Rouveyre, a former captain in Napoleon's army, returned to his village in the Ardèche after the defeat at Waterloo and a seven-year stay in America. There, he reunited with his family, persecuted by the Restoration regime. In order for his father to give him his share of the inheritance in advance of his permanent move to America, he needs the consent of his younger brother Antoine, a carpenter who is on the Compagnons' Tour de France. When Toussaint learns that his brother, a member of the Compagnons du Devoir (Devoirants) association, has been killed by a companion from the rival association, the Compagnons du Devoir de Liberté (Gavots), he is determined to find the murderer, a certain Tourangeau Sans-Quartier, and avenge his brother. To find this man, he joins the Compagnons du Devoir de Liberté incognito.",
+    "poster_path": "/gnyDqSh38AspCG9ftI6bIIhYybV.jpg",
+    "first_air_date": "1974-11-21",
+    "name": "Ardéchois, cœur fidèle"
+  },
+  {
+    "genre_ids": [],
+    "id": 14129,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "These Are the Days is an animated television series from Hanna-Barbera, originally broadcast on ABC from September 7, 1974, to September 27, 1975. The series, although critically acclaimed, only lasted 16 total episodes. Each episode had a run time of 30 minutes.",
+    "poster_path": "/9rkAWl8Mbg7RE7rHgRuKDTdOqFH.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "These Are the Days"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 154303,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/ebhT4ecZyK4D59jwwA84tQUVanP.jpg",
+    "first_air_date": "1974-05-25",
+    "name": "Le Roman de Renart"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 81850,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Ein Haus für uns"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 250754,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-16",
+    "name": "Schlagerfestival"
+  },
+  {
+    "genre_ids": [],
+    "id": 26425,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-17",
+    "name": "Music Country USA"
+  },
+  {
+    "genre_ids": [],
+    "id": 103197,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/vjx06rbdRrZKQXeFSFZSN2uDsQw.jpg",
+    "first_air_date": "1974-12-24",
+    "name": "Paul et Virginie"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 35354,
+    "origin_country": [
+      "ES"
+    ],
+    "overview": "El hombre y la Tierra is a 1974 television series produced by Radio Televisión Española.",
+    "poster_path": "/57yc0WRhboS36PJ9PehlqRdjS7A.jpg",
+    "first_air_date": "1974-03-04",
+    "name": "El Hombre y la Tierra"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 14583,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Oh No, It's Selwyn Froggitt! is an ITV sitcom that ran from 1974 to 1977 starring Bill Maynard as the council labourer, Scarsdale Working Men’s Club secretary, hapless handyman and all-round public nuisance Selwyn Froggitt. It was created by Roy Clarke, who wrote the pilot episode transmitted in 1974, though the series was mostly written by Alan Plater. It was made for the ITV network by Yorkshire Television\n\nWith outdoor location filming of the series filmed in Skelmanthorpe, West Yorkshire and Elvington, North Yorkshire",
+    "poster_path": "/zHz1JFM1pybRWx717wxvGXaid7T.jpg",
+    "first_air_date": "1974-09-30",
+    "name": "Oh No, It's Selwyn Froggitt!"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 60647,
+    "origin_country": [
+      "YU"
+    ],
+    "overview": "Based on the Ante Kovačić's novel \"U registraturi\" (In the Registrar's Office, 1888.) Tells the story of Ivica Kicmanovic – from his childhood to his eventual downfall caused by a femme fatale Laura. 9 episodes in total.",
+    "poster_path": "/gI5FU238TkroGG0InCzpWQUBKQw.jpg",
+    "first_air_date": "1974-02-17",
+    "name": "In the Registrar's Office"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 27350,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "A land-owning father and son clash over the future of their large estate in Wales.",
+    "poster_path": null,
+    "first_air_date": "1974-08-15",
+    "name": "The Inheritors"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 9022,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Children's Underground Club of United Moose and Beaver for Enthusiastic Reporters or Cucumber, was a TV show produced by TVOntario in the 1970s, and repeated in the 1980s during TVOntario's daytime kids' programming.\n\nThe show featured a human-sized moose and beaver often reporting from a treehouse. By sending in a story or some artwork to the show, one could become a member of the Cucumber Club.\n\nSome notable people appeared on the show:\n\n⁕A young John Candy guest starred as a character named Weatherman\n\n⁕A young Martin Short guest starred as a character named Smokey the Hare\n\n⁕An interview featured a nine-year-old Jeff Healey.",
+    "poster_path": "/gtamFMIDk9ytk7KXMVD4xepBxm3.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Cucumber"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 211251,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/leQoGYWDOFeihznkwqxGqB8Sr67.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Messieurs les jurés"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751
+    ],
+    "id": 63837,
+    "origin_country": [
+      "HU"
+    ],
+    "overview": "A kockásfülű nyúl (English: \"The rabbit with checkered ears\") is a 26-episode Hungarian animated children's series produced from 26 August 1977 on in the studios of PannóniaFilm. Created by the acclaimed children's literature writer and graphic artist Veronika Marék and animator Zsolt Richly, its protagonist, the rabbit with checkered ears quickly became one of the most prolific mascots of Hungarian animation.",
+    "poster_path": "/n0q0vhI1bb5E8V3PYOkFDJUikEk.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "The rabbit with checkered ears"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 227077,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "The plot takes place in a fictional city called Vale do Café, where two powerful families, the Toledo and Fontes, are locked in an intense dispute for power and land ownership. Conflicts are marked by betrayals, forbidden loves and dark secrets. The soap opera addresses themes such as ambition, revenge, romance and conflicts between families, showing the fire that consumes the land and human relationships.",
+    "poster_path": "/8fsKrlyYMq7VKv5v8kgxGxnqT36.jpg",
+    "first_air_date": "1974-05-08",
+    "name": "Fogo Sobre Terra"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 207208,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/zjsQHjtnpvkGuQ2wVidHhYL0pw8.jpg",
+    "first_air_date": "1974-05-01",
+    "name": "Autoverleih Pistulla"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 45831,
+    "origin_country": [],
+    "overview": "Dramatised stories of the founders of modern medicine. Until the 1840s, medicine had remained basically unchanged since the days of the ancient Greece. In the 60 years following it was transformed into a modern science.",
+    "poster_path": "/gMbnLdp66Qi4x28vRedPpj9RaUY.jpg",
+    "first_air_date": "1974-09-18",
+    "name": "Microbes and Men"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 24074,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The adventures of a 12-year-old boy's struggles in Victorian Yorkshire, after his father, Captain Charles Bulman, is lost, presumed drowned off the coast of Africa.",
+    "poster_path": "/sEWL5gdhhYQYpEEHRePdaAnvpwE.jpg",
+    "first_air_date": "1974-03-24",
+    "name": "Boy Dominic"
+  },
+  {
+    "genre_ids": [
+      10762,
+      16
+    ],
+    "id": 13387,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Bagpuss is a UK children's television series, made by Peter Firmin and Oliver Postgate from 12 February 1974 to 7 May 1974 through their company Smallfilms. The title character was, \"An old, saggy, cloth cat, baggy, and a bit loose at the seams.\" Although only 13 episodes of the show were made, it remains fondly remembered, and was regularly repeated in the UK for thirteen years. In 1999 Bagpuss topped a BBC poll for the UK's favourite children's TV programme.",
+    "poster_path": "/5dzsYX1bFKfyyOAiRbMiVaTBjx7.jpg",
+    "first_air_date": "1974-02-12",
+    "name": "Bagpuss"
+  },
+  {
+    "genre_ids": [
+      10766
+    ],
+    "id": 220818,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/mOPv0y3EpclcZ7m4voL4zIuOFtu.jpg",
+    "first_air_date": "1974-05-06",
+    "name": "Nans le berger"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 62303,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": "/ctGhJkgouRynkLQwJAz09wUqqc.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Aber Vati!"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 564,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Moody and Pegg was a bittersweet British comedy-drama, produced by Thames Television for ITV between 1974 and 1975. Derek Waring and Judy Cornwell starred in this series that accented comedy but also had moments of drama. Waring played Roland Moody, a newly divorced 42-year-old junk/antique dealer greatly anticipating freedom from matrimonial ties. Cornwell was cast as Daphne Pegg, plain spinster and dedicated civil servant in her early thirties who leaves her home in Bolton after realising that her office boss will never agree to marry her. She heads for London and a clean break, but, owing to a rogue estate agent's dealings, finds that a man - Moody - also has a valid lease arrangement for the property she acquires. Unable to work out who is the squatter, they agree to be feuding partners and share, forging a very uncomfortable situation that is exacerbated by Moody's prodigious line of visiting girlfriends. With hilarious consequences. Eventually, Moody loses in a winner-takes-all poker game and leaves, only to return in the second series.\n\nThe title theme is The Free Life by prolific library music composer Alan Parker.",
+    "poster_path": "/tsUXYCN7k8yMQvwOCjrBrK2paby.jpg",
+    "first_air_date": "1974-06-29",
+    "name": "Moody and Pegg"
+  },
+  {
+    "genre_ids": [],
+    "id": 70334,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Bertil \"Engeln\" Engelbrecht is tired of working for his half-brother's detective agency. After being released from prison his girlfriend Maggie begs him to find another job. But leaving his prior work is harder than Bertil thought.",
+    "poster_path": "/skWbzmiS8qLRvKwcn9oGU21ydlZ.jpg",
+    "first_air_date": "1974-09-15",
+    "name": "Engeln"
+  },
+  {
+    "genre_ids": [],
+    "id": 36863,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "Van Oekel's Discohoek was a Dutch television show, aired on VPRO in 1974-1975. The show, written by Wim T. Schippers and produced by Ellen Jens, starred Dolf Brouwers as Sjef van Oekel, and parodied music television programs of the era. Artists lip-synched their songs, but were frequently interrupted and insulted by van Oekel. The show had a real coup when Captain Beefheart made an appearance.",
+    "poster_path": "/34C0Fd1rkxyPxG4DsN4KCiFyaKM.jpg",
+    "first_air_date": "1974-05-30",
+    "name": "Van Oekel's Discohoek"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 9200,
+    "origin_country": [
+      "GB",
+      "US"
+    ],
+    "overview": "The Top Secret Life Of Edgar Briggs was a 30-minute British television comedy series created by Bernard McKenna & Richard Laing and produced by Humphrey Barclay for LWT. It was transmitted on the ITV network 15 September - 20 December 1974 and featured David Jason as the inept Edgar Briggs, personal assistant to the Commander of the British Secret Intelligence Service who, in spite of his cluelessness, manages to solve case after case. It has been likened to the earlier American series Get Smart.",
+    "poster_path": "/3dHxzPFGKShdZNggIkoamekcgfd.jpg",
+    "first_air_date": "1974-09-15",
+    "name": "The Top Secret Life of Edgar Briggs"
+  },
+  {
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 112380,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/ahLvTsTAtaGuepQEvqHaN9wfHmT.jpg",
+    "first_air_date": "1974-01-17",
+    "name": "Terauchi Kantarō Ikka"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 117980,
+    "origin_country": [
+      "DK"
+    ],
+    "overview": "",
+    "poster_path": "/wu8nP9nhwe70Z2rsS7iAjBFjz4.jpg",
+    "first_air_date": "1974-12-01",
+    "name": "Jullerup Færgeby"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 14258,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "No, Honestly is a British sitcom that was originally produced in 1974. No, Honestly featured the real-life married couple of Pauline Collins and John Alderton respectively as Clara and Charles Danby, a newlywed couple living in London.\n\nThe character of Clara was a ditzy dreamer who hoped to write books for children. Charles Danby by contrast was a struggling actor with a more serious streak.\n\nAt the start of each episode, the couple appeared in front of an audience telling stories about their first meeting, courtship and life as newlyweds. The entire programme, therefore, was a series of flashbacks as the couple recounted the earlier days of their romance.\n\nFilled with witty and sparkling banter, the episodes featured comic situations ranging from problems with mistaken identity to decorating and makeover mishaps.\n\nIn homage to George Burns and Gracie Allen, CD would end each episode with the phrase \"Say goodnight, Clara.\"\n\nThe series is based on the novels Coronet Among the Weeds and Coronet Among the Grass written by Charlotte Bingham, who was co-creator of the TV series with her husband Terence Brady.\n\nThe theme song for No, Honestly was written and performed by Lynsey De Paul. It peaked on the UK charts at number 7.",
+    "poster_path": "/4S3QXFZjTXQ06LDFwZN4w73tvQQ.jpg",
+    "first_air_date": "1974-10-04",
+    "name": "No, Honestly"
+  },
+  {
+    "genre_ids": [],
+    "id": 236348,
+    "origin_country": [
+      "HU"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-11-08",
+    "name": "Televíziós Mesék Felnőtteknek"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 236839,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-10-14",
+    "name": "Tajný agent"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 70703,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "This French spy story presented in comic book style was broadcasted on TV on November 1974. It tells the adventures of Hubert de Pomarec (Henri Piégay), alias “Milord”, a retired spy called back into service to foil the abduction of the new army tank AMX 30 by a gang of crooks.",
+    "poster_path": "/jORdATt6fE2EMcy06oTPn1ELfwh.jpg",
+    "first_air_date": "1974-11-04",
+    "name": "À vous de jouer Milord"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 63605,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-21",
+    "name": "Aus Liebe zum Sport"
+  },
+  {
+    "genre_ids": [
+      18,
+      35
+    ],
+    "id": 57749,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Village Hall is a drama anthology series made by Granada between 1974 and 1975. It is entirely set in a village hall, with each episode highlighting a different use to which the space is put by local people. Writers include Jack Rosenthal and the actor Kenneth Cope.",
+    "poster_path": "/8qREmyPzvWKtCdZItCUSRoiVwGF.jpg",
+    "first_air_date": "1974-07-16",
+    "name": "Village Hall"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648,
+      18
+    ],
+    "id": 260853,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Kanto Torishimari Shutsuyaku Sakon Oyamada and Shinbei Asano, called \"Hashū-sama\" by the people. Sakon, a family man, and Shinbei, a serious man, travel around the crime-ridden Kanto region and solve crimes...",
+    "poster_path": "/7Yq0GWKCBu6fpanIgBTbSJaNmsV.jpg",
+    "first_air_date": "1974-04-06",
+    "name": "Hashū Hankachō"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 13699,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Wodehouse Playhouse is a British television comedy series based on the short stories of P. G. Wodehouse. From 1974 to 1978, three series and a pilot were made, with 21 half-hour episodes altogether in the entire series.",
+    "poster_path": "/sFHM6a9MrADrWdFVO4ksXwdLjXJ.jpg",
+    "first_air_date": "1974-07-09",
+    "name": "Wodehouse Playhouse"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 22183,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "British ITV sitcom starring John Thaw and Bob Hoskins as two friends in a love triangle.",
+    "poster_path": "/4NqX7V7bebRgfZ3PfOeQb67r4Sx.jpg",
+    "first_air_date": "1974-06-01",
+    "name": "Thick As Thieves"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 65479,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/a2G9TumhvD68nZFb1itKKIWJKSg.jpg",
+    "first_air_date": "1974-12-25",
+    "name": "Der Monddiamant"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 6986,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Squirrels is a British television sitcom, written by Eric Chappell, who went on to create the Yorkshire Television sitcoms Rising Damp and Only When I Laugh. It ran for 3 series and 28 episodes and was made and broadcast from 1974 to 1977 on the ITV network, by ATV. Phil Redmond, the creator of now defunct Soap-Opera Brookside, was also a writer for the series.",
+    "poster_path": "/xIkoIdXe1zNuTCuSTAfCUhCB2TN.jpg",
+    "first_air_date": "1974-07-08",
+    "name": "The Squirrels"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 200799,
+    "origin_country": [
+      "DZ"
+    ],
+    "overview": "In 1939 in eastern Algeria, Omar, a young boy of ten, lives with his family in a room in Dar Sbitar, a house shared by several families who overcome the trials they go through every day to ensure their subsistence. Her deceased father is Aïni, the mother, who bleeds herself from all four veins to keep her children and their grandmother alive. The families of Dar Sbitar share their intimacy and their daily life, this life animates the big house, which itself becomes a character in its own right. \"El Harik\" (The Fire), is an Algerian drama series in 10 episodes adapted from Mohamed Dib's trilogy \"The Big House\", \"The Fire\" and \"The Loom\".",
+    "poster_path": "/9vErhpr8zHJTd9bB1ZNrZot6guB.jpg",
+    "first_air_date": "1974-03-15",
+    "name": "L’Incendie (El Harik)"
+  },
+  {
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 10462,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Daily soap featuring the fictional residents of the village of Cwmderi.",
+    "poster_path": "/x5JxP4x3EnqjnU2PwUn49xsHY0v.jpg",
+    "first_air_date": "1974-10-16",
+    "name": "People of the Valley"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 74168,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "A miniseries based on the novel by Leo Tolstoi.",
+    "poster_path": "/hDcPtz5IM7MRP5XC8SaRi2y8eha.jpg",
+    "first_air_date": "1974-11-10",
+    "name": "Anna Karenina"
+  },
+  {
+    "genre_ids": [
+      10762,
+      10759
+    ],
+    "id": 156885,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "The Soviet propagnda film follows young people from Ukrainian Kamianets-Podilskyi during the revolutionary battles for Soviet power, spanning from pre-revolutionary times to the 1930s. It depicts their experiences in a gymnasium, labour school, cadet dormitory, and their involvement in conflicts against Petliura’s forces and German interventionists, highlighting divisions by social status and political views. It consists of three parts: \"Commissar Sergushin\" (episodes 1-3); \"The Haunted House\" (episodes 4-5); \"The City by the Sea\" (episodes 6-7).",
+    "poster_path": "/g5ISG7um79hGjdQjJ4ZcSAN4f6H.jpg",
+    "first_air_date": "1974-04-23",
+    "name": "Old Fortress"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 16254,
+    "origin_country": [
+      "DE",
+      "CA",
+      "CH"
+    ],
+    "overview": "George was a Swiss-Canadian television series which aired on CTV on Thursday evenings in 1972-73.\n\nThe series was based on the 1971 film George!, about the adventures of a St. Bernard dog and his owner who live in Switzerland. Marshall Thompson starred in both the film and the resulting half-hour series. The series made its CTV debut in a Thursday evening time slot on 16 September 1972. However, George ended in 1973 after its only season. The Globe and Mail's Blaik Kirby considered the program to be \"abysmal\". Despite its short run and mixed critical reaction, the series was rerun on CTV affiliates for years afterwards, usually to fill Saturday morning schedules.",
+    "poster_path": "/gStlZdXL13T0KrlKCiVpAJVBhCa.jpg",
+    "first_air_date": "1974-03-15",
+    "name": "George"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 33125,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Missiles of October is a 1974 docudrama made-for-television play about the Cuban missile crisis. The title evokes the book The Guns of August by Barbara Tuchman about the missteps among the great powers and the failed chances to give an opponent a graceful way out, which led to the First World War. The teleplay introduced William Devane as John F. Kennedy and cast Martin Sheen as United States Attorney General Robert F. Kennedy. The script is based on Robert Kennedy's book Thirteen Days: A Memoir of the Cuban Missile Crisis.",
+    "poster_path": "/3xS4gNyO8vAGn1wObfd7HdYzfdN.jpg",
+    "first_air_date": "1974-09-18",
+    "name": "The Missiles of October"
+  },
+  {
+    "genre_ids": [],
+    "id": 27250,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-05",
+    "name": "The Aweful Mr. Goodall"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 213678,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Skleněná dáma"
+  },
+  {
+    "genre_ids": [],
+    "id": 64441,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-08-28",
+    "name": "Dr. med. Mark Wedmann - Detektiv inbegriffen"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 60934,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-10-09",
+    "name": "Die Powenzbande"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 70702,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "The story of a group of young New Zealand school boys. Because one of them is the nephew of a ship captain, they win the opportunity to go on a sailing trip. Some pirates (Forbes and Pike) are looking for a boat so they can go and find treasure on a deserted island. They manage to be recruited as crew members on that same boat as the school boys. After a mutiny, the pirates take over the boat and take the young boys as hostages. Helped by O'Brian, the young kids manage to escape from the pirates with the boat. After a storm, they have to land on a deserted island. They have learn to live together in harmony if they want their community to survive, despite the rivalry within the group. But is this island really a deserted one? And can they really get away from the pirates?",
+    "poster_path": "/rYmdYvwjKphPPLHRAPcfkDwBKNa.jpg",
+    "first_air_date": "1974-06-10",
+    "name": "Two Years Vacation"
+  },
+  {
+    "genre_ids": [],
+    "id": 207780,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "French children's television series inspired by Sesame Street featuring Casimir, an anthropomorphic orange dinosaur with yellow and red spots.",
+    "poster_path": "/mvLgD4X8eCgn9UPiFhgfogLivNj.jpg",
+    "first_air_date": "1974-09-16",
+    "name": "L'Île Aux Enfants"
+  },
+  {
+    "genre_ids": [
+      10765
+    ],
+    "id": 42205,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Das Blaue Palais is a series of five TV feature films written and directed by German author and filmmaker Rainer Erler. All five stories about the research and findings of an interdisciplinary scientific project have also been published as novels by Goldmann in 1978, 1979 and 1980. The series had an international cast. It was shot in Bavaria, Scotland, USA and Asia.",
+    "poster_path": "/rIH6uIBlk7uFdEGYlvSBb4fj8h9.jpg",
+    "first_air_date": "1974-10-15",
+    "name": "Das Blaue Palais"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 75550,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Miniseries about the Citroen expeditions in 1931/1932 across Asia.",
+    "poster_path": "/2wxKoBqQF70yzXnikdlNZNKaAUa.jpg",
+    "first_air_date": "1974-12-17",
+    "name": "La Cloche tibétaine"
+  },
+  {
+    "genre_ids": [],
+    "id": 21974,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": "/aYeboy7RQhWqFtxtDlGsHfK6w1l.jpg",
+    "first_air_date": "1974-11-22",
+    "name": "Ken Dodd's World of Laughter"
+  },
+  {
+    "genre_ids": [],
+    "id": 8906,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Wheeltappers and Shunters Social Club was a British television variety show produced by Granada Television from 1974 to 1977. It was set in a fictional working men's club in the North of England and was hosted by comedian Colin Crompton. Also regularly featured was comedian Bernard Manning who sang most weeks. Crompton was frequently the butt of Manning's jokes, unwittingly acting as Manning's stooge.",
+    "poster_path": "/jdNBOu2W1v0RdsbOb87PGyU4gtC.jpg",
+    "first_air_date": "1974-04-13",
+    "name": "The Wheeltappers and Shunters Social Club"
+  },
+  {
+    "genre_ids": [],
+    "id": 24537,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-21",
+    "name": "The Carnforth Practice"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 66771,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "The stories of two Tatra fairies, Slabejka and Lomnička, painted by the artist Hlavička.",
+    "poster_path": null,
+    "first_air_date": "1974-02-13",
+    "name": "Hlavičkove rozprávky"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 120799,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/ebeIjFy1R60ii2zVEPBId3r3OwQ.jpg",
+    "first_air_date": "1974-01-08",
+    "name": "L'Illustre Maurin"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 101096,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/chB5AvuwX44Y0i1On4RQLtm5HMO.jpg",
+    "first_air_date": "1974-12-20",
+    "name": "Le Pain noir"
+  },
+  {
+    "genre_ids": [
+      10765
+    ],
+    "id": 39465,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/5oe93nIcbPqkHUgcnOnTfcEw9Ad.jpg",
+    "first_air_date": "1974-10-06",
+    "name": "Army of the Apes"
+  },
+  {
+    "genre_ids": [],
+    "id": 33867,
+    "origin_country": [
+      "ES"
+    ],
+    "overview": "",
+    "poster_path": "/byVD5PMNmp3znU47tBiFjpuk20T.jpg",
+    "first_air_date": "1974-10-16",
+    "name": "El pícaro"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 103087,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "A story about a young Slovak peasant boy from the 17th century. After the death of his father, who was hanged for poaching, Adam Šangala decides to leave home and become a gentleman. However, he gets involved in a dispute with Count Markoč, who abuses a peasant girl, beats him up, and forces him to flee from his police officers. On the run, he meets the charming Betka, the daughter of a craftsman from Trnava, with whom he falls in love, but with Markoč's police still hot on his heels, there is no time for love. In his desperate situation, Adam enlists as a soldier for Count Pálfy...",
+    "poster_path": null,
+    "first_air_date": "1974-06-10",
+    "name": "Adam Šangala"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 13515,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Sierra is a short-lived 1974 television crime drama series focusing on the efforts of National Park Service rangers to enforce federal law and to effect wilderness rescues. The program aired on NBC and was packaged by Jack Webb's Mark VII Limited for Universal Television. John Denver wrote the show's theme song. Robert A. Cinader, executive producer of Mark VII's Emergency!, handled this program also; Bruce Johnson produced.",
+    "poster_path": "/n9qBKGyJjmdKRYuBisJweLJNlMo.jpg",
+    "first_air_date": "1974-09-12",
+    "name": "Sierra"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 61156,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-05-02",
+    "name": "Die Fälle des Herrn Konstantin"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 87064,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-05-09",
+    "name": "Hier kocht der Chef"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 26945,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Doctor at Sea is a British television comedy series based on a set of books by Richard Gordon about the misadventures of Doctors at sea. The series follows directly from its predecessor Doctor in Charge, and was produced by London Weekend Television in 1974.\n\nWriters for the Doctor at Sea episodes were Richard Laing, George Layton, Jonathan Lynn, Bernard McKenna, Gail Renard and Phil Redmond.",
+    "poster_path": "/zpETWfTP9rWmMwrBgnSMf8RDfKq.jpg",
+    "first_air_date": "1974-04-21",
+    "name": "Doctor at Sea"
+  },
+  {
+    "genre_ids": [],
+    "id": 29447,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-05-20",
+    "name": "Dial M for Murder"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 19750,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Churchill's People is series of 26 historical dramas produced by the BBC, based on Winston Churchill's A History of the English-Speaking Peoples. They were first broadcast on BBC1 in 1974 and 1975.",
+    "poster_path": "/cPEqAOyP6VCRkAAEUCfqTmmJhj0.jpg",
+    "first_air_date": "1974-12-30",
+    "name": "Churchill's People"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751
+    ],
+    "id": 90145,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/3hD8Mwn9GVzQLah00n9PbFtgs9x.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Garden"
+  },
+  {
+    "genre_ids": [
+      10768,
+      9648,
+      80
+    ],
+    "id": 211592,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "",
+    "poster_path": "/go2qn9w7mYDxF4UWkjVkvQCVenj.jpg",
+    "first_air_date": "1974-08-26",
+    "name": "Conscience"
+  },
+  {
+    "genre_ids": [
+      10765,
+      18
+    ],
+    "id": 29543,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Modern-day interpretation of fairy tales, with a contemporary, darker twist.",
+    "poster_path": null,
+    "first_air_date": "1974-03-03",
+    "name": "Bedtime Stories"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 41144,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Les Faucheurs de marguerites is a French-Canadian-German television series.",
+    "poster_path": "/tzcfS6vDRTg4ZtQUDZa7YI8mvFq.jpg",
+    "first_air_date": "1974-05-27",
+    "name": "Les Faucheurs de marguerites"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 29517,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "This short-lived sequel to On the Buses (1969) saw Blakey move to Spain with his sister.",
+    "poster_path": "/fNEPY7RqZR0gFxjpynPkU67b9Z4.jpg",
+    "first_air_date": "1974-07-27",
+    "name": "Don't Drink the Water"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 41031,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Unser Walter is a German television series.",
+    "poster_path": null,
+    "first_air_date": "1974-07-08",
+    "name": "Unser Walter"
+  },
+  {
+    "genre_ids": [
+      10768
+    ],
+    "id": 214455,
+    "origin_country": [
+      "YU"
+    ],
+    "overview": "An extended version of the eponymous feature film.",
+    "poster_path": "/gEfrksjYXF7QoSkPbMNCziaWOuD.jpg",
+    "first_air_date": "1974-06-10",
+    "name": "Walter Defends Sarajevo"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 30665,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "In BBC sitcom No Strings mismatched Leonara (Rita Tushingham) and Derek (Keith Barron) share a flat. This early Carla Lane series began life as a Comedy Playhouse entry.\n\nGuest stars included Michael Staniforth, Jessica Benton, Robert Gillespie and Tommy Godfrey.\n\nCast: Rita Tushingham as Leonora; Keith Barron as Derek\n\nWriter: Carla Lane / Producer: John Howard Davies\n\nUK / BBC One / 7×30 minute episodes / Pilot: 16 April 1974 Season: 4 October – 8 November 1974 Fridays at 7.45pm",
+    "poster_path": "/6T6atw1IW8zyfchQIWSC7JXWjHp.jpg",
+    "first_air_date": "1974-04-16",
+    "name": "No Strings"
+  },
+  {
+    "genre_ids": [],
+    "id": 23298,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "\"Silent Number\" was an Australian television series about a police doctor played by Grigor Taylor.",
+    "poster_path": null,
+    "first_air_date": "1974-03-13",
+    "name": "Silent Number"
+  },
+  {
+    "genre_ids": [],
+    "id": 207703,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A brutal murder triggers an investigation revealing that $4m of legendary Chicago gangster, Al Capone's, ill-gotten gains may be located on 1970's England.",
+    "poster_path": "/cSVx0OsFXkWPINa9Nt8EkAjMckF.jpg",
+    "first_air_date": "1974-07-09",
+    "name": "The Capone Investment"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 63944,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/2k3gBfs1GvXUBb3v1SiZvgexKwB.jpg",
+    "first_air_date": "1974-08-03",
+    "name": "Die Buchholzens"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 63750,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-17",
+    "name": "Unter Ausschluß der Öffentlichkeit"
+  },
+  {
+    "genre_ids": [],
+    "id": 248476,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/8L8ezBjVgfCYGFVfXjqBLaRr2ZO.jpg",
+    "first_air_date": "1974-10-05",
+    "name": "Tante scuse"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 236771,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-08-28",
+    "name": "Kronika"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 12800,
+    "origin_country": [
+      "MX"
+    ],
+    "overview": "Mundo de Juguete is a telenovela produced in Mexico by Televisa in 1974. It is a remake of telenovela Papá Corazón.\n\nThis telenovela holds the record for having the second longest run ever for a Latin American telenovela, with a total of 605 episodes. Most telenovelas run for an average of six to eight months; the shortest ones run about four months, and the longest up to a year. Many \"Mundo de Juguete\" fans believe that either all or some of the tapes and film from the telenovela were lost when Televisa collapsed during the 1985 earthquake. Televisa has been secretive regarding which tapes were lost during that earthquake, so there is no way of confirming this. However, such claims can be disputed, considering that the Telenovela has been repeated on television several times after 1985. During the nineties, it was repeated on Mexico City Canal 9. For a period of time, it was also shown on Unicable or on Telenovelas Televisa remade the telenovela in 2000, and called it \"Carita de Angel\".",
+    "poster_path": "/d6NYldLmO1sSzZMeRrOLsF3v3Oj.jpg",
+    "first_air_date": "1974-11-04",
+    "name": "Mundo de Juguete"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 124942,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/wkEyZI3QjTtxQgwUdVAnVoBXxhv.jpg",
+    "first_air_date": "1974-12-08",
+    "name": "La Juive du Château Trompette"
+  },
+  {
+    "genre_ids": [
+      10751,
+      35
+    ],
+    "id": 236776,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Pavol zasahuje"
+  },
+  {
+    "genre_ids": [
+      99,
+      18
+    ],
+    "id": 666,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "A combination of documentary and dramatic reconstructions, depicting the conception and construction of the Canadian Pacific Railway in the late 19th century.",
+    "poster_path": "/jTdXyK3oC3PRQwe2l8FnGWAKchN.jpg",
+    "first_air_date": "1974-03-03",
+    "name": "The National Dream"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 64268,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-02-11",
+    "name": "Wie würden Sie entscheiden?"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 14960,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "In this unsold 1974 television pilot, a successful engineer tires of his high-tension job and quits to start his own mail-order company, much to his mother's consternation.",
+    "poster_path": "/fuJTXsI5IwVlWfXQRxG8CP0YREz.jpg",
+    "first_air_date": "1974-05-15",
+    "name": "Hello Mother, Goodbye!"
+  },
+  {
+    "genre_ids": [
+      10768,
+      18
+    ],
+    "id": 253429,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "A dramatic story about a young man entangled in complicated matters of war, conspiracy and political struggle. The action of each part of the triptych presents one day from different years. These are fictionalized experiences of an authentic participant of the Polish resistance movement during the Nazi occupation.",
+    "poster_path": "/bneeXAK61FbauSqz5AI1WFysI5C.jpg",
+    "first_air_date": "1974-03-11",
+    "name": "Departures, Returns"
+  },
+  {
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 241307,
+    "origin_country": [
+      "HR",
+      "YU"
+    ],
+    "overview": "",
+    "poster_path": "/u9sKV9zp1yPfPt18lTSxk3GwIWo.jpg",
+    "first_air_date": "1974-10-13",
+    "name": "Covik I po"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 116658,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Inspired by the book The Lives of the Most Excellent Painters, Sculptors, and Architects by painter Giorgio Vasari, this historical soap opera, in which betrayals, kidnappings, murders and police investigations are interwoven, relates the discovery by the Italians of the secret of Flemish painting around 1470.",
+    "poster_path": "/xeYI0DBw3i6je3GqBDakbzLWBPQ.jpg",
+    "first_air_date": "1974-01-03",
+    "name": "Le Secret des Flamands"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 28915,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-10-23",
+    "name": "Second Time Around"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 34886,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Carrie's War was an adaptation of Nina Bawden's book Carrie's War, broadcast from 28 January 1974 to 25 February 1974 on BBC1 in five, 30-minute episodes.\n\nWorld War II evacuees, Carrie Willow, and Nick Willow, are billeted in a small Welsh village - - with the austere Mr. Evans, and his sister Lou. Carrie becomes an unwilling go-between, embroiled in a family feud between Evans and his elder sister Dilys.",
+    "poster_path": "/leVd3VVmvKhY8GzijEX8X55lxol.jpg",
+    "first_air_date": "1974-01-28",
+    "name": "Carrie's War"
+  },
+  {
+    "genre_ids": [
+      10751,
+      18
+    ],
+    "id": 194699,
+    "origin_country": [
+      "TR"
+    ],
+    "overview": "",
+    "poster_path": "/Ap1jGTtW5cnwf67vRC0efmgCW5K.jpg",
+    "first_air_date": "1974-12-06",
+    "name": "Yunus Emre"
+  },
+  {
+    "genre_ids": [
+      10764,
+      10767
+    ],
+    "id": 231323,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/hQO8mhlDoRVmUnMtJY15FnEpR2t.jpg",
+    "first_air_date": "1974-12-25",
+    "name": "Especial Roberto Carlos"
+  },
+  {
+    "genre_ids": [],
+    "id": 27130,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-07-27",
+    "name": "Good Girl"
+  },
+  {
+    "genre_ids": [],
+    "id": 27248,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-09-24",
+    "name": "Cloud Burst"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648,
+      18
+    ],
+    "id": 115921,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-09-24",
+    "name": "Mort au jury"
+  },
+  {
+    "genre_ids": [
+      10751,
+      10765
+    ],
+    "id": 232572,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "On a warm afternoon Alice falls asleep on the lawn and when she wakes up finds herself catapulted into an unreal and colorful world populated by strange characters and talking animals. Following first a white rabbit and then through a mirror, she will have fantastic adventures, amid clumsy talking chessmen and a shrewish duchess, played by Franca Valeri. When she wakes up, everything will return to normal, leaving her with the memory of a frightening but beautiful dream at the same time.",
+    "poster_path": "/2enC9NIPAHVHnaBloGL64j81YLC.jpg",
+    "first_air_date": "1974-09-03",
+    "name": "Nel mondo di Alice"
+  },
+  {
+    "genre_ids": [
+      10751,
+      10762,
+      18,
+      35
+    ],
+    "id": 62941,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Hedvig lives in a trailer in the woods and has a nose for learning new words. Helping her is Helge, an owl who lives on her roof.",
+    "poster_path": "/lG5vlqzUoxkY4iZErszDs6XejT6.jpg",
+    "first_air_date": "1974-11-22",
+    "name": "Från A till Ö"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 5119,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Roobarb is a British animated children's television programme, originally shown on BBC1 just before the evening news. Each cartoon, written by Grange Calveley and animated by Bob Godfrey, was about five minutes long. Thirty episodes were made, and the show was first shown on 21 October 1974. The theme is that of the friendly rivalry between Roobarb the green dog and Custard the pink cat from next door.\n\nThe narration of the series was provided by the actor Richard Briers. On 18 February 2013, Briers died, followed four days later by animator Godfrey.",
+    "poster_path": "/qgpl4KSomfue6u54hoIAH3WVSsV.jpg",
+    "first_air_date": "1974-10-21",
+    "name": "Roobarb"
+  },
+  {
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 9963,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Archie, Jughead, and the gang learn about their ancestors' roles in historical events.",
+    "poster_path": "/A3XXiLHUulz0MtgAWM75N4O66dn.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "The U.S. of Archie"
+  },
+  {
+    "genre_ids": [],
+    "id": 35559,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Don't Ask Me was a popular British television science show made by Yorkshire Television for the ITV network and ran from 1974 to 1978. It attempted to answer science-based questions and contributors included Magnus Pyke, Rob Buckman, David Bellamy, Miriam Stoppard, and Derek Griffiths. Those behind the scenes included Adam Hart-Davis, who later became a well-known science presenter in his own right.\n\nThe theme music was \"House of the King\" by the contemporary Dutch fusion band Focus.\n\nA follow up called Don't Just Sit There ran for 19 episodes from 1979 to 1980. It was also produced for Yorkshire TV and featured the same panel.",
+    "poster_path": "/9bGITd324h1WBKCtZ1SW2oBC0Rt.jpg",
+    "first_air_date": "1974-04-24",
+    "name": "Don't Ask Me"
+  },
+  {
+    "genre_ids": [
+      10751,
+      35
+    ],
+    "id": 105326,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "",
+    "poster_path": "/ugFgm2op4zzbzsoPAjGgg5jWgQ3.jpg",
+    "first_air_date": "1974-10-07",
+    "name": "Dag, Dag, Heerlijke Lach"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 24727,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-12-28",
+    "name": "An Unofficial Rose"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 80983,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-02-07",
+    "name": "Alexander und die Töchter"
+  },
+  {
+    "genre_ids": [],
+    "id": 241111,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Sonny Chiba stars as a member of a private bodyguard company.",
+    "poster_path": "/1vSKvcsUEusZRv7iX3hF1O0R2UJ.jpg",
+    "first_air_date": "1974-01-08",
+    "name": "The Bodyguard"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 7798,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Not On Your Nellie is a British sitcom that ran from 1974-75. It starred veteran actress Hylda Baker as Nellie Pickersgill, a Bolton woman who moves to London to help run her ailing father's Chelsea pub. 17 episodes of the series were produced by London Weekend Television for the ITV network.",
+    "poster_path": null,
+    "first_air_date": "1974-03-03",
+    "name": "Not On Your Nellie"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762
+    ],
+    "id": 295219,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The eponymous hero – Captain Horatio Pugwash – sails the high seas in his ship called the Black Pig, assisted by cabin boy Tom, pirates Willy and Barnabas, and Master Mate. His mortal enemy is Cut-Throat Jake, captain of the Flying Dustman.",
+    "poster_path": null,
+    "first_air_date": "1974-09-16",
+    "name": "Captain Pugwash"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 83831,
+    "origin_country": [
+      "HU"
+    ],
+    "overview": "The misadventures of a handyman goat.",
+    "poster_path": "/xOlX82thln6wfW3ilmedV2VkPiW.jpg",
+    "first_air_date": "1974-11-30",
+    "name": "Mekk Elek, az ezermester"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 61000,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Le dessous du ciel"
+  },
+  {
+    "genre_ids": [],
+    "id": 47940,
+    "origin_country": [
+      "NO",
+      "SE"
+    ],
+    "overview": "Edvard Munch is a 1974 biographical film about the Norwegian Expressionist painter Edvard Munch, written and directed by Peter Watkins. It was originally created as a three-part miniseries co-produced by the Norwegian and Swedish state television networks NRK and SVT, but subsequently gained an American theatrical release in a three-hour version in 1976. The film covers about thirty years of Munch's life, focusing on the influences that shaped his art, particularly the prevalence of disease and death in his family and his youthful affair with a married woman. The film was screened at the 1976 Cannes Film Festival, but wasn't entered into the main competition.",
+    "poster_path": "/lMjD3BCutH4GnKLSMY81QvpQzMA.jpg",
+    "first_air_date": "1974-11-12",
+    "name": "Edvard Munch"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 63604,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Die schöne Marianne"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 121701,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-12-20",
+    "name": "ABC der Liebe"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 22389,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Ronnie and Laura Corbett have embarked on a new future - this time in the company of the Prince of Denmark, a public house that she has inherited. Ronnie's initially rather put out by Laura's being technically in charge; something which the brewery's delivery men are swift to pick up on! Her prior experience working behind a bar soon begins to rub off, but it's a slow learning curve for the diminutive busybody as he attempts to keep his pride in tact, his eye over everything, and his hand firmly on the tiller.",
+    "poster_path": "/5GGQHO1zxF8CtwaAVF4GVL9dmuH.jpg",
+    "first_air_date": "1974-04-10",
+    "name": "The Prince of Denmark"
+  },
+  {
+    "genre_ids": [],
+    "id": 13112,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "After their mother’s death, Zack Wheeler, a long-absent father, returns to raise his four children in rural Texas. His gruff personality clashes with the challenges of reconnecting with his family.",
+    "poster_path": "/tnX74mK2msjKLO7a8zKDTeHCMDP.jpg",
+    "first_air_date": "1974-09-13",
+    "name": "The Texas Wheelers"
+  },
+  {
+    "genre_ids": [
+      18,
+      9648
+    ],
+    "id": 290609,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/wLldv46wlOlYuWdx2StIo4Inya2.jpg",
+    "first_air_date": "1974-12-26",
+    "name": "La Confession d'un enfant du siècle"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 98241,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/klo1XX61iZIRP2CDTlrxWnmJoU2.jpg",
+    "first_air_date": "1974-07-02",
+    "name": "Winter Tales"
+  },
+  {
+    "genre_ids": [],
+    "id": 73303,
+    "origin_country": [],
+    "overview": "A Japanese comedy anime series produced by Jiho Eigasha",
+    "poster_path": null,
+    "first_air_date": "1974-04-05",
+    "name": "Gan to Gon"
+  },
+  {
+    "genre_ids": [],
+    "id": 26850,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-02-19",
+    "name": "Des O'Connor Entertains"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 12118,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Dean Martin Comedy World is an American variety comedy television series, seen on NBC during the summer of 1974, as a summer replacement for The Dean Martin Show. It was also that program's last summer replacement series. The show was hosted by Jackie Cooper, Nipsey Russell and Barbara Feldon.",
+    "poster_path": null,
+    "first_air_date": "1974-06-06",
+    "name": "The Dean Martin Comedy World"
+  },
+  {
+    "genre_ids": [],
+    "id": 255216,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/awMxeywvcEobSCsbYxu78lTV4mf.jpg",
+    "first_air_date": "1974-06-29",
+    "name": "Kurayami Shitomenin"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 287559,
+    "origin_country": [
+      "DK"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-12-27",
+    "name": "Søndage med Karl og Gudrun"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 74270,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "In the sweltering Dutch East Indies, the European colonizers are plagued by a hidden force; a combination of tropical magic, Eastern inscrutability and mutual incomprehension. Blind and deaf to the slumbering powers of the East Indian people, resident Van Oudyck, his son, daughter and seductive wife slowly but surely fall prey to this mysterious force...",
+    "poster_path": "/8xzUPA5KQ7fhHNvuZ31YRiZN4XR.jpg",
+    "first_air_date": "1974-09-09",
+    "name": "The Hidden Force"
+  },
+  {
+    "genre_ids": [],
+    "id": 100559,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/xIEhzTTkm8aEhsdbAte1jvbkFL2.jpg",
+    "first_air_date": "1974-03-14",
+    "name": "Le soleil se lève à l'est"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 26660,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "The short-lived variety show, hosted by Gene Di Novi on piano and vocalist Jodie Drake, offered a captivating blend of music and conversation in its half-hour format. Renowned musicians like Clark Terry, Joe Venuti, Gene Lees, and Phyllis Marshall graced the show as guests, showcasing the best in jazz. The rhythm section boasted talents like Michel Donato on bass and Jerry Fuller on drums, enriching the performances. Produced in Toronto by Bob Gibbons, the series highlighted exceptional musical collaborations and remains a testament to the era's jazz brilliance.",
+    "poster_path": "/yk7pPP0hPhaWogF5I3n8sfCpKyk.jpg",
+    "first_air_date": "1974-06-01",
+    "name": "Gene And Jodie"
+  },
+  {
+    "genre_ids": [],
+    "id": 27135,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-02-20",
+    "name": "Marty Back Together Again"
+  },
+  {
+    "genre_ids": [
+      10762,
+      9648,
+      10765
+    ],
+    "id": 37115,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "One day, Doctor Kroch (Henk van Ulsen) receives a chest full of gold, accompanied by a half-illegible letter pleading for help. The doctor pays no further attention to it; the patient, after all, is asking for a cure for... gold fever. When the chest is later stolen by bandits Oenk (Tabe Bas) and Boenk (John Lanting), Doctor Kroch starts to think there might be more to it after all. He decides, together with his servant Valet (Henk Molenberg), to try to find the sender of the letter, the Duke of Woestewolf (Ton van Duinhoven). During his journey, the doctor is warned by Esmeralda, a gypsy fortune-teller (Elsa Lioni). Nevertheless, he continues his journey. “Ghosts do not exist. Everything can be explained by science,” the doctor claims. But the closer he gets to Woestewolf, the stranger his adventures become.",
+    "poster_path": "/l1YhEoTjok9CjUHFyDFOsE0blzJ.jpg",
+    "first_air_date": "1974-01-06",
+    "name": "The Curse of Wolf Castle"
+  },
+  {
+    "genre_ids": [],
+    "id": 275364,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Skiboy tells the story of Bobby Noël, known as Ski-Boy, an American teenager striving to meet Olympic skiing standards under the guidance of his older brother, who is a member of the mountain rescue team.",
+    "poster_path": "/ewSSZ8b8Hhpbz4SJq3AbAvCHWgE.jpg",
+    "first_air_date": "1974-05-13",
+    "name": "Skiboy"
+  },
+  {
+    "genre_ids": [
+      10762,
+      10751
+    ],
+    "id": 220981,
+    "origin_country": [
+      "HU"
+    ],
+    "overview": "",
+    "poster_path": "/cW7TFWNsIYMrYVrSkbuCsIBnsx9.jpg",
+    "first_air_date": "1974-02-17",
+    "name": "Pocok, az ördögmotoros"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 63133,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-07",
+    "name": "Engadiner Bilderbogen"
+  },
+  {
+    "genre_ids": [],
+    "id": 256416,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-10",
+    "name": "女の家庭"
+  },
+  {
+    "genre_ids": [],
+    "id": 231294,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-12-04",
+    "name": "Bons baisers de... Tarzan"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 63691,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-06-01",
+    "name": "Lokalseite unten links"
+  },
+  {
+    "genre_ids": [],
+    "id": 62847,
+    "origin_country": [
+      "FI"
+    ],
+    "overview": "Legendary English language teaching series from the 70's.",
+    "poster_path": "/cZUSE9GQ29dek1u8OEtIjcKvqWm.jpg",
+    "first_air_date": "1974-02-04",
+    "name": "Hello, hello, hello"
+  },
+  {
+    "genre_ids": [],
+    "id": 18377,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Alpha Scorpio was a short-lived Australian children's science fiction television series, written and produced by James Davern, and which aired on ABC Television in 1974. It starred Peter Hepworth and Kevin Wilson as two university students who begin to witness strange events while camping at Aireys Inlet in Victoria. The two soon discover that their friend Mirny is a member of a group of aliens who have recently landed from the 5th planet of Antares. The series lasted only six episodes.",
+    "poster_path": null,
+    "first_air_date": "1974-06-21",
+    "name": "Alpha Scorpio"
+  },
+  {
+    "genre_ids": [],
+    "id": 245167,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/4rRKtdyyqVbRYATohs2D5X2jEzz.jpg",
+    "first_air_date": "1974-04-07",
+    "name": "子連れ狼２"
+  },
+  {
+    "genre_ids": [
+      10762,
+      10751,
+      35
+    ],
+    "id": 91679,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/hSeqDndogUWBCXIFMHuM5v5KXcJ.jpg",
+    "first_air_date": "1974-12-23",
+    "name": "Znovu u Spejbla a Hurvínka"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 43752,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-05",
+    "name": "The Michele Lee Show"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 80343,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Documentary series about art. Yoshida's camera documents the history of painting and artistic expression with delicate intimacy.",
+    "poster_path": "/wGXnuYIPUgDEqVHmegAcuVC67Zg.jpg",
+    "first_air_date": "1974-01-07",
+    "name": "Beauty of Beauty"
+  },
+  {
+    "genre_ids": [],
+    "id": 17089,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Nearly Man was a UK TV series from the mid-1970s created by Arthur Hopcraft about a middle-class Labour MP. Originally screened on ITV on 4 August 1974, the series won the Broadcasting Press Guild award for the best single play on British television in 1974. The series was filmed in London by Granada Television, in black and white. Some episodes were directed by British director John Irvin. The main cast included Tony Britton as the lead character, Anne Firbank, John Leyton, and Ian McCulloch.",
+    "poster_path": "/dexm2zje2mRyIyGZBJjjtMNwPxR.jpg",
+    "first_air_date": "1974-08-04",
+    "name": "The Nearly Man"
+  },
+  {
+    "genre_ids": [],
+    "id": 204840,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "",
+    "poster_path": "/8fkaylCcjsIMAtLZKoM3QLUeqLt.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "S.O.S."
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 61644,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "Theatrical benefice of Arkadiy Raykin",
+    "poster_path": "/8cYHjlb0yQRJMU9sebhxLvzlHYv.jpg",
+    "first_air_date": "1974-11-08",
+    "name": "Люди и манекены"
+  },
+  {
+    "genre_ids": [],
+    "id": 239616,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/z7AO02eP8b6cRfDaCoAkotQyaOP.jpg",
+    "first_air_date": "1974-02-21",
+    "name": "Cartesius"
+  },
+  {
+    "genre_ids": [
+      9648
+    ],
+    "id": 86141,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Classic Swedish mini-series about time traveling children.",
+    "poster_path": "/kVbyhfnyHqQsFZipz4I9X6ghEEz.jpg",
+    "first_air_date": "1974-01-05",
+    "name": "Huset Silfvercronas gåta"
+  },
+  {
+    "genre_ids": [],
+    "id": 83777,
+    "origin_country": [],
+    "overview": "A series of 13 single plays.",
+    "poster_path": null,
+    "first_air_date": "1974-07-10",
+    "name": "Late Night Drama"
+  },
+  {
+    "genre_ids": [],
+    "id": 114320,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-11-06",
+    "name": "Crónicas fantásticas"
+  },
+  {
+    "genre_ids": [],
+    "id": 221884,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The spirit of this series is very unusual but not fantastic. In these stories, the unusual is capricious everyday life, offbeat realism, that is to say that the facts are ordinary until the moment when the situation slips into the unusual.",
+    "poster_path": null,
+    "first_air_date": "1974-10-19",
+    "name": "Histoires insolites"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 81756,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/aq9ePpYwqfeWZdHnB7yZbPZLddA.jpg",
+    "first_air_date": "1974-01-13",
+    "name": "Eine geschiedene Frau"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762,
+      10751
+    ],
+    "id": 127485,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Bohatier Ivan"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648
+    ],
+    "id": 225978,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "Italian miniseries starring the famous detective Philo Vance, which narrates the events that occurred in the first three books: \"The Benson Murder Case\", \"The Canary Murder Case\" and \"The Greene Murder Case\"",
+    "poster_path": "/wRj6YiKWWKy6B1cDeKEqZcO14nd.jpg",
+    "first_air_date": "1974-09-03",
+    "name": "Philo Vance"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 82872,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-11-26",
+    "name": "Die lieben Haustiere"
+  },
+  {
+    "genre_ids": [],
+    "id": 213593,
+    "origin_country": [
+      "SA"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "روبوكون"
+  },
+  {
+    "genre_ids": [],
+    "id": 28817,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-09-07",
+    "name": "The US of Archie"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 15061,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Barbara Frum is a Canadian talk show which aired on CBC Television between October 1974 and July 1975. Barbara Frum interviewed various guests including Michael Magee, Charlotte Gobeil, Paul Rimstead, Allan Fotheringham, and Jack Webster and in the premiere episode her guests included Roman Gralewicz, the President of the Seafarers' International Union, and, for a surprise appearance, Gerda Munsinger, the woman at the centre of a 1966 scandal that involved Cabinet Minister Pierre Sevigny.\n\nAired Tuesdays Midnight-1:00 a.m., October, 1974 to May 1975; Saturdays, 9:00-10:00 p.m., June/July 1975.",
+    "poster_path": "/jYVDi93M51J4USymk78wkO9swEr.jpg",
+    "first_air_date": "1974-10-01",
+    "name": "Barbara Frum"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 1290,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "All About You was an educational television series that was syndicated to numerous educational and PBS stations during the early and mid-1970s, mainly as part of weekday in-school telecasts.\n\nThe series was first produced at WHRO-TV, \"Hampton Roads ETV\", in Hampton, Virginia. In 1974, production of the series was moved to WGBH-TV Boston, where it was produced in association with WGBH's in-school television initiative, the \"21-Inch Classroom\". The 1974 episodes were distributed in the US and Canada by the Agency for Instructional Television; this is one of a few WGBH series to have not been distributed by NET or PBS.",
+    "poster_path": "/b78yFYTfRWVpeLD1xehDYetsbj3.jpg",
+    "first_air_date": "1974-02-25",
+    "name": "All About You"
+  },
+  {
+    "genre_ids": [
+      18,
+      10751
+    ],
+    "id": 296811,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Left in the care of her gruff grandfather in the Swiss mountains, young Heidi wants to make the best of things.",
+    "poster_path": "/4ZVlr9SvxHF6pi7F7FJr8shF5n8.jpg",
+    "first_air_date": "1974-10-20",
+    "name": "Heidi"
+  },
+  {
+    "genre_ids": [],
+    "id": 5226,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Celebrity Sweepstakes is an American television game show that aired on NBC's daytime schedule from April 1, 1974 to October 1, 1976. The show also had two separate weekly syndicated runs from September 9, 1974 to September 1975 and September 20, 1976 to September 1977.\n\nJim McKrell hosted the show. Bill Armstrong was the main announcer, with Dick Tufeld and John Harlan substituting. Joey Bishop and Carol Wayne were the regulars who appeared most often. Other regular panelists included Clifton Davis, Buddy Hackett, George Hamilton, and Freddie Prinze. CS was produced jointly by Ralph Andrews and Burt Sugarman. The first theme song was composed by Stan Worth, and the second by Alan Thicke. This show also marked the last national TV appearance of Mama Cass Elliott before her death on July 29, 1974.",
+    "poster_path": null,
+    "first_air_date": "1974-04-01",
+    "name": "Celebrity Sweepstakes"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 64318,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-06-11",
+    "name": "Konny und seine drei Freunde"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 136865,
+    "origin_country": [],
+    "overview": "A seasonal offering from one of Britain’s most missed comics first seen in 1974 featuring sketches, songs, music and dancing.",
+    "poster_path": "/8cSYbPbX92wyTLaIndcywSlw4Qg.jpg",
+    "first_air_date": "1974-12-26",
+    "name": "Les Dawson's Christmas Box"
+  },
+  {
+    "genre_ids": [],
+    "id": 3981,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Children's programme that makes use of household waste products in a creative way, presented by Susan Stranks and assisted by puppet spiders, Itsy and Bitsy.",
+    "poster_path": "/iUAaUNMpw4Z761QZwWLdfIoDlzE.jpg",
+    "first_air_date": "1974-04-02",
+    "name": "Paperplay"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 290412,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/jHz2MyRsQZvt84b484olaXZFV9t.jpg",
+    "first_air_date": "1974-04-21",
+    "name": "Malombra"
+  },
+  {
+    "genre_ids": [],
+    "id": 112277,
+    "origin_country": [],
+    "overview": "Kurata Tenzen, agent of the Royalists hides his identity, and using a disguise fights injustice during the Bakumatsu Period \"the end of the Tokugawa Shogunate's Downfall.\" There was a battle to completely unify the nation under the leadership of the Emperor and to bring the power back to the Imperial Government. His battles against the Shinsengumi are what the legends are made of. If only they knew the identity of the man behind the mask!",
+    "poster_path": null,
+    "first_air_date": "1974-10-05",
+    "name": "The Hooded Avenger"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 30009,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-11-17",
+    "name": "The End Of The Pier Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 1112,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "High Rollers is an American television game show based on the dice game Shut the Box. The show aired on NBC from July 1, 1974 to June 11, 1976 and again from April 24, 1978 to June 20, 1980. Two different syndicated versions were also produced, a weekly series in the 1975–1976 season which ran concurrently with the daytime version, and a daily series in 1987–1988. Heatter-Quigley Productions packaged all versions of the series except the 1987 revival, a co-production of Merrill Heatter Productions and Century Towers Productions.",
+    "poster_path": null,
+    "first_air_date": "1974-07-01",
+    "name": "High Rollers"
+  },
+  {
+    "genre_ids": [],
+    "id": 29027,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-22",
+    "name": "My Name Is Harry Worth"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 293477,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/sw7ifY2yuTLPBpXxFTi4MRw5YcD.jpg",
+    "first_air_date": "1974-10-15",
+    "name": "Les Musiciens de la pellicule"
+  },
+  {
+    "genre_ids": [],
+    "id": 30311,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-07-11",
+    "name": "The Mac Davis Show"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 80236,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Urmel plays in the castle - There is still a rumor in King Pumponell's kingdom that talking animals and Urmel live on a lonely, remote island. Museum and zoo director Dr. Zwengelmann will not rest until he has seen with his own eyes what he considers to be pure \"fantasy\". His niece Naftaline, who is keen to write a big report for her newspaper, also wants to know more about this mysterious island, the talking pig Wutz and the sensational Urmel. But if people found out about the talking animals from the newspaper, the island would soon be visited by many curious people. This must be prevented. Meanwhile, Urmel and Wutz hide out in King Pumponell's castle.",
+    "poster_path": "/511gSyC40m6sAbnukO9jv9iWeDd.jpg",
+    "first_air_date": "1974-12-08",
+    "name": "Urmel spielt im Schloss"
+  },
+  {
+    "genre_ids": [
+      99,
+      10764
+    ],
+    "id": 19061,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Family was a 1974 BBC television series made by producer Paul Watson, and directed by Franc Roddam. It was a fly-on-the-wall documentary series, seen by many as the precursor to reality television. It was similar to an American documentary which had aired the previous year in 1973, called An American Family.\n\nIt followed the working-class Wilkins family of six of Reading, through their daily lives, warts and all, and culminated in the marriage of one of the daughters, which was plagued by fans and paparazzi alike.\n\nThe show was the basis for two parodies: Monty Python's Flying Circus, in their very last episode which aired 5 December 1974, featured a sketch called \"The Most Awful Family in Britain 1974\"; and Benny Hill, on one of his 1975 specials, did a takeoff called \"That Family.\"\n\nMargaret re-married and became Margaret Sainsbury; she died of a reported heart attack in Berkshire on 10 August 2008, aged 73.\n\nThe format was revived in 2008.",
+    "poster_path": "/esOIHVtBKyuK5hcxDJi1z08ugsm.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "The Family"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 222695,
+    "origin_country": [
+      "ES"
+    ],
+    "overview": "",
+    "poster_path": "/oaKc9LaROdDKPx9y6vKZGyvJwXi.jpg",
+    "first_air_date": "1974-03-04",
+    "name": "El hombre y la tierra: Serie venezolana"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 46024,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "A psychiatrist whose wife is murdered tracks down the culprit. Psychiatrist Masato Yuki returns to Japan after three years in the United States, where his beloved wife, Taeko, and daughter, Akiko, are waiting for him. However, Masato becomes suspicious of his wife's behavior. At Masato's homecoming party, he receives a mysterious phone call and his wife, Taeko, disappears. The next day, Taeko's gruesomely mutilated body is discovered in a motel. Masato tracks down the murderer. However, the secret of his daughter, Akiko's birth, is hidden in convoluted web of lies and agony.",
+    "poster_path": "/z6jt5LuGCCSTjqXrVjIK8uKMV4W.jpg",
+    "first_air_date": "1974-10-04",
+    "name": "Red Maze"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 213554,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-25",
+    "name": "Přeslička a Prokůpek"
+  },
+  {
+    "genre_ids": [],
+    "id": 45829,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Headmistress Sarah Burton, a left-wing feminist, is disgusted by the social injustices faced by her pupils. In spite of her beliefs, she reluctantly finds herself falling in love with a Tory landowner whose wife is suffering from insanity.",
+    "poster_path": null,
+    "first_air_date": "1974-09-16",
+    "name": "South Riding"
+  },
+  {
+    "genre_ids": [],
+    "id": 153535,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Rogue's Rock is a small island off the coast of Britain that has been governed by a member of the Rogue family for centuries.",
+    "poster_path": "/dRydVD2YLR8bsCHNyvbCy6yVjnQ.jpg",
+    "first_air_date": "1974-11-06",
+    "name": "Rogue's Rock"
+  },
+  {
+    "genre_ids": [],
+    "id": 9822,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Winning Streak is an American television game show hosted by Bill Cullen and announced by Don Pardo. It aired daily on NBC from July 1, 1974 to January 3, 1975 and was produced at the NBC Studios in New York's Rockefeller Plaza.",
+    "poster_path": null,
+    "first_air_date": "1974-07-01",
+    "name": "Winning Streak"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 75828,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "This is a series that was on PBS during the 70's (circa 1973-1974)",
+    "poster_path": "/syntf9Mx6QLKHuE643lPzfjkXAe.jpg",
+    "first_air_date": "1974-02-18",
+    "name": "Bread & Butterflies"
+  },
+  {
+    "genre_ids": [],
+    "id": 239593,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Wealthy local personality Malcolm Winfield was mugged walking through a park late at night with Ronald Hamilton whom he had met at a club earlier in the evening. Hamilton was unharmed in the attack. The victim's wallet was found later on at the home of Derek Clark and Sharon Cox, tucked inside a record player. Winfield says that Clark and Cox attacked him that evening. Hamilton is also accused of the same crime - the prosecution argue he was a male prostitute who willingly took part in a plan to entice Winfield to the park where his former house-mates could rob him. All the defendants deny the charges. Clark and Cox say this is a case of mistaken identity - they simply found the wallet in the park and were going to hand it in to police the next day; Hamilton says he was forced to assist the others who would have made public his sexuality had he not done so.",
+    "poster_path": null,
+    "first_air_date": "1974-06-05",
+    "name": "Victims of Prejudice"
+  },
+  {
+    "genre_ids": [],
+    "id": 213428,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-26",
+    "name": "Prášilové"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 18948,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Weekend was a television newsmagazine that ran on NBC from 1974 to 1979. It was originally aired once monthly on Saturday nights from 11:30 P.M. to 1 A.M. Eastern time, the same time slot as Saturday repeats of The Tonight Show Starring Johnny Carson during its first season, then to replace Saturday Night Live, once a month on those weekends when the SNL cast was not producing a show. The program was awarded a George Foster Peabody medal in 1975 and attracted a cult following.\n\nThe program was hosted by Lloyd Dobyns, who also did much of the reporting. The show's creator and executive producer was past president of NBC News, Reuven Frank. Together, Dobyns and Frank were largely responsible for the distinctive writing and quirky style of the program.\n\nIn 1978, after four years of critical success and moderately good ratings for that hour, NBC moved Weekend to prime time. After airing once a month in various time slots in September, October, and November, the network placed the program weekly on Saturday nights at 10 P.M. Eastern time starting in December of 1978. Linda Ellerbee was added as Dobyns' co-host and co-lead reporter. Placed against strong programs on ABC and CBS, the show eventually died of poor ratings. A few years later, Ellerbee and Dobyns reunited to anchor another late-night NBC news program, NBC News Overnight.",
+    "poster_path": null,
+    "first_air_date": "1974-10-20",
+    "name": "Weekend"
+  },
+  {
+    "genre_ids": [
+      10762,
+      10751
+    ],
+    "id": 295175,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "",
+    "poster_path": "/fuwifz8hZZgIol5g76q5PMo853G.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Pappa Pellerins dotter"
+  },
+  {
+    "genre_ids": [],
+    "id": 24422,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Hope and Keen Scene was a childrens' sketch show starring Scottish comics Mike Hope and Albie Keen.",
+    "poster_path": "/uapwCL94YejHnyQxkNlez9HJNYb.jpg",
+    "first_air_date": "1974-12-24",
+    "name": "The Hope And Keen Scene"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 76199,
+    "origin_country": [],
+    "overview": "Looking at life in rural Pennsylvania in an ongoing project by Penn State Television / WPSX-TV / WPSU-TV.",
+    "poster_path": null,
+    "first_air_date": "1974-01-13",
+    "name": "Rural America Documentary Project"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 5614,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Countdown was a long-running popular weekly Australian music television show broadcast by the Australian Broadcasting Corporation from 8 November 1974 until 19 July 1987. It was created by Executive Producer Michael Shrimpton, producer/director Robbie Weekes and record producer and music journalist Ian \"Molly\" Meldrum. Countdown was produced at the studios of the ABC in the Melbourne suburb of Ripponlea.\n\nCountdown was the most popular music program in Australian TV history. It was broadcast nationwide on Australia's government-owned broadcaster, the ABC and commanded a huge and loyal audience. It soon exerted a strong influence on radio programmers because of its audience and the amount of Australian content it featured. For most of the time it was on air, it also gained double exposure throughout the country by screening a new episode each Sunday evening, and then repeating it the following Saturday evening. The majority of performances on the show were lip synched.",
+    "poster_path": null,
+    "first_air_date": "1974-11-08",
+    "name": "Countdown"
+  },
+  {
+    "genre_ids": [
+      10762,
+      10765
+    ],
+    "id": 72343,
+    "origin_country": [],
+    "overview": "Forced to stay with his aunt and uncle for the summer holidays, Tom Long is lonely and bored, until one night he hears the clock strike 13. He suddenly finds himself transported to a magical Victorian garden of the 1880s and meets a girl.",
+    "poster_path": "/18U8NvmxUkmvUcZ0kteAV5hdh1u.jpg",
+    "first_air_date": "1974-01-07",
+    "name": "Tom's Midnight Garden"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 205764,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Anthology series of one-hour love stories based on the short stories of Henry James.",
+    "poster_path": "/hRoJUiozeCTD14lTe9BMyzs26Dz.jpg",
+    "first_air_date": "1974-09-29",
+    "name": "Affairs of the Heart"
+  },
+  {
+    "genre_ids": [],
+    "id": 33641,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Double Up is a Canadian quiz show television series which aired on CBC Television in 1974.",
+    "poster_path": null,
+    "first_air_date": "1974-07-01",
+    "name": "Double Up"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 25201,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "This Friday afternoon series from Thames Television presented six standalone half-hour situation comedies for children, with each episode considered as the pilot for a possible new comedy series.",
+    "poster_path": "/1mjMGCY1eQBf2IN5aNOXrl73rJ2.jpg",
+    "first_air_date": "1974-05-24",
+    "name": "Funny Ha Ha"
+  },
+  {
+    "genre_ids": [],
+    "id": 235112,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The original version of Wheel was a network daytime series that ran on NBC from January 6, 1975, to June 30, 1989, and subsequently aired on CBS from July 17, 1989, to January 11, 1991; it returned to NBC on January 14, 1991, and was cancelled that year, ending on September 20, 1991.",
+    "poster_path": null,
+    "first_air_date": "1974-08-28",
+    "name": "Wheel of Fortune (Daytime)"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 238117,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Weekly hidden camera series hosted by Allen Funt. It ran from 1974 to 1979.",
+    "poster_path": null,
+    "first_air_date": "1974-09-01",
+    "name": "The New Candid Camera"
+  },
+  {
+    "genre_ids": [],
+    "id": 73103,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "",
+    "poster_path": "/oOnnIR7B2VMljas5NhO9vgmlDvo.jpg",
+    "first_air_date": "1974-03-02",
+    "name": "Lilla Anna och Långa Farbrorn"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 299845,
+    "origin_country": [
+      "IL"
+    ],
+    "overview": "",
+    "poster_path": "/aGYLHk3JOoxAF4JXZaqPuf8T7cz.jpg",
+    "first_air_date": "1974-04-24",
+    "name": "שרתי לך ארצי"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 124006,
+    "origin_country": [],
+    "overview": "The film describes the activity of an ABV of the People's Police in its section in East Berlin. A mixture of “positive” characters from the beginning, the extensively staged “owl”, who is introduced as a criminal and over the course of time, especially due to the influence of the ABV, develops into a good citizen, and incorrigible characters, with whom the ABV fails with its extensive attempts at rehabilitation and who are arrested after having committed again offenses.",
+    "poster_path": null,
+    "first_air_date": "1974-10-27",
+    "name": "Der Leutnant vom Schwanenkietz"
+  },
+  {
+    "genre_ids": [],
+    "id": 217587,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/50O2E9YvASH7xoqiy3CIYPYp3QB.jpg",
+    "first_air_date": "1974-03-04",
+    "name": "Die blaue Elise"
+  },
+  {
+    "genre_ids": [],
+    "id": 156079,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-10-13",
+    "name": "水もれ甲介"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 86483,
+    "origin_country": [],
+    "overview": "Branko Milicevic, known as \"Kockica\" (Little Cube) teaches and talks with young children on various life topics in an educational and interesting way.",
+    "poster_path": "/let4hOVpXrFxcEePZHGet0BszYi.jpg",
+    "first_air_date": "1974-11-27",
+    "name": "Kocka, kocka, kockica"
+  },
+  {
+    "genre_ids": [],
+    "id": 100739,
+    "origin_country": [],
+    "overview": "The sketches are Nationwide with jokes across the UK and Thumpalong with Reg Varnish. We then have an episode of Upstage Downstage. There is a sketch set in a canteen of California during WW2 which ends with an attempt to undermine American morale using well-known American entertainers. There is a brief discussion about bias in the news followed by a news report. Maurice Chevalier is in heaven and sings about how that he is glad he is not alive anymore. The show concludes with 2001 - A Royal Wedding Odyssey where Prince Eric marries a singer. There is a mass phone-in where you are able to ask questions of the participants.",
+    "poster_path": "/u8eahINTizJlbXpuH7JUbMmBbdB.jpg",
+    "first_air_date": "1974-09-07",
+    "name": "The Stanley Baxter Moving Picture Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 59770,
+    "origin_country": [],
+    "overview": "Witness to Yesterday is a Canadian docudrama television series which featured staged interviews with historical personalities. It was first broadcast by Global Television Network in 1974, then produced by TVOntario to 1976. A 12-episode revival of the series was produced in 1998 for History Television.",
+    "poster_path": null,
+    "first_air_date": "1974-01-08",
+    "name": "Witness to Yesterday"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10765
+    ],
+    "id": 73300,
+    "origin_country": [],
+    "overview": "Poron came from outer space to Earth. While he befriends several animals, the animal folks keep causing trouble in various places, by their naughty antics and bad behaviors. Poron, secretly unleashes his mysterious power, to save and punish them.",
+    "poster_path": null,
+    "first_air_date": "1974-04-01",
+    "name": "Star Child Poron"
+  },
+  {
+    "genre_ids": [],
+    "id": 296336,
+    "origin_country": [
+      "SI"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-28",
+    "name": "Vest in pločevina"
+  },
+  {
+    "genre_ids": [],
+    "id": 21884,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-04",
+    "name": "Bonny!"
+  },
+  {
+    "genre_ids": [],
+    "id": 9766,
+    "origin_country": [
+      "CA",
+      "US"
+    ],
+    "overview": "Jackpot! is a television game show seen in three different runs between 1974 and 1990. Geoff Edwards hosted the original version of this Bob Stewart production from January 7, 1974 until September 26, 1975 on NBC. A second version, produced in Canada, aired from September 30, 1985 to December 30, 1988 on the USA Network in the U.S. and was hosted by Mike Darrow. A third version, again hosted by Edwards, ran from September 18, 1989 to March 16, 1990 in syndication and was filmed in Glendale, California.\n\nElements of Jackpot! were later used in the GSN game show Hollywood Showdown. Its producer, Sande Stewart, became a production partner of his father during the 1980s.",
+    "poster_path": null,
+    "first_air_date": "1974-01-07",
+    "name": "Jackpot"
+  },
+  {
+    "genre_ids": [],
+    "id": 23013,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Three Men of the City is a 1974 Australian TV series about a corporate battle. It was followed in 1975 by the series The Company Men.",
+    "poster_path": null,
+    "first_air_date": "1974-02-11",
+    "name": "Three Men Of The City"
+  },
+  {
+    "genre_ids": [],
+    "id": 203886,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/3Xm0MBJaO0rCBBSSa0p9VI3UovY.jpg",
+    "first_air_date": "1974-04-07",
+    "name": "ビッグショー"
+  },
+  {
+    "genre_ids": [],
+    "id": 104763,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-04-16",
+    "name": "Juan y Manuela"
+  },
+  {
+    "genre_ids": [],
+    "id": 242771,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Einführung in die Digitaltechnik"
+  },
+  {
+    "genre_ids": [],
+    "id": 110633,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-22",
+    "name": "Die Abenteuer des Sherlock Holmes"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 299793,
+    "origin_country": [
+      "SI"
+    ],
+    "overview": "",
+    "poster_path": "/us7G213WM4C7KgTCGxVVSFGUQLz.jpg",
+    "first_air_date": "1974-03-28",
+    "name": "Vest in pločevina"
+  },
+  {
+    "genre_ids": [],
+    "id": 253251,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "French report summarising the events of 25 April 1974, the seizure of power by the \"captains\" of the Portuguese army who opposed the colonial war in the country and in the capital.\n\nReport by French television ORTF for the \"Magazine 52\" programme on the events of 25 April.\n\nThe report follows the forces of the Armed Forces Movement (MFA) in their action in Lisbon, from the Carmo barracks to Caxias prison, on the outskirts of Lisbon.",
+    "poster_path": null,
+    "first_air_date": "1974-05-30",
+    "name": "Portugal: liberdade e paz"
+  },
+  {
+    "genre_ids": [],
+    "id": 42827,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": "/88ZPK4hyngjIWrmiZxyqa35S4sr.jpg",
+    "first_air_date": "1974-04-18",
+    "name": "Klabb og Babb"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 278723,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "",
+    "poster_path": "/zi1DJkVcaJVK9LLcbGJLEbdnDsc.jpg",
+    "first_air_date": "1974-01-01",
+    "name": "Le son des Français d'Amérique"
+  },
+  {
+    "genre_ids": [],
+    "id": 155397,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/bVFnGKugrGOksaovuoqU1gz66Vs.jpg",
+    "first_air_date": "1974-07-04",
+    "name": "竜馬がゆく"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 121705,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-05-01",
+    "name": "À la Carte"
+  },
+  {
+    "genre_ids": [],
+    "id": 89372,
+    "origin_country": [],
+    "overview": "not found overview",
+    "poster_path": null,
+    "first_air_date": "1974-10-13",
+    "name": "Dimitrije Tucovic"
+  },
+  {
+    "genre_ids": [],
+    "id": 289448,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "",
+    "poster_path": "/o8kyf1FVGQpLz348J2ZFImxYbml.jpg",
+    "first_air_date": "1974-02-14",
+    "name": "De tre från Haparanda"
+  },
+  {
+    "genre_ids": [],
+    "id": 282825,
+    "origin_country": [
+      "HU"
+    ],
+    "overview": "",
+    "poster_path": "/rWZxjCSQ7duKcSaQjgJhPvOhca2.jpg",
+    "first_air_date": "1974-04-13",
+    "name": "Megtörtént bünügyek"
+  },
+  {
+    "genre_ids": [],
+    "id": 277468,
+    "origin_country": [
+      "SA"
+    ],
+    "overview": "",
+    "poster_path": "/9562h7tQYOulMVejdznAQwsvLxF.jpg",
+    "first_air_date": "1974-01-17",
+    "name": "الجريمة"
+  },
+  {
+    "genre_ids": [],
+    "id": 244585,
+    "origin_country": [
+      "IL"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-02-05",
+    "name": "דלת הקסמים"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 244572,
+    "origin_country": [
+      "IL"
+    ],
+    "overview": "",
+    "poster_path": "/zefkSOCMyerDdMmsVg3LrRCfQmk.jpg",
+    "first_air_date": "1974-05-01",
+    "name": "ניקוי ראש"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 125047,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/zhsY5XnDD3lk5pohZYAEsj4HU1u.jpg",
+    "first_air_date": "1974-02-24",
+    "name": "Le avventure di Tofffsy e l'erba musicale"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648,
+      18
+    ],
+    "id": 293955,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/ycjFkqXJuDpGjmpDK5incAOd98A.jpg",
+    "first_air_date": "1974-02-18",
+    "name": "À dossiers ouverts"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 126858,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-06-03",
+    "name": "Accadde a Lisbona"
+  },
+  {
+    "genre_ids": [],
+    "id": 302449,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-03-09",
+    "name": "Oberhofer Bauernmarkt"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 302601,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1974-01-01",
+    "name": "Merijntje Gijzens Jeugd"
+  },
+  {
+    "genre_ids": [],
+    "id": 300283,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "",
+    "poster_path": "/8W4dwobWNuXSUNbJaZfLDrcnq4V.jpg",
+    "first_air_date": "1974-01-16",
+    "name": "Albert och Herbert"
+  }
+]

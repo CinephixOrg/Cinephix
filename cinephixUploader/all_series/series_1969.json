@@ -1,0 +1,4323 @@
+[
+  {
+    "genre_ids": [
+      16,
+      35,
+      10751
+    ],
+    "id": 153485,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The adventures of Sazae Fuguta and her family and friends in their Tokyo suburb.",
+    "poster_path": "/sR3tqK13hhpohIfnpd2z3HkpnUb.jpg",
+    "first_air_date": "1969-10-14",
+    "name": "Sazae-san"
+  },
+  {
+    "genre_ids": [
+      10762,
+      35
+    ],
+    "id": 502,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "On a special inner city street, the inhabitants—human and muppet—teach preschoolers basic educational and social concepts using comedy, cartoons, games, and songs.",
+    "poster_path": "/14k9BfZ2p4rQBMeJ5crKTfUZVwD.jpg",
+    "first_air_date": "1969-11-10",
+    "name": "Sesame Street"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 1825,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "An anthology comedy series featuring a line up of different celebrity guest stars appearing in anywhere from one, two, three, and four short stories or vignettes within an hour about versions of love and romance.",
+    "poster_path": "/aSL7chmSyz6aqTebDd8qxTFlwbW.jpg",
+    "first_air_date": "1969-09-29",
+    "name": "Love, American Style"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 3922,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Hee Haw was an American variety show featuring a mixture of country music and comedy skits. Co-hosted by Buck Owens and Roy Clark for most of the series, the show also guested well-established country music stars including Johnny Cash and Dolly Parton. Originally airing on CBS from 1969 to 1971, the show ran for over 20 years in syndication until 1993.",
+    "poster_path": "/zn6fQZFZ0wktzemHAhIlZaFqUum.jpg",
+    "first_air_date": "1969-06-15",
+    "name": "Hee Haw"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 3213,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Marcus Welby, M.D. is an American medical drama television program that aired on ABC from September 23, 1969, to July 29, 1976. It starred Robert Young as a family practitioner with a kind bedside manner and James Brolin as the younger doctor he often worked with, and was produced by David Victor and David J. O'Connell. The pilot, A Matter of Humanities, had aired as an ABC Movie of the Week on March 26, 1969.",
+    "poster_path": "/areZG2JxZUYjCs2oDpkf2TW1ziX.jpg",
+    "first_air_date": "1969-09-23",
+    "name": "Marcus Welby, M.D."
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2126,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "When widower Mike Brady marries a lovely lady widow Carol Ann, their two families become one. These are the misadventures of this new couple, their six children, a dog named Tiger, and quirky housekeeper Alice.",
+    "poster_path": "/63MN0GwbAW4Oq2VxbpZODYomMsi.jpg",
+    "first_air_date": "1969-09-26",
+    "name": "The Brady Bunch"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 1698,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Der Kommissar is a German television series about a group of detectives of the Munich homicide squad. All 97 episodes, which were shot in black-and-white and first broadcast between 1969 and 1976, were written by Herbert Reinecker and starred Erik Ode as Kommissar Herbert Keller. Keller's assistants were Walter Grabert, Robert Heines, and Harry Klein who, in 1974, was replaced by his younger brother Erwin Klein.",
+    "poster_path": "/3jPtZ0ArpniildjPklBGawxING7.jpg",
+    "first_air_date": "1969-01-03",
+    "name": "Der Kommissar"
+  },
+  {
+    "genre_ids": [
+      16,
+      9648,
+      35,
+      10762,
+      10751
+    ],
+    "id": 926,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Fred, Daphne, Velma, Shaggy, and the talking dog, Scooby-Doo, travel on the Mystery Machine van, in search of weird mysteries to solve.",
+    "poster_path": "/lTzUSCtXR77CmGmEHcaxpxu2b4h.jpg",
+    "first_air_date": "1969-09-13",
+    "name": "Scooby-Doo, Where Are You!"
+  },
+  {
+    "genre_ids": [
+      16,
+      18
+    ],
+    "id": 25114,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "A villainous masked wrestler becomes a hero for the sake of protecting the orphanage in which he was raised.",
+    "poster_path": "/doHX1Hg4AEw54TvOIPcY5L6BMy8.jpg",
+    "first_air_date": "1969-10-02",
+    "name": "Tiger Mask"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 4060,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Medical Center is a medical drama series which aired on CBS from 1969 to 1976. It was produced by MGM Television.",
+    "poster_path": "/gRGYVJYF2g12tx61CLIGeh041G.jpg",
+    "first_air_date": "1969-09-24",
+    "name": "Medical Center"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 849,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "A British sketch comedy series with the shows being composed of surreality, risqué or innuendo-laden humour, sight gags and observational sketches without punchlines.",
+    "poster_path": "/jugMPE9rTDySDyirqeDssPJLNQy.jpg",
+    "first_air_date": "1969-10-05",
+    "name": "Monty Python's Flying Circus"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762,
+      10751
+    ],
+    "id": 12451,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Follow the adventures of the Cattanooga Cats, an anthropomorphic band of cats.",
+    "poster_path": "/zWZvz0WwouqnkYnovkg3fgaNNPf.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Cattanooga Cats"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 12511,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Then Came Bronson is an American adventure/drama television series produced by MGM Television and broadcast on NBC from 1969 to 1970. Created by Denne Bart Petitclerc, the series began with a feature-length pilot on March 24, 1969. It was greenlit for one year and began first run on September 17, 1969.\n\nDisillusioned reporter Jim Bronson quits his job and starts wandering the road on his Harley-Davidson motorcycle as a form of soul-searching. He meets various characters; some he helps, others he educates.",
+    "poster_path": "/rHTdggd1OUvx7H1BwgTyx7Fwyzw.jpg",
+    "first_air_date": "1969-09-17",
+    "name": "Then Came Bronson"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 14520,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "The ZDF-Hitparade, or Hitparade for short was one of the most popular and most well-known music television series presenting mostly German Schlager.",
+    "poster_path": null,
+    "first_air_date": "1969-01-18",
+    "name": "Die ZDF-Hitparade"
+  },
+  {
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 3783,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/gcAILcFjcpa6YQkMuwYhXBk2pog.jpg",
+    "first_air_date": "1969-09-11",
+    "name": "Room 222"
+  },
+  {
+    "genre_ids": [
+      10766
+    ],
+    "id": 10136,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Where the Heart Is was an American soap opera telecast on the CBS television network from September 8, 1969 to March 23, 1973. Created by Lou Scofield and Margaret DePriest, the program ran for 25 minutes, the remaining five minutes of its timeslot ceded to a CBS news break.\n\nScofield and DePriest were the original head writers. A year after the soap’s premiere, they were succeeded by Pat Falken Smith. In 1972, Smith was replaced by Claire Labine and Paul Avila Mayer. The series was produced by Tom Donovan and directed by Richard Dunlap.",
+    "poster_path": "/1E1eCOH3KMJo6mo6Ol7YBkboRW9.jpg",
+    "first_air_date": "1969-09-08",
+    "name": "Where the Heart Is"
+  },
+  {
+    "genre_ids": [],
+    "id": 124,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Nationwide was a BBC News and current affairs television programme which ran from 9 September 1969 to 5 August 1983. It was broadcast on BBC One each weekday following the early evening news. It followed a magazine format, combining political analysis and discussion with consumer affairs, light entertainment and sports reporting. It began on 9 September 1969, running between Tuesdays and Thursdays at 6.00pm, before being extended to five days a week in 1972. From 1976 until 1981 the start time was 5:55pm. The final edition was broadcast on 5 August 1983, and the following October it was replaced by Sixty Minutes. The long-running Watchdog programme began as a Nationwide feature.\n\nThe light entertainment was quite similar in tone to That's Life!. Eccentric stories featured skateboarding ducks and men who claimed that they could walk on egg shells.. Richard Stilgoe performed topical songs.",
+    "poster_path": "/7ikCv32zpkZ6n048iG0dpLLF2GG.jpg",
+    "first_air_date": "1969-09-09",
+    "name": "Nationwide"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 290179,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-03",
+    "name": "Os Acorrentados"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762
+    ],
+    "id": 10097,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Dick Dastardly and his snickering canine co-pilot Muttley plot to stop Yankee Doodle Pigeon aboard their World War I flying machines.",
+    "poster_path": "/tKytNdXhBWPYBWC2DmogIWGBSVg.jpg",
+    "first_air_date": "1969-09-13",
+    "name": "Dastardly and Muttley in Their Flying Machines"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 33804,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Main Chance was a British television series which first aired on ITV between 1969,1970,1972 and 1975. A drama, it depicts the sudden transformation in the life of solicitor David Main who relocates from London to Leeds.",
+    "poster_path": "/kE1tNZH18DCF4OjisMMjGw6aMrz.jpg",
+    "first_air_date": "1969-06-18",
+    "name": "The Main Chance"
+  },
+  {
+    "genre_ids": [
+      10751,
+      16,
+      35
+    ],
+    "id": 6138,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "Follows the comical adventures of a mischievous yet artistic wolf [Volk], trying to catch a hare [Zayats]. The series has additional characters that usually either help the hare or interfere with the wolf's plans.",
+    "poster_path": "/evPwhhd8nnlLEaKlj35HtWDPOLk.jpg",
+    "first_air_date": "1969-06-14",
+    "name": "Well, Just You Wait!"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751,
+      10762
+    ],
+    "id": 6137,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Courtship of Eddie's Father is an American television sitcom based on the 1963 movie of the same name, which was based on the book written by Mark Toby. It tells the story of a widower, Tom Corbett, who is a magazine publisher, and his son, Eddie, who believes his father should marry, and manipulates situations surrounding the women his father is interested in. ABC had acquired the rights to the story; the series debuted on September 17, 1969, and was last broadcast on March 1, 1972.\n\nBixby received an Emmy nomination for the show.",
+    "poster_path": "/gMMgHbBnR1DXtHCfWvWqQnmaJVI.jpg",
+    "first_air_date": "1969-09-17",
+    "name": "The Courtship of Eddie's Father"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762,
+      10751
+    ],
+    "id": 12451,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Follow the adventures of the Cattanooga Cats, an anthropomorphic band of cats.",
+    "poster_path": "/zWZvz0WwouqnkYnovkg3fgaNNPf.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Cattanooga Cats"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 33804,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Main Chance was a British television series which first aired on ITV between 1969,1970,1972 and 1975. A drama, it depicts the sudden transformation in the life of solicitor David Main who relocates from London to Leeds.",
+    "poster_path": "/kE1tNZH18DCF4OjisMMjGw6aMrz.jpg",
+    "first_air_date": "1969-06-18",
+    "name": "The Main Chance"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 230903,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-04",
+    "name": "Dez Vidas"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 14520,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "The ZDF-Hitparade, or Hitparade for short was one of the most popular and most well-known music television series presenting mostly German Schlager.",
+    "poster_path": null,
+    "first_air_date": "1969-01-18",
+    "name": "Die ZDF-Hitparade"
+  },
+  {
+    "genre_ids": [
+      10765,
+      18
+    ],
+    "id": 10293,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Strange Paradise is a Canadian occult / supernatural soap opera of 195 episodes, initially launched in syndication in the United States on September 8, 1969, and later broadcast on CBC Television from October 20, 1969 to July 22, 1970. The production was the brainchild of producer Steve Krantz, in an attempt to capitalize on the phenomenal success of ABC's daytime serial Dark Shadows. To develop this series, Krantz hired actor-writer Ian Martin and veteran TV and radio producer Jerry Layton, both of who would be given screen credit for the creation of Strange Paradise. With the CBC and American broadcasters Metromedia and Kaiser Broadcasting handling distribution and co-production, the series was produced in Ottawa at CTV affiliate CJOH-TV and aired for 39 weeks, presenting three separate 13-week story arcs.",
+    "poster_path": "/2YNx6tXynA8tUbSKXZmHuBuct39.jpg",
+    "first_air_date": "1969-10-20",
+    "name": "Strange Paradise"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11275,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Glen Campbell Goodtime Hour is an American network television music and comedy variety show hosted by singer Glen Campbell from January 1969 through June 1972 on CBS. He was offered the show after he hosted a 1968 summer replacement for The Smothers Brothers Comedy Hour. Campbell used \"Gentle on My Mind\" as the theme song of the show. The show was one of the few rural-oriented shows to survive CBS's rural purge of 1971.",
+    "poster_path": "/iWN7PZIBSonPBFqGjYa9abSrmzT.jpg",
+    "first_air_date": "1969-01-22",
+    "name": "The Glen Campbell Goodtime Hour"
+  },
+  {
+    "genre_ids": [
+      10762,
+      16,
+      10751
+    ],
+    "id": 265,
+    "origin_country": [
+      "AU",
+      "GB"
+    ],
+    "overview": "The Clangers are strange, long-nosed, pink, woolly creatures that live inside a small blue planet, which lies far, far away in space.Under the dustbin-lidded craters that cover the planet's surface is the cave system where the these strange yet cuddly extraterrestrials live. They share their world with the bizarre Soup Dragon, who lives in a soup well and provides them with their staple diet of green soup and blue string pudding; the Glow Buzzers, which supply light and tasty glow honey; and the tiny orange Froglets, magical creatures that live inside a travelling top-hat. Other beings encountered by the Clangers are the Iron Chicken, originally found in pieces and who, once reconstructed by the little planet's inhabitants, now lives in a nest in the sky; the large, odd, blue-skinned Skymoos; and the water-providing Cloud.",
+    "poster_path": "/9P26sMQ0caG3Yod1ERxbJjVzgqm.jpg",
+    "first_air_date": "1969-11-16",
+    "name": "Clangers"
+  },
+  {
+    "genre_ids": [
+      16,
+      18
+    ],
+    "id": 46348,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The story is about Kozue Ayuhara, a girl who transferred to Fujimi College and tried out for the school volleyball team. She develops a friendship with her teammate Midori Hayakawa, and her talents impress coach Hongō more and more each day. Though she showcases extraordinary volleyball skills, she makes enemies with Yoshimura, the star of the current team. Kozue discovers that being at the top would bring stress, incompatibilities and other dilemmas into her life. Her high expectations of becoming the best volleyball player in the school, Japan and eventually the world, set the tone for the drama to follow.",
+    "poster_path": "/ubdlKL4ejScebWB6dmLpwCtXQUH.jpg",
+    "first_air_date": "1969-12-07",
+    "name": "Attack Number One"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 774,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "On the Buses is a British comedy series created by Ronald Wolfe and Ronald Chesney, broadcast in the United Kingdom from 1969 to 1973. The writers' previous successes with The Rag Trade and Meet the Wife were for the BBC, but the corporation rejected On the Buses, not seeing much comedy potential in a bus depot as a setting. The comedy partnership turned to a friend, Frank Muir, Head of Entertainment at London Weekend Television, who loved the idea; the show was accepted and despite a poor critical reception became a hit with viewers.",
+    "poster_path": "/xomwMTba1nx7qbycf7q3Nts9WhE.jpg",
+    "first_air_date": "1969-02-28",
+    "name": "On the Buses"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 282883,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-05-01",
+    "name": "Nino, o Italianinho"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 290179,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-03",
+    "name": "Os Acorrentados"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18,
+      10765
+    ],
+    "id": 983,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Department S is a United Kingdom spy-fi adventure series produced by ITC Entertainment. The series consists of 28 episodes which originally aired in 1969–1970. It starred Peter Wyngarde as author Jason King, Joel Fabiani as Stewart Sullivan, and Rosemary Nicols as computer expert Annabelle Hurst. The trio were agents for a fictional special department of Interpol. The head of Department S was Sir Curtis Seretse.",
+    "poster_path": "/1V4hhhXtYOI0YKjYxM7Gut9c2bU.jpg",
+    "first_air_date": "1969-09-09",
+    "name": "Department S"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11480,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Sez Les was a British comedy sketch show that starred Les Dawson, produced by Yorkshire Television, airing on ITV from 1969 to 1976. Roy Barraclough also joined from series four and would go on to become Dawson's most recognisable sidekick. The two most notably appeared together in drag as characters Cissie and Ada. John Cleese, who had quit the Monty Python team's television series, was also present from 1974 in two complete seasons. Other cast members included Norman Chappell, Brian Glover, Brian Murphy and Kathy Staff. Music was provided by Syd Lawrence and his orchestra.",
+    "poster_path": "/2bc4Cv4IwDNcnNOL70OCl7gN4OZ.jpg",
+    "first_air_date": "1969-04-30",
+    "name": "Sez Les"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751,
+      35,
+      10765,
+      10762
+    ],
+    "id": 102754,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Atsuko Kagami is an elementary school girl who has an affinity for mirrors. One day, her favorite mirror which was given to Akko by her mother is broken, and she prefers to bury it in her yard rather than throw it to the trash can. In her dreams, she is contacted by a spirit (or in some cases the Queen of the Mirror Kingdom) who is touched that the girl would treat the mirror so respectfully and not simply throw it away. Akko-chan is then given the gift of a magical mirror and taught enchantments, such as \"Tekumaku mayakon, tekumaku mayakon\" and \"Lamipasu lamipasu lu lu lu lu lu\", that will allow her to transform into anything she wishes",
+    "poster_path": "/gxJODuiE9EP1JleJ5u819BUZcAo.jpg",
+    "first_air_date": "1969-01-06",
+    "name": "Akko-chan's Secret"
+  },
+  {
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 204053,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/4h1MJXJ9WaufvRCNGzkPxY7DHsv.jpg",
+    "first_air_date": "1969-04-04",
+    "name": "もーれつア太郎"
+  },
+  {
+    "genre_ids": [
+      10766,
+      35,
+      18
+    ],
+    "id": 284599,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "After a fall, intelligent young Plácido becomes a little slow. As an adult he works at a bank and his keen intelligence returns when he drinks the soft drink \"Super Plá\". Other side stories include the love relationship between Baby Stompanato and Joana Martini, and the life of Majô Prado, a neurotic millionairess and prominent personality living in São Paulo.",
+    "poster_path": null,
+    "first_air_date": "1969-12-01",
+    "name": "Super Plá"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751
+    ],
+    "id": 68268,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Moomin is a Japanese anime series broadcast on the Fuji Television Network between 1969 and 1970. It is loosely based on the Moomin books by the Finnish author Tove Jansson.",
+    "poster_path": "/1kEf1vblX2y5o8cBjMc28LqliQX.jpg",
+    "first_air_date": "1969-10-05",
+    "name": "Moomin"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 14173,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Bold Ones: The New Doctors is an American medical drama that lasted for four seasons on NBC, from 1969 to 1973.",
+    "poster_path": "/j7eXFgPeSjMQwhRKjxpIJqa4QMY.jpg",
+    "first_air_date": "1969-09-14",
+    "name": "The Bold Ones: The New Doctors"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 208218,
+    "origin_country": [
+      "TR"
+    ],
+    "overview": "",
+    "poster_path": "/q9uKBOPphOOspVhkYlnIS8np39g.jpg",
+    "first_air_date": "1969-05-22",
+    "name": "Altın Koza"
+  },
+  {
+    "genre_ids": [],
+    "id": 107583,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Softly, Softly: Task Force is a police based drama series which ran on BBC 1 from 1969 to 1976. It was a revamp of Softly, Softly, itself a spin-off from Z-Cars. The change was made partly to coincide with the coming of colour broadcasting to the BBC's main channel BBC1. The programme was due to be called simply Task Force, but reluctant to sacrifice a much-loved brand the BBC compromised this so it became Softly, Softly: Task Force.",
+    "poster_path": "/zar91e2FA5e7HrA815Pnnvv9K9j.jpg",
+    "first_air_date": "1969-11-20",
+    "name": "Softly Softly: Task Force"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 102748,
+    "origin_country": [
+      "XC",
+      "SK"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-31",
+    "name": "Zlatá brána"
+  },
+  {
+    "genre_ids": [
+      16,
+      10759
+    ],
+    "id": 43903,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Sanshiro, a teenage martial artist, trains in the Kurenai School of Jiujitsu and searches for his father's killer. Accompanying Sanshiro is an orphaned boy named Kenbo and his pet dog Boke. Sanshiro's only clue to his father's murderer is a glass eye left on the scene of the crime, suggesting that his father's murderer was one-eyed.",
+    "poster_path": "/uSWsGTPABU6zEuXTebWu24JzdrE.jpg",
+    "first_air_date": "1969-04-02",
+    "name": "Judo Boy"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 3523,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Bill Cosby Show is an American situation comedy that aired for two seasons on NBC's Sunday night schedule from 1969 until 1971, under the sponsorship of Procter & Gamble. There were 52 episodes made in the series. It marked Bill Cosby's first solo foray in television, after his co-starring role with Robert Culp in I Spy. The series also marked the first time an African American starred in his or her own eponymous comedy series.",
+    "poster_path": "/5KsVVhrdb2wiCP45m1ObIDZ34KE.jpg",
+    "first_air_date": "1969-09-14",
+    "name": "The Bill Cosby Show"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10751
+    ],
+    "id": 25641,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Toon version of the Archie Comics witch who uses her powers to aide the uncertainty of adolescence.",
+    "poster_path": "/4s0HsGnKlUBTqLX3rCamrRrX3ZZ.jpg",
+    "first_air_date": "1969-09-13",
+    "name": "Sabrina, the Teenage Witch"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762,
+      10751
+    ],
+    "id": 1765,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Perils of Penelope Pitstop is an American animated television series produced by Hanna-Barbera Productions that premiered on CBS on September 13, 1969. The show lasted two full seasons, with a total of 17 half-hour episodes produced and released, the last first-run episode airing on January 17, 1970. Repeats aired until September 4, 1971. It is a spin-off of the Wacky Races cartoon, reprising the characters of Penelope Pitstop and the Anthill Mob. This show airs reruns on Cartoon Network classic channel Boomerang.",
+    "poster_path": "/tEyhRt3ZlBdrIV03pdiK0OW4oZD.jpg",
+    "first_air_date": "1969-09-13",
+    "name": "The Perils of Penelope Pitstop"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 25988,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/zXbbyblvEQky9RF2Eylta45a92F.jpg",
+    "first_air_date": "1969-11-10",
+    "name": "Sesame Unpaved"
+  },
+  {
+    "genre_ids": [],
+    "id": 230902,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-20",
+    "name": "A Menina do Veleiro Azul"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13249,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Behind the scenes at the fictitious Century Studios in Hollywood, headed by the (initially) unseen John Bracken.",
+    "poster_path": "/kXyByv0Vs7lRDwcRgldJzkMYrqU.jpg",
+    "first_air_date": "1969-09-19",
+    "name": "Bracken's World"
+  },
+  {
+    "genre_ids": [],
+    "id": 29806,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Castle Haven was a British soap opera, set around the residents of two Victorian seaside houses that had been converted into a series of flats and bedsits. It was first broadcast on 4 April 1969, but cancelled just under a year later on 26 March 1970\n\n100 episodes were produced, but it is believed that only fifteen minutes of the series is still in existence; the rest were wiped after transmission, as per the (then commonplace) procedure of wiping videotape.",
+    "poster_path": "/sRlToEWHCO7JqKDyCnwG5rYWQUF.jpg",
+    "first_air_date": "1969-04-04",
+    "name": "Castle Haven"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 33996,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Paul Temple is a British-German television series . It features Francis Matthews as Paul Temple, the fictional detective created by Francis Durbridge, who solves crimes with the assistance of his wife Steve.  Paul Temple used overseas locations in France, Malta, Germany and elsewhere. T",
+    "poster_path": "/1z7IJKIGcpPASr0YRdYYY8bH3bd.jpg",
+    "first_air_date": "1969-11-23",
+    "name": "Paul Temple"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 9939,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "To Rome with Love is an American sitcom that aired on CBS from September 1969 to September 1971.",
+    "poster_path": "/yu2XvRk2ITT46dSKGvDtG4wjo2n.jpg",
+    "first_air_date": "1969-09-28",
+    "name": "To Rome with Love"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 35414,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Hadleigh was a British television series made by Yorkshire Television which originally ran from 1969 to 1976. Developed by Robert Barr, it was a sequel to the writer's earlier Gazette for the same company. The theme music was composed by Alan Moorhouse and, from series 3, Tony Hatch.\n\nJames Hadleigh played by Gerald Harper, was \"the perfect squire, paternalistically careful of his tenantry's welfare, beloved in the village, respected in the council.\" A \"knight in a shining white Aston Martin V8, he sets about correcting local injustices.\" His wife, from a lower-class background, was played by Hilary Dwyer. The series attracted around 17 million viewers at its peak.",
+    "poster_path": "/aMlzw4hgAYkTyVPFsgK3guAcnMw.jpg",
+    "first_air_date": "1969-09-16",
+    "name": "Hadleigh"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 106337,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-04-26",
+    "name": "Das Sonntagskonzert"
+  },
+  {
+    "genre_ids": [
+      10759,
+      16,
+      10765
+    ],
+    "id": 21298,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Hyakkimaru is a young man who lacks 48 body parts because they were taken from him by demons before birth, as payment by his father, Kagemitsu Daigo, to obtain his wish to take over the country. When the baby boy was born he was missing 48 parts of his body, and thus was abandoned—thrown into a river. Hyakkimaru has grown up and now has obtained fake body parts so he can eliminate the 48 demons that were made from his body, and to retrieve his missing parts. Along for the adventure is the boy thief, Dororo, with whom he becomes friends.",
+    "poster_path": "/kFFRiNaQJub24cgiNmDfLjZj9oT.jpg",
+    "first_air_date": "1969-04-06",
+    "name": "Dororo and Hyakkimaru"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 9903,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Johnny Cash Show was an American television music variety show hosted by Johnny Cash. The Screen Gems 58-episode series ran from June 7, 1969 to March 31, 1971 on ABC; it was taped at the Ryman Auditorium in Nashville, Tennessee. The show reached No. 17 in the Nielsen ratings in 1970.\n\nCash opened each show, and its regulars included members of his touring troupe, June Carter Cash and the Carter Family, The Statler Brothers, Carl Perkins, and The Tennessee Three, with Australian-born musical director-arranger-conductor Bill Walker. The Statler Brothers performed brief comic interludes.\n\nIt featured many folk-country musicians, such as Joni Mitchell, Bob Dylan, Linda Ronstadt, Kris Kristofferson, Mickey Newbury, Neil Young, Gordon Lightfoot, Merle Haggard, James Taylor and Tammy Wynette. It also featured other musicians such as jazz great Louis Armstrong, who died eight months after appearing on the show.",
+    "poster_path": "/xxFcb2jvHByVGJ35i9JyM6HToe7.jpg",
+    "first_air_date": "1969-06-07",
+    "name": "The Johnny Cash Show"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 118025,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The story chronicles the life of Nagao Kagetora.",
+    "poster_path": "/tqcfnBROT22LiensREWaXA0Nucm.jpg",
+    "first_air_date": "1969-01-05",
+    "name": "Heaven and Earth"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2021,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Up Pompeii! is a British television comedy series broadcast between 1969 and 1970, starring Frankie Howerd. The first series was written by Talbot Rothwell, a scriptwriter for the Carry On films, and the second series by Rothwell and Sid Colin. Two further specials were transmitted in 1975 and 1991.\n\nIn ancient Pompeii, much-put-upon slave Lurcio navigates the chaotic lives of his owner's family",
+    "poster_path": "/4qZeFAFVnPVydbhLIkGMlKln5dJ.jpg",
+    "first_air_date": "1969-09-17",
+    "name": "Up Pompeii!"
+  },
+  {
+    "genre_ids": [
+      10766
+    ],
+    "id": 11286,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Bright Promise is an American daytime soap opera that ran on NBC from September 29, 1969 to March 31, 1972. It aired weekdays at 3:30 PM Eastern/2:30 PM Central.",
+    "poster_path": "/j63YsPAoYvJoKIKxZx2eGMVT7y0.jpg",
+    "first_air_date": "1969-09-29",
+    "name": "Bright Promise"
+  },
+  {
+    "genre_ids": [
+      10766
+    ],
+    "id": 11286,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Bright Promise is an American daytime soap opera that ran on NBC from September 29, 1969 to March 31, 1972. It aired weekdays at 3:30 PM Eastern/2:30 PM Central.",
+    "poster_path": "/j63YsPAoYvJoKIKxZx2eGMVT7y0.jpg",
+    "first_air_date": "1969-09-29",
+    "name": "Bright Promise"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18,
+      80
+    ],
+    "id": 39098,
+    "origin_country": [
+      "AU",
+      "US"
+    ],
+    "overview": "Riptide is an Australian adventure television",
+    "poster_path": "/c0SaJLgZAIQxSv64EOd2CkPYGrT.jpg",
+    "first_air_date": "1969-02-06",
+    "name": "Riptide"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 2021,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Up Pompeii! is a British television comedy series broadcast between 1969 and 1970, starring Frankie Howerd. The first series was written by Talbot Rothwell, a scriptwriter for the Carry On films, and the second series by Rothwell and Sid Colin. Two further specials were transmitted in 1975 and 1991.\n\nIn ancient Pompeii, much-put-upon slave Lurcio navigates the chaotic lives of his owner's family",
+    "poster_path": "/4qZeFAFVnPVydbhLIkGMlKln5dJ.jpg",
+    "first_air_date": "1969-09-17",
+    "name": "Up Pompeii!"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 35414,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Hadleigh was a British television series made by Yorkshire Television which originally ran from 1969 to 1976. Developed by Robert Barr, it was a sequel to the writer's earlier Gazette for the same company. The theme music was composed by Alan Moorhouse and, from series 3, Tony Hatch.\n\nJames Hadleigh played by Gerald Harper, was \"the perfect squire, paternalistically careful of his tenantry's welfare, beloved in the village, respected in the council.\" A \"knight in a shining white Aston Martin V8, he sets about correcting local injustices.\" His wife, from a lower-class background, was played by Hilary Dwyer. The series attracted around 17 million viewers at its peak.",
+    "poster_path": "/aMlzw4hgAYkTyVPFsgK3guAcnMw.jpg",
+    "first_air_date": "1969-09-16",
+    "name": "Hadleigh"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 582,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "My World and Welcome to It is an American half-hour television sitcom based on the humor and cartoons of James Thurber. It starred William Windom as John Monroe, a Thurber-like writer and cartoonist who works for a magazine closely resembling The New Yorker called The Manhattanite. Wry, fanciful and curmudgeonly, Monroe observes and comments on life, to the bemusement of his rather sensible wife Ellen and intelligent, questioning daughter Lydia. Monroe's frequent daydreams and fantasies are usually based on Thurber material. My World — And Welcome To It is the name of a book of illustrated stories and essays, also by James Thurber.\n\nThe series ran one season on NBC 1969-1970. It was created by Mel Shavelson, who wrote and directed the pilot episode and was one of the show's principal writers. Sheldon Leonard was executive producer. The show's producer, Danny Arnold, co-wrote or directed numerous episodes, and even appeared as Santa Claus in \"Rally Round the Flag.\"",
+    "poster_path": "/oRg8veeuDTRapZluyTh1NY6fuRL.jpg",
+    "first_air_date": "1969-09-15",
+    "name": "My World and Welcome to It"
+  },
+  {
+    "genre_ids": [],
+    "id": 24861,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-09-13",
+    "name": "The Barbara McNair Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 11679,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Jim Nabors Hour is an American variety television series hosted by Jim Nabors that aired on the CBS television network from 1969 to 1971.\n\nFresh from his success with Gomer Pyle, U.S.M.C., which put his backwoods \"Gomer Pyle\" character from The Andy Griffith Show in a military context, the show not only built on that success, including Ronnie Schell and Frank Sutton, two of Nabors' old co-stars, but also displayed his baritone singing voice, which had been used on the Pyle show on occasion and had gotten Nabors several gold records in the late 1960s.\n\nThe show was consistently in the top thirty and performed strongly in its time slot, but fell victim to the infamous CBS \"rural purge\" and was axed by the network.",
+    "poster_path": null,
+    "first_air_date": "1969-09-25",
+    "name": "The Jim Nabors Hour"
+  },
+  {
+    "genre_ids": [],
+    "id": 84500,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-09",
+    "name": "Peter Alexander präsentiert Spezialitäten"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 118025,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The story chronicles the life of Nagao Kagetora.",
+    "poster_path": "/tqcfnBROT22LiensREWaXA0Nucm.jpg",
+    "first_air_date": "1969-01-05",
+    "name": "Heaven and Earth"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13814,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The lives of the Duke of Marlborough and his wife Sarah, from their meeting in 1673 to the duke's death in 1722.",
+    "poster_path": "/2ZZIc51Ba6fMLSsjf5UTMTiUeZ8.jpg",
+    "first_air_date": "1969-09-27",
+    "name": "The First Churchills"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 118269,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/3CMqVn2zLALhO4Hu0vQVm3DYWt1.jpg",
+    "first_air_date": "1969-03-29",
+    "name": "Erkennen Sie die Melodie?"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 12471,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Liver Birds is a British sitcom set in the city of Liverpool, in the north-west of England, which aired on BBC1 from 1969 to 1978, and again in 1996. It was created by Carla Lane and Myra Taylor. These two Liverpudlian writers had met at a local writers club and decided to pool their talents. Having been invited to London by Michael Mills and asked to write about two young women sharing a flat, Mills brought in sitcom expert Sydney Lotterby to work with the writing team. Lotterby had previously worked with Eric Sykes, Sheila Hancock and on The Likely Lads. Carla Lane in fact wrote most of the episodes, Taylor co-writing only the first two series. The pilot was shown as an episode of Comedy Playhouse, the BBC's breeding ground for sitcoms, in April 1969.",
+    "poster_path": "/4Ws9BtvBgzYt2SHajAkNFFA0ZN3.jpg",
+    "first_air_date": "1969-07-25",
+    "name": "The Liver Birds"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 14542,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Bold Ones: The Lawyers is an American legal drama that aired for three seasons on NBC from December 1969 through February 1972. The series was introduced with two pilot movies in December 1968 and March 1969, and was one of four wheel series alternating under 'The Bold Ones' umbrella used 1969 through 1973.",
+    "poster_path": "/eugFVywADRexT5HN1JJ5fjiAGem.jpg",
+    "first_air_date": "1969-09-21",
+    "name": "The Bold Ones: The Lawyers"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 236085,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Five-day-a-week syndicated revival of one of Goodson-Todman's most durable and longest-lived formats: A celebrity panel determines which of three contestants is the actual person associated with a given story.",
+    "poster_path": null,
+    "first_air_date": "1969-09-08",
+    "name": "To Tell The Truth"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 51818,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/s76f8XwWN62NjQQIsEftwgQpzNJ.jpg",
+    "first_air_date": "1969-12-19",
+    "name": "Luftsprünge"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 63188,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-06-06",
+    "name": "Gestern gelesen"
+  },
+  {
+    "genre_ids": [],
+    "id": 24885,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "A British sitcom created by and starring Rodney Bewes, Bewes co-wrote and produced the series with Derrick Goodwin. The show proved popular and regularly made the TV ratings top ten throughout its three year run. There were 26 episodes, including the three Christmas specials, all three broadcast as part of All Star Comedy Carnival. The fourth and final series was broadcast as a sequel entitled Albert!, which ran for a further series of seven episodes. Series 1 was produced by Thames Television, while the subsequent series 2-4 were produced by Yorkshire Television.",
+    "poster_path": "/tkz9AUThHclTO3fmSrBgkb6BLBV.jpg",
+    "first_air_date": "1969-09-15",
+    "name": "Dear Mother... ...Love Albert"
+  },
+  {
+    "genre_ids": [
+      80,
+      10759
+    ],
+    "id": 26234,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/nu94vMD2gwERj3ouiQul9cdaH8D.jpg",
+    "first_air_date": "1969-03-12",
+    "name": "Percy Stuart"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 66741,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/4F51osd8jsWnByVXu6oXvubBAUT.jpg",
+    "first_air_date": "1969-09-27",
+    "name": "Hříšní lidé města pražského"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 204058,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The goofy tales of a king and his family who make their way to Earth after their planet explodes.",
+    "poster_path": "/n5rrSVIIjEnHJRGIDxZEnSC0ghN.jpg",
+    "first_air_date": "1969-04-01",
+    "name": "Umeboshi-denka"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 206292,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-05-24",
+    "name": "Úsměvy světa"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648
+    ],
+    "id": 79319,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/dwLnt35aehGhmq35yawb0brmyHW.jpg",
+    "first_air_date": "1969-02-21",
+    "name": "Nero Wolfe"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 6528,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Two in Clover is a British sitcom produced by Thames Television for two series from 1969 to 1970 on ITV. It starred Sid James and Victor Spinetti and was written by Vince Powell and Harry Driver, and produced and directed by Alan Tarrant. The first series was made in black and white and the second series was made in colour.\n\nFrustrated office workers Sid Turner and Vic Evans decide to leave behind their nine-to-five lifestyle for the simpler life of living in the countryside and running a farm.",
+    "poster_path": "/oL98C9oyc8SXDhqWoxw03xGCn6j.jpg",
+    "first_air_date": "1969-02-18",
+    "name": "Two in Clover"
+  },
+  {
+    "genre_ids": [],
+    "id": 17245,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Playboy After Dark is an American television show hosted by Hugh Hefner. It aired in syndication through Screen Gems from 1969 to 1970 and was taped at CBS Television City in Los Angeles.",
+    "poster_path": "/vfaBaGSibqeIgFE6owPTROlC54U.jpg",
+    "first_air_date": "1969-01-18",
+    "name": "Playboy After Dark"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 13374,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Adam Strange, a retired Home Office criminologist, solves bizarre cases – which have been marked \"Open File\" by various government departments – with the help of Hamlyn Gynt, Evelyn and Professor Marks. He employs the latest techniques in forensic investigation, which he undertakes in his own laboratory in his flat in Warwick Crescent in the Maida Vale/Little Venice area of Paddington.",
+    "poster_path": "/mzoFiG8jaxmrzcxwwVJhkBrA4zR.jpg",
+    "first_air_date": "1969-09-21",
+    "name": "Strange Report"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 230901,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-24",
+    "name": "Os Estranhos"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13814,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The lives of the Duke of Marlborough and his wife Sarah, from their meeting in 1673 to the duke's death in 1722.",
+    "poster_path": "/2ZZIc51Ba6fMLSsjf5UTMTiUeZ8.jpg",
+    "first_air_date": "1969-09-27",
+    "name": "The First Churchills"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10762
+    ],
+    "id": 4284,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "H.R. Pufnstuf is a children's television series produced by Sid and Marty Krofft in the United States. It was the first Krofft live-action, life-size puppet program. The seventeen episodes were originally broadcast from September 6, 1969 to December 27, 1969. The broadcasts were successful enough that NBC kept it on the Saturday morning schedule until August 1972. The show was shot in Paramount Studios and its opening was shot in Big Bear Lake, California. Reruns of the show aired on ABC Saturday morning from September 2, 1972 to September 8, 1973 and on Sunday mornings in some markets from September 16, 1973 to September 8, 1974. It was syndicated by itself from 1974 to 1978 and in a package with six other Kroft series under the banner Kroft Superstars from 1978 to 1985.\n\nIn 2004 and 2007, H.R. Pufnstuf was ranked #22 and #27 on TV Guide's Top Cult Shows Ever.",
+    "poster_path": "/6C8gOxW1xzBFiYOZCtxptN3icqZ.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "H.R. Pufnstuf"
+  },
+  {
+    "genre_ids": [],
+    "id": 11679,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Jim Nabors Hour is an American variety television series hosted by Jim Nabors that aired on the CBS television network from 1969 to 1971.\n\nFresh from his success with Gomer Pyle, U.S.M.C., which put his backwoods \"Gomer Pyle\" character from The Andy Griffith Show in a military context, the show not only built on that success, including Ronnie Schell and Frank Sutton, two of Nabors' old co-stars, but also displayed his baritone singing voice, which had been used on the Pyle show on occasion and had gotten Nabors several gold records in the late 1960s.\n\nThe show was consistently in the top thirty and performed strongly in its time slot, but fell victim to the infamous CBS \"rural purge\" and was axed by the network.",
+    "poster_path": null,
+    "first_air_date": "1969-09-25",
+    "name": "The Jim Nabors Hour"
+  },
+  {
+    "genre_ids": [
+      16,
+      10759
+    ],
+    "id": 14338,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "Kamui is a ninja from the Edo period who has decided to leave his clan. After doing so he is pursued relentlessly by the members of his former clan; who consider him to be a traitor and therefore wish to kill him. Kamui then wanders around Japan to escape from them by using his intelligence and great abilities to survive. In the course of the series Kamui begins to suffer from paranoia because of his status as a persecuted man. Kamui then started to believe that everybody wished to murder him and became distrusting of everyone he came across.",
+    "poster_path": "/qnLjTOvjJckO0wFAzLiI6fTlugc.jpg",
+    "first_air_date": "1969-04-06",
+    "name": "The Legend of Ninja Kamui"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18,
+      80
+    ],
+    "id": 39098,
+    "origin_country": [
+      "AU",
+      "US"
+    ],
+    "overview": "Riptide is an Australian adventure television",
+    "poster_path": "/c0SaJLgZAIQxSv64EOd2CkPYGrT.jpg",
+    "first_air_date": "1969-02-06",
+    "name": "Riptide"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 34320,
+    "origin_country": [],
+    "overview": "The misadventures of a group of medical students.",
+    "poster_path": "/hidrnYNDzfqdhw6e0qdVBd5vVmU.jpg",
+    "first_air_date": "1969-07-12",
+    "name": "Doctor in the House"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11680,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Debbie Reynolds Show is an American situation comedy which aired on the NBC television network during the 1969-70 television season. The series was produced by Filmways, but the distribution rights are currently owned by Universal Media Studios through its ownership of NBC Productions.",
+    "poster_path": "/esMxD3HyBzViWJ7G4Mt5OMzaOr7.jpg",
+    "first_air_date": "1969-09-16",
+    "name": "The Debbie Reynolds Show"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 1560,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "A Dutch television series about an exiled knight and his Indian friend. Together they try to get his birthright papers back from an evil Lord. During their quest, they get help from a nobleman who offers them a place in his castle.\n\nWritten by Gerard Soeteman starring Rutger Hauer and Jos Bergman and directed by Paul Verhoeven.",
+    "poster_path": "/xUUhRBBxF3fYZEaSMvTqpt5Z4md.jpg",
+    "first_air_date": "1969-10-05",
+    "name": "Floris"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 70377,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/4p01ovuVxs7WJ3I5BZZTWWbD5oU.jpg",
+    "first_air_date": "1969-10-04",
+    "name": "Jacquou le Croquant"
+  },
+  {
+    "genre_ids": [
+      16,
+      10765,
+      35,
+      10759
+    ],
+    "id": 13958,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The bumbling, goofy Grump has placed a curse of gloom all over the land and only the Crystal Key can break the curse. It's up to Princess Dawn, her doglike companion Blip and young Terry to find the the Key and save the kingdom!",
+    "poster_path": "/u7c5humlR97taocn5ClW3fxmkNq.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Here Comes the Grump"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 121337,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-23",
+    "name": "TV Intim"
+  },
+  {
+    "genre_ids": [
+      10764
+    ],
+    "id": 106553,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-04-14",
+    "name": "Unsere kleine Show"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 15699,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "An ATV variety series starring Tom Jones, featuring many show business legends of the time, which ran from 1969 to 1971. It was exported to the United States by ITC Entertainment and was networked there by ABC, earning Jones a nomination at the Golden Globes. The show also featured comedy sketches by the Ace Trucking Company improvisational group, featuring Fred Willard and Patti Deutsch, among others.",
+    "poster_path": "/wejJBavjXDyU2ZzMbrvxEyhB52p.jpg",
+    "first_air_date": "1969-02-07",
+    "name": "This Is Tom Jones"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762,
+      35
+    ],
+    "id": 30420,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/vOiJrMulNrqWiJC5zmWLB9EWUvq.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "It's the Wolf"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11944,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Dustbinmen is a British television sitcom made by Granada Television for ITV, which starred Bryan Pringle, Trevor Bannister, Graham Haberfield, and Tim Wylton. The show was a spin-off from a one-off 90-minute TV film \"There's a Hole in Your Dustbin, Delilah\" written by Jack Rosenthal and directed by Michael Apted. This led to the sitcom which ran for three series between 1969 and 1970. Rosenthal wrote all of the episodes of the first two series.",
+    "poster_path": "/skc7kmqAkcW2hDs1Bb54814GFv8.jpg",
+    "first_air_date": "1969-09-23",
+    "name": "The Dustbinmen"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 154574,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-27",
+    "name": "Die Perle – Aus dem Tagebuch einer Hausgehilfin"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 25283,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Crime drama series detailing the cases of Detective Inspector Gamble and Detective Sergeant Vicky Hicks working for the Fraud Squad in the Midlands. Gamble is very much his own man, all too often doing things his own way, much to the frustration of his boss Superintendent Proud.\n\nGamble’s sidekick Vicky is often little more than a glorified secretary for too much of the time but as the series goes on she does more of a chance to shine.",
+    "poster_path": "/cKJmYtAJY9BHPpVJzGDQ6HkyqLT.jpg",
+    "first_air_date": "1969-05-20",
+    "name": "Fraud Squad"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 60792,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/vbfBLvFjbadEFU6SjL9cVxUF7OC.jpg",
+    "first_air_date": "1969-01-19",
+    "name": "Alle Hunde lieben Theobald"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762
+    ],
+    "id": 96369,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "This is a story involving balloonist Phinny Fogg. He and reporter teenagers Jenny and Hoppy  set out on a globetrotting adventure to travel around the world in 79 days and beat the original record set by Phinny's father. The trio are in competition for both the record and a £1,000,000 prize against the sinister Crumden. Crumden is aided by his idiotic chauffeur Bumbler and his pet monkey Smirky.",
+    "poster_path": "/dHv4StIw9yhDXKUzUVAu8BjGQbb.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Around the World in 79 Days"
+  },
+  {
+    "genre_ids": [
+      10751,
+      16
+    ],
+    "id": 40970,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-09-09",
+    "name": "Der Spatz vom Wallrafplatz"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 22110,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": "/wLg7lBRt4o6q7XUj4Rm0iqqfDBG.jpg",
+    "first_air_date": "1969-09-21",
+    "name": "The Flaxton Boys"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 17005,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Hark at Barker was a 1969 British comedy series combining elements of sitcom and sketch show, which starred Ronnie Barker. It was made for the ITV network by LWT.\n\nEach show began with a spoof news item read by Barker as a continuity announcer. He would then introduce the main part of the programme, a lecture to be given by Lord Rustless on a different topic each week from his stately home, Chrome Hall. Helped and hindered by Rustless' secretary Bates, his Butler Badger, his bad-tempered Cook, his incoherent gardener Dithers and his buxom, near-mute maid Effie, these lectures invariably degenerated into farce, and were frequently interrupted by comic sketches on film or videotape which also starred Barker in various roles.\n\nBarker reprised the role of Lord Rustless in the BBC series His Lordship Entertains, and played very similar characters in Futtock's End and the Two Ronnies specials The Picnic and By the Sea.",
+    "poster_path": "/hn9Z3K1PE42m3oIjikJzBkzh0cu.jpg",
+    "first_air_date": "1969-04-11",
+    "name": "Hark at Barker"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11682,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Music Scene is a television series aired by ABC as part of its Fall 1969 lineup, in the Monday, 7:30 to 8:15 timeslot, primarily featuring rock and pop music.",
+    "poster_path": "/3Dn8EAJ3jzHryGYlzf37xsvG3OB.jpg",
+    "first_air_date": "1969-09-22",
+    "name": "The Music Scene"
+  },
+  {
+    "genre_ids": [
+      99,
+      10768
+    ],
+    "id": 128062,
+    "origin_country": [
+      "DE",
+      "CH"
+    ],
+    "overview": "An investigation into the nature, details and reasons for the collaboration, from 1940 to 1944, during World War II, between the Vichy regime, established in the south of France and headed by Marshal Pétain, and Nazi Germany.",
+    "poster_path": "/e2U7S6kmiwsvq0vgiuKSYWOBFKM.jpg",
+    "first_air_date": "1969-09-18",
+    "name": "The Sorrow and the Pity"
+  },
+  {
+    "genre_ids": [
+      10751,
+      10759,
+      10762,
+      18
+    ],
+    "id": 115511,
+    "origin_country": [
+      "YU",
+      "SI"
+    ],
+    "overview": "The story about a brave boy called Ivo and his friends, who get into fights with smugglers.",
+    "poster_path": "/dxbC5hECcD7BUqCoZD90R23OX0w.jpg",
+    "first_air_date": "1969-05-15",
+    "name": "The Crew of the Blue Seagull"
+  },
+  {
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 218694,
+    "origin_country": [
+      "PE"
+    ],
+    "overview": "A humble seamstress named María Ramos, who, based on tenacity and a lot of drive, gets ahead with a son on her back, the result of her relationship with the handsome and rich Roberto Caride, son of the owners of the house where María worked as a servant.",
+    "poster_path": "/yqWEtLjL5AmtkgSaMJkFrBKEvI1.jpg",
+    "first_air_date": "1969-05-15",
+    "name": "Simplemente María"
+  },
+  {
+    "genre_ids": [
+      16,
+      10765,
+      35,
+      10759
+    ],
+    "id": 13958,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The bumbling, goofy Grump has placed a curse of gloom all over the land and only the Crystal Key can break the curse. It's up to Princess Dawn, her doglike companion Blip and young Terry to find the the Key and save the kingdom!",
+    "poster_path": "/u7c5humlR97taocn5ClW3fxmkNq.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Here Comes the Grump"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 34320,
+    "origin_country": [],
+    "overview": "The misadventures of a group of medical students.",
+    "poster_path": "/hidrnYNDzfqdhw6e0qdVBd5vVmU.jpg",
+    "first_air_date": "1969-07-12",
+    "name": "Doctor in the House"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 9285,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Sir Kenneth Clark guides us through the ages exploring the glorious rise of civilisation in western man. Beginning with the bleakness of the dark ages to the present day, we consider civilisation's articulations and expressions in some of man's finest works of art.",
+    "poster_path": "/2lmJlzj7eNUqd4AHf57AkRDLvM6.jpg",
+    "first_air_date": "1969-02-23",
+    "name": "Civilisation"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 601,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Complete And Utter History Of Britain was a 1969 television comedy sketch show. It was created and written by Michael Palin and Terry Jones between the two series of Do Not Adjust Your Set. It was produced for and broadcast by London Weekend Television but was not shown in other ITV regions.\n\nThe idea was to replay history as if television had been around at the time. Sketches included interviews with the vital characters in the dressing-room after the Battle of Hastings, Samuel Pepys presenting a TV chat-show and an estate agent trying to sell Stonehenge to a young couple looking for their first home.\n\nSeven programmes were written and produced, but LWT amalgamated the first two episodes into a single \"stronger\" episode, resulting in a six-part series.\n\nFor many years the entire series was believed to have been wiped. However, copies of the first two episodes have now been found, as have the complete first two episodes as produced. As of June 2008, none are known to have been repeated on television or released on DVD.\n\nTerry Jones has expressed dissatisfaction with the show, complaining after a showing of surviving episodes that the pacing was off and the soundtrack all wrong.",
+    "poster_path": "/jkcME6RhVcBohy98yo4zJovu2Op.jpg",
+    "first_air_date": "1969-01-12",
+    "name": "The Complete and Utter History of Britain"
+  },
+  {
+    "genre_ids": [],
+    "id": 75628,
+    "origin_country": [
+      "FI"
+    ],
+    "overview": "",
+    "poster_path": "/8NkQFOPV3DX6Fm6kTTznu5fcL51.jpg",
+    "first_air_date": "1969-11-02",
+    "name": "Yhdeksän miehen saappaat"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13846,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Survivors is a high-profile prime time soap opera aired by the ABC television network as part of its Fall 1969 lineup.\n\nThis program is probably most noted now for having been the only appearance as a regular series character of major Hollywood actress Lana Turner, and also starred other \"big names\" such as Jan-Michael Vincent, Ralph Bellamy, Diana Muldaur, George Hamilton, Clu Gulager, and Natalie Schafer. Despite their presence, and that above the title of bestselling author Harold Robbins, since the characters were from his novel of the same name, the program was a ratings fiasco, losing badly to Mayberry R.F.D. and The Doris Day Show on CBS and The NBC Monday Movie on NBC. A program as expensive to produce as this one must garner large ratings in order to be successful, so it was cancelled at midseason, although it was rerun the following summer in an attempt to recoup at least some of the investment.",
+    "poster_path": "/MpybbQ8UFqAPpLD6Nbg2Nvr0sT.jpg",
+    "first_air_date": "1969-09-22",
+    "name": "Harold Robbins' The Survivors"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 75564,
+    "origin_country": [
+      "BE"
+    ],
+    "overview": "Six teenagers experience fantastic adventures at a summer camp in the Belgian Ardennes.",
+    "poster_path": "/y3mA8Qm2dnsrn1oa6YqaWAwmHjG.jpg",
+    "first_air_date": "1969-12-23",
+    "name": "Les Galapiats"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 48873,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "",
+    "poster_path": "/krJ4mCw7b0Si4pwQqQg88me5Fpz.jpg",
+    "first_air_date": "1969-11-14",
+    "name": "Przygody pana Michała"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 71632,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": "/yX2hg3NK2TU381133rHMfqCXoFO.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "Krupp und Krause"
+  },
+  {
+    "genre_ids": [
+      18,
+      35
+    ],
+    "id": 17130,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Centres on the lives of three single girls living in bedsit-land in London SW3.",
+    "poster_path": null,
+    "first_air_date": "1969-11-17",
+    "name": "Take Three Girls"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 154574,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-27",
+    "name": "Die Perle – Aus dem Tagebuch einer Hausgehilfin"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 126161,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/9ryfwZI8Rjm4s4pFIZKTFcF1vPe.jpg",
+    "first_air_date": "1969-09-01",
+    "name": "Agence Interim"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 23128,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Tough cop Detective Chief Superintendent Cradock is assigned to track down & bring to justice the criminals behind the daring theft of five and half million pounds worth of gold bullion from an airfield in the South of England.",
+    "poster_path": "/sWnpmEonyE1rSaDow0lDOnppKbS.jpg",
+    "first_air_date": "1969-06-06",
+    "name": "The Gold Robbers"
+  },
+  {
+    "genre_ids": [],
+    "id": 13746,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Counterstrike is a British science fiction television series produced by the BBC in 1969.\n\nThe series starred Jon Finch as an alien living on Earth as a human named Simon King. He was assigned to live there to prevent an alien invasion of the planet.\n\nThe programme lasted for one series of ten episodes, but only nine episodes were actually transmitted. The screening of the sixth episode, \"Out of Mind\", was canceled on the day it was due to be shown due to a late schedule change, being replaced by a documentary on the Kray brothers who had been refused leave to appeal against their prison sentences on that same day. For reasons that will probably never be known, \"Out of Mind\" was never rescheduled; it was subsequently wiped from the BBC Archives and has never been screened – thus making it possibly one of the rarest pieces of British science fiction television.\n\nThe first four episodes – \"King's Gambit\", \"Joker's One\", \"On Ice\" and \"Nocturne\" – still exist in the BBC Archives as 16mm Black & White Film telerecordings, while the remaining five transmitted instalments – \"Monolith\", \"The Lemming Syndrome\", \"Backlash\", \"All That Glisters\" and \"The Mutant\" – are listed as missing by the Lost Shows website.",
+    "poster_path": null,
+    "first_air_date": "1969-09-08",
+    "name": "Counterstrike"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 41086,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Königlich Bayerisches Amtsgericht is a German comedy television series. It was produced by ZDF in the years 1968 to 1972 and contains 52 episodes.\n\nIt is set in the German Empire shortly before World War I and revolves around the court proceedings of the Königlich Bayrisches Amtsgericht in the fictional Bavarian small town Geisbach. Almost all actors speak with a Bavarian dialect.\n\nThe series features many famous Bavarian actors like Gustl Bayrhammer, Hans Baur and Max Grieser.",
+    "poster_path": "/kHXx71KCSnknbJ9afBW0ejXqGVy.jpg",
+    "first_air_date": "1969-01-13",
+    "name": "Königlich Bayerisches Amtsgericht"
+  },
+  {
+    "genre_ids": [],
+    "id": 34172,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": "/n2Z3r6cYgnWGK4bcPLue4s4zcmZ.jpg",
+    "first_air_date": "1969-04-27",
+    "name": "The Dudley Do-Right Show"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 80717,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/7hGbUW0zTvY31GlPyuqb9xyY5nY.jpg",
+    "first_air_date": "1969-07-01",
+    "name": "Der Staudamm"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751
+    ],
+    "id": 64335,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/l3HC8fom60g2QqIBiucZRHSxZJf.jpg",
+    "first_air_date": "1969-03-24",
+    "name": "Aglaé et Sidonie"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 14542,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Bold Ones: The Lawyers is an American legal drama that aired for three seasons on NBC from December 1969 through February 1972. The series was introduced with two pilot movies in December 1968 and March 1969, and was one of four wheel series alternating under 'The Bold Ones' umbrella used 1969 through 1973.",
+    "poster_path": "/eugFVywADRexT5HN1JJ5fjiAGem.jpg",
+    "first_air_date": "1969-09-21",
+    "name": "The Bold Ones: The Lawyers"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 4198,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Turn-On is an American sketch comedy series that aired on ABC in February 1969. Only one episode was shown leaving one episode unaired and the show is considered one of the most infamous flops in TV history.\n\nTurn-On's sole episode was shown on Wednesday, February 5, 1969, at 8:30 p.m. Eastern. Among the cast were Teresa Graves, who would join the Laugh-In cast that autumn, and Chuck McCann, longtime kiddie show host, character actor, and voice artist. The writing staff included a young Albert Brooks. The guest host for the 1st episode was Tim Conway.",
+    "poster_path": "/lEQYnc2l8j2lnEhPiQm5nhXIGDu.jpg",
+    "first_air_date": "1969-02-05",
+    "name": "Turn-On"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 75564,
+    "origin_country": [
+      "BE"
+    ],
+    "overview": "Six teenagers experience fantastic adventures at a summer camp in the Belgian Ardennes.",
+    "poster_path": "/y3mA8Qm2dnsrn1oa6YqaWAwmHjG.jpg",
+    "first_air_date": "1969-12-23",
+    "name": "Les Galapiats"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13846,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Survivors is a high-profile prime time soap opera aired by the ABC television network as part of its Fall 1969 lineup.\n\nThis program is probably most noted now for having been the only appearance as a regular series character of major Hollywood actress Lana Turner, and also starred other \"big names\" such as Jan-Michael Vincent, Ralph Bellamy, Diana Muldaur, George Hamilton, Clu Gulager, and Natalie Schafer. Despite their presence, and that above the title of bestselling author Harold Robbins, since the characters were from his novel of the same name, the program was a ratings fiasco, losing badly to Mayberry R.F.D. and The Doris Day Show on CBS and The NBC Monday Movie on NBC. A program as expensive to produce as this one must garner large ratings in order to be successful, so it was cancelled at midseason, although it was rerun the following summer in an attempt to recoup at least some of the investment.",
+    "poster_path": "/MpybbQ8UFqAPpLD6Nbg2Nvr0sT.jpg",
+    "first_air_date": "1969-09-22",
+    "name": "Harold Robbins' The Survivors"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 17005,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Hark at Barker was a 1969 British comedy series combining elements of sitcom and sketch show, which starred Ronnie Barker. It was made for the ITV network by LWT.\n\nEach show began with a spoof news item read by Barker as a continuity announcer. He would then introduce the main part of the programme, a lecture to be given by Lord Rustless on a different topic each week from his stately home, Chrome Hall. Helped and hindered by Rustless' secretary Bates, his Butler Badger, his bad-tempered Cook, his incoherent gardener Dithers and his buxom, near-mute maid Effie, these lectures invariably degenerated into farce, and were frequently interrupted by comic sketches on film or videotape which also starred Barker in various roles.\n\nBarker reprised the role of Lord Rustless in the BBC series His Lordship Entertains, and played very similar characters in Futtock's End and the Two Ronnies specials The Picnic and By the Sea.",
+    "poster_path": "/hn9Z3K1PE42m3oIjikJzBkzh0cu.jpg",
+    "first_air_date": "1969-04-11",
+    "name": "Hark at Barker"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 601,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Complete And Utter History Of Britain was a 1969 television comedy sketch show. It was created and written by Michael Palin and Terry Jones between the two series of Do Not Adjust Your Set. It was produced for and broadcast by London Weekend Television but was not shown in other ITV regions.\n\nThe idea was to replay history as if television had been around at the time. Sketches included interviews with the vital characters in the dressing-room after the Battle of Hastings, Samuel Pepys presenting a TV chat-show and an estate agent trying to sell Stonehenge to a young couple looking for their first home.\n\nSeven programmes were written and produced, but LWT amalgamated the first two episodes into a single \"stronger\" episode, resulting in a six-part series.\n\nFor many years the entire series was believed to have been wiped. However, copies of the first two episodes have now been found, as have the complete first two episodes as produced. As of June 2008, none are known to have been repeated on television or released on DVD.\n\nTerry Jones has expressed dissatisfaction with the show, complaining after a showing of surviving episodes that the pacing was off and the soundtrack all wrong.",
+    "poster_path": "/jkcME6RhVcBohy98yo4zJovu2Op.jpg",
+    "first_air_date": "1969-01-12",
+    "name": "The Complete and Utter History of Britain"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 77276,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "Louis Malle called his gorgeous and groundbreaking Phantom India the most personal film of his career. And this extraordinary journey to India, originally shown as a miniseries on European television, is infused with his sense of discovery, as well as occasional outrage, intrigue, and joy.",
+    "poster_path": "/51cptkoGoeqJXi9yJyGfQ9ttPEk.jpg",
+    "first_air_date": "1969-07-25",
+    "name": "Phantom India"
+  },
+  {
+    "genre_ids": [
+      16,
+      35,
+      10762
+    ],
+    "id": 96369,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "This is a story involving balloonist Phinny Fogg. He and reporter teenagers Jenny and Hoppy  set out on a globetrotting adventure to travel around the world in 79 days and beat the original record set by Phinny's father. The trio are in competition for both the record and a £1,000,000 prize against the sinister Crumden. Crumden is aided by his idiotic chauffeur Bumbler and his pet monkey Smirky.",
+    "poster_path": "/dHv4StIw9yhDXKUzUVAu8BjGQbb.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Around the World in 79 Days"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 63067,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-24",
+    "name": "Kapitän Harmsen"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 77106,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "This dramatization from the New Testament originated as a 342-minute, five-part television mini-series; it was subsequently released in a shortened, 280-minute version. In part one, the Apostles call the pilgrims of Jerusalem to be baptized, and Peter (Jacques Dumur) and John (Mohamed Kouka) are arrested by the Sanhedrin but later set free. In part two, Stephen (Zignani Houcine) is stoned for disobeying Mosaic Law, Philip (Bepy Mannaiuolo) baptizes an Ethiopian eunuch, and Saul (Edoardo Torricella) is blinded by the Lord while journeying to Damascus. In part three, Peter baptizes a centurion and Saul, renamed Paul, makes his first mission journey from Antioch in Syria to Pisidian Antioch. In part four, Paul preaches the equality before God of both the circumcised and uncircumcised. In part five, Paul is arrested in Jerusalem and sent to stand trial in Rome.",
+    "poster_path": "/duZvi92AVQFAEsM7LfZctLTiOhr.jpg",
+    "first_air_date": "1969-04-06",
+    "name": "Acts of the Apostles"
+  },
+  {
+    "genre_ids": [
+      10765
+    ],
+    "id": 7817,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Three teenagers discover a mysterious set of owl and flower-patterned dinner plates in the attic and the magical ancient legend of the \"Mabinogion\" comes to life once again in their Welsh valley.",
+    "poster_path": "/tqucM8FMzvsLgtlWcVdd5B2wTJh.jpg",
+    "first_air_date": "1969-12-21",
+    "name": "The Owl Service"
+  },
+  {
+    "genre_ids": [],
+    "id": 275123,
+    "origin_country": [
+      "ES"
+    ],
+    "overview": "",
+    "poster_path": "/24FUVY6UEyxkrrNBj7eSkNfceRX.jpg",
+    "first_air_date": "1969-09-05",
+    "name": "La Pantera Rosa"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 61180,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-06-25",
+    "name": "Drei von der K"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 16807,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "Jornal Nacional is a Brazilian Emmy-winning primetime news program aired by Rede Globo since September 1, 1969. It was the first news program broadcast live by a television network throughout Brazil.",
+    "poster_path": "/ikGRSbjOJhQ74YqYTxYqhURGdNC.jpg",
+    "first_air_date": "1969-09-01",
+    "name": "Jornal Nacional"
+  },
+  {
+    "genre_ids": [],
+    "id": 281609,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/fSV4yUkN0Qr2CEkeRj0qStvWgKE.jpg",
+    "first_air_date": "1969-10-07",
+    "name": "フラワーアクション009ノ1"
+  },
+  {
+    "genre_ids": [],
+    "id": 24067,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": "/nUwN9k6wtURoCBGq6QCZWOjSyie.jpg",
+    "first_air_date": "1969-04-08",
+    "name": "Judge Dee"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 55937,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Never trust a man whoever he is. This is the bitter lesson learned by Mary MacNeil in her relationships with three different men: her father, a mendacious womaniser; a smooth-talking office flirt, Cornelius; and an ageing barrister, Emlyn, who is enchanted by Mary's youthful vitality and charm. Only one of these men will win her heart in the end... Featuring rare television performances from Sean Connery, Michael Caine and Paul Scofield, this trilogy of plays forms a dramatic and controversial study in male behaviour. Differs slightly from the omnibus version that aired 3 Jan 1969 on NBC (US).",
+    "poster_path": "/szp2P7gpHP8oVk54XkPV8YOsEQI.jpg",
+    "first_air_date": "1969-02-01",
+    "name": "Male of the Species"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 291453,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-05-20",
+    "name": "Enquanto Houver Estrelas"
+  },
+  {
+    "genre_ids": [],
+    "id": 29130,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Comedy legend Bernard Cribbins had been a key presence in British film and television comedy for over a decade before he landed his own headlining television series at the tail-end of the 1960s. An off-beat revue of quickfire sketches in the \"Cribbins style\", this fast-moving mixture of comedy and song (including chart hits Hole in the Ground, Gossip Calypso and Right, Said Fred) featured a gallery of outrageous characters in a myriad of seemingly inexhaustible situations! Bank clerk, burglar, tramp, librarian, cowboy and even spaceman – Cribbins is all these, and many more!",
+    "poster_path": "/y0T1HdhMGzGZDrnVt3sO5K83ZXb.jpg",
+    "first_air_date": "1969-11-18",
+    "name": "Cribbins"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 122220,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/uRve2nYI1Y0gZP4brr6plWL0t59.jpg",
+    "first_air_date": "1969-12-15",
+    "name": "Le Petit Monde de Marie-Plaisance"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 196288,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Poncho, a pushy but experienced toad, shows his apprentice Toro how to catch flies and otherwise survive the pitfalls of being a toad.",
+    "poster_path": "/szKOjXBqlplQ2MJQQSxOqQdmlI2.jpg",
+    "first_air_date": "1969-08-06",
+    "name": "Tijuana Toads"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 291320,
+    "origin_country": [
+      "VE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-10-20",
+    "name": "Corazón de madre"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 115936,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/sCSv12q0KaNH20gedMuhw5DHorw.jpg",
+    "first_air_date": "1969-03-02",
+    "name": "Fortune"
+  },
+  {
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 218694,
+    "origin_country": [
+      "PE"
+    ],
+    "overview": "A humble seamstress named María Ramos, who, based on tenacity and a lot of drive, gets ahead with a son on her back, the result of her relationship with the handsome and rich Roberto Caride, son of the owners of the house where María worked as a servant.",
+    "poster_path": "/yqWEtLjL5AmtkgSaMJkFrBKEvI1.jpg",
+    "first_air_date": "1969-05-15",
+    "name": "Simplemente María"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 66741,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/4F51osd8jsWnByVXu6oXvubBAUT.jpg",
+    "first_air_date": "1969-09-27",
+    "name": "Hříšní lidé města pražského"
+  },
+  {
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 48873,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "",
+    "poster_path": "/krJ4mCw7b0Si4pwQqQg88me5Fpz.jpg",
+    "first_air_date": "1969-11-14",
+    "name": "Przygody pana Michała"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 72186,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/3j3Z73ysc2Ay1dHZOTvNZqH3GPw.jpg",
+    "first_air_date": "1969-10-08",
+    "name": "Rendezvous mit unbekannt"
+  },
+  {
+    "genre_ids": [
+      10768
+    ],
+    "id": 99106,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/4y2fe6GnO5kVLvb6ShACj70YJrh.jpg",
+    "first_air_date": "1969-12-23",
+    "name": "Jean-Roch Coignet"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 65323,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Dagmar Croner is a dedicated stewardess, who takes care of her passengers. She passes the exam to become a purser. She meets business travelers and tourists experiencing amusing and sometimes dramatic events on board.",
+    "poster_path": null,
+    "first_air_date": "1969-09-05",
+    "name": "Stewardesses"
+  },
+  {
+    "genre_ids": [],
+    "id": 75628,
+    "origin_country": [
+      "FI"
+    ],
+    "overview": "",
+    "poster_path": "/8NkQFOPV3DX6Fm6kTTznu5fcL51.jpg",
+    "first_air_date": "1969-11-02",
+    "name": "Yhdeksän miehen saappaat"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 21922,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Mr. Deeds Goes to Town is an American sitcom television series that aired from September 26, 1969 until January 16, 1970. Based on the movie from 1936.",
+    "poster_path": null,
+    "first_air_date": "1969-09-26",
+    "name": "Mr. Deeds Goes to Town"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 24632,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Mind of Mr. J.G. Reeder is based on a character created by Edgar Wallace in a series of 1925 short stories of the same name, Hugh Burden played the titular character – A mild-mannered investigator with the Department of Public Prosecutions.",
+    "poster_path": "/vwFmX3L7fZDEZLdJkyEA1dksJ31.jpg",
+    "first_air_date": "1969-04-23",
+    "name": "The Mind of Mr. J.G. Reeder"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 12548,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Curry and Chips is a British sitcom broadcast in 1969 which was produced by London Weekend Television for the ITV network.\n\nSet on a factory floor of 'Lillicrap Ltd', it starred a blacked up Spike Milligan as an Asian immigrant who went by the name of Kevin O'Grady. It also featured Eric Sykes as the foreman, Norman Rossington as the shop steward, and other regulars were Kenny Lynch, and Sam Kydd. The series was written by Till Death Us Do Part writer Johnny Speight, but based on idea by Milligan.\n\nIt was the first LWT sitcom to be made in colour, and all episodes still exist.",
+    "poster_path": "/nJMkD26q4oxFfslzSvsfqYxULi1.jpg",
+    "first_air_date": "1969-11-21",
+    "name": "Curry and Chips"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 11682,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Music Scene is a television series aired by ABC as part of its Fall 1969 lineup, in the Monday, 7:30 to 8:15 timeslot, primarily featuring rock and pop music.",
+    "poster_path": "/3Dn8EAJ3jzHryGYlzf37xsvG3OB.jpg",
+    "first_air_date": "1969-09-22",
+    "name": "The Music Scene"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751,
+      10762
+    ],
+    "id": 13284,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Chigley is the third and final stop-motion children's television series in Gordon Murray's Trumptonshire sequence. Production details are identical to Camberwick Green.\n\nAs in Camberwick Green and Trumpton, the action centres around a small community, in this case the fictitious village or hamlet of Chigley, near Camberwick Green in Trumptonshire. Chigley is more of an industrial area, and according to Gordon Murray, the three communities are at the corners of an equilateral triangle. A digitally restored version of the series from the rediscovered original film masters emerged in 2012.",
+    "poster_path": "/sOktUiFFGzgCajpO3XA3p9AiGrK.jpg",
+    "first_air_date": "1969-10-06",
+    "name": "Chigley"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 118280,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-05-13",
+    "name": "Party-Geschichten"
+  },
+  {
+    "genre_ids": [
+      10751,
+      16
+    ],
+    "id": 28088,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Hardy Boys is an animated series, produced by Filmation and aired Saturday mornings on ABC in 1969. It featured the Hardy Boys, Joe and Frank, along with their friends Chubby Morton, Wanda Kay Breckenridge, and Pete Jones touring as a rock band while solving mysteries. The series is also notable for its opening and closing credits, which the Hardys appeared in live action. The series debuted at the same time as Hanna-Barbera's similarly themed Scooby-Doo, Where Are You!, which was scheduled against the show on CBS.",
+    "poster_path": "/7xVfGACXFiVbFN7fEzx0NATjZOu.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "The Hardy Boys"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 75167,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "Italian adaptation of Dostoevskys famous novel.",
+    "poster_path": "/guDynEW4NMoQcq37sLusyj9gvhM.jpg",
+    "first_air_date": "1969-11-16",
+    "name": "The Brothers Karamazov"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 64319,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-07",
+    "name": "Ein Sommer mit Nicole"
+  },
+  {
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 227831,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-11-10",
+    "name": "Véu de Noiva"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10768
+    ],
+    "id": 97375,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-27",
+    "name": "Gniewko, syn rybaka"
+  },
+  {
+    "genre_ids": [],
+    "id": 294306,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "BBC adaptation of Compton Mackenzie's novel about love, faith and the clash between the old and new forms of British society in the early twentieth century. Being the sole televised adaptation produced, all six episodes were wiped and are believed to be lost.",
+    "poster_path": null,
+    "first_air_date": "1969-05-10",
+    "name": "Sinister Street"
+  },
+  {
+    "genre_ids": [],
+    "id": 18436,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "The Rovers was an Australian ocean-based family adventure television show originally screened 1969 - 1970 on the 0-Ten network.\n\nProduced by NLT Productions, the series starred Rowena Wallace, Edward Hepple, Noel Trevarthen and Grant Seiden.\n\nThe storylines revolve around the adventures of the crew of the ‘Pacific Lady’, an island schooner owned by Captain Sam McGill, played by Hepple, Bob Wild played by Trevarthen and Rusty Collins, a wildlife journalist.\n\nThirty-nine episodes of 30 minutes each were produced. Writers included Kenneth Cook, Ron McLean, Michael Wright, Ralph Peterson and Rosamund Waring.",
+    "poster_path": "/ugSqoW7TZiqjZmzuOxP8kVjYRAV.jpg",
+    "first_air_date": "1969-08-21",
+    "name": "The Rovers"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 73771,
+    "origin_country": [
+      "AT"
+    ],
+    "overview": "",
+    "poster_path": "/7C9M62Hf6kTk4R0t3HR7sz0tqAU.jpg",
+    "first_air_date": "1969-01-03",
+    "name": "Der alte Richter"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 74419,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "Italian miniseries.",
+    "poster_path": "/vtJVBKE4vviEtWaRyI1UVMUmfAM.jpg",
+    "first_air_date": "1969-08-15",
+    "name": "Geminus"
+  },
+  {
+    "genre_ids": [],
+    "id": 15077,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Leslie Uggams Show is an American variety television series starring actress/singer Leslie Uggams. The series aired on CBS as part of its 1969 fall lineup, and was the second variety series to feature an African American host since 1956's The Nat King Cole Show.",
+    "poster_path": null,
+    "first_air_date": "1969-09-28",
+    "name": "The Leslie Uggams Show"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 14550,
+    "origin_country": [
+      "BE"
+    ],
+    "overview": "Two puppies who get into some kind of mischief in each episode, but who are always saved by their uncle (a flying adult dog) at the last second. At the end, their uncle brings them back home to their beds and tucks them in under the sheets.",
+    "poster_path": "/1mulKgjR7UMS2mZoHlz36HywBR4.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "Tip en Tap"
+  },
+  {
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 101579,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "A large number of jewelers in different central Swedish cities are exposed to burglary. The method elicits the police when the jewels were stolen without any door to the shops being broken up. When an elderly jeweler is murdered in his shop, the local police first conclude that it is another crime of the same offender, when another jeweler in the city got burglary the day before. But Sverre Sterner soon begins to suspect that completely different motives are behind the murder. The wires lead backwards in time around a putative drowning accident.",
+    "poster_path": "/8SRyo5yuD1vEbEKiyO6PSKZjlCw.jpg",
+    "first_air_date": "1969-09-06",
+    "name": "Håll polisen utanför"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 118075,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "These four made-for-TV Christmas Carry On spectaculars feature favourite stories and timely traditions, including Treasure Island, A Christmas Carol, pantomime and much more, in the only way the Carry On team know how... pure slapstick comedy and scripts full of trademark innuendo!",
+    "poster_path": "/4Ss7Zvj8lxe0GId6Mq3gBnvWqny.jpg",
+    "first_air_date": "1969-12-24",
+    "name": "Carry On Christmas Specials"
+  },
+  {
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 290216,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A hungry blue aardvark is on a never-ending quest to catch a clever red ant named Charlie. Using absurd gadgets, elaborate traps, and sheer determination, the aardvark tries to outsmart his tiny prey—but Charlie always finds a way to escape. Packed with slapstick humor, jazzy music, and witty dialogue, this classic animated series from DePatie-Freleng Enterprises delivers fast-paced comedy in every episode. Originally released as theatrical shorts from 1969 to 1971, the series later became a beloved part of The Pink Panther Show.",
+    "poster_path": "/3e6PScGCb4yAPd6DRk9bIfqIBQh.jpg",
+    "first_air_date": "1969-03-05",
+    "name": "The Ant and the Aardvark"
+  },
+  {
+    "genre_ids": [],
+    "id": 23002,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "A British send-up of news magazine programmes, celebrities, and broadcasters that proudly declared “no matter where in the world news is being made, we will be somewhere else – poised to bring you the facts without fear or favour about something totally different and to bring them to you late, wrong, and garbled.”",
+    "poster_path": null,
+    "first_air_date": "1969-06-23",
+    "name": "World in Ferment"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 80300,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "Story is set in deep Russia, on a wild river in woods called \"Ugrum-reka\" - the Moody river. Son of a dishonest trader, Prohor Gromov wants to become his own man. He takes his fathers order and goes trough the woods to deliver the furs to the byer in the nearest town. He tries to take the shorter way and get`s lost. At the highest point of this, his fathers servant, Abdulla, who is sent with him to guard him almost shoots him driven by hunger, but comes to the senses and saves his life by continuing to go on.",
+    "poster_path": "/jbrEk3kde9Bk946PGQmu2dRLWnz.jpg",
+    "first_air_date": "1969-04-15",
+    "name": "Ugryum-River"
+  },
+  {
+    "genre_ids": [
+      10751,
+      10759
+    ],
+    "id": 80019,
+    "origin_country": [
+      "DK"
+    ],
+    "overview": "Summer vacation. But Lars remain in town for his parents must work. One day as he bikes around, he hears a scream from a garden.",
+    "poster_path": "/vQ7imyrHOEDDpUygCrp08dKhyQ9.jpg",
+    "first_air_date": "1969-06-01",
+    "name": "Clandestine Summer"
+  },
+  {
+    "genre_ids": [],
+    "id": 2588,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Sale of the Century is a television game show format that has been screened in several countries in various incarnations since 1969. The show found its biggest success in Australia, where it aired weeknights from 1980 to 2001. A new version had aired in Australia from May 2005 to January 2009 and in the United States during the 2007-2008 television season in syndication under the title of Temptation.\n\nThe format is a general knowledge quiz, where a set of contestants earn money for correct answers, and occasionally have the chance to \"buy\" heavily-discounted prizes with their score money via \"Instant Bargains\". Long-running champions would compete to win enough money to buy larger prizes, such as trips or cars, at show's end; more successful ones could end up buying all the prizes on offer and/or a large cash jackpot. In 1973 the three contestant format was dropped and two married couples were used as contestants. This two couple format was also used during the 1973-1974 night time syndicated version as well.\n\nAfter its original run in the USA and during its successful run in the UK, the format was purchased by Australian TV mogul Reg Grundy, whose Grundy Television had produced a similarly formatted program called Temptation between 1971 and 1976. The Grundy version of Sale premiered on Nine Network on July 14, 1980 and became a massive success, spawning versions all across the world. At its close in 2001 it was Australia's longest-running game show.",
+    "poster_path": null,
+    "first_air_date": "1969-09-29",
+    "name": "Sale of the Century"
+  },
+  {
+    "genre_ids": [],
+    "id": 28547,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-17",
+    "name": "The Roy Hudd Show"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 248392,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Charles Dickens' classic novel is given its first television adaptation in this classic 1969 BBC production. Paul Dombey is a well-to-do shipping firm owner, who lacks a son to take over the family business. After rejecting his daughter's affection, he reconciles with her before his death.",
+    "poster_path": "/sT5MvR2aEEZnMGpFpFmFIPrkCNQ.jpg",
+    "first_air_date": "1969-08-17",
+    "name": "Dombey and Son"
+  },
+  {
+    "genre_ids": [],
+    "id": 24342,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Children's TV series set in a fictional rural town in New South Wales, Australia, following the adventures of veterinarian John Stevens and his team. The aborigines call Stevens Woobinda, animal doctor.",
+    "poster_path": "/f5c4onUngZQiiImCHz5hY5qF06B.jpg",
+    "first_air_date": "1969-06-03",
+    "name": "Woobinda: Animal Doctor"
+  },
+  {
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 227789,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-07-07",
+    "name": "A Cabana do Pai Tomás"
+  },
+  {
+    "genre_ids": [
+      10768
+    ],
+    "id": 137998,
+    "origin_country": [],
+    "overview": "Three members of the National Committee Free Germany form a secret commando that comes to Berlin from Minsk to take up the fight against the SS in the last days before the end of the war.",
+    "poster_path": "/xrJXCFIcKtyy92Ib3C7xm4CEu6C.jpg",
+    "first_air_date": "1969-07-18",
+    "name": "Geheime Spuren"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 48523,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "",
+    "poster_path": "/m9sAsUXqKpnfg81XNSuTUp0ZtT3.jpg",
+    "first_air_date": "1969-09-11",
+    "name": "Do przerwy 0:1"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 61233,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/xCAELYDahPeH6L5mAfbHU0php7D.jpg",
+    "first_air_date": "1969-11-05",
+    "name": "Die Kramer"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 40928,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-17",
+    "name": "Familie Bergmann"
+  },
+  {
+    "genre_ids": [],
+    "id": 48070,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": "/8DfoF5tSiDKTrLonz8yHmUo2VVQ.jpg",
+    "first_air_date": "1969-01-11",
+    "name": "ITV Saturday Night Theatre"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 131392,
+    "origin_country": [],
+    "overview": "Winnie-the-Pooh trilogy.",
+    "poster_path": "/6MZhvxHPzakdwjUvnwjmEwT7R6S.jpg",
+    "first_air_date": "1969-10-26",
+    "name": "Winnie-the-Pooh"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 206616,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-11-15",
+    "name": "Tajemství výchovy"
+  },
+  {
+    "genre_ids": [
+      10751,
+      10759,
+      10762,
+      18
+    ],
+    "id": 115511,
+    "origin_country": [
+      "YU",
+      "SI"
+    ],
+    "overview": "The story about a brave boy called Ivo and his friends, who get into fights with smugglers.",
+    "poster_path": "/dxbC5hECcD7BUqCoZD90R23OX0w.jpg",
+    "first_air_date": "1969-05-15",
+    "name": "The Crew of the Blue Seagull"
+  },
+  {
+    "genre_ids": [
+      10762,
+      10751
+    ],
+    "id": 76273,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "There are incredible things on the remote South Sea island of Titiwu: a school that you can skip with impunity and a harmony between humans and animals that was thought to be lost. The absent-minded Professor Habakuk Tibatong has taught some animals to speak. For example, the pig lady Wutz, the shoebill Shush, Ping Penguin and the monitor lizard Wawa. On the rocky reef, the elephant seal sings his \"traurögön Lödör\" all the time. Unfortunately, every one of them except Wutz has a speech impediment. The orphan Tim Tintenklecks helps the professor when it comes to getting the animals excited about a joint project. And one day it happens: a block of ice is stranded on the shore. Inside is an egg from which a primeval creature hatches - the Urmel. And it can even talk. Professor Tibatong, who has always believed in the existence of the Urmel, does something stupid...",
+    "poster_path": "/a5K2Jd9XvLUNxyhtxz5IJUKEFE6.jpg",
+    "first_air_date": "1969-11-23",
+    "name": "Augsburger Puppenkiste - Urmel aus dem Eis"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 14368,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Bold Ones: The Protectors is an American crime drama series that aired on NBC from 1969 to 1970; it lasted for seven episodes.\n\nThe Protectors was part of The Bold Ones, a rotating series of dramas that also included The New Doctors, The Lawyers and The Senator. This was the shortest of the four series.",
+    "poster_path": "/dYpFGCQJHCw0iaTf0p8BFNwShEd.jpg",
+    "first_air_date": "1969-09-28",
+    "name": "The Bold Ones: The Protectors"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 292576,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "The story is set in Sumidagawa Hospital, an emergency hospital in downtown Tokyo. The head of surgery there, Iwashita Ken, is a brain surgeon who has just returned from the United States . He has excellent skills, but his strict personality often makes him the envy of other doctors. He also has a secret past. The story depicts the various facets of the hospital, including the interactions between doctors and patients, the power struggle within the hospital, and Asou Yukie, a recent nursing school graduate who was assigned to the hospital unaware of the complex internal affairs that exist.",
+    "poster_path": "/7NsS9UFCzjozW68WOxGpRVIl6Ca.jpg",
+    "first_air_date": "1969-05-05",
+    "name": "The Lonely Scalpel"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 20638,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Miracle of Bali is a BBC series of cultural documentaries narrated by David Attenborough and first shown in 1969. The series comprises three programs about the culture of Bali. The complete series is available as a special feature on the DVD release of David Attenborough's 1975 series The Tribal Eye.",
+    "poster_path": "/ocsYllnDpsPQUfrfWTAkoeZYEs4.jpg",
+    "first_air_date": "1969-06-10",
+    "name": "The Miracle of Bali"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 63504,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-02",
+    "name": "Der rasende Lokalreporter"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751,
+      10762
+    ],
+    "id": 62029,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "The Abduction of Balthazar Sponge (Polish: Porwanie Baltazara Gąbki) is a Polish-language fantasy animated series produced by Studio Filmów Rysunkowych from 1969 to 1970, that was based on 1965 children's book Porwanie Baltazara Gąbki by Stanisław Pagaczewski. The series had 1 season consisting of 13 episodes, each lasting from 6 to 7 minutes. The episodes were directed by Władysław Nehrebecki, Alfred Ledwig, Edward Wątor, Józef Byrdy, Bronisław Zeman, Wacław Wajser, and Stanisław Dülz, while the scrips were written by Zofia Olak and Leszek Mech. The series had a sequel ,Wyprawa profesora Gąbki, that was produced from 1978 to 1980.",
+    "poster_path": "/lJnc9rWQaJYTwG76tvRlQOtj0xr.jpg",
+    "first_air_date": "1969-05-01",
+    "name": "The Abduction of Balthazar Sponge"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 15139,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Moomintroll was a Swedish television series about the Moomins 1969 directed by Vivica Bandler and Ulla Berglund. The series, which is in 13 parts, is written by Tove and Lars Jansson, and produced by Swedish Radio. The premier was December 5, 1969 on TV2.\n\nThe series became known for Moomins took off their heads a bit into the series. In 2008 the series was up as the play \"The King of Moomin Valley\" at the Swedish Theatre in Helsinki.",
+    "poster_path": "/2Jnp0TiZXj6FfTQ5N460s2uqp6A.jpg",
+    "first_air_date": "1969-12-05",
+    "name": "Mumintrollet"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 200744,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "Landmark tv adaptation of Louis Couperus' \"Small Souls\" saga, that tells of the gradual disintegration of the once-powerful Van Lowe clan.",
+    "poster_path": "/9OidpfVNnzHv1x3rTnOLXnBRQ9x.jpg",
+    "first_air_date": "1969-11-10",
+    "name": "Small Souls"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 63299,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-21",
+    "name": "Ida Rogalski"
+  },
+  {
+    "genre_ids": [
+      37
+    ],
+    "id": 63636,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-01",
+    "name": "Novellen aus dem wilden Westen"
+  },
+  {
+    "genre_ids": [],
+    "id": 25461,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Two teams competed to see which one knew more about movies. Various rounds of the game included trivia questions, identifying film clips and acting out scenes from a film.",
+    "poster_path": null,
+    "first_air_date": "1969-09-08",
+    "name": "The Movie Game (US)"
+  },
+  {
+    "genre_ids": [
+      99,
+      35
+    ],
+    "id": 206393,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-01",
+    "name": "Úsměvné legendy o hradech a zámcích"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 41088,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "Junger Herr auf altem Hof is a German television series.",
+    "poster_path": null,
+    "first_air_date": "1969-12-15",
+    "name": "Junger Herr auf altem Hof"
+  },
+  {
+    "genre_ids": [],
+    "id": 29720,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-10",
+    "name": "The Fossett Saga"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 92982,
+    "origin_country": [
+      "PK"
+    ],
+    "overview": "",
+    "poster_path": "/sVBVM2sydq9AIpHsUSd9OhDqED1.jpg",
+    "first_air_date": "1969-06-01",
+    "name": "Khuda Ki Basti"
+  },
+  {
+    "genre_ids": [
+      9648,
+      18,
+      10765
+    ],
+    "id": 71531,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "When a series of brutal attacks are committed by a lunatic named Edward Hyde, the investigation leads to molecular biologist Henry Jekyll. But have the doctor's unorthodox experiments unlocked even greater horrors?",
+    "poster_path": "/ciRxDa0aOflyARri8gyXse2hJ89.jpg",
+    "first_air_date": "1969-02-16",
+    "name": "Jekyll"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 55063,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The events surrounding the Apollo 11 moon landing on July 20, 1969 are covered in this unprecedented CBS News marathon telecast.",
+    "poster_path": "/eRq6zvNbXf26wEaOpMGnfqFlzwS.jpg",
+    "first_air_date": "1969-07-16",
+    "name": "Man on the Moon: The Epic Journey of Apollo 11"
+  },
+  {
+    "genre_ids": [
+      10751,
+      16
+    ],
+    "id": 40970,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-09-09",
+    "name": "Der Spatz vom Wallrafplatz"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 80420,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": "/tg9KGCv5SpZRdEHrLmookiKbRj4.jpg",
+    "first_air_date": "1969-08-31",
+    "name": "Hans Beimler, Kamerad"
+  },
+  {
+    "genre_ids": [
+      10765,
+      9648
+    ],
+    "id": 93002,
+    "origin_country": [
+      "CH"
+    ],
+    "overview": "Sial IV is a Swiss television miniseries by Greek filmmaker and writer Adonis Kyrou, adapted from the speculative fiction novel Deadly Image (AKA The Uncertain Midnight) by British author Edmund Cooper. It tells the story of Denis Lange (Henri Gilabert), a fallout shelter engineer who is accidentally trapped in suspended animation as war breaks out in 1970, only to awaken in the early 2100s in Sial IV, an underground city in which humankind lives a life of leisure, having discharged all responsibility to androids. Assigned the android Diana as his personal assistant, Denis ventures through this unsettling idyll, eventually finding a small but tenacious group of resistors who seek to uncover the truth about the compound and its ruler, the mysterious Machiavelli.",
+    "poster_path": "/nlhy1QoCjSyOxRsYd3vq0VEuZdv.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "Sial IV"
+  },
+  {
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 291468,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-04-08",
+    "name": "Era Preciso Voltar"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 72434,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "Polish animated series about the adventures of clumsy goat - Koziołek Matołek on his way to the city of Pacanów.",
+    "poster_path": "/d95nFoQw7JWPr6oSqqmrxbtQ4LC.jpg",
+    "first_air_date": "1969-01-05",
+    "name": "The Adventures of Koziołek Matołek"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 82126,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-01",
+    "name": "Die Hupe - Eine Schülerzeitung"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 4869,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Mary, Mungo and Midge features the adventures of a girl called Mary, her dog Mungo, and her pet mouse Midge, who live in a tower block in a busy town.",
+    "poster_path": "/s7igEkA37EoMLFnJIjp3gAYlLBJ.jpg",
+    "first_air_date": "1969-10-07",
+    "name": "Mary, Mungo and Midge"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 252180,
+    "origin_country": [
+      "EG"
+    ],
+    "overview": "",
+    "poster_path": "/8FIh4YFsdTVKs2glOLpTJ9jqJO2.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "الحب الضائع"
+  },
+  {
+    "genre_ids": [
+      10768
+    ],
+    "id": 123243,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-10-30",
+    "name": "Sankt Urban"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 131407,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "A story loosely based on the Brothers Grimm fairy tale 'Town Musicians of Bremen', about a donkey, a dog, a cat, a rooster and their master Troubadour",
+    "poster_path": "/7jaS9NdXbSICXzG6Abvd4Sjz8Wa.jpg",
+    "first_air_date": "1969-10-10",
+    "name": "The Bremen Town Musicians"
+  },
+  {
+    "genre_ids": [],
+    "id": 75173,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "Italian miniseries.",
+    "poster_path": null,
+    "first_air_date": "1969-04-17",
+    "name": "Il killer"
+  },
+  {
+    "genre_ids": [],
+    "id": 28023,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-11",
+    "name": "Psst!"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 234768,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-01",
+    "name": "Portrét Doriana Graya"
+  },
+  {
+    "genre_ids": [
+      10759
+    ],
+    "id": 122931,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/bwLxOjV94yajo3IZWP2pfFVXMIG.jpg",
+    "first_air_date": "1969-09-29",
+    "name": "La cravache d' or"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 152643,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Partaj (Party) is a swedish classical humor TV series from 1969. Known actors and comdians deliver sketches and short stories. Among the participants you'll find among others, Carl-Gustaf Lindstedt, Lars Ekborg, Jarl Borssén, Sonya Hedenbratt, Margareta Sjödin, Roffe Bengtson and Mille Schmidt. The series used the same concept as the popular US show Laugh-In.",
+    "poster_path": "/aCSX5fT8qkWegRO7WKsKmm7Y5jn.jpg",
+    "first_air_date": "1969-04-03",
+    "name": "Party"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 57082,
+    "origin_country": [
+      "HU"
+    ],
+    "overview": "",
+    "poster_path": "/fGnMjcndFSnOur9ZEHmyhF6c3wQ.jpg",
+    "first_air_date": "1969-01-07",
+    "name": "Mazsola és Tádé"
+  },
+  {
+    "genre_ids": [],
+    "id": 24886,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-06",
+    "name": "Mr Digby, Darling"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 64504,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-09-12",
+    "name": "Reisedienst Schwalbe"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 208598,
+    "origin_country": [
+      "MX",
+      "ES"
+    ],
+    "overview": "Television adaptation of the literary classic by Alexandre Dumas. After being unjustly arrested and convicted of treason, Edmundo Dantés manages to escape from the Château d'If prison after 14 years of captivity. During his stay in this place, another prisoner of Italian origin, Abbe Faria, entrusted him with the secret of a treasure. When Edmundo manages to find it and dig it up, he decides to start a revenge against those who ruined his life, for which he assumes the identity of the powerful Count of Monte Cristo.",
+    "poster_path": "/1CPMT1IThBIkZztUZWjDgGH8Dd3.jpg",
+    "first_air_date": "1969-10-01",
+    "name": "The Earl of Montecristo"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 60738,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-09-12",
+    "name": "Vier Frauen im Haus"
+  },
+  {
+    "genre_ids": [],
+    "id": 64795,
+    "origin_country": [
+      "DE",
+      "CH"
+    ],
+    "overview": "",
+    "poster_path": "/fKgLaTB60k1C0SRyocOwnD4aijk.jpg",
+    "first_air_date": "1969-12-12",
+    "name": "Die Reiter von Padola"
+  },
+  {
+    "genre_ids": [
+      80,
+      9648
+    ],
+    "id": 222636,
+    "origin_country": [
+      "NO"
+    ],
+    "overview": "",
+    "poster_path": "/u0pPcTNOJqkObnAcJJWDQokTv0q.jpg",
+    "first_air_date": "1969-10-17",
+    "name": "Taxi"
+  },
+  {
+    "genre_ids": [],
+    "id": 153730,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/2Q9rsQMZlm1XDad4ew9M9fJM1df.jpg",
+    "first_air_date": "1969-03-15",
+    "name": "Águias de Fogo"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 234780,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-25",
+    "name": "Generácia"
+  },
+  {
+    "genre_ids": [
+      18,
+      37
+    ],
+    "id": 220863,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/emqJuL5EM3KP2YU8aW7AQntl08Y.jpg",
+    "first_air_date": "1969-11-17",
+    "name": "Verão Vermelho"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 10979,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Gnomes of Dulwich was a United Kingdom television sitcom originally shown in six episodes from 12 May 1969 to 16 June 1969. Written by Jimmy Perry, the show starred Terry Scott, Hugh Lloyd, John Clive, Leon Thau, Anne de Vigier and Lynn Dalby as garden gnomes living at 25 Telegraph Road, Dulwich, London, England.\n\nThe title is a reference to the term \"Gnomes of Zürich\".\n\nThe tapes were wiped in the 1970s and no material seems to have survived.",
+    "poster_path": null,
+    "first_air_date": "1969-05-12",
+    "name": "The Gnomes of Dulwich"
+  },
+  {
+    "genre_ids": [],
+    "id": 284673,
+    "origin_country": [
+      "PL"
+    ],
+    "overview": "",
+    "poster_path": "/53KTTWJRZQsCMNc6Dza68o34p7L.jpg",
+    "first_air_date": "1969-04-05",
+    "name": "Hrabina Cosel"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 227823,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/rHyOtHnLIpUP4BqyW0TRYt5NA4u.jpg",
+    "first_air_date": "1969-01-15",
+    "name": "Rosa Rebelde"
+  },
+  {
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 237297,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "At the beginning of the Edo era, the Brahman sorcerer Bisho Dojin and his henchmen make secret moves to invade Japan. To stand against them, Lord Kotaki, a man of influence in the Shogunate, goes to Kido Makoto-no-suke, who uses the Shimpen Sword Drawing style, and the heroic priest Kakuzen of the secret court for help.",
+    "poster_path": "/pGkeomL6fIhM30NumfedEcUw1Sh.jpg",
+    "first_air_date": "1969-03-16",
+    "name": "Youjutsu Bugeicho"
+  },
+  {
+    "genre_ids": [],
+    "id": 75546,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/pA1NLjV7mCWNs74WS8WTDI2Yqbl.jpg",
+    "first_air_date": "1969-12-18",
+    "name": "D'Artagnan"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 35060,
+    "origin_country": [
+      "MX"
+    ],
+    "overview": "Los Beverly de Peralvillo is a Mexican family television sitcom that originally aired from 1968 to 1973 on the Canal de las Estrellas network. The series stars Guillermo Rivas, Leonorilda Ochoa, Arturo Castro, and Amparo Arozamena. As Mexico's answer to The Beverly Hillbillies, the sitcom was probably the most popular family television series in Mexico before El Chavo.\n\nThe cast members, who usually had minor insignificant roles before, were offered principal roles in the series. The series spawned two theatrical releases, Los Beverly de Peralvillo and Que familia tan cotorra!. Both films featured the same series' cast.",
+    "poster_path": "/l6HMeqmt3aUFPnfEuNRVABzypY.jpg",
+    "first_air_date": "1969-10-28",
+    "name": "Los Beverly de Peralvillo"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 195256,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-17",
+    "name": "Traja z 9. poschodia"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 274680,
+    "origin_country": [
+      "KW"
+    ],
+    "overview": "The events revolve around the Bomerian family, whom the State of Kuwait gives a large amount of money in exchange for taking his house, so he spends money on his travels, then marries another woman in Lebanon without the knowledge of his first wife, then his second wife leaves him after seizing what money he has left, and here he regrets what he did.",
+    "poster_path": "/4zYDrK6EzFrvdbl1Lg8iW0swb58.jpg",
+    "first_air_date": "1969-05-22",
+    "name": "Bu miryan's Family"
+  },
+  {
+    "genre_ids": [
+      16
+    ],
+    "id": 73133,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "",
+    "poster_path": "/7jcu71GwsFCnLCEjlhD8FD1lhsr.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "Весёлая карусель"
+  },
+  {
+    "genre_ids": [],
+    "id": 63138,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/jnm4y5XaDGcOwhgWgD0OdJBBl9H.jpg",
+    "first_air_date": "1969-12-08",
+    "name": "Meine Schwiegersöhne und ich"
+  },
+  {
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 291222,
+    "origin_country": [
+      "EG"
+    ],
+    "overview": "",
+    "poster_path": "/oLJ7NGkkUFpKn8q6n6G5DblJc1L.jpg",
+    "first_air_date": "1969-05-11",
+    "name": "الرقم المجهول"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 204723,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-01",
+    "name": "Norské pohádky"
+  },
+  {
+    "genre_ids": [],
+    "id": 25358,
+    "origin_country": [
+      "BG"
+    ],
+    "overview": "The series consists of 26 episodes divided into two parts as 13 episodes - the first covering the period between 1923 and September 9, 1944, and the second one - after it. The main characters are Nikola Dejanov, played by Stefan Danailov and Dimitar Bombov, nicknamed \"Mitko Bombata\" (Mitko the Bomb), played by Grigor Vachkov. They are childhood friends, both communists, spies, and partisans.",
+    "poster_path": "/eIMmw55LOejz1ZjpD7vJ0m10V0X.jpg",
+    "first_air_date": "1969-08-20",
+    "name": "Every kilometer"
+  },
+  {
+    "genre_ids": [],
+    "id": 224635,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": "/seo8PmWofwOIGRRyx5EwA984rXv.jpg",
+    "first_air_date": "1969-08-04",
+    "name": "水戸黄門　第１部"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 206347,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-15",
+    "name": "Tajemství řeči"
+  },
+  {
+    "genre_ids": [],
+    "id": 21883,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-06-10",
+    "name": "Wink To Me Only"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 53248,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Narrated by Lord Mountbatten himself, this is a positive feast of history and archive material, some of it part of Mountbatten's personal collection. A masterpiece in history.",
+    "poster_path": "/zIEDT9rvMtSr9gdAI60oEjJ4iWK.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "The Life and Times of Lord Mountbatten"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 9753,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Governor & J.J. is a television series that ran from September 1969 to January 1971 on CBS in the United States and in Canada, where it ran on CBC Television. Selected episodes were rerun by CBS during the summer of 1972. It was produced by Talent Associates and CBS Productions. CBS Television Distribution now owns the distribution rights to the program.\n\nThe series starred Dan Dailey and Julie Sommars. It focused on William Drinkwater, a governor in an unnamed Midwestern state, who, in lieu of his late wife, had a \"first lady\" in his twenty-something year-old daughter, Jennifer Jo. J.J., as Jennifer Jo was called, had a regular job as an assistant curator at a zoo in the capital city and had a love for animals. She was bright and opinionated and could also debate political issues with her father as well as anyone else. Despite their difference in opinions, William really loved J.J., and she proved herself to be charming and efficient in her duties being \"first lady\" for her widowered father. J.J. often gained support and advice from Maggie McLeod, the governor's secretary; George Callison, the Governor's press secretary, and from Sara Andrews, the housekeeper at the Governor's Mansion, who appeared in twenty-three episodes.",
+    "poster_path": null,
+    "first_air_date": "1969-09-23",
+    "name": "The Governor & J.J."
+  },
+  {
+    "genre_ids": [],
+    "id": 28019,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-28",
+    "name": "Charge!"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 13771,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Doctors is a British television series, produced by the BBC between 1969 and 1971.\n\nThe series was set around a general practice in North London and leading cast members included: Justine Lord, Nigel Stock, Barry Justice, Richard Leech, Isla Blair and Lynda La Plante.\n\nNigel Stock's character, Dr. Thomas Owens, was the lead in a later spin-off series, Owen, M.D., which aired between 1971 and 1973. Theme music to Owen, M.D. was \"Sleepy Shores\" by the Johnny Pearson Orchestra.",
+    "poster_path": "/wGNrROqm1uWEqUKwNoTNK9MzuaL.jpg",
+    "first_air_date": "1969-11-19",
+    "name": "The Doctors"
+  },
+  {
+    "genre_ids": [],
+    "id": 29812,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-06",
+    "name": "What's It All About, World?"
+  },
+  {
+    "genre_ids": [],
+    "id": 217455,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Featuring the combined and various talents of Georgie Fame and Alan Price",
+    "poster_path": "/dU2Sjuk8fahVdXlAKSHnXjDfI0P.jpg",
+    "first_air_date": "1969-09-17",
+    "name": "The Price of Fame or Fame at any Price"
+  },
+  {
+    "genre_ids": [],
+    "id": 30463,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-05-30",
+    "name": "The John Davidson Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 24993,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-04-03",
+    "name": "John Browne's Body"
+  },
+  {
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 69143,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": "/fBTYdNLfNgIx8ZUKCAmwpoc7dnQ.jpg",
+    "first_air_date": "1969-12-24",
+    "name": "Záhada hlavolamu"
+  },
+  {
+    "genre_ids": [],
+    "id": 30008,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-07-11",
+    "name": "Don't Ask Us - We're New Here"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 16626,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Whicker's World is an award-winning British television documentary series that ran from 1958 to 1994, presented by journalist and broadcaster Alan Whicker.\n\nOriginally a segment on the BBC's Tonight programme in 1958, Whicker's World became a fully-fledged television series in its own right in the 1960s. The series was first shown by the BBC until 1968, and then by ITV from 1969 to 1983, when it was produced by Yorkshire Television, in which Whicker himself was a shareholder. The series returned to the BBC in 1984, and to ITV again in 1992.",
+    "poster_path": "/wBWqN3Kgqty8OHcHF4qxpeLNEeK.jpg",
+    "first_air_date": "1969-06-17",
+    "name": "Whicker's World"
+  },
+  {
+    "genre_ids": [],
+    "id": 223594,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/3LVn4kJCIK1kBI3T1ZOs9mmVS4a.jpg",
+    "first_air_date": "1969-07-26",
+    "name": "Aiuto, è vacanza!"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 277567,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Herkules Jonsson's father has never time for his son. Hercules mother is the secretary of the Banan Monopoly and owns a special pen with magic powers.",
+    "poster_path": "/6GehODYVqsBeICFHDL5Q0SuR55p.jpg",
+    "first_air_date": "1969-11-30",
+    "name": "Herkules Jonssons storverk"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 138916,
+    "origin_country": [
+      "YU"
+    ],
+    "overview": "The world of small people from the suburbs and the melancholic atmosphere of anxious everyday life that senses imminent catastrophe. While they see no way out of social troubles, these good-natured and somewhat eccentric loners find compensation in pubs, movie theaters and sex.\n\nOriginal title: DNEVNIK OČENAŠEKA",
+    "poster_path": "/c9VjNgimKFWcQnCmXXvSHY3t852.jpg",
+    "first_air_date": "1969-06-15",
+    "name": "Our Father's Diary"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 105314,
+    "origin_country": [
+      "NL"
+    ],
+    "overview": "",
+    "poster_path": "/c0NV1UwtsyUKIeQQuFxx1kiE94p.jpg",
+    "first_air_date": "1969-10-26",
+    "name": "André Van Duin - Een Avondje TeeVee met André"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 27341,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "Delta is an independent research organisation, a freelance scientific consultancy which is called in to provide scientific investigators and troubleshooters in a wide range of situations, including pollution, forgery, mining, conservation, and the recovery of a lost satellite.",
+    "poster_path": null,
+    "first_air_date": "1969-09-25",
+    "name": "Delta"
+  },
+  {
+    "genre_ids": [
+      10767
+    ],
+    "id": 243563,
+    "origin_country": [
+      "DZ"
+    ],
+    "overview": "",
+    "poster_path": "/hFAFWTIJq0BU2LoXAXknMe2CCNu.jpg",
+    "first_air_date": "1969-12-01",
+    "name": "Télé Ciné Club"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 234707,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-04-06",
+    "name": "Maroško"
+  },
+  {
+    "genre_ids": [],
+    "id": 282196,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "An exciting historical drama depicting the activities of Dohaku Yatsushiro, who dares to confront the evil that makes the common people cry while helping the people of Ichii as a doctor, and as a mysterious swordsman \"white hood\".",
+    "poster_path": "/ahOyGE28LD8tZPehjm94h03PTj8.jpg",
+    "first_air_date": "1969-10-05",
+    "name": "Shirozukin Sanjo"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 204721,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-28",
+    "name": "Učedník čaroděje Čáryfuka"
+  },
+  {
+    "genre_ids": [],
+    "id": 22280,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-30",
+    "name": "A Present For Dickie"
+  },
+  {
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 256944,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-15",
+    "name": "Jede Stunde deines Lebens"
+  },
+  {
+    "genre_ids": [
+      10767,
+      10751
+    ],
+    "id": 261146,
+    "origin_country": [
+      "CO"
+    ],
+    "overview": "",
+    "poster_path": "/2pxeO0zBoA4boOtY3anT9hVR3xs.jpg",
+    "first_air_date": "1969-05-24",
+    "name": "El Show de Las Estrellas"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 288852,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/exvceeqF7iKuzV4wFyuu1ctCrYF.jpg",
+    "first_air_date": "1969-06-24",
+    "name": "Le Francophonissime"
+  },
+  {
+    "genre_ids": [
+      10751
+    ],
+    "id": 65403,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-10-12",
+    "name": "Familie Mack verändert sich"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 18578,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Who Killed Lake Erie is a two and a half hour television documentary that aired on NBC in September 1969.",
+    "poster_path": null,
+    "first_air_date": "1969-09-12",
+    "name": "Who Killed Lake Erie"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 112716,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Running from 1969 until 1977, the BBC Christmas shows were usually on Christmas Day. These classic sketches revolved around famous guest stars, such as Eric Porter, Fenella Fielding, Ann Hamilton, Peter Gushing, Glenda Jackson, Andre Previn and Des O'Connor, being made fun of by Eric and Ernie.",
+    "poster_path": "/hIlPwl61UCNr3wqYIQDvqPxthOD.jpg",
+    "first_air_date": "1969-12-25",
+    "name": "Morecambe & Wise: Christmas Specials"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 71330,
+    "origin_country": [
+      "XG"
+    ],
+    "overview": "",
+    "poster_path": "/2Lfozt7wuEA2eOiw3XnbarEhAj1.jpg",
+    "first_air_date": "1969-09-30",
+    "name": "Dolles Familienalbum"
+  },
+  {
+    "genre_ids": [],
+    "id": 11681,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Jimmy Durante Presents the Lennon Sisters is an American variety show that aired on ABC during the 1969-70 television season. The series was hosted by Jimmy Durante, and stars The Lennon Sisters.",
+    "poster_path": null,
+    "first_air_date": "1969-09-26",
+    "name": "Jimmy Durante Presents the Lennon Sisters"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 25033,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "\"Jambo\" (Swahili for “Greetings” and rhymes with Mambo) — a live-action Ivan Tors animal series hosted and narrated by “Daktari” star Marshall Thompson. Familiar with the African scene he brings first-hand knowledge to the show. Each episode highlights different animals in personalized, real- life adventure stories. Filmed on three continents and under two oceans.",
+    "poster_path": null,
+    "first_air_date": "1969-09-06",
+    "name": "Jambo"
+  },
+  {
+    "genre_ids": [],
+    "id": 25423,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-05",
+    "name": "Ken Dodd and the Diddymen"
+  },
+  {
+    "genre_ids": [],
+    "id": 13188,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Letters to Laugh-In is a daytime game show and spin-off of NBC's popular nighttime comedy series at the time, Rowan & Martin's Laugh-In, that aired on the network from September 29 to December 26, 1969. The show was hosted by Gary Owens, the announcer for Laugh-In.",
+    "poster_path": null,
+    "first_air_date": "1969-09-29",
+    "name": "Letters to Laugh-In"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 24137,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "The Dave Allen Show was a variety/comedy sketch series hosted by Irish comedian Dave Allen, his first show after signing with the BBC in 1968.",
+    "poster_path": "/kbzGh8EBLbFqTgoDcpObOJoGxsx.jpg",
+    "first_air_date": "1969-10-11",
+    "name": "The Dave Allen Show"
+  },
+  {
+    "genre_ids": [],
+    "id": 96169,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-23",
+    "name": "Il était un grand navire"
+  },
+  {
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 196431,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "An annual Christmas special produced by ITV, containing new mini-episodes of popular British sitcoms and light entertainment programmes, with some musical interludes. It was hosted by Des O'Connor in 1969, Max Bygraves in 1970, Mike and Bernie Winters in 1971 and Jimmy Tarbuck in 1972 and 1973. Created as a direct competitor to the BBC's Christmas Night with the Stars, all had short five minute sketches devised and produced for transmission within the festive period, written by the original writers of each comedy series.",
+    "poster_path": "/oOjCYVw3zHYhBa0YZeV5r0txSCu.jpg",
+    "first_air_date": "1969-12-25",
+    "name": "All Star Comedy Carnival"
+  },
+  {
+    "genre_ids": [
+      80
+    ],
+    "id": 227420,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": "/eCdgXeWa9whSjnfbcM2lI50bdJo.jpg",
+    "first_air_date": "1969-09-25",
+    "name": "Spion unter der Haube"
+  },
+  {
+    "genre_ids": [],
+    "id": 96801,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": "/g51vyaJZUFWk1Ha8jGb6bSx2siW.jpg",
+    "first_air_date": "1969-11-07",
+    "name": "Incontro con Fabrizio De André"
+  },
+  {
+    "genre_ids": [
+      16,
+      10751,
+      10762
+    ],
+    "id": 87509,
+    "origin_country": [
+      "CH"
+    ],
+    "overview": "",
+    "poster_path": "/2WGBEjzVqeRmpRFCwJ0rJMSuny.jpg",
+    "first_air_date": "1969-01-06",
+    "name": "Le avventure di Cappuccetto a pois"
+  },
+  {
+    "genre_ids": [],
+    "id": 30483,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-07-03",
+    "name": "Join Jim Dale"
+  },
+  {
+    "genre_ids": [
+      10768,
+      18
+    ],
+    "id": 255811,
+    "origin_country": [
+      "SU"
+    ],
+    "overview": "",
+    "poster_path": "/3UL8rSvVqhFDXx8XBnpdpXcNwla.jpg",
+    "first_air_date": "1969-07-09",
+    "name": "Pimedad aknad"
+  },
+  {
+    "genre_ids": [],
+    "id": 21701,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "You're Putting Me On! was a short-lived Bob Stewart NBC game show in which celebrities tried to communicate the identities of famous people through odd and interesting clues. Bill Leyden was the original host, with Larry Blyden taking over halfway through the run. The program was broadcast from June 30 to December 26, 1969, at 1:30 pm.",
+    "poster_path": null,
+    "first_air_date": "1969-06-30",
+    "name": "You're Putting Me On"
+  },
+  {
+    "genre_ids": [],
+    "id": 9948,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "It's Your Bet is an American game show which aired in syndication from 1969-1973. The series was a revised version of the NBC game I'll Bet, which aired for six months in 1965. Both I'll Bet and It's Your Bet were produced by Ralph Andrews.",
+    "poster_path": null,
+    "first_air_date": "1969-09-29",
+    "name": "It's Your Bet"
+  },
+  {
+    "genre_ids": [],
+    "id": 284784,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/l1SSgv4Wlwl76HwFE6Gm7FCjAOP.jpg",
+    "first_air_date": "1969-02-15",
+    "name": "Bentornata Caterina"
+  },
+  {
+    "genre_ids": [
+      10762
+    ],
+    "id": 1345,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "Storybook Squares is a short-lived Saturday morning version of Hollywood Squares for children. The primary difference, apart from having children as contestants, was that it featured celebrities in costume as well-known fictional characters and some as historical figures.\n\nAs with the adult version, Peter Marshall was host and Kenny Williams was announcer; Williams read the characters' names off a scroll as \"The Guardian of the Gate\", a role similar to his \"Town Crier\" on Video Village.\n\nThe series originally ran on NBC from January 4 to April 19, 1969, with repeats airing until August 30.",
+    "poster_path": null,
+    "first_air_date": "1969-01-04",
+    "name": "Storybook Squares"
+  },
+  {
+    "genre_ids": [],
+    "id": 7544,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Anniversary Game was a daily syndicated game show that involved three married couples competing for points and prizes by performing stunts and answering questions, à la Beat the Clock. The host was Alan Hamel, with voice-over artist Dean Webber announcing.\n\nThe program was taped in San Francisco at KGO-TV, formerly the home of Oh My Word.",
+    "poster_path": null,
+    "first_air_date": "1969-01-27",
+    "name": "Anniversary Game"
+  },
+  {
+    "genre_ids": [],
+    "id": 201576,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-12-22",
+    "name": "La Chronique de Cyrano"
+  },
+  {
+    "genre_ids": [],
+    "id": 131421,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": "/9T2x59TbuitEbdz8ypGciBHllLa.jpg",
+    "first_air_date": "1969-12-28",
+    "name": "Sørøver Sally"
+  },
+  {
+    "genre_ids": [],
+    "id": 12137,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The Who, What, or Where Game was an American television game show that was broadcast weekdays on NBC from December 29, 1969 to January 4, 1974. The host was Art James, and the announcer was Mike Darrow; Ron Greenberg packaged the show, which was recorded in NBC studios 6A and 8H in Rockefeller Plaza in New York City.",
+    "poster_path": null,
+    "first_air_date": "1969-12-29",
+    "name": "The Who, What, or Where Game"
+  },
+  {
+    "genre_ids": [
+      18
+    ],
+    "id": 204156,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-17",
+    "name": "Monology v zrcadle"
+  },
+  {
+    "genre_ids": [],
+    "id": 6464,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "It Takes Two is a game show in which contestants gave numerical answers to questions. The original program was created and produced by Ralph Andrews and aired on NBC from March 31, 1969 to July 31, 1970 at 10:00 AM Eastern. A second version, produced by Mark Phillips Philms & Telephision, aired on The Family Channel in 1997.\n\nLos Angeles Dodgers broadcaster Vin Scully hosted the NBC version with John Harlan as announcer and on-camera assistant. The 1997 version was hosted by Dick Clark.",
+    "poster_path": null,
+    "first_air_date": "1969-03-31",
+    "name": "It Takes Two"
+  },
+  {
+    "genre_ids": [
+      10765,
+      10751
+    ],
+    "id": 13295,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Aliens Calinelle and Picabo befriend human Francolin upon arrival on earth.",
+    "poster_path": null,
+    "first_air_date": "1969-10-20",
+    "name": "Les Oraliens"
+  },
+  {
+    "genre_ids": [
+      99,
+      10768
+    ],
+    "id": 202064,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "This is the story of the creation of the Nazi war machine. We trace its origins from the Freikorps and street thugs battling in the German streets after the great war, to the secret German army that was trained in Soviet Union to hide from the prying eyes of the victorius Allies. We show the growth of the Panzer Corps, the mighty Luftwaffe and the feared SS. This is the most comprehensive look at the military force that took Europe by storm during WWII.",
+    "poster_path": "/s0WEoyD0SXHsAwSAj5bUJcXSKxn.jpg",
+    "first_air_date": "1969-07-10",
+    "name": "The Nazi War Machine of WWII"
+  },
+  {
+    "genre_ids": [],
+    "id": 293957,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/ikoH7YJe9KqKnRvNDtrhqEi5nG9.jpg",
+    "first_air_date": "1969-04-14",
+    "name": "S.O.S. fréquence 17"
+  },
+  {
+    "genre_ids": [],
+    "id": 223700,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/9oiQhptk3qliTOlyEpZOcfuVuDH.jpg",
+    "first_air_date": "1969-12-04",
+    "name": "Le avventure di Ciuffettino"
+  },
+  {
+    "genre_ids": [],
+    "id": 33497,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "It's Our Stuff is a Canadian music variety television series which aired on CBC Television in 1969.",
+    "poster_path": null,
+    "first_air_date": "1969-06-30",
+    "name": "It's Our Stuff"
+  },
+  {
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 206286,
+    "origin_country": [
+      "XC"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-10-23",
+    "name": "Dobrodružství veverky Zrzečky"
+  },
+  {
+    "genre_ids": [],
+    "id": 111631,
+    "origin_country": [],
+    "overview": "The slighter confused and rather clumsy repair-men Pompel and Pilt are looking for something to fix and, but they are scared by Moffedilten, and their opportunities are always ruined by the scary Gorgon Caretaker and his deranged family.",
+    "poster_path": "/2l1Y1FCeKtVB7dq9ZruXi8fYbz1.jpg",
+    "first_air_date": "1969-10-10",
+    "name": "Pompel og Pilt - Reparatørene kommer"
+  },
+  {
+    "genre_ids": [],
+    "id": 230904,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-05-05",
+    "name": "A Mansão dos Vampiros"
+  },
+  {
+    "genre_ids": [],
+    "id": 230900,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-02-19",
+    "name": "Vidas em Conflito"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 47863,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Trevor Philpott covers various topics from a German Business to a Beer Battle to the workings of Multinationals.",
+    "poster_path": "/2SPaz0XudTxAckPmFTIj4oREYBA.jpg",
+    "first_air_date": "1969-02-22",
+    "name": "The Philpott File"
+  },
+  {
+    "genre_ids": [],
+    "id": 195883,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "A series of films with a new perspective on Britain - from the air.",
+    "poster_path": null,
+    "first_air_date": "1969-04-05",
+    "name": "Bird's Eye View"
+  },
+  {
+    "genre_ids": [
+      10763
+    ],
+    "id": 289138,
+    "origin_country": [
+      "LU"
+    ],
+    "overview": "",
+    "poster_path": "/69DQ0gjNQAmu7YoZiDoFKdAAipW.jpg",
+    "first_air_date": "1969-09-21",
+    "name": "Hei Elei Kuck Elei"
+  },
+  {
+    "genre_ids": [],
+    "id": 62525,
+    "origin_country": [],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-01",
+    "name": "Im Krug zum grünen Kranze"
+  },
+  {
+    "genre_ids": [],
+    "id": 289452,
+    "origin_country": [
+      "SE"
+    ],
+    "overview": "Gothenburg, Sweden. About a family that falls victim for the modern streamlining in the industry. This affects all the members of the family in a brutal and suffocating way. They cease to exist.",
+    "poster_path": "/42EbHLE7ltdxZVimWGiXx05Jqhd.jpg",
+    "first_air_date": "1969-04-22",
+    "name": "Friställd"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 280642,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "In these six programmes Ian Nairn looks at industrial landscape; considers the unique appeal of Liverpool; tries to analyse the attraction of a summer Bank Holiday county like Cornwall; asks if in new towns like Cumbernauld people have been given enough say in their environment; sees the potential in a plan for a Welsh hill-town; and finally takes a look at a uniquely British institution - the public house.",
+    "poster_path": null,
+    "first_air_date": "1969-01-07",
+    "name": "Nairn at Large"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 33394,
+    "origin_country": [
+      "CA"
+    ],
+    "overview": "Time for Living was a Canadian variety television series which aired on CBC Television in 1969.",
+    "poster_path": null,
+    "first_air_date": "1969-09-11",
+    "name": "Time for Living"
+  },
+  {
+    "genre_ids": [],
+    "id": 222050,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": "/tyOGZ0wpdOBCGkzLL4KoRJILv15.jpg",
+    "first_air_date": "1969-03-16",
+    "name": "È domenica, ma senza impegno"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 78843,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "A Horizon presentation of seven programmes on animal life.",
+    "poster_path": null,
+    "first_air_date": "1969-07-14",
+    "name": "Eye on Life"
+  },
+  {
+    "genre_ids": [],
+    "id": 25805,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-09",
+    "name": "The Frankie Howerd Show (1969)"
+  },
+  {
+    "genre_ids": [],
+    "id": 2760,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Holiday is a long-running UK television programme on BBC One, and was the oldest travel review show on UK television. It was aired on the channel from 1969 until 2007.",
+    "poster_path": null,
+    "first_air_date": "1969-01-02",
+    "name": "Holiday"
+  },
+  {
+    "genre_ids": [],
+    "id": 246675,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-10-20",
+    "name": "Le petit homme"
+  },
+  {
+    "genre_ids": [],
+    "id": 243932,
+    "origin_country": [
+      "IT"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-11-13",
+    "name": "Eleonora Duse"
+  },
+  {
+    "genre_ids": [],
+    "id": 234050,
+    "origin_country": [
+      "AU"
+    ],
+    "overview": "A collection of Malcolm Douglas' journeys across Australia alongside the Aborigines and nature over a span of 40 years.",
+    "poster_path": null,
+    "first_air_date": "1969-12-31",
+    "name": "In the Bush with Malcolm Douglas"
+  },
+  {
+    "genre_ids": [],
+    "id": 297342,
+    "origin_country": [
+      "MX"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-03-05",
+    "name": "The Ant and the Aardvark"
+  },
+  {
+    "genre_ids": [],
+    "id": 206339,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-08-18",
+    "name": "見合い恋愛"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 212014,
+    "origin_country": [
+      "DE"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-01-05",
+    "name": "Geisterstädte im Wilden Westen"
+  },
+  {
+    "genre_ids": [],
+    "id": 213387,
+    "origin_country": [
+      "BR"
+    ],
+    "overview": "",
+    "poster_path": "/soDH4cv3gjTQjG72dldWofCO847.jpg",
+    "first_air_date": "1969-01-01",
+    "name": "The Architecture of Doom"
+  },
+  {
+    "genre_ids": [],
+    "id": 277457,
+    "origin_country": [
+      "SA"
+    ],
+    "overview": "",
+    "poster_path": "/50sv5ykqaw61I0tualJvNxw9hxv.jpg",
+    "first_air_date": "1969-05-25",
+    "name": "عائلة بومريان"
+  },
+  {
+    "genre_ids": [],
+    "id": 256861,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Thriller serial set against the backdrop of the Edinburgh Festival.",
+    "poster_path": null,
+    "first_air_date": "1969-01-14",
+    "name": "Scobie In September"
+  },
+  {
+    "genre_ids": [],
+    "id": 196925,
+    "origin_country": [
+      "JP"
+    ],
+    "overview": "",
+    "poster_path": null,
+    "first_air_date": "1969-04-06",
+    "name": "あいつの季節"
+  },
+  {
+    "genre_ids": [
+      35
+    ],
+    "id": 301282,
+    "origin_country": [
+      "GB"
+    ],
+    "overview": "Six standalone comedy plays by writers Ray Galton and Alan Simpson, with themes including farce, fantasy and murder. Featured stars include Leslie Phillips and Bob Monkhouse, while there's also another collaboration with Harry H. Corbett.",
+    "poster_path": "/gBtXQSo8E5FH1mAzf1WpICWTAVa.jpg",
+    "first_air_date": "1969-04-19",
+    "name": "Galton and Simpson Comedy"
+  }
+]
