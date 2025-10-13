@@ -1,0 +1,2833 @@
+[
+  {
+    "adult": false,
+    "backdrop_path": "/iq4BjyVsDxzg24XnjoGP0Xi2Tz5.jpg",
+    "genre_ids": [
+      9648,
+      18,
+      80
+    ],
+    "id": 4177,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Perry Mason",
+    "overview": "The cases of master criminal defense attorney Perry Mason and his staff who handled the most difficult of cases in the aid of the innocent.",
+    "popularity": 34.7955,
+    "poster_path": "/sK6JvgNFP1ClT4aF4nPAZiDpAdk.jpg",
+    "first_air_date": "1957-09-21",
+    "name": "Perry Mason",
+    "vote_average": 7.7,
+    "vote_count": 129
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/o0X11m9s7rmiJULBaV6A11hwxe2.jpg",
+    "genre_ids": [
+      35,
+      37
+    ],
+    "id": 953,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Maverick",
+    "overview": "The Maverick boys - Bret, Bart, Beau and Brent - are a clan of well-dressed dandies, gamblers who'd much rather make their money playing cards than messing up their fine clothing with actual work. Sly and clever, none of the Mavericks are much for acts of derring do, but they can be courageous when the situation calls for it. Most often, however, they live by their wits and considerable charm.",
+    "popularity": 20.223,
+    "poster_path": "/psVbZjMHt9f9X7EIks9IQdCMZke.jpg",
+    "first_air_date": "1957-09-22",
+    "name": "Maverick",
+    "vote_average": 6.8,
+    "vote_count": 39
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/1Rzdd9VjqXOE7rzMlaMdwHOTmkr.jpg",
+    "genre_ids": [
+      37,
+      18,
+      10751
+    ],
+    "id": 6081,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Wagon Train",
+    "overview": "The series initially starred veteran movie supporting actor Ward Bond as the wagon master, later replaced upon his death by John McIntire, and Robert Horton as the scout, subsequently replaced by lookalike Robert Fuller a year after Horton had decided to leave the series.\n\nThe series was inspired by the 1950 film Wagon Master directed by John Ford and starring Ben Johnson, Harry Carey Jr. and Ward Bond, and harkens back to the early widescreen wagon train epic The Big Trail starring John Wayne and featuring Bond in his first major screen appearance playing a supporting role. Horton's buckskin outfit as the scout in the first season of the television series resembles Wayne's, who also played the wagon train's scout in the earlier film.",
+    "popularity": 19.3052,
+    "poster_path": "/csC6kMTKWmOcy9nKZEgdwd7Frb9.jpg",
+    "first_air_date": "1957-09-18",
+    "name": "Wagon Train",
+    "vote_average": 6.4,
+    "vote_count": 27
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/7z1QYCB1cu06u3oJwIupRlZ8SrX.jpg",
+    "genre_ids": [
+      37,
+      10759,
+      18
+    ],
+    "id": 10980,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Have Gun, Will Travel",
+    "overview": "Have Gun – Will Travel is an American Western television series that aired on CBS from 1957 through 1963. It was rated number three or number four in the Nielsen ratings every year of its first four seasons. It was one of the few television shows to spawn a successful radio version. The radio series debuted November 23, 1958.\n\nThe television show is presently shown on the Encore-Western channel.\n\nHave Gun – Will Travel was created by Sam Rolfe and Herb Meadow and produced by Frank Pierson, Don Ingalls, Robert Sparks, and Julian Claman. There were 225 episodes of the TV series, 24 written by Gene Roddenberry. Other contributors included Bruce Geller, Harry Julian Fink, Don Brinkley and Irving Wallace. Andrew McLaglen directed 101 episodes and 19 were directed by series star Richard Boone.",
+    "popularity": 18.0422,
+    "poster_path": "/6aJRq7FGs2axLOdZNJ2G4IOQtMx.jpg",
+    "first_air_date": "1957-09-14",
+    "name": "Have Gun, Will Travel",
+    "vote_average": 7.4,
+    "vote_count": 41
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/x8W6sQ89q6WlbkGQDLZjkso8AjR.jpg",
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 5133,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Leave It to Beaver",
+    "overview": "Leave It to Beaver is an American television situation comedy about an inquisitive and often naïve boy named Theodore \"The Beaver\" Cleaver and his adventures at home, in school, and around his suburban neighborhood. The show also starred Barbara Billingsley and Hugh Beaumont as Beaver's parents, June and Ward Cleaver, and Tony Dow as Beaver's brother Wally. The show has attained an iconic status in the US, with the Cleavers exemplifying the idealized suburban family of the mid-20th century.",
+    "popularity": 14.2763,
+    "poster_path": "/1Tl9FH0gFmaFDyW4J3eAowMwt8O.jpg",
+    "first_air_date": "1957-10-04",
+    "name": "Leave It to Beaver",
+    "vote_average": 6.949,
+    "vote_count": 78
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sMk5YZQIjlfhrLOAgW4igI9xqin.jpg",
+    "genre_ids": [
+      37,
+      10759
+    ],
+    "id": 4681,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Zorro",
+    "overview": "Diego de la Vega, the son of a wealthy landowner, returns from his studies in Spain and discovers that Los Angeles is under the command of Capitan Monastario, a cruel man who relishes in the misuse of his power for personal gain. Knowing that he cannot hope to single-handedly defeat Monastario and his troops, Diego resorts to subterfuge. He adopts the secret identity of Zorro, a sinister figure dressed in black, and rides to fight Monastario's injustice.",
+    "popularity": 12.1626,
+    "poster_path": "/1i4HdLMCRfEXLeA6JGTsQj6WU3k.jpg",
+    "first_air_date": "1957-10-10",
+    "name": "Zorro",
+    "vote_average": 7.481,
+    "vote_count": 180
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763,
+      35,
+      10767
+    ],
+    "id": 63024,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Zum blauen Bock",
+    "overview": "",
+    "popularity": 9.755,
+    "poster_path": null,
+    "first_air_date": "1957-08-03",
+    "name": "Zum blauen Bock",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 113485,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Landesschau Baden-Württemberg",
+    "overview": "",
+    "popularity": 8.572,
+    "poster_path": "/wDOSenxoxj7sxesG8H6zrOSZOhw.jpg",
+    "first_air_date": "1957-05-03",
+    "name": "Landesschau Baden-Württemberg",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/h13mJKE3KhGCX10D0pH2FGiZsMa.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 13893,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Sugarfoot",
+    "overview": "Sugarfoot is an American western television series that aired on ABC from 1957 to 1961. The series stars Will Hutchins as Tom Brewster, an Easterner who comes to the Oklahoma Territory to become a lawyer. Jack Elam is cast in occasional episodes as sidekick Toothy Thompson. Brewster was a correspondence-school student whose apparent lack of cowboy skills earned him the nickname \"Sugarfoot\", a designation even below that of a tenderfoot.",
+    "popularity": 8.6627,
+    "poster_path": "/bg7LXonQWV5oTu9BUkgvz1oAD2n.jpg",
+    "first_air_date": "1957-09-17",
+    "name": "Sugarfoot",
+    "vote_average": 4.8,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/rGZo3xBJM2VYHn30LY7G0xwYu1n.jpg",
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 13795,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Tales of Wells Fargo",
+    "overview": "Jim Hardie helps Wells Fargo agents battle the bad guys.",
+    "popularity": 8.7503,
+    "poster_path": "/qqm4UkpOT7pno9zt25nSmbt7MIh.jpg",
+    "first_air_date": "1957-03-18",
+    "name": "Tales of Wells Fargo",
+    "vote_average": 6.6,
+    "vote_count": 12
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/jng9VE6bnzoejV4Evg9GFtSCBgv.jpg",
+    "genre_ids": [
+      80,
+      18,
+      9648
+    ],
+    "id": 12512,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "M Squad",
+    "overview": "Lt. Frank Ballinger is a no-nonsense plain clothes cop in the elite M Squad Division. The Squad's task is to root out organised crime and corruption in America's Second City, Chicago.",
+    "popularity": 9.2892,
+    "poster_path": "/8mDoUftlI60WeGmlp35NJ6XRfrk.jpg",
+    "first_air_date": "1957-09-20",
+    "name": "M Squad",
+    "vote_average": 5.2,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/1XF2p5Tyuq5W8R6QorwXwiDlsIB.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 10458,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Real McCoys",
+    "overview": "The Real McCoys is an American situation comedy co-produced by Danny Thomas' \"Marterto Productions\", in association with Walter Brennan and Irving Pincus' \"Westgate\" company. The series aired for five seasons on the ABC-TV network from 1957 through 1962 and then for its final year on CBS from 1962 to 1963.\n\nThe series, set in the San Fernando Valley of California, was filmed in Hollywood at Desilu studios.",
+    "popularity": 6.6435,
+    "poster_path": "/2xpqTNMVtnBfXQVAR1eP5ay2UAz.jpg",
+    "first_air_date": "1957-10-03",
+    "name": "The Real McCoys",
+    "vote_average": 5.6,
+    "vote_count": 12
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 4821,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "American Bandstand",
+    "overview": "American Bandstand was an American music-performance show that aired in various versions from 1952 to 1989 and was hosted from 1956 until its final season by Dick Clark, who also served as producer. The show featured teenagers dancing to Top 40 music introduced by Clark; at least one popular musical act—over the decades, running the gamut from Jerry Lee Lewis to Run DMC—would usually appear in person to lip-sync one of their latest singles. Freddy \"Boom Boom\" Cannon holds the record for most appearances at 110.\n\nThe show's popularity helped Dick Clark become an American media mogul and inspired similar long-running music programs, such as Soul Train and Top of the Pops. Clark eventually assumed ownership of the program through his Dick Clark Productions company.",
+    "popularity": 5.6253,
+    "poster_path": "/eSVrrBYvMXOZgLOZC45H2VPc7dl.jpg",
+    "first_air_date": "1957-08-05",
+    "name": "American Bandstand",
+    "vote_average": 8.4,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/60KMLXvtUATae1TIPOxyii6W53e.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 14412,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Tombstone Territory",
+    "overview": "Tombstone Territory is an American Western series starring Pat Conway and Richard Eastham. The series' first two seasons aired on ABC from 1957 to 1959. The third and final season aired in syndication from 1959 until 1960.",
+    "popularity": 6.6712,
+    "poster_path": "/sqd4Z8UljfMvLYtdqszay1YtOCy.jpg",
+    "first_air_date": "1957-10-16",
+    "name": "Tombstone Territory",
+    "vote_average": 6.2,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/dVlgfcTHLEe3RvYEYmb0nECRVyW.jpg",
+    "genre_ids": [
+      80,
+      18,
+      10759
+    ],
+    "id": 11574,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Richard Diamond, Private Detective",
+    "overview": "Richard Diamond, Private Detective is an American detective drama which aired on radio from 1949 to 1953, and on television from 1957 to 1960.",
+    "popularity": 6.2178,
+    "poster_path": "/reHCk6hs895e96oC6LAUtnzIQ78.jpg",
+    "first_air_date": "1957-07-01",
+    "name": "Richard Diamond, Private Detective",
+    "vote_average": 6.2,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/xSy1RcLD81Bidr8mliB1Dhc7JUH.jpg",
+    "genre_ids": [
+      37,
+      10759
+    ],
+    "id": 980,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Trackdown",
+    "overview": "Trackdown is an American Western television series starring Robert Culp that aired on CBS between 1957 and 1959. More than seventy episodes of this series were produced by Dick Powell's Four Star Television and filmed at the Desilu-Culver Studio. The series was itself a spin-off of Powell's anthology series, Dick Powell's Zane Grey Theater.",
+    "popularity": 5.1692,
+    "poster_path": "/n39XqrEQjKWSWGFZ7G6pZYBWI6T.jpg",
+    "first_air_date": "1957-10-04",
+    "name": "Trackdown",
+    "vote_average": 6.4,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/4lQuc92U8irlFtJOCXoHp8P5EA8.jpg",
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 44256,
+    "origin_country": [
+      "XC"
+    ],
+    "original_language": "cs",
+    "original_name": "O krtkovi",
+    "overview": "Created by Czech director and animator Zdeněk Miler in 1956, Krtek, or The Mole in English, was an international hit with children. Because the cartoons were presented with no dialogue, Krtek was held to no national boundaries.\n\nMilers daughter voiced the noises and grunts that Krtek made, and gave Miler the feedback from a child's perspective he needed to keep his stories focus on his young fans.",
+    "popularity": 4.2282,
+    "poster_path": "/tkuoiW7Q8iOHBckBEePhwV8SVLI.jpg",
+    "first_air_date": "1957-09-13",
+    "name": "The Adventures of the Mole",
+    "vote_average": 7.855,
+    "vote_count": 62
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 10990,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Bachelor Father",
+    "overview": "Bachelor Father is an American sitcom starring John Forsythe, Noreen Corcoran, and Sammee Tong. The series first premiered on CBS in September 1957 before moving to NBC for the third season in 1959. The series' fifth and final season aired on ABC from 1961 to 1962. A total of 157 episodes were aired. The series was based on \"A New Girl in His Life\", which aired on General Electric Theater on May 26, 1957.\n\nBachelor Father is the only primetime series ever to run in consecutive years on the three major televisions networks.",
+    "popularity": 5.1671,
+    "poster_path": "/knAE7Of58hD1EYytaY2CMeBK7Vg.jpg",
+    "first_air_date": "1957-09-15",
+    "name": "Bachelor Father",
+    "vote_average": 6,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80,
+      18,
+      9648
+    ],
+    "id": 21506,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Suspicion",
+    "overview": "Suspicion is the title of an American television mystery drama series which aired on the NBC from 1957 through 1959. The executive producer of Suspicion was film director Alfred Hitchcock.",
+    "popularity": 4.2347,
+    "poster_path": "/g3InNLJAdrkhYAqTTj8b4yClfj6.jpg",
+    "first_air_date": "1957-09-30",
+    "name": "Suspicion",
+    "vote_average": 5.9,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763,
+      10767
+    ],
+    "id": 105875,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Aktuelle Schaubude",
+    "overview": "",
+    "popularity": 4.3339,
+    "poster_path": null,
+    "first_air_date": "1957-12-07",
+    "name": "Aktuelle Schaubude",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/6BYspBS8LpvaFm7tPSCUdSExnQS.jpg",
+    "genre_ids": [
+      37,
+      80
+    ],
+    "id": 17555,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "26 Men",
+    "overview": "26 Men is a syndicated American western television series about the Arizona Rangers, an elite group commissioned in 1901 by the legislature of the Arizona Territory and limited, for financial reasons, to twenty-six active members. Russell Hayden was the producer of the series and the co-composer of the theme song. The series aired between October 15, 1957 and June 30, 1959, for a total of 78 episodes.",
+    "popularity": 3.7826,
+    "poster_path": "/kQDvw5BhIfqk3l7aWqHqRLbTc9f.jpg",
+    "first_air_date": "1957-10-15",
+    "name": "26 Men",
+    "vote_average": 4.2,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/xfiHIfTHXD6DOFmcZhd2yfMaA1p.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 11562,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Thin Man",
+    "overview": "Nick Charles was a private detective who married the wealthy Nora and decided to settle down and leave the good life. Unfortunately for the couple, Nick's past frequently caught up with him and got the couple involved in mystery after mystery. The series was based on the popular MGM series of movies of the 1930's starring William Powell and Myrna Loy. Peter Lawford and Phyllis Kirk starred as the televison versions of Nick and Nora which ran on NBC for two seasons from 1957-59.",
+    "popularity": 3.0243,
+    "poster_path": "/blhYK8id2rfjLKYrKFjwFNateIf.jpg",
+    "first_air_date": "1957-09-20",
+    "name": "The Thin Man",
+    "vote_average": 7.1,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 26552,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Tonight Starring Jack Paar",
+    "overview": "Tonight Starring Jack Paar is an American talk show hosted by Jack Paar under The Tonight Show franchise from 1957 to 1962. It originally aired during late-night.\n\nDuring most of its run it was broadcast from Studio 6B inside the RCA Building. The same studio would also host early episodes of The Tonight Show Starring Johnny Carson, and Late Night with Jimmy Fallon. Its theme song was an instrumental version of \"Everything's Coming Up Roses\", and the closing theme was \"So Until I See You\" by Al Lerner.",
+    "popularity": 8.7304,
+    "poster_path": null,
+    "first_air_date": "1957-07-29",
+    "name": "Tonight Starring Jack Paar",
+    "vote_average": 7,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/stMEiGX4Tk2yJDK3E1gLctObCpK.jpg",
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 13981,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Whirlybirds",
+    "overview": "Whirlybirds is a syndicated American drama/adventure television series, which aired for 111 episodes — broadcast from February 4, 1957, through January 18, 1960. It was produced by Desilu Studios .\n\nThe show centered around Chuck Martin (Kenneth Tobey) and Pete (P.T.) Moore (Craig Hill), owners of 'Whirlybirds, Inc', who flew their helicopter (N975B) between Longwood Field and anywhere where they could be of help to someone in trouble.",
+    "popularity": 3.5368,
+    "poster_path": "/2xHjaO7gct3K1PjaObe2t5ubf2b.jpg",
+    "first_air_date": "1957-01-03",
+    "name": "Whirlybirds",
+    "vote_average": 5.4,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 11477,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Alcoa Theatre",
+    "overview": "Alcoa Theatre is a half-hour American anthology series telecast on NBC at 9:30 pm on alternate Monday nights from October 7, 1957 to September 16, 1960. The program also aired under the title Turn of Fate, with the stories depicting the difficulties faced by individuals who are suddenly thrust into unexpected and perilous dangers. Alcoa Theatre was syndicated together with Goodyear Theatre as Award Theatre.\n\nIn 1955, The Alcoa Hour premiered in a one-hour format aired on Sunday nights, but it was reduced to 30 minutes, retitled Alcoa Theatre, and moved to Monday evening in 1957. The show employed an alternating rotating company of actors: David Niven, Robert Ryan, Jane Powell, Jack Lemmon and Charles Boyer. Each appeared in dramatic and light comedic roles through the first season.",
+    "popularity": 3.5859,
+    "poster_path": "/uiaO4sVZbx4SJqJWdnDnNHO8HS2.jpg",
+    "first_air_date": "1957-09-30",
+    "name": "Alcoa Theatre",
+    "vote_average": 6.5,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/9omfYTwjvHbuDcD84T4OSBOtIZW.jpg",
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 5960,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Californians",
+    "overview": "San Franciscans during the goldrush of the 1850s attempt to maintain law and order in their wild city. Newly arrived Matthew Wayne becomes sheriff, then marshal, and organizes the city police force while expressing interest in the young widow Fanzler and sparring with attorney Pitt. Adam Kennedy appears as Dion Patrick, an Irish newspaperman who helps the local vigilante committee.",
+    "popularity": 2.9456,
+    "poster_path": "/d2AK81I6vdwmL5I8GK4viZ5vPCI.jpg",
+    "first_air_date": "1957-09-24",
+    "name": "The Californians",
+    "vote_average": 5.2,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      35
+    ],
+    "id": 21309,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "DuPont Show of the Month",
+    "overview": "DuPont Show of the Month is an acclaimed 90-minute television anthology series that aired monthly on CBS from 1957 to 1961. The DuPont Company also sponsored a weekly half-hour anthology drama series hosted by June Allyson, The DuPont Show with June Allyson.\n\nDuring the Golden Age of Television, DuPont Show of the Month was one of numerous anthology series telecast between 1949 and 1962. Superficially, it resembled Playhouse 90 and other anthologies, but DuPont Show of the Month focused less on contemporary dramas and more on adaptations of literary classics, including Oliver Twist, The Prince and the Pauper, Billy Budd, The Prisoner of Zenda, A Tale of Two Cities and The Count of Monte Cristo.",
+    "popularity": 4.3451,
+    "poster_path": "/r6fPB95zGx5ncBZJt40xmOPJQnw.jpg",
+    "first_air_date": "1957-09-29",
+    "name": "DuPont Show of the Month",
+    "vote_average": 6.8,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 25643,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Panic!",
+    "overview": "",
+    "popularity": 3.3513,
+    "poster_path": "/mK2KXuEpwXp2jYUgiGTmmC5S4l.jpg",
+    "first_air_date": "1957-03-05",
+    "name": "Panic!",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 13537,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Restless Gun",
+    "overview": "The Restless Gun is an American western television series that appeared on NBC between 1957 and 1959, with John Payne in the role of Vint Bonner, a wandering cowboy in the era after the American Civil War. A skilled gunfighter, Bonner is an idealistic person who prefers peaceful resolutions of conflict wherever possible. He is gregarious, intelligent, and public-spirited. The half-hour black-and-white program aired seventy-eight episodes. Jeanne Bates appeared in varying roles with Payne in five episodes of The Restless Gun.\n\nThe Restless Gun theme song begins: \"I ride with the wind, my eyes on the sun, and my hand on my restless gun...\" The song composer is probably Paul Dunlap, credited as the primary series composer, but could have been contributed to by either of the two other series composers, Dave Kahn and Stanley Wilson, also. Two versions are currently posted on YouTube, but neither posting lists any composer or performance credits.",
+    "popularity": 3.3431,
+    "poster_path": "/r9Kk7XVHhhjVfif4i6YYNFkvegM.jpg",
+    "first_air_date": "1957-09-23",
+    "name": "The Restless Gun",
+    "vote_average": 3.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/iZm8NBU3iwrcaCF9QlAZ8z6MdmZ.jpg",
+    "genre_ids": [
+      10751,
+      16,
+      35
+    ],
+    "id": 12519,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Ruff and Reddy Show",
+    "overview": "The Ruff and Reddy Show is a Hanna-Barbera animated series starring Ruff, a straight and smart cat voiced by Don Messick, and Reddy, a dumb and stupid dog voiced by Daws Butler. First broadcast in December 1957 on NBC, it was the first television show produced by Hanna-Barbera and presented by Screen Gems, the television arm of Columbia Pictures.",
+    "popularity": 2.4426,
+    "poster_path": "/2dj9Vvy689ZYNQQ85X2Iq3WpoXo.jpg",
+    "first_air_date": "1957-12-14",
+    "name": "The Ruff and Reddy Show",
+    "vote_average": 5.7,
+    "vote_count": 11
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/yQ3pW0CGIaE9LR16L2Kya8dVBui.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 1832,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Lucy–Desi Comedy Hour",
+    "overview": "The Lucy–Desi Comedy Hour is a collection of thirteen one-hour specials airing occasionally from 1957 to 1960, and originally served as part of Westinghouse Desilu Playhouse. Its original network title was The Ford Lucille Ball-Desi Arnaz Show for the first season, and The Westinghouse Desilu Playhouse Presents The Lucille Ball-Desi Arnaz Show for the following seasons. It was the successor to the classic comedy, I Love Lucy, and featured the same major cast members. The production schedule avoided the grind of a regular weekly series.\n\nDesilu produced the show, which was mostly filmed at their Los Angeles studios with occasional on-location shoots at Lake Arrowhead, Las Vegas and Sun Valley, Idaho. CBS reran the show under the \"Lucy-Desi\" title during the summers of 1962-1967, after which it went into syndication.",
+    "popularity": 3.8189,
+    "poster_path": "/ha0aHNPgcke8V0kN3hAUQ3oKTDd.jpg",
+    "first_air_date": "1957-11-06",
+    "name": "The Lucy–Desi Comedy Hour",
+    "vote_average": 8.6,
+    "vote_count": 14
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/nGWlVSsW6zzNkGbtlS9v9h62yFo.jpg",
+    "genre_ids": [
+      18,
+      80,
+      10759,
+      9648
+    ],
+    "id": 13669,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Decoy",
+    "overview": "New York City policewoman Casey Jones' assignment to fight crime often entails her going undercover in some of the seediest and most dangerous parts of the city. Decoy is a groundbreaking American crime drama television series created for syndication and initially broadcast from October 14, 1957, to July 7, 1958, with thirty-nine 30-minute black-and-white episodes. It was the first American police series with a female protagonist. Many Decoy episodes are in the public domain.",
+    "popularity": 2.718,
+    "poster_path": "/n1mAebNUJkmoefUO1lXwcQfvJA2.jpg",
+    "first_air_date": "1957-10-14",
+    "name": "Decoy",
+    "vote_average": 6.2,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/4hYsain6zuUOHEK9A7aPRraxHAG.jpg",
+    "genre_ids": [
+      99,
+      10763
+    ],
+    "id": 9873,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Sky at Night",
+    "overview": "Your monthly journey through the fascinating world of space and astronomy with the latest thinking on what's out there in space and what you can see in the night sky.",
+    "popularity": 2.5233,
+    "poster_path": "/m0WlBOExJzajLPly4ebmCSxwta1.jpg",
+    "first_air_date": "1957-04-24",
+    "name": "The Sky at Night",
+    "vote_average": 8.3,
+    "vote_count": 13
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 19300,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Blondie",
+    "overview": "Blondie is the first of two TV series based on the comic strip of the same name. It first aired on January 4, 1957, on NBC. Although Penny Singleton had starred in most of the Blondie movies, producers chose Pamela Britton for the title role, with Arthur Lake playing the role of Dagwood Bumstead as he had in the Blondie movie series.\n\nA pilot episode was filmed in 1954 with Hal Le Roy as Dagwood opposite Britton's Blondie. The DVD for the 1957 version of Blondie was later released but only includes the first three episodes.",
+    "popularity": 3.2724,
+    "poster_path": "/bE9XRLc1xsfyU6kTrUbJcAAUGQp.jpg",
+    "first_air_date": "1957-01-04",
+    "name": "Blondie",
+    "vote_average": 4.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21558,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Walter Winchell File",
+    "overview": "The Walter Winchell File is the title of a television crime drama series that initially aired from 1957 to 1958, dramatizing cases from the New York City Police Department that were covered in the New York Daily Mirror. The series featured columnist and announcer Walter Winchell, John Larch, George Cisar, Robert Anderson, Robert Brubaker, Dolores Donlon, and Gene Barry, a year before he was cast in the lead of NBC's Bat Masterson.\n\nThirty-nine episodes were produced; the first twenty-six aired on ABC during the 1957-1958 season, and the final thirteen were seen in syndication in 1959.\n\nAmong the guest stars was the child actor Dennis Holmes, who played 7-year-old Allie Marisch in the 1957 episode \"Thou Shalt Not Kill.\"",
+    "popularity": 3.0335,
+    "poster_path": "/m8cQSDoLpfwovrnTGCF8n56amVN.jpg",
+    "first_air_date": "1957-10-02",
+    "name": "The Walter Winchell File",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/yO3sF0NQIg2ViyI3wKbnVcYhXHI.jpg",
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 13718,
+    "origin_country": [
+      "CA",
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hawkeye and the Last of the Mohicans",
+    "overview": "Hawkeye and the Last of the Mohicans was set in New York's Hudson Valley during the French and Indian war in the 1750's and depicted the adventures of Hawkeye and his Indian blood brother Chingachgook, the last member of the Mohican tribe. The series based on stories by James Fenimore Cooper.",
+    "popularity": 3.9914,
+    "poster_path": "/2b5isBzFmNYVdazEdINnPL32rns.jpg",
+    "first_air_date": "1957-04-03",
+    "name": "Hawkeye and the Last of the Mohicans",
+    "vote_average": 4.8,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/6pDW0WC5TvfAdROYEtZHxNSvI57.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 4452,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Army Game",
+    "overview": "Follows the exploits of Hut 29, a dysfunctional group of soldiers and their National Service conscription into the British Army during the post war years.",
+    "popularity": 2.1662,
+    "poster_path": "/3OoTpa6RGxkUDO69pWi76X6zgCK.jpg",
+    "first_air_date": "1957-06-19",
+    "name": "The Army Game",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/1qFd637x9qVoNyMbih6QhXx4Zo8.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 6848,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Casey Jones",
+    "overview": "Television version of the classic train story of Casey Jones, the engineer of the steam-engine powered \"Cannonball Express\".",
+    "popularity": 2.5269,
+    "poster_path": "/8kTfDE1Ig7Z5CPr1cER7UtNeNFN.jpg",
+    "first_air_date": "1957-10-08",
+    "name": "Casey Jones",
+    "vote_average": 5.5,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qJMfpdKfiBIEZBpZHUQaxrIyFCZ.jpg",
+    "genre_ids": [
+      10759,
+      18,
+      10751
+    ],
+    "id": 27513,
+    "origin_country": [
+      "AU"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures of Long John Silver",
+    "overview": "The Adventures of Long John Silver is a family adventure series about the Long John Silver character from Treasure Island. Produced in 1954 in colour in Australia for the American and British markets before the development of Australian television.\n\nLong John Silver is the proud captain of his own ship and his own crew. He and his buccaneer cruise around the Caribbean and often stay on the side of the English and fight the French and Spanish. After long and dangerous adventures, he and his crew rest in the tavern of Miss Purity.\n\nThe series first aired in the United States on syndicated basis in 1956, but irregularly as part of another show. Several episodes were edited together and shown theatrically under the titles: 'Under the Black Flag' and 'South Sea Pirates'.\n\nAfterwards, it was sold to the ITV in the UK, and aired in 1957. In 1958, the Australian Broadcasting Company (ABC) screened the series as part of Children's TV Club.",
+    "popularity": 2.256,
+    "poster_path": "/kqrl6yfs0IDD1VwumMEVJNGQXlq.jpg",
+    "first_air_date": "1957-04-09",
+    "name": "The Adventures of Long John Silver",
+    "vote_average": 6.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/7ttwM0KRxsV60sRtmxZgGsDLUjZ.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 13909,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Colt .45",
+    "overview": "Colt .45 is an American Western series which aired on ABC between October 1957 and September 1960.  Christopher Colt was apparently a gun salesman but was in fact a government agent tracking down notorious bad guys.\n\nThe half-hour program is loosely based on the 1950 Warner Bros. film of the same name, starring Randolph Scott. Colt .45 was part of the William T. Orr-produced array of westerns which Warner produced for ABC in the late 1950s and early 1960s.",
+    "popularity": 2.1648,
+    "poster_path": "/zYZvtpgag5frXlogFJAwsPzvXFN.jpg",
+    "first_air_date": "1957-10-18",
+    "name": "Colt .45",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sFLI02iPG4aTuxJNhGAlxXvf93M.jpg",
+    "genre_ids": [
+      16
+    ],
+    "id": 30003,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Captain Pugwash",
+    "overview": "The adventures of the pirate Captain Pugwash, of the pirate ship the 'Black Pig'",
+    "popularity": 1.8056,
+    "poster_path": "/nWEj2Jq6NSbBRN9NEa3lB6pGEww.jpg",
+    "first_air_date": "1957-10-22",
+    "name": "Captain Pugwash",
+    "vote_average": 6,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 13344,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Emergency – Ward 10",
+    "overview": "Emergency – Ward 10 is a British television series shown on ITV between 1957 and 1967. Like The Grove Family, a series shown by the BBC between 1954 and 1957, Emergency – Ward 10 is considered to be one of British television's first major soap operas.  Set in Oxbridge General Hospital, this soap opera focused equally on the lives and loves of its medical staff and the pressure of their work.",
+    "popularity": 2.2815,
+    "poster_path": "/srLWuQ0zVg8VIHG70NXTRga1DT2.jpg",
+    "first_air_date": "1957-02-19",
+    "name": "Emergency – Ward 10",
+    "vote_average": 5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 18196,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Harbor Command",
+    "overview": "Harbor Command is an American action series that aired in syndicated from October 11, 1957, to July 4, 1958. The series stars Wendell Corey as Captain Ralph Baxter, an officer of the United States Coast Guard. The series was produced by Ziv Television Programs.",
+    "popularity": 1.7828,
+    "poster_path": "/bXYxa4A0JP00y69XPFsfZTW7pYS.jpg",
+    "first_air_date": "1957-10-11",
+    "name": "Harbor Command",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 17979,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Mr. Adams and Eve",
+    "overview": "Mr. Adams and Eve is a CBS sitcom starring Howard Duff and his then wife, Ida Lupino, as a fictitious acting couple, Howard and Eve Adams, residing in Beverly Hills, California. In the television series, Lupino is known professionally as Eve Drake. The program aired sixty-six episodes from January 4, 1957, to July 8, 1958, with rebroadcasts continuing until September 23, 1958. Lupino was nominated for an Emmy Award for \"Best Actress in a Continuing Role\" for both seasons of Mr. Adams and Eve.",
+    "popularity": 3.5704,
+    "poster_path": "/qpWG6M1Lfzftui1SCe8rCUijPuD.jpg",
+    "first_air_date": "1957-01-04",
+    "name": "Mr. Adams and Eve",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/rJE6KT9tKsE6rdQ47w6enSnxhll.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 18008,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "How to Marry a Millionaire",
+    "overview": "How to Marry a Millionaire is an American sitcom that aired in syndication from September 1957 to August 1959. The series is based on the 1953 film of the same name starring Marilyn Monroe, Betty Grable, and Lauren Bacall.\n\nThe series stars Lori Nelson, Merry Anders, and Barbara Eden. Lisa Gaye joined the cast in the second season after Lori Nelson left the series. How to Marry a Millionaire was the first series that Barbara Eden was featured in as a regular cast member. Eden would go on to play one of her more notable roles, \"Jeannie\" in the NBC sitcom I Dream of Jeannie. During the series' first season, Eden was billed third. After Lori Nelson left the series, Eden was billed first.",
+    "popularity": 2.6476,
+    "poster_path": "/8Fgw5r7ZcJYcEfIxhZm49LxToG6.jpg",
+    "first_air_date": "1957-10-07",
+    "name": "How to Marry a Millionaire",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/eRfm7BwgmLitMQHN0vvQg8W387l.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 14352,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Date with the Angels",
+    "overview": "Date with the Angels is an American sitcom that aired on ABC from May 10, 1957 to January 29, 1958. The series, which stars Betty White and Bill Williams, began as a late season replacement for The Ray Anthony Show for the same sponsor, Chrysler's Plymouth division. Tom Kennedy was the show's announcer and spokesman for Plymouth.",
+    "popularity": 1.7311,
+    "poster_path": "/uHBIsYFfJIuqmZxNtCl3SJR1DrG.jpg",
+    "first_air_date": "1957-05-10",
+    "name": "Date with the Angels",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24787,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Lux Show",
+    "overview": "",
+    "popularity": 1.8333,
+    "poster_path": null,
+    "first_air_date": "1957-09-26",
+    "name": "The Lux Show",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25757,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Official Detective",
+    "overview": "",
+    "popularity": 2.6861,
+    "poster_path": null,
+    "first_air_date": "1957-01-01",
+    "name": "Official Detective",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/TBjRq5L6cmNgnKVs2EA0msfmnT.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 18127,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Silent Service",
+    "overview": "The Silent Service was a 1957–1958 syndicated anthology television series based on actual events in the submarine section of the United States Navy. The Silent Service was narrated by Rear Admiral Thomas M. Dykers, who retired from the Navy in 1949 after twenty-two years of service. He began each episode with this refrain: \"Tonight, we bring you another thrilling episode of Silent Service stories, of warfare under the sea.\"\n\nMany of the episodes focused on the history of specific submarines, including:\n\n⁕USS Sculpin\n\n⁕USS Nautilus, the first atomic submarine\n\n⁕USS Perch\n\n⁕USS Tang\n\n⁕USS S-38\n\n⁕USS Tirante\n\n⁕USS Bergall\n\n⁕USS Spearfish\n\n⁕USS Triton\n\n⁕USS Wahoo, and\n\n⁕USS Gato, subject of the series finale.\n\nActors appearing on The Silent Service included Russell Johnson, cast three times in the role of the character \"Beach\". DeForest Kelley and Leonard Nimoy appeared in two episodes each as Lieutenant Commander James Dempsey and as Sonarman, respectively. Jerry Paris and Liam Sullivan each guest starred twice. Eric Morris appeared in nineteen episodes identified only as \"Soldier\".\n\nOther guest stars included Joe Conley, Mike Connors, Lawrence Dobkin, Ron Hagerthy, Adam Kennedy, Robert Knapp, Paul Richards, Bing Russell, Craig Stevens, Dennis Weaver and Stuart Whitman.",
+    "popularity": 1.8692,
+    "poster_path": "/wqZvdHvkhDXGBRzC0v3a4VLIMaB.jpg",
+    "first_air_date": "1957-04-05",
+    "name": "The Silent Service",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/c3gn31lc7R1XGzCdwdYMUVrWQOv.jpg",
+    "genre_ids": [],
+    "id": 26581,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Shadow Squad",
+    "overview": "",
+    "popularity": 1.1886,
+    "poster_path": "/g6aVphDAfDqGJZ6HF2xyvAcZVvk.jpg",
+    "first_air_date": "1957-06-17",
+    "name": "Shadow Squad",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/92oN7beYNdgb4JIDryl6uVCqiSn.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 30917,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Boots and Saddles",
+    "overview": "Boots and Saddles is an American Western television series created by Robert A. Cinader which aired in syndication from 1957 to 1958.",
+    "popularity": 1.223,
+    "poster_path": "/x2LHThcjbzkgW5jAL95mOgXWsCV.jpg",
+    "first_air_date": "1957-09-19",
+    "name": "Boots and Saddles",
+    "vote_average": 5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 30959,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Meet McGraw",
+    "overview": "Meet McGraw is an American dramatic television series starring Frank Lovejoy in the role of the hard-hitting detective McGraw, a man specifically given no first name in the program. Forty-one half-hour episodes aired on NBC during the 1957-1958 season, sponsored by Procter & Gamble. The series was produced by the Desilu Studios, most of whose productions were broadcast by CBS. The theme song for the series is \"One For My Baby\" by Harold Arlen and Johnny Mercer.\n\nMeet McGraw preceded The Bob Cummings Show on Tuesday evenings on NBC. It aired at 9:00pm ET/PT opposite John Lupton’s Western series, Broken Arrow on ABC and Bud Collyer's To Tell the Truth quiz show on CBS.\n\nAfter its cancellation, Meet McGraw was repeated as The Adventures of McGraw on ABC in 1958-1959, but not in prime time. A number of episodes of the series, including \"Mohave\" and \"Lady in Limbo,\" are available on DVD.",
+    "popularity": 2.4626,
+    "poster_path": "/v8niZRmNyKopbgl7Lt3ipr9E2LV.jpg",
+    "first_air_date": "1957-06-17",
+    "name": "Meet McGraw",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/a6zpJLAnoLk4cq9ncpAFLy1bqO8.jpg",
+    "genre_ids": [
+      37,
+      10751,
+      10762
+    ],
+    "id": 24030,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The New Adventures of Spin and Marty",
+    "overview": "The boys (and girls) are back for another summer of ranch life.",
+    "popularity": 1.7197,
+    "poster_path": "/dvrbvicMxwbA87NR7UgjkgC7Jyi.jpg",
+    "first_air_date": "1957-11-04",
+    "name": "The New Adventures of Spin and Marty",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 21509,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Court of Last Resort",
+    "overview": "The Court of Last Resort is an American television dramatized court show which aired on the NBC from 1957 through 1958. It was co-produced by Erle Stanley Gardner's Paisano Productions, which also brought forth the long-running hit television program, Perry Mason on CBS. Its approach to dealing with potential miscarriages of justice in an entirely extra-judicial format was adopted by the BBC series Rough Justice in the 1980s.",
+    "popularity": 1.4936,
+    "poster_path": null,
+    "first_air_date": "1957-10-04",
+    "name": "The Court of Last Resort",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28244,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hotel Cosmopolitan",
+    "overview": "",
+    "popularity": 1.186,
+    "poster_path": null,
+    "first_air_date": "1957-08-19",
+    "name": "Hotel Cosmopolitan",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 12362,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Six-Five Special",
+    "overview": "The Six-Five Special is a British television programme launched in February 1957 when both television and rock and roll were in their infancy in Britain.",
+    "popularity": 1.0602,
+    "poster_path": null,
+    "first_air_date": "1957-02-16",
+    "name": "Six-Five Special",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 31423,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "O. Henry Playhouse",
+    "overview": "The O. Henry Playhouse was an early American anthology television series which featured television adaptations of short stories written by 19th-century author O. Henry and primarily set in New York City. The series was both hosted and narrated by Thomas Mitchell, who portrayed the title character, and featured several television and film stars during its run such as DeForest Kelley, Lisa Montell, Otto Kruger, Max Showalter and Ernest Borgnine. The series was syndicated and initially ran from January 23 to May 25, 1957, and its final episode aired on November 19 of that year.",
+    "popularity": 1.3865,
+    "poster_path": null,
+    "first_air_date": "1957-01-23",
+    "name": "O. Henry Playhouse",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 295749,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Overseas Press Club - Exclusive!",
+    "overview": "The series adapted for television some true tales from press correspondents from around the world.",
+    "popularity": 1.5201,
+    "poster_path": "/eByOiBQ62p9ArWlueltM6Oeg44x.jpg",
+    "first_air_date": "1957-06-15",
+    "name": "Overseas Press Club - Exclusive!",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 7809,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Goodyear Theatre",
+    "overview": "Goodyear Theatre is a 30-minute dramatic television anthology series telecast on NBC from 1957 to 1960 for a total of 55 episodes. The live show was directed by Don Taylor, Arthur Hiller and James Sheldon. It followed Goodyear Television Playhouse.",
+    "popularity": 1.21,
+    "poster_path": null,
+    "first_air_date": "1957-09-30",
+    "name": "Goodyear Theatre",
+    "vote_average": 6.8,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 12576,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Frank Sinatra Show",
+    "overview": "The Frank Sinatra Show is an ABC variety and drama series, starring Frank Sinatra, premiering on October 18, 1957, and last airing on June 27, 1958.",
+    "popularity": 1.0876,
+    "poster_path": "/gfpqffREYX1tgvb38dJYA2ZZP50.jpg",
+    "first_air_date": "1957-10-18",
+    "name": "Frank Sinatra Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 12017,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "O.S.S.",
+    "overview": "O.S.S. was a Buckeye Productions and Associated Television co-produced wartime television drama series.\n\nIt ran for 26 half-hour monochrome episodes during the 1957-1958 season and was distributed by ITC Entertainment and networked in the United States by ABC.\n\nThe series followed the adventures of Frank Hawthorne, an agent with the American Office of Strategic Services, who operated behind Nazi lines in occupied France.",
+    "popularity": 1.1753,
+    "poster_path": null,
+    "first_air_date": "1957-09-14",
+    "name": "O.S.S.",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 13223,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Man Without a Gun",
+    "overview": "Man Without a Gun, is an American western television series produced by 20th Century Fox television and presented in first-run syndication in the United States from 1957 to 1959. Set in the town of Yellowstone near Yellowstone National Park in the then Dakota Territory during the 1870s, the program starred Rex Reason as newspaper editor Adam MacLean, who brought miscreants to justice without the use of violence or gunplay but through his Yellowstone Sentinel. The co-star was Mort Mills, as Marshal Frank Tallman, who intervened when the \"pen\" proved not to be \"mightier than the sword\".Harry Harvey, Sr., was cast in twenty-one episodes as Yellowstone Mayor George Dixon.\n\nThe program is considered to have been unique because it showcased MacLean's moral ethics and common sense to bring outlaws to justice. The show was also used as a schoolroom to teach the youngsters of the 1950s about decency and the differences between right and wrong.",
+    "popularity": 2.2361,
+    "poster_path": "/aX2w2Pz9hGCI9ISgbnruWP7agw6.jpg",
+    "first_air_date": "1957-11-06",
+    "name": "Man Without a Gun",
+    "vote_average": 7.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/c9vBwlGCx8u9L1Y1LTMnNBX44YO.jpg",
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 28697,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Code 3",
+    "overview": "Code 3 is an American crime drama that aired in syndication in 1957. The stories were all based on actual files of the Los Angeles sheriff's office.",
+    "popularity": 1.0203,
+    "poster_path": "/k2DycRNUrDjZg4LYG36ceISzgTQ.jpg",
+    "first_air_date": "1957-04-02",
+    "name": "Code 3",
+    "vote_average": 5.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/l4T4XXXVAfbDWbE83eG3aWaIIue.jpg",
+    "genre_ids": [
+      35,
+      10762
+    ],
+    "id": 2974,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Annette",
+    "overview": "Annette is a television serial that ran on The Mickey Mouse Club during the show's third season. It starred Annette Funicello as Annette McCloud, a poor, orphaned country girl who moves into town with her upper-class aunt and uncle. The serial also starred Richard Deacon as Uncle Archie McCleod, Sylvia Field as Aunt Lila McCleod, Mary Wickes as Katie the housekeeper and prolific Disney child stars Tim Considine, David Stollery and Roberta Shore as Annette's friends. The story was adapted by Lillie Hayward from the book Margaret by Janette Sebring Lowrey.\n\nAnnette was released to DVD in 2008 as part of the Walt Disney Treasures series.",
+    "popularity": 0.8442,
+    "poster_path": "/qEfyTiF1BNrYjZgTExpQYVL49Y0.jpg",
+    "first_air_date": "1957-02-08",
+    "name": "Annette",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763,
+      99
+    ],
+    "id": 19194,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Twentieth Century",
+    "overview": "The Twentieth Century was a documentary television program, sponsored by the Prudential Insurance Company, which ran on the CBS network from 20 October 1957 until 4 January 1970. It was hosted by Walter Cronkite. The opening and closing theme music was written by composer George Antheil.\n\nThe program presented filmed reports on news and cultural events that were important for the development of the 20th century. The show did not just present the events, but also interpreted them. Such subjects as World War I and major assassinations were presented in context.\n\nOn 20 January 1967, the show was renamed The 21st Century, sponsored by Union Carbide. The show's focus changed to the future, and what mankind could look forward to. 'The 21st Century' was cancelled after three seasons. The reason given was that the writers had run out of things to talk about. However, it is possible that CBS may have wished to replace it with a more commercially successful program.",
+    "popularity": 1.2478,
+    "poster_path": null,
+    "first_air_date": "1957-10-20",
+    "name": "The Twentieth Century",
+    "vote_average": 8,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23973,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Silver Sword",
+    "overview": "",
+    "popularity": 0.7847,
+    "poster_path": null,
+    "first_air_date": "1957-11-24",
+    "name": "The Silver Sword",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 8775,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Tom Terrific",
+    "overview": "Drawn in a simple style, it features a gee-whiz boy hero, Tom Terrific, who lives in a treehouse and can transform himself into anything he wants thanks to his magic, funnel-shaped \"thinking cap,\" which also enhances his intelligence. He has a comic lazybones of a sidekick, Mighty Manfred the Wonder Dog, and an arch-foe named Crabby Appleton, whose motto is, \"I'm rotten to the core!\" Other foes include Mr. Instant, the Instant Thing King, Captain Kidney Bean, Sweet Tooth Sam, the Candy Bandit and Isotope Feaney, The Meany.",
+    "popularity": 1.1074,
+    "poster_path": "/4OGQfoZwFjL7e3RhkrjLDNZCyc3.jpg",
+    "first_air_date": "1957-06-10",
+    "name": "Tom Terrific",
+    "vote_average": 9,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21862,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Nicholas Nickleby",
+    "overview": "",
+    "popularity": 0.7626,
+    "poster_path": null,
+    "first_air_date": "1957-10-18",
+    "name": "Nicholas Nickleby",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/2vetv4ahNe38Y2OszDc6c5mu1fV.jpg",
+    "genre_ids": [
+      9648,
+      18,
+      80
+    ],
+    "id": 13652,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The New Adventures of Charlie Chan",
+    "overview": "The New Adventures of Charlie Chan is a British-American crime drama series that aired in the United States in syndicated television from June 1957, to 1958. The first five episodes were made by Vision Productions in the United States, before production switched to the United Kingdom under ITC Entertainment and Television Programs of America.",
+    "popularity": 0.9074,
+    "poster_path": "/8p4BvR2EIpyc8mukSlTTym1w1WD.jpg",
+    "first_air_date": "1957-08-09",
+    "name": "The New Adventures of Charlie Chan",
+    "vote_average": 5.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 34511,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Pat Boone Chevy Showroom",
+    "overview": "The Pat Boone Chevy Showroom is a half-hour variety show that aired on ABC-TV from October 3, 1957 to June 23, 1960, starring the young singer Pat Boone and a host of top-name guest stars sponsored by Chevrolet. Boone, a descendant of Kentucky frontiersman Daniel Boone, was, at 23, still attending Columbia University in New York City when the program began production. Though born in Jacksonville, Florida, Boone was reared primarily in Nashville, Tennessee. Upon his graduation from Columbia in 1958, TV Guide pictured him in his cap and gown on the magazine cover. Boone, the No. 10 all-time vocalist in sales, was at the time the youngest person to host his own network variety program until ABC's The Donny & Marie Show, with two hosts, broke the record in 1976.",
+    "popularity": 2.9611,
+    "poster_path": null,
+    "first_air_date": "1957-10-23",
+    "name": "The Pat Boone Chevy Showroom",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759
+    ],
+    "id": 19347,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Captain David Grief",
+    "overview": "Captain David Grief is an American action/adventure series that aired in syndication from October 1957, to 1960. The program was based on a series of Jack London short-stories centered around the South Seas tradesman and adventurer David Grief.",
+    "popularity": 0.7046,
+    "poster_path": null,
+    "first_air_date": "1957-10-03",
+    "name": "Captain David Grief",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 124982,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Hier und heute",
+    "overview": "",
+    "popularity": 0.8873,
+    "poster_path": null,
+    "first_air_date": "1957-11-30",
+    "name": "Hier und heute",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/8C2RBqy7AK3Si70Mq7MTtP4kvlj.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 99834,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "La caméra explore le temps",
+    "overview": "This French TV series from the 1950s and 60s explored historical events using dramatic reenactments, bringing history to life for its viewers.",
+    "popularity": 0.7699,
+    "poster_path": "/bgISCpXlu5dlodlq2B5MFCDpFty.jpg",
+    "first_air_date": "1957-09-14",
+    "name": "The camera explores time",
+    "vote_average": 9,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 18508,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Harbormaster",
+    "overview": "Harbormaster is an American adventure/drama series that premiered on September 26, 1957 on CBS. In January 1958, the series was renamed Adventure at Scott Island and began airing on ABC. Harbormaster was a Ziv production.",
+    "popularity": 0.8568,
+    "poster_path": null,
+    "first_air_date": "1957-09-26",
+    "name": "Harbormaster",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/9lxeuVkwG7V3iV8Idt0Q94ZeaXP.jpg",
+    "genre_ids": [],
+    "id": 71071,
+    "origin_country": [
+      "IT"
+    ],
+    "original_language": "it",
+    "original_name": "Orgoglio e Pregiudizio",
+    "overview": "",
+    "popularity": 1.0135,
+    "poster_path": "/gNWCWqAmCmNcJ4bbxwl06T3l7hk.jpg",
+    "first_air_date": "1957-09-21",
+    "name": "Orgoglio e Pregiudizio",
+    "vote_average": 10,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 18524,
+    "origin_country": [
+      "GB",
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Dick and the Duchess",
+    "overview": "Dick and the Duchess is a rare 1950s CBS situation comedy shot and set in London; it was one of the earliest of filmed television series in the UK.\n\nA multinational insurance company stationed American Dick Starrett in London as an investigator and adjuster. His wife, Jane, daughter of an English earl, and her family were less than enchanted with her marriage to a commoner — and an American at that. Jane feels that she had been 'Americanised' by movie and television crime stories enough to be a detective, so she often tries to help with Dick's investigations, although she usually causes more problems by doing so.",
+    "popularity": 0.887,
+    "poster_path": "/rYn1avuCfzkiVUTyRLEyDGxLyTZ.jpg",
+    "first_air_date": "1957-09-28",
+    "name": "Dick and the Duchess",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28181,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Meet McGraw",
+    "overview": "",
+    "popularity": 0.6555,
+    "poster_path": null,
+    "first_air_date": "1957-07-02",
+    "name": "Meet McGraw",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 8736,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Eve Arden Show",
+    "overview": "The Eve Arden Show is a 26-segment American television sitcom which aired during the 1957-1958 season on CBS, alternately sponsored by Lever Brothers and Shulton, Inc..",
+    "popularity": 0.7931,
+    "poster_path": null,
+    "first_air_date": "1957-09-17",
+    "name": "The Eve Arden Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 40307,
+    "origin_country": [],
+    "original_language": "en",
+    "original_name": "The Adventures of Clint and Mac",
+    "overview": "The Adventures of Clint and Mac is a 1957 television serial that aired on ABC as part of the third season of The Mickey Mouse Club.",
+    "popularity": 0.6447,
+    "poster_path": "/xueLXT2lfxVpBlwgrHj51DhUY8T.jpg",
+    "first_air_date": "1957-12-31",
+    "name": "The Adventures of Clint and Mac",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23477,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "White Hunter",
+    "overview": "British expatriate John A. Hunter leads safari tours in Africa.",
+    "popularity": 0.9324,
+    "poster_path": null,
+    "first_air_date": "1957-10-12",
+    "name": "White Hunter",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26680,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Kenilworth",
+    "overview": "",
+    "popularity": 0.6125,
+    "poster_path": null,
+    "first_air_date": "1957-02-08",
+    "name": "Kenilworth",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qJI8Zf4rG9NFdPGyRb4BkqZkBgp.jpg",
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 29856,
+    "origin_country": [
+      "CA",
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Sailor of Fortune",
+    "overview": "Captain of 'The Shipwreck' Grant Mitchell runs a cargo business, but finds himself often called on for help against problems, intrigue, and villainy on the choppy waters of his trade.",
+    "popularity": 1.5034,
+    "poster_path": "/kfMyFE5rfkNh1BqKVxJWYvah0XK.jpg",
+    "first_air_date": "1957-05-26",
+    "name": "Sailor of Fortune",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 8447,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The O. Henry Playhouse",
+    "overview": "Anthology series based on the short stories of O. Henry.",
+    "popularity": 0.7477,
+    "poster_path": "/83SwOAKuzQ5XD141HZOcA4LxZrD.jpg",
+    "first_air_date": "1957-01-23",
+    "name": "The O. Henry Playhouse",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/oFWlF94sCK791Z0e29IdzlXHJrz.jpg",
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 71517,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Five Clues to Fortune",
+    "overview": "A treasure has been hidden at Woburn Abbey at the time of the Dissolution of the Monasteries. When the sale of the present-day estate is threatened three children find this treasure by means of five clues hidden in a deer's antler.",
+    "popularity": 0.6504,
+    "poster_path": "/kWMMhcw9McE3mYWiWpvbjxJCRVB.jpg",
+    "first_air_date": "1957-06-01",
+    "name": "Five Clues to Fortune",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25269,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Big Beat",
+    "overview": "",
+    "popularity": 0.9481,
+    "poster_path": null,
+    "first_air_date": "1957-07-12",
+    "name": "The Big Beat",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 295412,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Our Miss Pemberton",
+    "overview": "Our Miss Pemberton is a British television programme which aired on the BBC from 1957 to 1958. A drama, it was about life in a small town. All 56 episodes were broadcast live and no telerecordings appear to have survived, leaving them lost.",
+    "popularity": 1.0585,
+    "poster_path": "/kbncZctGbCxuXlvbocHpOHXPiM2.jpg",
+    "first_air_date": "1957-01-03",
+    "name": "Our Miss Pemberton",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 30934,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Sally",
+    "overview": "Sally is an American situation comedy which aired on NBC from September 15, 1957 to March 30, 1958. The series is the first filmed television series produced by Paramount Studios.",
+    "popularity": 0.5252,
+    "poster_path": null,
+    "first_air_date": "1957-09-15",
+    "name": "Sally",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 2145,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Living It Up",
+    "overview": "Comedian Arthur Askey and his buddy Stinker reside in a flat on top of Associated-Rediffusion's Television House in Aldwych, getting into all sorts of comedic situations.\n\nThe series was based on the BBC radio comedy Band Waggon. Produced for the ITV network by Associated-Rediffusion, all nine episodes survive in the archives.",
+    "popularity": 0.8298,
+    "poster_path": null,
+    "first_air_date": "1957-04-12",
+    "name": "Living It Up",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/bhr5G1PUfPAMH36dD7opLfxZok.jpg",
+    "genre_ids": [
+      18,
+      10768
+    ],
+    "id": 294292,
+    "origin_country": [
+      "SU"
+    ],
+    "original_language": "ru",
+    "original_name": "Тихий Дон",
+    "overview": "",
+    "popularity": 0.607,
+    "poster_path": "/rs420Ii8zehESUHLJXhgr89KPzE.jpg",
+    "first_air_date": "1957-10-26",
+    "name": "Quiet Flows the Don",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 283665,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Theatre Night",
+    "overview": "Excerpts from Plays",
+    "popularity": 0.4754,
+    "poster_path": "/mWtfv8BU3tKEn3wO3wgyab9Fo7s.jpg",
+    "first_air_date": "1957-01-21",
+    "name": "Theatre Night",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 110158,
+    "origin_country": [
+      "AT"
+    ],
+    "original_language": "de",
+    "original_name": "Was sieht man Neues?",
+    "overview": "",
+    "popularity": 0.5662,
+    "poster_path": null,
+    "first_air_date": "1957-03-09",
+    "name": "Was sieht man Neues?",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 104832,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Zeichen der Zeit",
+    "overview": "",
+    "popularity": 0.4988,
+    "poster_path": null,
+    "first_air_date": "1957-08-01",
+    "name": "Zeichen der Zeit",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 27134,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Early To Braden",
+    "overview": "",
+    "popularity": 0.4891,
+    "poster_path": null,
+    "first_air_date": "1957-07-11",
+    "name": "Early To Braden",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      9648,
+      18
+    ],
+    "id": 21549,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The George Sanders Mystery Theater",
+    "overview": "The George Sanders Mystery Theater is the title of a 30 minute American television mystery drama series which aired on the NBC in 1957 and hosted by character actor George Sanders.\n\nSome of the actors who were cast in the episodes included: George Sanders, Lyle Talbot, June Vincent, S. John Launer, Paul Petersen, and John Archer.",
+    "popularity": 0.4682,
+    "poster_path": null,
+    "first_air_date": "1957-06-22",
+    "name": "The George Sanders Mystery Theater",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10765
+    ],
+    "id": 1511,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures of Twizzle",
+    "overview": "The Adventures of Twizzle is the very first television show produced by AP Films and specifically Gerry Anderson, after being approached by author Roberta Leigh and her colleague Suzanne Warner. Sources vary as to who directed the series. In addition to his production duties, Anderson also directed the action whilst photography was directed by Arthur Provis, Anderson's founding partner at AP Films. The music for the songs were written by Leslie Clair, the music was scored by Barry Gray, art direction came from Reg Hill and special effects were by Derek Meddings, all of whom would become long-time collaborators with Anderson.",
+    "popularity": 0.5808,
+    "poster_path": "/q4TLADN4PlxhvGH15tpb4vjMJlz.jpg",
+    "first_air_date": "1957-11-13",
+    "name": "The Adventures of Twizzle",
+    "vote_average": 7.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/rKd2CgtfM60tmnKgazItNcafQUZ.jpg",
+    "genre_ids": [],
+    "id": 274211,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Vautrin",
+    "overview": "",
+    "popularity": 0.8775,
+    "poster_path": "/a570Lfe7a9HlMmNIbsAw4Oja2Ee.jpg",
+    "first_air_date": "1957-06-01",
+    "name": "Vautrin",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 25205,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Art Ford's Greenwich Village Party",
+    "overview": "",
+    "popularity": 0.6161,
+    "poster_path": null,
+    "first_air_date": "1957-09-13",
+    "name": "Art Ford's Greenwich Village Party",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 35072,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Polly Bergen Show",
+    "overview": "The Polly Bergen Show is a half-hour 18-episode comedy/variety show, starring then 27-year-old Polly Bergen, which aired on NBC in the 1957-1958 television season. The program is remembered for its impressive guest-star lineup as well as its closing theme song, \"The Party's Over\".The Polly Bergen Show alternated in the 9 p.m. EST Saturday time slot with the equally short-lived Club Oasis.",
+    "popularity": 0.5651,
+    "poster_path": null,
+    "first_air_date": "1957-09-21",
+    "name": "The Polly Bergen Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28548,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Yes, It's The Cathode-Ray Tube Show!",
+    "overview": "",
+    "popularity": 0.4481,
+    "poster_path": null,
+    "first_air_date": "1957-02-11",
+    "name": "Yes, It's The Cathode-Ray Tube Show!",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26111,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "A Time Of Day",
+    "overview": "",
+    "popularity": 0.4988,
+    "poster_path": null,
+    "first_air_date": "1957-11-13",
+    "name": "A Time Of Day",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 102628,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Les Aventures de Tintin, d'après Hergé",
+    "overview": "",
+    "popularity": 0.5124,
+    "poster_path": "/jwceHgz4P02PzgHCsIscuobcXj9.jpg",
+    "first_air_date": "1957-11-28",
+    "name": "Les Aventures de Tintin, d'après Hergé",
+    "vote_average": 4.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28318,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Arlene Francis Show",
+    "overview": "",
+    "popularity": 0.4456,
+    "poster_path": null,
+    "first_air_date": "1957-08-12",
+    "name": "The Arlene Francis Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763,
+      10767
+    ],
+    "id": 219883,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "America After Dark",
+    "overview": "A short-lived change of format for the talk show \"Tonight Starring Steve Allen\". The co-hosts Steve Allen and Ernie Kovacs were dismissed, and the series changed into a news show. Jack Lescoulie and Al \"Jazzbo\" Collins served as the new hosts, while Hy Gardner conducted the interviews. The news show suffered from low ratings, and several NBC affiliates dropped the show. NBC then changed the format back into a talk show, under the title \"Tonight Starring Jack Paar\".",
+    "popularity": 0.476,
+    "poster_path": null,
+    "first_air_date": "1957-01-28",
+    "name": "America After Dark",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 122330,
+    "origin_country": [],
+    "original_language": "it",
+    "original_name": "Viaggio nella valle del Po",
+    "overview": "",
+    "popularity": 0.4951,
+    "poster_path": "/6s16boU01kkWlOfJ38vURnsjyFi.jpg",
+    "first_air_date": "1957-12-03",
+    "name": "Viaggio nella valle del Po",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 77104,
+    "origin_country": [
+      "IT"
+    ],
+    "original_language": "it",
+    "original_name": "Jane Eyre",
+    "overview": "Italian adaptation of Charlotte Bronte's novel.",
+    "popularity": 0.5709,
+    "poster_path": "/26gx3IXVnplQju6JSXEQ1l6JYjz.jpg",
+    "first_air_date": "1957-03-09",
+    "name": "Jane Eyre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 75632,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Tiny Talent Time",
+    "overview": "The talent and variety program showcased the artistic abilities of local children in an entertaining family genre. The show was marked by a characteristically home-spun style and had great appeal to many different age groups. Indeed, many participants in the original show have enjoyed illustrious careers as performers around the world.\n\nDuring the program, host Bill. Lawrence engaged in casual, light-hearted banter with the performers before and after each act. The questions usually revolved around a child's school, home life, family and likes and dislikes.",
+    "popularity": 0.5074,
+    "poster_path": null,
+    "first_air_date": "1957-09-01",
+    "name": "Tiny Talent Time",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 257036,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Huntingtower",
+    "overview": "What was the secret of the great deserted house overlooking the sea from the lonely peninsula on the Scottish coast? Why was the house so closely guarded by the silent men who would have no dealings with their neighbours' in the village below? In Judith Kerr's adaptation of John Buchan's most exciting novel Huntingtower you can see how chance brought together strange partners to solve the mystery. A retired grocer, a poet, and a band of tough, ragged Gorbals Boy Scouts combine forces to uncover the secret.\n\nHuntingtower by John Buchan was adapted as a six-part BBC Television Children's serial by Judith Kerr and first broadcast on the BBC-tv network on Sundays (5.35–6.05pm) from 16 June to 21 July 1957. It starred James Hayter and Richard Wordsworth.",
+    "popularity": 0.4455,
+    "poster_path": null,
+    "first_air_date": "1957-06-16",
+    "name": "Huntingtower",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/ekaMxoyCsRlJLjkuyyYWaybtKFj.jpg",
+    "genre_ids": [
+      10762,
+      10751
+    ],
+    "id": 69013,
+    "origin_country": [
+      "AT"
+    ],
+    "original_language": "de",
+    "original_name": "Kasperl und Pezi",
+    "overview": "",
+    "popularity": 0.5112,
+    "poster_path": "/nF8gNtvtYdOdENKbkTIFJF5hppn.jpg",
+    "first_air_date": "1957-01-01",
+    "name": "Kasperl und Pezi",
+    "vote_average": 9,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 27817,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Railway Children",
+    "overview": "A serial in eight parts adapted for television from the book by E. Nesbit.",
+    "popularity": 0.5565,
+    "poster_path": null,
+    "first_air_date": "1957-03-03",
+    "name": "The Railway Children",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28835,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "The Wayne And Shuster Hour",
+    "overview": "",
+    "popularity": 0.3993,
+    "poster_path": "/yPxPiMDfD6NinbmU9EshysetntY.jpg",
+    "first_air_date": "1957-11-16",
+    "name": "The Wayne And Shuster Hour",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/skgYjz7qzRI8hjq9G1VZOgZqDvI.jpg",
+    "genre_ids": [],
+    "id": 246615,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Eye to Eye",
+    "overview": "Documentary programmes looking at aspects of contemporary British life.",
+    "popularity": 0.4804,
+    "poster_path": "/f4zl9Ulu8kN7aOLNwkRH8cr7Zdg.jpg",
+    "first_air_date": "1957-05-17",
+    "name": "Eye to Eye",
+    "vote_average": 7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23561,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Cooper (or Life With Tommy)",
+    "overview": "",
+    "popularity": 0.7064,
+    "poster_path": null,
+    "first_air_date": "1957-03-25",
+    "name": "Cooper (or Life With Tommy)",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10762
+    ],
+    "id": 13637,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "fr",
+    "original_name": "Bobino",
+    "overview": "Bobino is a Quebec French language children's television show made in Quebec and broadcast on Radio Canada, the French language television service of the Canadian Broadcasting Corporation, between 1957 and 1985. Its stories revolved around Bobino and his sister Bobinette. The cast is complemented by a number of other characters which never appear on screen but who interact with the cast by visual or audible cues.",
+    "popularity": 0.4068,
+    "poster_path": null,
+    "first_air_date": "1957-05-23",
+    "name": "Bobino",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      9648
+    ],
+    "id": 26301,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Murder Bag",
+    "overview": "Murder Bag debuted in 1957, featuring Detective Lockhart and his iconic murder bag for forensic investigations.",
+    "popularity": 0.4274,
+    "poster_path": "/mkxGJn8f8kbxnQ1CznEeydSQdGw.jpg",
+    "first_air_date": "1957-09-16",
+    "name": "Murder Bag",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 50972,
+    "origin_country": [
+      "AU"
+    ],
+    "original_language": "en",
+    "original_name": "Noughts and Crosses",
+    "overview": "An Australian television game show.",
+    "popularity": 0.4075,
+    "poster_path": null,
+    "first_air_date": "1957-12-01",
+    "name": "Noughts and Crosses",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26778,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Royalty",
+    "overview": "",
+    "popularity": 0.7108,
+    "poster_path": null,
+    "first_air_date": "1957-10-16",
+    "name": "The Royalty",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 35375,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Club Oasis",
+    "overview": "Club Oasis is a 24-episode half-hour comedy-variety show, set in a chic simulated nightclub, which appeared on NBC in the 1957–1958 television season. The series alternated with The Polly Bergen Show in the 9 p.m. EST time slot on Saturday evenings. Though several entertainers appeared as hosts on Club Oasis, the program became most closely associated toward the end of its short run with the bandleader Spike Jones, who became its permanent host, and his City Slickers.\n\nAfter their performances, the Club Oasis guests were interviewed by Hy Gardner. In the series premiere, Van Johnson acted as host, and the singers included Jo Stafford and the four Ames Brothers. In the second episode, Kay Starr sang \"Wheel of Fortune\", \"When You're Smiling\", \"That's What the Good Book Says\", and \"Three Letters\".\n\nOn December 21, 1957, the program featured Fred Waring and the Pennsylvanians performing \"Holiday\", \"Auld Lang Syne\", \"When Irish Eyes Are Smiling\", and \"Easter Parade\", as well as some traditional carols.\n\nOther Club Oasis regulars were comedienne Joyce Jameson and midget comedian Billy Barty. Among the many well-known guest stars, some of whom made multiple appearances, were Andy Griffith, Joe Besser of The Three Stooges, Edie Adams, Jeannie Carson, Jimmy Durante, Eddie Fisher, Stan Freburg, Phil Harris, Peter Lawford, Gisele MacKenzie, Dean Martin, the Nelson Riddle Orchestra, Martha Raye, Jimmie Rodgers, and Frank Sinatra.",
+    "popularity": 0.4345,
+    "poster_path": null,
+    "first_air_date": "1957-09-28",
+    "name": "Club Oasis",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 214920,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Jingle All the Way! Christmas Stories Vol. 2",
+    "overview": "A collection of three classic TV episodes; Date with the Angels, Adventures of Long John Silvers and Crossroads",
+    "popularity": 0.7135,
+    "poster_path": null,
+    "first_air_date": "1957-12-13",
+    "name": "Jingle All the Way! Christmas Stories Vol. 2",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28741,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures Of Charlie Quick",
+    "overview": "",
+    "popularity": 0.3906,
+    "poster_path": null,
+    "first_air_date": "1957-11-11",
+    "name": "The Adventures Of Charlie Quick",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 28966,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "The Family Circle",
+    "overview": "The Family Circle was a Canadian documentary television series which aired on CBC Television in 1957.",
+    "popularity": 0.4088,
+    "poster_path": null,
+    "first_air_date": "1957-04-07",
+    "name": "The Family Circle",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28935,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Mostly Maynard",
+    "overview": "",
+    "popularity": 0.4186,
+    "poster_path": null,
+    "first_air_date": "1957-02-26",
+    "name": "Mostly Maynard",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22932,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The New Adventures of Martin Kane",
+    "overview": "",
+    "popularity": 0.3868,
+    "poster_path": null,
+    "first_air_date": "1957-09-14",
+    "name": "The New Adventures of Martin Kane",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 100166,
+    "origin_country": [],
+    "original_language": "en",
+    "original_name": "The Arthur Haynes Show",
+    "overview": "Hobo Haynes and a series of other working class characters fight back against the authorities and anybody else who might look down on them. Many musical acts of the time also appear to add a little variety to proceedings.",
+    "popularity": 0.4704,
+    "poster_path": "/vL37RxdB0PIYgbW87gdpngTtq6.jpg",
+    "first_air_date": "1957-01-02",
+    "name": "The Arthur Haynes Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 30551,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Andy Williams and June Valli Show",
+    "overview": "",
+    "popularity": 0.3939,
+    "poster_path": null,
+    "first_air_date": "1957-07-02",
+    "name": "The Andy Williams and June Valli Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 12480,
+    "origin_country": [],
+    "original_language": "en",
+    "original_name": "The Seven Lively Arts",
+    "overview": "The Seven Lively Arts is an American anthology series that aired on Sunday afternoons in 1957 on CBS television. The series was executive produced John Houseman, and hosted by New York Herald Tribune critic John Crosby. The title was taken from the influential book of same name written by the cultural critic Gilbert Seldes, in which he argued that the low arts deserved as much critical attention as the high arts.",
+    "popularity": 0.6906,
+    "poster_path": null,
+    "first_air_date": "1957-11-03",
+    "name": "The Seven Lively Arts",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 119572,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Die glücklichen Vier",
+    "overview": "",
+    "popularity": 0.4295,
+    "poster_path": null,
+    "first_air_date": "1957-08-03",
+    "name": "Die glücklichen Vier",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 70369,
+    "origin_country": [
+      "BR"
+    ],
+    "original_language": "pt",
+    "original_name": "Escolinha do Professor Raimundo",
+    "overview": "",
+    "popularity": 0.4661,
+    "poster_path": null,
+    "first_air_date": "1957-08-04",
+    "name": "Escolinha do Professor Raimundo",
+    "vote_average": 5.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 121859,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "fr",
+    "original_name": "Au Chenal-du-Moine",
+    "overview": "",
+    "popularity": 0.4285,
+    "poster_path": null,
+    "first_air_date": "1957-10-17",
+    "name": "Au Chenal-du-Moine",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 6286,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "BBC Points West",
+    "overview": "BBC Points West is the BBC's regional news programme for the West of England, covering Bristol, the majority of Wiltshire, northern and eastern Somerset and southern Gloucestershire. Produced by BBC West, the programme is produced from the BBC Broadcasting Centre at Whiteladies Road, Bristol with reporters also based at newsrooms in Bath, Gloucester, Swindon and Taunton. The main presenters are Alex Lovell, David Garmston and Amanda Parr.",
+    "popularity": 0.3989,
+    "poster_path": null,
+    "first_air_date": "1957-09-30",
+    "name": "BBC Points West",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 7252,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Gay Cavalier",
+    "overview": "The Gay Cavalier was a 1957 British television adventure series set during the English Civil War and starring Christian Marquand as a fictionalised Captain Claude Duval. The series was made by Associated Rediffusion and shown on ITV between May and August 1957.\n\nIn truth, Duval was a successful gentleman highwayman who came from France to post-Restoration England, but The Gay Cavalier portrayed him in heroic fashion. In each of the series 13 episodes, Duval was to be seen emnbarking on an adventure which required him to undertake such tasks as retrieving a piece of treasure, thwarting a plot by the Roundheads or saving a woman in trouble. Each of the adventures was self-contained and Duval was often accompanied on these exploits by a female companion.\n\nThe series also starred a number of other actors who generally appeared in one of the adventures. These included Christopher Lee, John Le Mesurier, Conrad Phillips, Nigel Stock and Sam Kydd.\n\nThe series was similar in genre to others of the time, such as The Adventures of Robin Hood, and though it was shot on film, it is unique in that not one of its episodes has survived.",
+    "popularity": 0.4092,
+    "poster_path": null,
+    "first_air_date": "1957-07-12",
+    "name": "The Gay Cavalier",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22732,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "High-Low",
+    "overview": "High Low was an American game show that aired on NBC from July 4 to September 19, 1957. The series was a summer replacement for the popular variety show The Ford Show. Jack Barry was the emcee and Don Pardo was the announcer.",
+    "popularity": 0.3934,
+    "poster_path": null,
+    "first_air_date": "1957-07-04",
+    "name": "High-Low",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/8DBoGo26IdZbLM34rBJhSM0isA2.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 274619,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "NHK新人演芸大賞",
+    "overview": "An annual contest organized by NHK, aimed at discovering and promoting emerging talent in the fields of comedy and rakugo. With a history dating back to shows in the 1950s, it welcomes professional comedians and storytellers with up to 10 years of experience.",
+    "popularity": 0.4079,
+    "poster_path": "/ApuiGCDKF9JyIYIU4fp65XlTi1l.jpg",
+    "first_air_date": "1957-04-27",
+    "name": "NHK Newcomer Entertainer Award",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 242061,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Le Tour de la France par deux enfants",
+    "overview": "",
+    "popularity": 0.4046,
+    "poster_path": null,
+    "first_air_date": "1957-11-03",
+    "name": "Le Tour de la France par deux enfants",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 18651,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Gisele MacKenzie Show",
+    "overview": "The Gisele MacKenzie Show in an American variety show hosted by Gisele MacKenzie. The series aired live on NBC from September 28, 1957, to March 29, 1958. The Curfew Kids appeared on the program as semi-regulars.\n\nMacKenzie had been a regular on the earlier NBC musical series Your Hit Parade from 1953 to 1957. She had also worked in radio with Bob Crosby and had toured with Jack Benny and guest starred on The Jack Benny Program. Benny in fact had recommended her to the producers of Your Hit Parade.",
+    "popularity": 0.3886,
+    "poster_path": null,
+    "first_air_date": "1957-09-28",
+    "name": "The Gisele MacKenzie Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/ykYLkRRu5QlIZsaOG2zjGS1mfBO.jpg",
+    "genre_ids": [
+      10764
+    ],
+    "id": 155240,
+    "origin_country": [
+      "XG"
+    ],
+    "original_language": "de",
+    "original_name": "Zwischen Frühstück und Gänsebraten",
+    "overview": "",
+    "popularity": 0.3792,
+    "poster_path": "/5Yjtc6wkTS4fbayCN6i7vgbdCs5.jpg",
+    "first_air_date": "1957-12-25",
+    "name": "Zwischen Frühstück und Gänsebraten",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 121499,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "fr",
+    "original_name": "À moitié sages",
+    "overview": "",
+    "popularity": 0.3699,
+    "poster_path": null,
+    "first_air_date": "1957-06-05",
+    "name": "À moitié sages",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 261461,
+    "origin_country": [
+      "IT"
+    ],
+    "original_language": "it",
+    "original_name": "Il Musichiere",
+    "overview": "Il Musichiere was an Italian game show based upon Name That Tune. It ran from 1957 to 1960 and ended with untimely death of its host Mario Riva. It ran for 90 episodes, airing on Saturday evenings during prime-time.",
+    "popularity": 0.3683,
+    "poster_path": "/tMhyCJC4CwpTJ2yFaBUzUEvRzEM.jpg",
+    "first_air_date": "1957-12-07",
+    "name": "Il Musichiere",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767,
+      10763
+    ],
+    "id": 2445,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Scotsport",
+    "overview": "Scotsport was a Scottish sports television programme, broadcast on STV in northern and central Scotland, as well as on ITV Border in southern Scotland. It was recognised as the world's longest-running sports television magazine.",
+    "popularity": 0.367,
+    "poster_path": null,
+    "first_air_date": "1957-09-18",
+    "name": "Scotsport",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 158674,
+    "origin_country": [
+      "CN"
+    ],
+    "original_language": "zh",
+    "original_name": "一个新足球",
+    "overview": "",
+    "popularity": 0.3649,
+    "poster_path": "/odna0DHE56AQv2840WslYWDQLfC.jpg",
+    "first_air_date": "1957-06-21",
+    "name": "一个新足球",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26003,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Jill Day Show",
+    "overview": "",
+    "popularity": 0.3618,
+    "poster_path": null,
+    "first_air_date": "1957-03-07",
+    "name": "The Jill Day Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24235,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "People Like Us",
+    "overview": "",
+    "popularity": 0.3618,
+    "poster_path": null,
+    "first_air_date": "1957-10-01",
+    "name": "People Like Us",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sEP8g4FRhZwFihs5oiebyHma7N.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 251819,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "The Living Sea",
+    "overview": "Two-thirds of the Earth's surface is covered by water, and beneath the waves exists an entire living world, rarely seen by human eyes.  Beautiful reefs, exotic fish, fierce predators and sunken ships are just some of the treasures uncovered by renowned naturalist film maker John Stoneman as he dives below the surface.  Swim safely amongst predators in The Savage Reef and Killers of the Deep.  Explore beautiful and densely populated coral reef in Coral World and Shipwrecks. Study the daily lives and sometimes strange habits of coral reef creatures in Shadowland and Creatures of the Sand.  Finally, investigate the legend of the Bermuda Triangle in The Mysterious Sea and understand the devastating toll pollution and over-fishing are taking on the oceans in The Fragile Ocean. Dive deep beneath the surface of the ocean and experience the habitat and marine life up close, as few have done before.",
+    "popularity": 0.3597,
+    "poster_path": "/pHdjmWtAz6ctt006a5vDm6Xv1dt.jpg",
+    "first_air_date": "1957-01-10",
+    "name": "The Living Sea",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/4ieL27qATuDZnvPqCVIxoJEbjxw.jpg",
+    "genre_ids": [],
+    "id": 252347,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "きょうの料理",
+    "overview": "Cooking instructors will show all there is to know for a good hearty cooking.",
+    "popularity": 0.3584,
+    "poster_path": "/q8EWFe3pAaWGrseOX7MGr1Ag1TN.jpg",
+    "first_air_date": "1957-11-04",
+    "name": "Today's Cooking",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/9iOrzcvRbsEBFPW0TrWy9AYBL24.jpg",
+    "genre_ids": [],
+    "id": 223718,
+    "origin_country": [
+      "IT"
+    ],
+    "original_language": "it",
+    "original_name": "Piccolo Mondo Antico",
+    "overview": "",
+    "popularity": 0.3552,
+    "poster_path": "/qM3dHGGZ9OCASwYkIzRIA4uJUV8.jpg",
+    "first_air_date": "1957-10-26",
+    "name": "Piccolo Mondo Antico",
+    "vote_average": 0,
+    "vote_count": 0
+  }
+]

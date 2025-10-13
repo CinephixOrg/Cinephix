@@ -1,0 +1,3548 @@
+[
+  {
+    "adult": false,
+    "backdrop_path": "/8VWgyQjExeMgeg6Qzv6agduMU1A.jpg",
+    "genre_ids": [
+      18,
+      10759,
+      10765
+    ],
+    "id": 121,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Doctor Who",
+    "overview": "The adventures of The Doctor, a time-traveling humanoid alien known as a Time Lord. He explores the universe in his TARDIS, a sentient time-traveling spaceship. Its exterior appears as a blue British police box, which was a common sight in Britain in 1963 when the series first aired. Along with a succession of companions, The Doctor faces a variety of foes while working to save civilizations, help ordinary people, and right many wrongs.",
+    "popularity": 23.333,
+    "poster_path": "/xinqAmYrZ1TEwowcQhgTkZVtVE0.jpg",
+    "first_air_date": "1963-11-23",
+    "name": "Doctor Who",
+    "vote_average": 7.878,
+    "vote_count": 670
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vh29Z9EqTbaBy0sX5I370Hf3KJG.jpg",
+    "genre_ids": [
+      10759,
+      18,
+      9648
+    ],
+    "id": 10083,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Fugitive",
+    "overview": "Richard Kimble is falsely convicted of his wife's murder and given the death penalty. En route to death row, Kimble's train derails and crashes, allowing him to escape and begin a cross-country search for the real killer, a \"one-armed man\". At the same time, Dr. Kimble is hounded by the authorities, most notably dogged by Police Lieutenant Philip Gerard.",
+    "popularity": 21.8724,
+    "poster_path": "/cSvrnCMFX8OWqHSkUwERfKU7mnP.jpg",
+    "first_air_date": "1963-09-17",
+    "name": "The Fugitive",
+    "vote_average": 7.2,
+    "vote_count": 58
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/hQWWSbiUz4HKQxRQJtPXpO8ixJB.jpg",
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 3346,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Petticoat Junction",
+    "overview": "The Bradley family are proud owners of the Shady Rest Hotel. Kate and her three young daughters do the job of running the hotel.",
+    "popularity": 16.9115,
+    "poster_path": "/2kTGzz870hmdmQ074CYTdKFRqSm.jpg",
+    "first_air_date": "1963-09-24",
+    "name": "Petticoat Junction",
+    "vote_average": 5.8,
+    "vote_count": 38
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/1vS7Z2RPXpFVXC0aIOP8VsCIrmh.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 945,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Burke's Law",
+    "overview": "Burke's Law is an American detective series that ran on ABC from 1963 to 1965 and was revived on CBS in the 1990s. The show starred Gene Barry as Amos Burke, millionaire captain of Los Angeles police homicide division, who was chauffeured around to solve crimes in his Rolls-Royce Silver Cloud II.",
+    "popularity": 13.787,
+    "poster_path": "/ePKRW7T0RCgzSzuVJPwHxcqBPXG.jpg",
+    "first_air_date": "1963-09-20",
+    "name": "Burke's Law",
+    "vote_average": 6,
+    "vote_count": 11
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      35,
+      10767
+    ],
+    "id": 11576,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Bob Hope Presents the Chrysler Theatre",
+    "overview": "",
+    "popularity": 13.0047,
+    "poster_path": null,
+    "first_air_date": "1963-10-04",
+    "name": "Bob Hope Presents the Chrysler Theatre",
+    "vote_average": 5.7,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/7rsml8nSsAm5Wg1Tx7Uj9Wf7Fxd.jpg",
+    "genre_ids": [
+      10765
+    ],
+    "id": 21567,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Outer Limits",
+    "overview": "The Outer Limits is an anthology tv series of self-contained sci-fi-horror stories, sometimes with a plot twist at the end.",
+    "popularity": 10.3668,
+    "poster_path": "/p87hnTFR91vJuw8lLKVhG5NLw7n.jpg",
+    "first_air_date": "1963-09-16",
+    "name": "The Outer Limits",
+    "vote_average": 7.8,
+    "vote_count": 155
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/pAEOrnk8VLf4aDv2fFowdUPN4Ii.jpg",
+    "genre_ids": [
+      16,
+      9648,
+      10765,
+      10762
+    ],
+    "id": 10826,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "鉄腕アトム",
+    "overview": "In the year 2000, Dr. Boyton creates a super-robot in his deceased son's image. He calls the robot Astro Boy. Astro Boy can swim oceans, leap over mountains, even fly into space on his own power. However, Astro Boy can't replace his son. Dr. Boyton becomes dissatisfied with the boy robot and disowns him.\n\nAstro Boy is befriended by Dr. Packadermus J. Elefun of the Institute of Science, who guides him through his adventures. Endowed with super strength, rocket-powered flight, a selfless heart and a kind demeanor, Astro Boy fights a never-ending crusade against the forces of evil!",
+    "popularity": 9.7795,
+    "poster_path": "/nmzhfHyuOfhmTH9A20LhFP6u5Fx.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Astro Boy",
+    "vote_average": 7.6,
+    "vote_count": 14
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/d1tMNa9DA4PHpJUZdFAGLRtnLoD.jpg",
+    "genre_ids": [
+      9648,
+      18
+    ],
+    "id": 1627,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Kraft Suspense Theatre",
+    "overview": "",
+    "popularity": 8.7857,
+    "poster_path": "/wmQngp59Yx8zGLU7MHeFiv8HoOm.jpg",
+    "first_air_date": "1963-10-10",
+    "name": "Kraft Suspense Theatre",
+    "vote_average": 5.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/xZwohsOk8Q3nx3FmdR8Z6zhUwAE.jpg",
+    "genre_ids": [
+      10764
+    ],
+    "id": 23902,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Miss USA",
+    "overview": "The Miss USA Pageant is a beauty contest that has been held annually since 1952 to select the United States entrant in the Miss Universe pageant. The Miss Universe Organization operates both pageants, as well as Miss Teen USA.",
+    "popularity": 8.1918,
+    "poster_path": "/l9FnshEyCCNzR84f1fZQghuhjV0.jpg",
+    "first_air_date": "1963-07-17",
+    "name": "Miss USA",
+    "vote_average": 6,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/2pRmH3le9BwulALJhFFCYjmBj8s.jpg",
+    "genre_ids": [],
+    "id": 77728,
+    "origin_country": [
+      "CL"
+    ],
+    "original_language": "es",
+    "original_name": "Festival Internacional de la Canción de Viña del Mar",
+    "overview": "A yearly musical contest organized by the municipality of Viña del Mar, Chile which takes place during the last week of February at the Quinta Vergara Amphitheater since February 21, 1960.",
+    "popularity": 7.3706,
+    "poster_path": "/u5muV6ulY272YIdHSUGDnBb2FtF.jpg",
+    "first_air_date": "1963-02-14",
+    "name": "Viña del Mar International Song Festival",
+    "vote_average": 4.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/hAoeLuQjL176bQ4jfGpqUhg442A.jpg",
+    "genre_ids": [
+      10765,
+      35,
+      10751
+    ],
+    "id": 3882,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "My Favorite Martian",
+    "overview": "Newspaper reporter Tim O'Hara finds a crashed alien spaceship that contains one live alien. Not wanting to be discovered by the authorities, the Martian assumes the identity of Tim's Uncle Martin and begins to repair his spaceship so that he can return to Mars.",
+    "popularity": 6.4743,
+    "poster_path": "/kw90AgVKEPwfKLtC07hoRQFwOXk.jpg",
+    "first_air_date": "1963-09-29",
+    "name": "My Favorite Martian",
+    "vote_average": 5.8,
+    "vote_count": 30
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 46011,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Das aktuelle Sportstudio",
+    "overview": "Das aktuelle sportstudio is a German sport magazine on German broadcaster ZDF.",
+    "popularity": 6.2895,
+    "poster_path": null,
+    "first_air_date": "1963-08-24",
+    "name": "Das aktuelle Sportstudio",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/pFUSQhaFscwpMuxwyP3tYUx4kk3.jpg",
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 3176,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Arrest and Trial",
+    "overview": "Arrest and Trial is a 90-minute American crime/legal drama series that ran during the 1963-1964 season on ABC, airing Sundays from 8:30-10 p.m. Eastern.",
+    "popularity": 6.0041,
+    "poster_path": "/oFTtDdKpmTLgX6vMaczjI8mfnfz.jpg",
+    "first_air_date": "1963-09-15",
+    "name": "Arrest and Trial",
+    "vote_average": 7.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 14086,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Mr. Novak",
+    "overview": "Mr. Novak is an American dramatic series starring James Franciscus in the title role, which aired on NBC for two seasons, from 1963 to 1965.",
+    "popularity": 5.6578,
+    "poster_path": "/70JM7KslaQEuR82eAbiykGgtjDH.jpg",
+    "first_air_date": "1963-09-24",
+    "name": "Mr. Novak",
+    "vote_average": 6.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/ljS3auI8tPDYyLw6CnNpLcr2kjT.jpg",
+    "genre_ids": [
+      10766
+    ],
+    "id": 987,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "General Hospital",
+    "overview": "Families, friends, enemies and lovers experience life-changing events in the large upstate New York city of Port Charles, which has a busy hospital, upscale hotel, cozy diner and dangerous waterfront frequented by the criminal underworld.",
+    "popularity": 5.5276,
+    "poster_path": "/gS5iORCJHwP5moEXSF9b6ZcsZ1w.jpg",
+    "first_air_date": "1963-04-01",
+    "name": "General Hospital",
+    "vote_average": 5.7,
+    "vote_count": 212
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/mZLyXAphn4GDbTqaGOQz5kFDLTi.jpg",
+    "genre_ids": [
+      80
+    ],
+    "id": 40843,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Das Kriminalmuseum",
+    "overview": "Das Kriminalmuseum was a German television series. It ran from 1963 to 1970 on ZDF and was one of its first programs. Each episode began with a tracking shot through an unspecified crime museum, stopping at one of the displays, whose story was then told. Each episode was between 60 and 75 minutes long and featured different actors as the criminal commissioner. The best known was Erik Ode, who in 1969 moved to Der Kommissar, appearing in 97 episodes. The theme music of the series was written by German composer Martin Böttcher, who also composed the complete scores for five episodes.",
+    "popularity": 5.285,
+    "poster_path": "/emXfrZwTho7EPN0EWjQUuAVeglf.jpg",
+    "first_air_date": "1963-04-04",
+    "name": "Das Kriminalmuseum",
+    "vote_average": 8.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/7PxYMUooTHxAy0CsHpjSUL5pDkm.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 1247,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Great Adventure",
+    "overview": "The Great Adventure is a historical anthology series that appeared on CBS for the 1963-1964 television season. The series, narrated each week by Van Heflin, and featuring theme music by Richard Rodgers, presented a weekly one-hour dramatization of the lives of famous Americans and important historical events in American History.",
+    "popularity": 5.2489,
+    "poster_path": "/gxsVGvSS8cvIuYM2d9d6qGn1DMW.jpg",
+    "first_air_date": "1963-09-27",
+    "name": "The Great Adventure",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 12928,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Danny Kaye Show",
+    "overview": "The Danny Kaye Show is an American variety show hosted by Danny Kaye that aired on CBS from 1963 to 1967 on Wednesday nights. Directed by Robert Scheerer, the show premiered in black-and-white, but later switched to color broadcasts. At the time, Kaye was at the height of his popularity, having starred in a string of successful films in the 1940s and '50's, made successful personal appearances at such venues as the London Palladium, and appeared many times on television. His most recent films had been considered disappointing, but the television specials he starred in were triumphant, leading to this series. Prior to his television and film career, Kaye had made a name for himself with his own radio show, and numerous other guest appearances on other shows.",
+    "popularity": 5.2327,
+    "poster_path": "/fbr2fONp9YZY46vsiHJWtDoTohm.jpg",
+    "first_air_date": "1963-09-25",
+    "name": "The Danny Kaye Show",
+    "vote_average": 6.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/eEf6acBj8wbXdE3rngQOJO0Nrjf.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 12444,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Patty Duke Show",
+    "overview": "The Patty Duke Show is an American sitcom which ran on ABC from September 18, 1963 to April 27, 1966, with reruns airing through August 31, 1966. The show was created as a vehicle for rising star Patty Duke. A total of 104 episodes were produced, most written by Sidney Sheldon.",
+    "popularity": 4.514,
+    "poster_path": "/rjBKHT0et8oWpqLhhyiLQwfKtPz.jpg",
+    "first_air_date": "1963-09-18",
+    "name": "The Patty Duke Show",
+    "vote_average": 5.8,
+    "vote_count": 14
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/DPqd2f4uZPZJtRJxvqpAYYS7Bz.jpg",
+    "genre_ids": [
+      35,
+      80,
+      18,
+      9648
+    ],
+    "id": 24608,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Vacation Playhouse",
+    "overview": "The concept of the series was the showing of unaired and unsold television pilots that did not make the television lineup for CBS. The show was successful during its first few seasons due to the fact that the show's concept, airing unsold and unaired television pilots, was a popular concept in the 1960s. But during its last two seasons on the air, the series did find some trouble due to the fact that the series were running out of pilots to air and, in their 4th season, they began airing repeats from the three seasons prior. During its 1966 summer run, the series aired eights new pilots and two repeats and during its last year airing five new pilots and four repeats.",
+    "popularity": 4.1981,
+    "poster_path": null,
+    "first_air_date": "1963-07-22",
+    "name": "Vacation Playhouse",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/hEQtkZGVbg3jYNObMY8MaVEBItV.jpg",
+    "genre_ids": [
+      16,
+      10759,
+      10762
+    ],
+    "id": 68170,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "狼少年ケン",
+    "overview": "",
+    "popularity": 3.7631,
+    "poster_path": "/k3OiwGMSDF4OvQpTeBWf0mXguOb.jpg",
+    "first_air_date": "1963-11-25",
+    "name": "Wolf Boy Ken",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qJvzJYuTkXcIWiLRIDrIdIE1X1A.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 14387,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Lieutenant",
+    "overview": "Situated at Camp Pendleton, the West Coast base of the U.S. Marine Corps, The Lieutenant focuses on the men of the Corps in peace time with a Cold War backdrop. The title character is Second Lieutenant William Tiberius Rice, a rifle platoon leader and one of the training instructors at Camp Pendleton. An hour-long drama, The Lieutenant explores the lives of enlisted Marines and general officers alike.",
+    "popularity": 3.4593,
+    "poster_path": "/goGyTkfPYecOtTuwdfZL8OgLWpd.jpg",
+    "first_air_date": "1963-09-14",
+    "name": "The Lieutenant",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/rwldVfSKCLeNpeXLq5a0a5WEZDy.jpg",
+    "genre_ids": [
+      16,
+      10765
+    ],
+    "id": 6153,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "鉄人28号",
+    "overview": "Gigantor is an American adaptation of the anime version of Tetsujin 28-go, a manga by Mitsuteru Yokoyama released in 1956. Jimmy Sparks controls a gigantic, powerful robot and uses it to fight crime. It debuted on U.S. television in 1964. As with Speed Racer, the characters' original names were altered and the original series' violence was toned down for American viewers.",
+    "popularity": 3.451,
+    "poster_path": "/c0JLcw2vwmBGPsPTlzYerydAAQm.jpg",
+    "first_air_date": "1963-10-20",
+    "name": "Gigantor",
+    "vote_average": 7.4,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/lhksXSpdUAvVVOh5te7a2V6yuw.jpg",
+    "genre_ids": [],
+    "id": 14364,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Human Jungle",
+    "overview": "The Human Jungle is a British TV series about a psychiatrist, made for ABC Television by the small production company Independent Artists for transmission on ITV. Starring Herbert Lom, it ran for two series which were first transmitted during 1963 and 1965.",
+    "popularity": 3.3763,
+    "poster_path": "/kK66e5FKVFMTPxEROIQi7toWbo4.jpg",
+    "first_air_date": "1963-03-30",
+    "name": "The Human Jungle",
+    "vote_average": 8.2,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 104426,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Zur Person",
+    "overview": "",
+    "popularity": 3.3676,
+    "poster_path": "/6sCgmi9X7haXAVqJ5vTCDsSFHl2.jpg",
+    "first_air_date": "1963-04-10",
+    "name": "Zur Person",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qi7zn2AjCnWKncpatSHkgLRHFUF.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 13866,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Dakotas",
+    "overview": "The Dakotas is an ABC/Warner Brothers western television series starring Larry Ward and featuring Jack Elam broadcast during 1963. The short-lived program is considered a spin-off of Clint Walker's Cheyenne.\n\nThe Dakotas is perhaps most notable for the fact that it was cancelled one week after heavy viewer protest over an objectionable scene.",
+    "popularity": 3.224,
+    "poster_path": "/bMif0OHAsVXtU41o7fkD2uOCRnK.jpg",
+    "first_air_date": "1963-01-07",
+    "name": "The Dakotas",
+    "vote_average": 5.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 7931,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Greatest Show on Earth",
+    "overview": "Johnny Slate successfully manages his circus as it moves from town to town.",
+    "popularity": 3.1724,
+    "poster_path": null,
+    "first_air_date": "1963-09-17",
+    "name": "The Greatest Show on Earth",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 127278,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Festival",
+    "overview": "An anthology of single plays offering up adaptations of either of prominent stage plays or novels.",
+    "popularity": 3.1583,
+    "poster_path": "/5CFOdCbx1CXmnOKUoST7d1uE3k2.jpg",
+    "first_air_date": "1963-10-09",
+    "name": "Festival",
+    "vote_average": 8,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 4701,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Ready Steady Go!",
+    "overview": "Ready Steady Go! is one of the UK's first rock/pop music television programmes and was a forerunner of MTV-type programming. It was conceived by Elkan Allan, head of Rediffusion TV. Allan was assisted by record producer/talent manager Vicki Wickham, who became the show's producer, and Michael Lindsay-Hogg who was appointed the show's director in 1965. It was broadcast from August 1963 until December 1966. It was produced by Associated-Rediffusion the weekday ITV contractor for London, called Rediffusion-London post 1964. The live show was eventually networked nationally.\n\nThe show gained its highest ratings on 20 March 1964 when it featured the Beatles being interviewed and performing their songs \"It Won't Be Long\", \"You Can't Do That\" and \"Can't Buy Me Love\" - the last of which was a hit at the time.\n\nRSG! USA! was a Dick Clark production in 1964. A trademark infringement ended the show after six episodes.\n\nIts last episode was broadcast on 23 December 1966.",
+    "popularity": 3.0965,
+    "poster_path": "/xphOItk6BLgbfrSisTH71XKq5aY.jpg",
+    "first_air_date": "1963-08-09",
+    "name": "Ready Steady Go!",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/1RDXpjl0fK9acyKx6OESorzQbhU.jpg",
+    "genre_ids": [
+      18,
+      10751
+    ],
+    "id": 209474,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "あかつき",
+    "overview": "The 3rd NHK Asadora. Starring Shin Saburi as a professor who quits the university to become a painter.",
+    "popularity": 3.064,
+    "poster_path": null,
+    "first_air_date": "1963-04-01",
+    "name": "Akatsuki",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vJb4jZrqhpkdOXfwODoFm8co62Q.jpg",
+    "genre_ids": [],
+    "id": 219015,
+    "origin_country": [
+      "CN"
+    ],
+    "original_language": "zh",
+    "original_name": "中国水墨动画",
+    "overview": "",
+    "popularity": 3.034,
+    "poster_path": "/dPmz5Q9l9uMZe3mfE0Qw83e5zmu.jpg",
+    "first_air_date": "1963-05-08",
+    "name": "中国水墨动画",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/mXAoeLuq6pbRMLh8f1YIIT75sEW.jpg",
+    "genre_ids": [
+      10764
+    ],
+    "id": 4593,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The French Chef",
+    "overview": "One of the first cooking shows on American television, created and hosted by Julia Child on public television to introduce the French way of cooking. It emphasized fresh ingredients, many of which were unfamiliar to Americans. Based on the books she co-authored, entitled Mastering the Art of French Cooking.",
+    "popularity": 3.0014,
+    "poster_path": "/kE41Ilfz5wPpcv4IWFgh9SlN5Pu.jpg",
+    "first_air_date": "1963-02-02",
+    "name": "The French Chef",
+    "vote_average": 7.1,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 16377,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Breaking Point",
+    "overview": "",
+    "popularity": 2.6954,
+    "poster_path": "/zgb5jQ6wOreapkVXSdAH5hDmVd1.jpg",
+    "first_air_date": "1963-09-16",
+    "name": "Breaking Point",
+    "vote_average": 7.2,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 913,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Temple Houston",
+    "overview": "Temple Houston is a 1963–64 NBC television series which has been called \"the first attempt . . . to produce an hour-long Western series with the main character being an attorney in the formal sense.\" It was the only show Jack Webb sold to a network during his ten months as the head of production at Warner Bros. Television. It was also the lone series in which actor Jeffrey Hunter played a regular part.",
+    "popularity": 2.5818,
+    "poster_path": "/bERKH0OFOeqvRgAM1T40jq5wr9o.jpg",
+    "first_air_date": "1963-09-19",
+    "name": "Temple Houston",
+    "vote_average": 5.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99,
+      10763,
+      10767
+    ],
+    "id": 272923,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Report Mainz",
+    "overview": "",
+    "popularity": 2.5078,
+    "poster_path": null,
+    "first_air_date": "1963-11-25",
+    "name": "Report Mainz",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/6pXJh1G9Iuqc3WlWJnr7He9ESrz.jpg",
+    "genre_ids": [],
+    "id": 1040,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Let's Make a Deal",
+    "overview": "Let's Make a Deal is a television game show which originated in the United States and has since been produced in many countries throughout the world. The show is based around deals offered to members of the audience by the host. The traders usually have to weigh the possibility of an offer being for a valuable prize, or an undesirable item, referred to as a \"Zonk\". Let's Make a Deal is also known for the various unusual and crazy costumes worn by audience members, who dressed up that way in order to increase their chances of being selected as a trader. The show was hosted for many years by Monty Hall, who co-created and co-produced the show with Stefan Hatos. The current version is hosted by Wayne Brady, with Jonathan Mangum, Tiffany Coyne, and Cat Gray assisting.",
+    "popularity": 2.5021,
+    "poster_path": null,
+    "first_air_date": "1963-12-30",
+    "name": "Let's Make a Deal",
+    "vote_average": 8,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 10207,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Farmer's Daughter",
+    "overview": "The Farmer's Daughter is an American situation comedy series that was produced by Screen Gems Television and aired on ABC from September 20, 1963 to April 22, 1966. It was sponsored by Liggett & Myers Tobacco and Clairol for whom the two leading stars often appeared at show's end promoting the products. It also enjoyed a brief run in syndication when it aired on CBN Cable in the 1980s.",
+    "popularity": 2.4681,
+    "poster_path": "/vDdRKzEQ27c6ikdZa0SVAZcCkdF.jpg",
+    "first_air_date": "1963-09-20",
+    "name": "The Farmer's Daughter",
+    "vote_average": 5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 114163,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Der Sport-Spiegel",
+    "overview": "",
+    "popularity": 2.4602,
+    "poster_path": null,
+    "first_air_date": "1963-04-02",
+    "name": "Der Sport-Spiegel",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/2wqB72VwoFoug6r8SU7PAnMZBuF.jpg",
+    "genre_ids": [
+      16,
+      10765
+    ],
+    "id": 210222,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "鉄人28号",
+    "overview": "",
+    "popularity": 2.4382,
+    "poster_path": "/hDKhHwntnCVVFFg9iRoO6jGCEld.jpg",
+    "first_air_date": "1963-10-20",
+    "name": "Tetsujin 28",
+    "vote_average": 8,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 8609,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Channing",
+    "overview": "Professor Joe Howe is a Korean War veteran who is hired to teach English at Channing College. The dean Fred Baker is his mentor as Howe is writing a novel about his experiences. They are frequently involved in the student's lives.\n\nChanning, a production of Revue Studios, aired during the same time frame as the first season of NBC's somewhat similar offering, Mr. Novak.",
+    "popularity": 2.4264,
+    "poster_path": "/zqlU1KqV4mQcXaZ2As8e3rmfrcL.jpg",
+    "first_air_date": "1963-09-18",
+    "name": "Channing",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/lz0X3AFlCqiZ4UA6LTHeNPqjwiN.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 28158,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Sergeant Cork",
+    "overview": "Sergeant Cork is a British detective television series which first aired between 1963 and 1968 on ITV. It was a police procedural show that followed the efforts of two police officers and their battle against crime in Victorian London. In all 66 hour-long episodes were aired during the five-year run, although the last episode was not broadcast until January 1968, 16 months after the others. Journalist Tom Sutcliffe has credited it as a first example of the use of the Victorian-era policeman in a television crime series.\n\nA 1969 review in The Age opined that rather than suspense, the strengths of the series were its \"excellent period settings and wonderfully thick pea-soupers\" which \"add up to splendid evocative stuff\", as well as the performance of star John Barrie.\n\nAt no time during the whole series is Sergeant Cork's first name given.",
+    "popularity": 2.3599,
+    "poster_path": "/uze7CYOPmYv0pH7ox3Gqc1r2b1P.jpg",
+    "first_air_date": "1963-06-29",
+    "name": "Sergeant Cork",
+    "vote_average": 6.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10766
+    ],
+    "id": 1151,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Doctors",
+    "overview": "The Doctors is an American television soap opera which aired on NBC Daytime from April 1, 1963, to December 31, 1982. There were 5280 episodes produced, with the 5000th episode airing in November 1981. The series was set in Hope Memorial Hospital in the fictional \"Madison,\" located somewhere in New England.",
+    "popularity": 2.2232,
+    "poster_path": "/nVrUXzcTdCsAoQ4rled68diuGx5.jpg",
+    "first_air_date": "1963-04-01",
+    "name": "The Doctors",
+    "vote_average": 5.8,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 106075,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Zwischenmahlzeit",
+    "overview": "",
+    "popularity": 2.1814,
+    "poster_path": null,
+    "first_air_date": "1963-11-27",
+    "name": "Zwischenmahlzeit",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 8009,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Redigo",
+    "overview": "Redigo is a 15-week Western dramatic series, set on a New Mexico ranch during the early 1960s, which aired over NBC from September 24 to December 31, 1963. The series features Richard Egan as ranch owner Jim Redigo, Roger Davis as Mike the ranch hand, and Elena Verdugo as Gerry. Don Diamond appeared in four episodes, three as the character Arturo.\n\nRedigo was the truncated second half-hour season of the previous one-hour series, Empire, which aired from September 25, 1962, to May 13, 1963. Both programs were placed on the Tuesday evening schedule against CBS's The Red Skelton Show. Redigo also lost out in the ratings to the ABC military sitcom, McHale's Navy, starring Ernest Borgnine and Tim Conway.\n\nIn Redigo, Egan's character Jim Redigo was no longer the manager of the large Garrett Ranch but the owner of his own smaller spread nearby. The half-hour format made it hard for the program to develop complex characters as had been done in the initial one-hour version of the show.",
+    "popularity": 2.115,
+    "poster_path": "/1g5I1UgArPEBvEucXo7ugCDHzCu.jpg",
+    "first_air_date": "1963-09-24",
+    "name": "Redigo",
+    "vote_average": 5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/fW3NlS86Na7pHwCyYNSG7e3rDDi.jpg",
+    "genre_ids": [
+      80
+    ],
+    "id": 41079,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Hafenpolizei",
+    "overview": "Hafenpolizei is a German television series.",
+    "popularity": 2.0764,
+    "poster_path": "/2ra3QmuPY9ELyeVAQWGWDihXHRB.jpg",
+    "first_air_date": "1963-10-07",
+    "name": "Hafenpolizei",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/liOe1ToprxTiDo2ou7ebjqaiFnv.jpg",
+    "genre_ids": [
+      10767,
+      10764,
+      35,
+      10751
+    ],
+    "id": 45820,
+    "origin_country": [
+      "BR"
+    ],
+    "original_language": "pt",
+    "original_name": "Programa Silvio Santos",
+    "overview": "For over 60 years, Silvio Santos, the icon of Brazilian TV and culture, has entertained his auditorium and audience on Sundays on his program. Games, jokes, interviews and the classic question \"Who wants money?\" with money planes. After his departure from Brazilian screens, Silvio Santos' show was taken over by his daughter Patrícia Abravanel until the present day, becoming a mark of the legacy of the SBT television channel, and its owner Senor Abravanel aka Silvio Santos",
+    "popularity": 1.959,
+    "poster_path": "/1NliRl65Q6TXAv5L7vIKjc91ZZM.jpg",
+    "first_air_date": "1963-06-02",
+    "name": "Silvio Santos Show",
+    "vote_average": 7.4,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 2705,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Travels of Jaimie McPheeters",
+    "overview": "The Travels of Jaimie McPheeters is an American western television series based on the Pulitzer Prize-winning novel of the same name by Robert Lewis Taylor. The show aired on ABC in the 1963-1964 television season and was produced by MGM Television. The series introduces Dan O'Herlihy as a charming Scotsman of the frontier, Dr. Sardius McPheeters. As with many such charmers, Doc is missing something commonsense-wise. Fortunately his 12-year-old son, Jaimie (Kurt Russell), makes up for it by being as sharp as Daddy is gullible. The production is slick, authentic and brisk.",
+    "popularity": 1.9529,
+    "poster_path": "/xZuYSz1yJNPIYCw0FdsQdkUojVj.jpg",
+    "first_air_date": "1963-09-29",
+    "name": "The Travels of Jaimie McPheeters",
+    "vote_average": 5.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/cs41kLh0zrWK6QwPx2XsX4d9t3t.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 14855,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Bill Dana Show",
+    "overview": "The Bill Dana Show is a United States comedy series .The plot follows the daily lifestyle of Latin American, Jose Jimenez, as a bellhop in a New York hotel.",
+    "popularity": 1.8916,
+    "poster_path": "/7lE6mrMRmuflsdoIrFyW894wzSP.jpg",
+    "first_air_date": "1963-09-22",
+    "name": "The Bill Dana Show",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 15179,
+    "origin_country": [
+      "PL"
+    ],
+    "original_language": "pl",
+    "original_name": "Bolek i Lolek",
+    "overview": "Bolek and Lolek are two Polish cartoon characters from the TV animated series by the same title. They are based on Władysław Nehrebecki's sons, named Jan and Roman, and were partially created by German-born Alfred Ledwig before being developed by Władysław Nehrebecki and Leszek Lorek. The series is about two young brothers and their fun and sometimes silly adventures which often involve spending a lot of time outdoors. They first appeared in an animated film in 1963.\n\nThe names of the two characters are diminutives of Bolesław and Karol. In English, the cartoon was distributed as Jym & Jam and Bennie and Lennie. Some episodes were seen as part of Nickelodeon's Pinwheel. In 1973 the creators of the film placed on the request from the female viewing audience a girl character by the name of Tola. The first time she appeared in occurred in the episode entitled \"Tola\". In total, Tola appeared in 30 episodes.\n\nMost episodes do not have dialogues. Exceptions are feature-length films and the series from the 1980s, where the main characters' voices were done by: Bolek – Ewa Złotowska, Ilona Kuśmierska; Lolek – Danuta Mancewicz, Danuta Przesmycka.\n\nDuring the period of the Peoples Republic of Poland, Bolek and Lolek were reproduced in a large quantity of toys: action figures, movies, postcards, online arcades, puzzles, etc., which can be seen in the Museum of Dobranocki of the PRL. They are also currently made in computer programs, coloring books, general picture books and games.",
+    "popularity": 1.8764,
+    "poster_path": "/yPO6noyrRW1B3GIGAjABzpRDJ2v.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Bolek and Lolek",
+    "vote_average": 7.3,
+    "vote_count": 24
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 10834,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Grindl",
+    "overview": "Grindl is an American situation comedy that began in the fall of 1963 on NBC, originally sponsored by Procter & Gamble. The show, starring Imogene Coca in the title role, lasted for one season.",
+    "popularity": 1.8505,
+    "poster_path": null,
+    "first_air_date": "1963-09-15",
+    "name": "Grindl",
+    "vote_average": 5.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/432stnFYqqAMjaH95cIE7weWrbr.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 118193,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "花の生涯",
+    "overview": "The story chronicles the life of Ii Naosuke.",
+    "popularity": 1.7821,
+    "poster_path": "/2cgzkj6mdDUPhgqoZzZNFOu9wvH.jpg",
+    "first_air_date": "1963-04-07",
+    "name": "Life of a Flower",
+    "vote_average": 7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/tUHTBizYxreEHQvDiWWDkQmytoU.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 11760,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Judy Garland Show",
+    "overview": "The Judy Garland Show is an American musical variety television series that aired on CBS on Sunday nights during the 1963-1964 television season. Despite a sometimes stormy relationship with Judy Garland, CBS had found success with several television specials featuring the star. Garland, who for years had been reluctant to commit to a weekly series, saw the show as her best chance to pull herself out of severe financial difficulties.\n\nProduction difficulties beset the series almost from the beginning. The series had three different producers in the course of its 26 episodes and went through a number of other key personnel changes. With the change in producers also came changes to the show's format, which started as comedy/variety but switched to an almost purely concert format.\n\nWhile Garland herself was popular with critics, the initial variety format and her co-star, Jerry Van Dyke, were not. The show competed with Bonanza, then the fourth most popular program on television, and consistently performed poorly in the ratings. Although fans rallied in an attempt to save the show, CBS cancelled it after a single season.\n\nTV Guide included the series in their 2013 list of 60 shows that were \"Cancelled Too Soon\".",
+    "popularity": 1.66,
+    "poster_path": "/8aUVlLAmOrRzyVIFutNljFZUICN.jpg",
+    "first_air_date": "1963-12-08",
+    "name": "The Judy Garland Show",
+    "vote_average": 8,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vPA1AWuwFCDuZBqQdqQ7N7Jya8x.jpg",
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 13404,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Tennessee Tuxedo and His Tales",
+    "overview": "Tennessee Tuxedo and His Tales is a semi-educational animated cartoon TV series that originally aired on CBS from 1963 to 1966. It was produced by Total Television, the same company that produced the earlier King Leonardo and the later Underdog, and primarily sponsored by General Mills. The title is a play on “tuxedo and tails” formal wear.",
+    "popularity": 1.5561,
+    "poster_path": "/f8YE6SrWNlFexwdK22EVcTeBlAm.jpg",
+    "first_air_date": "1963-09-28",
+    "name": "Tennessee Tuxedo and His Tales",
+    "vote_average": 5,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 10953,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Sentimental Agent",
+    "overview": "The Sentimental Agent is a television drama series spin-off from Man of the World. Produced in the United Kingdom in 1963 by Associated Television and distributed by ITC Entertainment, the series ran for 13 one-hour monochrome episodes. Some episodes were edited into a 1962 feature film Our Man in the Caribbean.\n\nArgentinian Carlos Varela is a successful import-export agent based in London, whose company takes him into unusual and sometimes dangerous situations. Impeccably dressed, cigar smoking and using wit, ingenuity, and charm, which often involves a damsel in distress, he is typically assisted by Chin, a resourceful Chinese manservant, and Miss Carter, an ultra-efficient secretary.",
+    "popularity": 1.5468,
+    "poster_path": "/vRxsP5JsgTdU7oBj7nIR0Cmcn4Z.jpg",
+    "first_air_date": "1963-09-28",
+    "name": "The Sentimental Agent",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/kxxbORX98iWgfLbjBsdHce6lhNg.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 10992,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "East Side/West Side",
+    "overview": "East Side/West Side is an American drama series starring George C. Scott, Elizabeth Wilson, Cicely Tyson, and later on, Linden Chiles. The series aired for only one season and was shown Monday nights on CBS.\n\nTV Guide ranked it #6 on their 2013 list of 60 shows that were \"Cancelled Too Soon\".",
+    "popularity": 1.5347,
+    "poster_path": "/93KlbVjRzw77gnp7UzPlzhniqZv.jpg",
+    "first_air_date": "1963-09-23",
+    "name": "East Side/West Side",
+    "vote_average": 7.8,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 29861,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Scene at 6:30",
+    "overview": "",
+    "popularity": 1.4694,
+    "poster_path": null,
+    "first_air_date": "1963-01-28",
+    "name": "Scene at 6:30",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/djQgYjdZlaGzCD57ZSA7NPEVw4V.jpg",
+    "genre_ids": [
+      16
+    ],
+    "id": 19866,
+    "origin_country": [
+      "PL"
+    ],
+    "original_language": "pl",
+    "original_name": "Zaczarowany Ołówek",
+    "overview": "Tells a story of a boy named Piotr and his dog, aided by an enchanted pencil, which can materialize anything they draw. The 26 episodes have no linking story, but the last few are centered around heroes quest to save a shipwrecked refugee.",
+    "popularity": 1.4528,
+    "poster_path": "/11rP5J19Z16m8jnpoBZrMfUCwKC.jpg",
+    "first_air_date": "1963-06-12",
+    "name": "Enchanted Pencil",
+    "vote_average": 7.8,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/idEqToEilhuF1uJO0bbC2hnH5Mh.jpg",
+    "genre_ids": [
+      80,
+      18,
+      10762
+    ],
+    "id": 132761,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "エイトマン",
+    "overview": "A police officer working a routine case is hit by a car and mortally wounded. He is saved by a professor that transfers his consciousness into a powerful cyborg crime-fighter. Resurrected as the ultimate high-tech vigilante, it is up to 8Man to bring the lawless to justice and put an end to the escalating cycle of violence.",
+    "popularity": 1.4355,
+    "poster_path": "/zvs1iyDxJW4wYZqYXXRoehJCwAg.jpg",
+    "first_air_date": "1963-11-07",
+    "name": "Eightman",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 6019,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Glynis",
+    "overview": "Glynis is an American situation comedy that aired on CBS from September 25 to December 18, 1963.",
+    "popularity": 1.424,
+    "poster_path": null,
+    "first_air_date": "1963-09-25",
+    "name": "Glynis",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 12030,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Espionage",
+    "overview": "Espionage is a 1963 Associated Television series, distributed outside the UK by ITC Entertainment and networked in the United States by NBC.",
+    "popularity": 1.419,
+    "poster_path": "/7rkn2BEaOPucEmg1yXRjBPul9PX.jpg",
+    "first_air_date": "1963-10-02",
+    "name": "Espionage",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759,
+      80
+    ],
+    "id": 32593,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Crane",
+    "overview": "The adventures of Richard Crane, cafe owner & part-time smuggler, around the coast of Morocco, aided (and sometimes abetted) by his ex-Foreign Legion sidekick Orlando, waitress Halina, and local cop Colonel Mahmoud.",
+    "popularity": 1.4177,
+    "poster_path": null,
+    "first_air_date": "1963-04-02",
+    "name": "Crane",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 71487,
+    "origin_country": [],
+    "original_language": "de",
+    "original_name": "Weltspiegel",
+    "overview": "",
+    "popularity": 1.4104,
+    "poster_path": null,
+    "first_air_date": "1963-04-05",
+    "name": "Weltspiegel",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/cgkSBMC79SosYjuZu44s5SaIUU0.jpg",
+    "genre_ids": [
+      10765,
+      16
+    ],
+    "id": 203747,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "銀河少年隊",
+    "overview": "",
+    "popularity": 1.4049,
+    "poster_path": "/wmaG6Un73g9EmjIf30GYOa1vnep.jpg",
+    "first_air_date": "1963-04-07",
+    "name": "銀河少年隊",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/usM9dbLuHJ934wGDYf1vf0RWJxG.jpg",
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 66333,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "The Littlest Hobo",
+    "overview": "A German Shepherd roams ceaselessly, pausing solely to perform acts of kindness or assist those in distress, before resuming his never-ending journey.",
+    "popularity": 1.3813,
+    "poster_path": "/N4m89nmbP5FR23ctrbUyMF9IsN.jpg",
+    "first_air_date": "1963-09-24",
+    "name": "The Littlest Hobo",
+    "vote_average": 4.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10766
+    ],
+    "id": 24708,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Ben Jerrod",
+    "overview": "Ben Jerrod is an American soap opera which ran from April 1, 1963 to June 28, 1963. The series is most notable for being the first soap to be regularly televised in color. The show debuted April 1, 1963, the same day as the long-running General Hospital and The Doctors.",
+    "popularity": 1.3766,
+    "poster_path": null,
+    "first_air_date": "1963-04-01",
+    "name": "Ben Jerrod",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/nlHduB1WujOGV5zU6nJ2hyF4XMT.jpg",
+    "genre_ids": [
+      10759
+    ],
+    "id": 5693,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Thierry la Fronde",
+    "overview": "Thierry la Fronde was a French television series that aired in 1963–66 on the television station, ORTF original script by Jean-Claude Deret. Dubbed into English, it was shown internationally in the 1960s, including in Canada, where it was referred to under the original name, and also as The King's Outlaw. It was shown as well in Poland as Thierry Śmiałek. On ABC in Australia, it was called The King's Outlaw. In the Netherlands, 32 of the 52 episodes were shown in 1967 as Thierry de Slingeraar, as a Netherlands Television Service programme.",
+    "popularity": 1.3624,
+    "poster_path": "/36oGnR2iF4vM89ejwFVseNeTkDk.jpg",
+    "first_air_date": "1963-11-03",
+    "name": "Thierry la Fronde",
+    "vote_average": 7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 14980,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Richard Boone Show",
+    "overview": "The Richard Boone Show is a short-lived, award-winning anthology television series. It aired on NBC during the 1963-64 season.",
+    "popularity": 1.3104,
+    "poster_path": "/2cjVi42sbHeIctDbPn4g9cg2hyh.jpg",
+    "first_air_date": "1963-09-24",
+    "name": "The Richard Boone Show",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80
+    ],
+    "id": 40635,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Die fünfte Kolonne",
+    "overview": "Die fünfte Kolonne is a German television series.",
+    "popularity": 1.2792,
+    "poster_path": "/9Zt12TdMayhcWFwF5guvO8dA8Fn.jpg",
+    "first_air_date": "1963-06-06",
+    "name": "Die fünfte Kolonne",
+    "vote_average": 8,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 29620,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Our Man At St Mark's",
+    "overview": "Trials and tribulations of the priest of Felgate village.",
+    "popularity": 1.2139,
+    "poster_path": "/1zjdD7DFTqnkAzoBnmR0oJ9HIm9.jpg",
+    "first_air_date": "1963-09-25",
+    "name": "Our Man At St Mark's",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80
+    ],
+    "id": 41208,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Die Karte mit dem Luchskopf",
+    "overview": "",
+    "popularity": 1.187,
+    "poster_path": "/9DD78dI2erNHhL138GpJTreVUUq.jpg",
+    "first_air_date": "1963-04-03",
+    "name": "Die Karte mit dem Luchskopf",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/An2a4gXEmHXlrlJ3fg1VNEwC4XM.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 66797,
+    "origin_country": [],
+    "original_language": "it",
+    "original_name": "Il mulino del Po",
+    "overview": "",
+    "popularity": 1.1571,
+    "poster_path": "/rJHicKauUeeZgcVra4THAnfZbEa.jpg",
+    "first_air_date": "1963-01-13",
+    "name": "Il mulino del Po",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 41083,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Kommissar Freytag",
+    "overview": "Kommissar Freytag is a German television series.",
+    "popularity": 1.1567,
+    "poster_path": "/gqTXp3XAtsd1efRjNuPoKZCEfv3.jpg",
+    "first_air_date": "1963-12-06",
+    "name": "Kommissar Freytag",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/6k4kZfjmNARpYlHCj3shIpLdd4M.jpg",
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 203782,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "仙人部落",
+    "overview": "",
+    "popularity": 1.1553,
+    "poster_path": "/j6vLpJ0i5KdiYCOEiZsgngrnwY1.jpg",
+    "first_air_date": "1963-09-04",
+    "name": "仙人部落",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22864,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Crane",
+    "overview": "",
+    "popularity": 1.1469,
+    "poster_path": null,
+    "first_air_date": "1963-04-02",
+    "name": "Crane",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/e9Qg4fR59rHB6qzyAUSnTMfr7gU.jpg",
+    "genre_ids": [
+      16,
+      10765
+    ],
+    "id": 6059,
+    "origin_country": [
+      "CA",
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Mighty Hercules",
+    "overview": "The Mighty Hercules is a low-budget animated series based loosely on the Greek mythological character of Heracles, under his Roman Mythology name, Hercules. It was created in 1962 and then debuted on TV in 1963 and ran until 1966 coinciding with the sword and sandal genre of films popular at the time. Each standalone episode runs approximately 5 minutes with opening and closing credits, and in syndication several such episodes are compiled to fill 30-minute timeslots. It has played in re-runs on early morning television ever since, and is a cherished memory from many of our childhoods. The show was based on the myth of Hercules, and featured characters such as Hercules, Newton, Helena, Daedalus, The Sea Witch, and Murtis.",
+    "popularity": 1.1468,
+    "poster_path": "/hkoXBitjA4u4N6nUI9QnOKBmMIs.jpg",
+    "first_air_date": "1963-09-01",
+    "name": "The Mighty Hercules",
+    "vote_average": 6.2,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/xIEDfdoA8jVtnrXm5pXDmlZKfAr.jpg",
+    "genre_ids": [
+      10759,
+      16,
+      10751,
+      10765
+    ],
+    "id": 10554,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Space Patrol",
+    "overview": "Space Patrol is a science-fiction television series featuring marionettes that was produced in the United Kingdom in 1962 and broadcast beginning in 1963. It was written and produced by Roberta Leigh in association with the Associated British Corporation.",
+    "popularity": 1.1349,
+    "poster_path": "/aC71c8ifcNzsNd34CXjUtZDGDd9.jpg",
+    "first_air_date": "1963-04-07",
+    "name": "Space Patrol",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/bgszxqKwIKcqkOgY5ZHCPp9lism.jpg",
+    "genre_ids": [
+      80
+    ],
+    "id": 63389,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Interpol",
+    "overview": "",
+    "popularity": 1.1172,
+    "poster_path": "/faLk5tE6rrI4dE1EUwEPuyAX324.jpg",
+    "first_air_date": "1963-08-22",
+    "name": "Interpol",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16,
+      35
+    ],
+    "id": 20622,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Fractured Flickers",
+    "overview": "Fractured Flickers is a live-action syndicated half-hour television comedy show that was produced by Jay Ward, who is otherwise known for animated cartoons. The pilot film was produced in 1961, but the series wasn't completed until 1963. Twenty-six episodes were produced; they were syndicated by Desilu Productions and played for several years on local stations.",
+    "popularity": 1.0921,
+    "poster_path": "/At32gWoRlkOEIjRtp7VQuFY1sjV.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Fractured Flickers",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 16190,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The New Phil Silvers Show",
+    "overview": "The New Phil Silvers Show is an American situation comedy starring comedian Phil Silvers which aired thirty episodes on CBS from September 28, 1963, to April 25, 1964, under the sponsorship of General Foods.",
+    "popularity": 1.0634,
+    "poster_path": null,
+    "first_air_date": "1963-09-28",
+    "name": "The New Phil Silvers Show",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99,
+      10763
+    ],
+    "id": 125886,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Blick zurück im Film",
+    "overview": "",
+    "popularity": 1.0595,
+    "poster_path": null,
+    "first_air_date": "1963-04-29",
+    "name": "Blick zurück im Film",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/bIXVCibXqeS98eQsAfUyMt26r7X.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 26410,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Jerry Lewis Show",
+    "overview": "The Jerry Lewis Show is an American variety series hosted by Jerry Lewis that aired on ABC from September 21, 1963 to December 21, 1963. The variety series was originally supposed to be 40 episodes long but only 13 episodes aired due to the assassination of  President John F. Kennedy on November 22, 1963.",
+    "popularity": 1.0568,
+    "poster_path": "/6F5lNQUIwKzkfO5iupORfE66bQk.jpg",
+    "first_air_date": "1963-09-21",
+    "name": "The Jerry Lewis Show",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 20134,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Plane Makers",
+    "overview": "The Plane Makers is a British television series created by Wilfred Greatorex and produced by Rex Firken. ATV made three series for ITV between 1963 and 1965. It was succeeded by The Power Game, which ran for an additional three series from 1965 to 1969. Firkin continued as producer for the first two series, and David Reid took over for series 3.",
+    "popularity": 1.0129,
+    "poster_path": "/i7b9Ty44btPg6wrQPMW1YQAAFPv.jpg",
+    "first_air_date": "1963-02-04",
+    "name": "The Plane Makers",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 30854,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Harry's Girls",
+    "overview": "Harry's Girls is an American situation comedy which appeared on NBC from September 13, 1963, to January 3, 1964. The series stars Larry Blyden portraying Henry Burns, the leader of a vaudeville troupe consisting of three young women. The co-stars were Dawn Nickerson as Lois, Susan Silo as Rusty, and Diahn Williams as Terry.",
+    "popularity": 0.9774,
+    "poster_path": "/g2uhSBOxYPUvTf3GoSZ4oGw0vWx.jpg",
+    "first_air_date": "1963-09-13",
+    "name": "Harry's Girls",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 284898,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Faqaqie",
+    "overview": "The series discusses a variety of social issues within a framework of separate episodes, and through a series of comedic events that simulate society, such as hypocrisy, science, and other issues",
+    "popularity": 0.9733,
+    "poster_path": "/sT1Q7dxmRuotGnflcSKcauC2qxd.jpg",
+    "first_air_date": "1963-02-26",
+    "name": "Faqaqie",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 35467,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hollywood and the Stars",
+    "overview": "Each 30 minute show concentrated on a Hollywood genre, film or legendary star.",
+    "popularity": 0.9683,
+    "poster_path": null,
+    "first_air_date": "1963-09-30",
+    "name": "Hollywood and the Stars",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 2442,
+    "origin_country": [
+      "US",
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "World in Action",
+    "overview": "World in Action was a British investigative current affairs programme made by Granada Television from 1963 until 1998. Its campaigning journalism frequently had a major impact on events of the day. Its production teams often took audacious risks and gained a solid reputation for its often unorthodox, some said left-wing, approach.\n\nCabinet ministers fell victim to its probings. Numerous innocent victims of the British criminal justice system, including the Birmingham Six, were released from jail. Honouring the programme in its fiftieth anniversary awards, the Political Studies Association, said: \"World in Action thrived on unveiling corruption and highlighting underhand dealings. World in Action came to be seen as hard-hitting investigative journalism at its best.\"\n\nIn its heyday World in Action drew audiences of up to 23 million in Britain alone, equivalent to almost half the population.",
+    "popularity": 0.968,
+    "poster_path": "/ioyz1WHZrv3LQ5j6LSAcQh5fhLA.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "World in Action",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sLXcgG83PWzeqSMkZjyWrmKPFev.jpg",
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 12029,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "fr",
+    "original_name": "The Forest Rangers",
+    "overview": "The Forest Rangers was a Canadian television series that ran from 1963 to 1965. It was a co-production between CBC Television and ITC Entertainment and was Canada's first television show produced in colour. Executive producer Maxine Samuels founded the show.\n\nThe series ran for three seasons, a total of 104 30-minute colour episodes. Early episodes of the series were broadcast in serialized form as part of a CBC children's series entitled Razzle Dazzle, hosted by Alan Hamel and Michelle Finney.\n\nThis was the first appearance in a major series by Gordon Pinsent. He left the series in 1965 to star in Quentin Durgens, M.P.\n\nIn June 2004, there was a reunion for ex-cast and fans just south of Kleinburg, where the show was originally filmed. Six of the ex-junior rangers appeared and Peter Tully flew in from his home in Ireland. Another reunion occurred June 15, 2013 at the actual studios where the show was filmed. This time nine junior rangers and Gordon Pinsent were in attendance.\n\nThe show's first season was released on DVD by Imavision in early 2007.",
+    "popularity": 0.9574,
+    "poster_path": "/uRmUX8P1jwRmrpPwMra9Bb8hGBZ.jpg",
+    "first_air_date": "1963-01-04",
+    "name": "The Forest Rangers",
+    "vote_average": 7.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/deFtDw7x8xH2L1pDHahpTqBDC0X.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 40656,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Die Fernfahrer",
+    "overview": "Die Fernfahrer is a German television series.",
+    "popularity": 0.9494,
+    "poster_path": "/oXBhYT1vnjFeqvVEUE1iiKAlsRR.jpg",
+    "first_air_date": "1963-02-17",
+    "name": "Die Fernfahrer",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/54rRHX8XMHRBCHoI3cNZN5kmaJD.jpg",
+    "genre_ids": [
+      99,
+      10751
+    ],
+    "id": 153296,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Mutual of Omaha's Wild Kingdom",
+    "overview": "Premiering in 1963 broadcast on prime-time from 1968-1971 and airing in syndication until 1988 the Emmy Award-winning Mutual of Omaha's Wild Kingdom was one of the longest-running and most beloved television series of all time. A pioneer of the narrative nature-documentary format the educational series followed venerable host and ecologist Marlin Perkins (later joined by Jim Fowler Peter Gros Stan Brock and Tom Allen) as he trekked to the farthest reaches of the globe to study wild animals in their natural habitats.",
+    "popularity": 0.922,
+    "poster_path": "/feQpPj2aDaXxRUhtAoQrbWgUSKU.jpg",
+    "first_air_date": "1963-01-06",
+    "name": "Mutual of Omaha's Wild Kingdom",
+    "vote_average": 9,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 48262,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Love Story",
+    "overview": "Love Story is a 60-minute British anthology television series produced by Associated Television (ATV). A total of 128 episodes aired on ITV from 1963 to 1974. Its guest stars included Vanessa Redgrave, Lynn Redgrave, Stephanie Beacham, James Bolam, Dudley Moore, Wendy Hiller, Malcolm McDowell, Patrick Macnee, John Hurt, Geoffrey Palmer, Judy Cornwell, Leo McKern, David Hemmings, Judy Parfitt, Anna Massey, Felicity Kendal, Edward Fox, Sam Wanamaker, Ian McShane, Michael Kitchen, George Maharis and Margaret Whiting.",
+    "popularity": 0.9212,
+    "poster_path": "/btK2e2wdvrfB2yakPPVL6eT2LaE.jpg",
+    "first_air_date": "1963-06-03",
+    "name": "Love Story",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10766,
+      18
+    ],
+    "id": 229472,
+    "origin_country": [
+      "BR"
+    ],
+    "original_language": "pt",
+    "original_name": "2-5499 Ocupado",
+    "overview": "",
+    "popularity": 0.8707,
+    "poster_path": null,
+    "first_air_date": "1963-07-22",
+    "name": "2-5499 Ocupado",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 117976,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Tonight in Person",
+    "overview": "A series of weekly programmes presenting music in the folk idiom from many parts of the world.",
+    "popularity": 0.8589,
+    "poster_path": null,
+    "first_air_date": "1963-01-30",
+    "name": "Tonight in Person",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/f23nLGSsItzLgXKyb9DPvLy3KDt.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 24255,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Spread of the Eagle",
+    "overview": "A nine-part serial adaptation featuring dramatisations of three of William Shakespeare's iconic plays: Coriolanus, Julius Caesar, and Antony & Cleopatra.",
+    "popularity": 0.8475,
+    "poster_path": "/lUbpm4gIpR7wpD3J0HiMn6nDwQF.jpg",
+    "first_air_date": "1963-05-03",
+    "name": "The Spread of the Eagle",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 11861,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Moonstrike",
+    "overview": "An anthology of self-contained stories about acts of resistance in occupied Europe during the Second World War. Producer Gerard Glaister drew upon his own wartime experiences, having served as a pilot in the RAF.",
+    "popularity": 0.8423,
+    "poster_path": null,
+    "first_air_date": "1963-02-21",
+    "name": "Moonstrike",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/bXAeoRdrRS183evdyo0Es52QezX.jpg",
+    "genre_ids": [
+      10751
+    ],
+    "id": 63143,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Meine Frau Susanne",
+    "overview": "",
+    "popularity": 0.8355,
+    "poster_path": "/eQYwqobEKreprfKmXZh9Et20n7Z.jpg",
+    "first_air_date": "1963-04-05",
+    "name": "Meine Frau Susanne",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 127280,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "First Night",
+    "overview": "A series of contemporary television dramas by new writers.",
+    "popularity": 0.821,
+    "poster_path": null,
+    "first_air_date": "1963-09-22",
+    "name": "First Night",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 70497,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Janique Aimée",
+    "overview": "",
+    "popularity": 0.817,
+    "poster_path": "/ocJwToPANSXeacHqJdBOTgvgGiF.jpg",
+    "first_air_date": "1963-02-04",
+    "name": "Janique Aimée",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 118277,
+    "origin_country": [
+      "SE"
+    ],
+    "original_language": "sv",
+    "original_name": "Ingmar Bergman gör en film",
+    "overview": "The year is 1961 and Ingmar Bergman is making a movie. While planted on the scene as apprentice to Bergman, Vilgot Sjöman (director, I Am Curious–Yellow, 1967), suggests to Swedish Television that they take the opportunity to record with the acclaimed director. In August, Sjöman and the television crew begin to capture what would become a comprehensive five-part documentary on the making of Winter Light, offering views of script development, set construction and lighting, rehearsals and editing, as well as intimate conversations with Bergman and members of his cast and crew. Footage from the film’s Swedish premiere delivers immediate audience reactions and the critics’ reviews the following day.",
+    "popularity": 0.8128,
+    "poster_path": "/qYNDeEsQSvCGZAfcnXq9KDYPd8d.jpg",
+    "first_air_date": "1963-01-27",
+    "name": "Ingmar Bergman Makes a Movie",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 9021,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Des O'Connor Show",
+    "overview": "The Des O'Connor Show is a British variety and chat show hosted by Des O'Connor. ITV broadcast the programme from 1963 until 1973.\n\nAssociated Television produced the programme, and which was recorded in black-and-white for the first six series.\n\nWhen the seventh series of the show aired in colour in 1970, its popularity spread internationally. ITV licensed the programme to the National Broadcasting Company in the United States, where it aired during prime time, and continued for one more series. Some entertainment celebrities of the time, such as Patrick Newell and Dom DeLuise, made multiple guest appearances on the show.\n\nIn the United States, NBC retitled the programme to Kraft Music Hall Presents the Des O'Connor Show, after their own popular variety show Kraft Music Hall, which also ended in 1971.",
+    "popularity": 0.7939,
+    "poster_path": null,
+    "first_air_date": "1963-05-29",
+    "name": "The Des O'Connor Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 11528,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Telescope",
+    "overview": "Telescope is a Canadian documentary series which aired on CBC Television between 1963 and 1973. The series was hosted by Fletcher Markle, which profiled notable Canadian people from celebrities to the unknown, who made a difference.\n\nStarting in September 1966, Telescope was the first regular colour broadcast in Canada. It's producer was Sam Levene.\n\nIn 2008, CBC offered 10 episodes of Telescope on their Digital Archives website. The episodes are from the 1970-1971 season, and feature new host Ken Kavanagh. Among those profiled were game show host Monty Hall, publisher Mel Hurtig, journalist Pat Carney, actor John Vernon, author Farley Mowat, amusement park impresario Patty Conklin, and underwater explorer Joe MacInnis. A 1970 episode featured actor Donald Sutherland including early footage of his son Kiefer. Mentalist Uri Geller followed a week later by Ray Hyman and Jerry Andrus who explained and duplicated Geller's \"paranormal\" feats.",
+    "popularity": 0.7926,
+    "poster_path": null,
+    "first_air_date": "1963-07-01",
+    "name": "Telescope",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 74622,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Curd Jürgens erzählt...",
+    "overview": "",
+    "popularity": 0.7868,
+    "poster_path": null,
+    "first_air_date": "1963-04-27",
+    "name": "Curd Jürgens erzählt...",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25314,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Art Linkletter Show",
+    "overview": "",
+    "popularity": 0.7821,
+    "poster_path": null,
+    "first_air_date": "1963-02-18",
+    "name": "The Art Linkletter Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vD50bbeuVDPAX8qfzHiyzuOOkd4.jpg",
+    "genre_ids": [],
+    "id": 84400,
+    "origin_country": [
+      "SE"
+    ],
+    "original_language": "sv",
+    "original_name": "Skäggen",
+    "overview": "\"The Beards\" - The framework was that the participants would produce a relatively current entertainment program titled Concrete. During the meetings ideas and sketches were presented. Most of it was rejected.",
+    "popularity": 0.7628,
+    "poster_path": null,
+    "first_air_date": "1963-03-09",
+    "name": "Skäggen",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80
+    ],
+    "id": 41817,
+    "origin_country": [
+      "AT"
+    ],
+    "original_language": "de",
+    "original_name": "Oberinspektor Marek",
+    "overview": "Oberinspektor Marek is an Austrian television series.",
+    "popularity": 0.7585,
+    "poster_path": "/qructl53Tnc7StGf1gDN7KBjEJX.jpg",
+    "first_air_date": "1963-10-03",
+    "name": "Oberinspektor Marek",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 218101,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "La Route",
+    "overview": "",
+    "popularity": 0.7323,
+    "poster_path": "/6AfQswKsWWu3xNrN88G5AyAtEIN.jpg",
+    "first_air_date": "1963-12-21",
+    "name": "La Route",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 57275,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Taxi!",
+    "overview": "Taxi! is a BBC television comedy-drama series transmitted in 1963 and 1964. Created by Ted Willis, who had developed Dixon of Dock Green, he was well aware of taxicab drivers inclination to provide stories, and intended twelve individual plays for what became the first series. The series stars Sid James as Cab firm owner and driver Sid Stone. Similar to his role in the near contemporary film Carry On Cabby, this was more a drama with humour, Jack Rosenthal scripted a few episodes and Bill Owen appeared as the Cab firm's co-owner Fred Cudell with Ray Brooks as driver Terry Mills.",
+    "popularity": 0.7319,
+    "poster_path": "/ldaZ2isgxxxCSS8xYi19Vs0Vxzo.jpg",
+    "first_air_date": "1963-07-10",
+    "name": "Taxi!",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      9648,
+      18
+    ],
+    "id": 72317,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Desperate People",
+    "overview": "Famous photographer Larry Martin receives a visit from his brother Philip, on leave from military service in West Germany. Philip is trying to find the wife of a deceased friend and his search takes him to Dublin. Sometime later, Larry learns that Philip never went to Dublin, but instead has disappeared.",
+    "popularity": 0.7275,
+    "poster_path": "/q27IYiYU2vOxwrBvCfD9Zl3oXCW.jpg",
+    "first_air_date": "1963-02-24",
+    "name": "The Desperate People",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/wC6M0HdhtMO76gZXkTrAzwZUMF2.jpg",
+    "genre_ids": [],
+    "id": 75529,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Le Chevalier de Maison Rouge",
+    "overview": "This historic mini-series is set just after the execution of Louis XVI and follows the actions of a group of loyal royalists, led by the Chevalier de Maison-Rouge. His goal is to free Queen Marie-Antoinette and the young King Louis XVII, but he runs into the brutal jailer Simon who makes sure to thwart any attempt to escape.\n\nA secondary plot line deals with the feelings of Lindet, the lieutenant of the national guard, towards Geneviève, the young protege of the royalist Morand, which for the sans-culottes is a crime in itself.",
+    "popularity": 0.7203,
+    "poster_path": "/t7RI7F3lfVjqSINFw1NCdXyMwGQ.jpg",
+    "first_air_date": "1963-03-02",
+    "name": "Le Chevalier de Maison Rouge",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16,
+      10765
+    ],
+    "id": 21275,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Rod Rocket",
+    "overview": "Rod Rocket is the first animated cartoon with production credited to Filmation, debuting in syndication in 1963.",
+    "popularity": 0.7119,
+    "poster_path": null,
+    "first_air_date": "1963-01-01",
+    "name": "Rod Rocket",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/zZt9DPedEtFN1FSFdH6CTJ5FxTf.jpg",
+    "genre_ids": [
+      10751
+    ],
+    "id": 82767,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Die Laubenpieper",
+    "overview": "",
+    "popularity": 0.7106,
+    "poster_path": "/yPriKp1gPAcNSOuy2PmK08K9aKP.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Die Laubenpieper",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/oEyQPYHpw4QmcT0nkeVtSj9md4m.jpg",
+    "genre_ids": [
+      16
+    ],
+    "id": 14470,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The New Casper Cartoon Show",
+    "overview": "The New Casper Cartoon Show is a 1963 to 1969 animated television series that appeared on ABC's Saturday morning schedule. The show featured older 1959–62 Famous Studios cartoons, mostly Noveltoons and \"Modern Madcaps\" which were shown as \"Harveytoons\", and 26 new Casper the Friendly Ghost episodes that were created specifically for this show, though all of them originally ran in the first 1963–1964 season. Several Minisodes of the show are available to view for free on Crackle. All voices in the Casper episodes were performed by Norma MacMillan and Bradley Bolke.",
+    "popularity": 0.7088,
+    "poster_path": "/nDoXLepGxTCp0ROe6jEGjBkzceg.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "The New Casper Cartoon Show",
+    "vote_average": 8.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23504,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Lorna Doone",
+    "overview": "",
+    "popularity": 0.694,
+    "poster_path": null,
+    "first_air_date": "1963-06-16",
+    "name": "Lorna Doone",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 74244,
+    "origin_country": [
+      "AT"
+    ],
+    "original_language": "de",
+    "original_name": "Das alte Hotel",
+    "overview": "",
+    "popularity": 0.6825,
+    "poster_path": "/7BZK1tr6hbgeRbDiNpHAGTdeFVP.jpg",
+    "first_air_date": "1963-10-10",
+    "name": "Das alte Hotel",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 157343,
+    "origin_country": [
+      "SE"
+    ],
+    "original_language": "sv",
+    "original_name": "Societetshuset",
+    "overview": "",
+    "popularity": 0.6638,
+    "poster_path": "/i3kOBhmyWWRcONU9rb2M14ZIeVj.jpg",
+    "first_air_date": "1963-11-02",
+    "name": "Societetshuset",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759
+    ],
+    "id": 285286,
+    "origin_country": [
+      "CN"
+    ],
+    "original_language": "zh",
+    "original_name": "碧血金钗",
+    "overview": "",
+    "popularity": 0.6403,
+    "poster_path": "/vMrMwLevwPJaTnDZl9yUJQeTzjT.jpg",
+    "first_air_date": "1963-08-28",
+    "name": "碧血金钗",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 4867,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "You Don't Say!",
+    "overview": "You Don't Say! is an American television game show that had three separate runs on television. The first version aired on NBC daytime from April 1, 1963 to September 26, 1969 with revivals on ABC in 1975 and in syndication from 1978–1979. The last two incarnations were executive produced by Ralph Andrews and produced and directed by Bill Carruthers.\n\nNBC broadcasts were produced by Ralph Andrews-Bill Yagemann Productions in association with Desilu Productions. Ralph Andrews Productions produced both of the 1970s versions, with the ABC version produced in association with the Carruthers Company and Warner Bros. Television.\n\nSimilar to the announcer's function on Password, either Stewart or Harlan would whisper the name being guessed, along with a description.",
+    "popularity": 0.6333,
+    "poster_path": null,
+    "first_air_date": "1963-04-01",
+    "name": "You Don't Say!",
+    "vote_average": 8,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 11896,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hootenanny",
+    "overview": "Hootenanny is an American musical variety television show broadcast on ABC from April 1963 to September 1964. The program was hosted by Jack Linkletter. It primarily featured pop-oriented folk music acts, including The Journeymen, The Limeliters, the Chad Mitchell Trio, The New Christy Minstrels, The Brothers Four, Ian & Sylvia, The Big 3, Hoyt Axton, Judy Collins, Johnny Cash, The Carter Family, Flatt & Scruggs and the Foggy Mountain Boys, The Tarriers, Bud & Travis, and the Smothers Brothers. Although both popular and influential, the program is primarily remembered today for the controversy created when the producers blacklisted certain folk music acts, which then led to a boycott by others.",
+    "popularity": 0.6269,
+    "poster_path": null,
+    "first_air_date": "1963-04-06",
+    "name": "Hootenanny",
+    "vote_average": 3,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 7607,
+    "origin_country": [
+      "NL"
+    ],
+    "original_language": "nl",
+    "original_name": "Memorandum van een dokter",
+    "overview": "Memorandum van een dokter is a Dutch television series based on A. J. Cronin's stories about the fictional hero, Dr. Finlay. The series was broadcast from 1963 to 1965 and was directed by Peter Holland. It starred Bram van der Vlugt as Dr. Finlay, Rob Geraerds as Dr. Cameron, and Fien Berghegge as Janet.",
+    "popularity": 0.6237,
+    "poster_path": null,
+    "first_air_date": "1963-10-27",
+    "name": "Memorandum van een dokter",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 229514,
+    "origin_country": [
+      "BR"
+    ],
+    "original_language": "pt",
+    "original_name": "Aqueles Que Dizem Amar-Se",
+    "overview": "",
+    "popularity": 0.6214,
+    "poster_path": null,
+    "first_air_date": "1963-10-04",
+    "name": "Aqueles Que Dizem Amar-Se",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/mIpbqlZ5L3f48qwqGEZiLb5IrvL.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 92590,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Adventure",
+    "overview": "Long-running travel programme",
+    "popularity": 0.6212,
+    "poster_path": "/hWcjuzknX5QmvYMHYRZzRn8DeoH.jpg",
+    "first_air_date": "1963-04-26",
+    "name": "Adventure",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759
+    ],
+    "id": 91289,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Young Jacobites",
+    "overview": "Two children on holiday on The Isle of Skye, Scotland, go back in time and help Bonnie Prince Charlie escape from Scotland to France.",
+    "popularity": 0.6212,
+    "poster_path": "/lOp3T5PRv5snMKy4ZwBIy67EYFg.jpg",
+    "first_air_date": "1963-07-25",
+    "name": "The Young Jacobites",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/c8bEQx9xOYqBUVq5eveBi5rNclA.jpg",
+    "genre_ids": [
+      10763
+    ],
+    "id": 9729,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "heute",
+    "overview": "heute is a television news program on the German channel ZDF. The main program is broadcast at 19:00, and includes news, with an emphasis on political news from Germany, Europe and the world plus 'mixed' news from cultural life or entertainment, and the sports news with an extra presenter. The weather forecast comes up at 19:22 after a break with commercials. The opening sequence of each broadcast features an analogue clock, a signature element of the program.\n\nThe newscast “heute” of ZDF and the 20:00-Tagesschau of ARD/“Das Erste” are the main broadcasts of German public TV starting the evening programme. Advertisement can not be shown in public TV after 8:00 p.m.",
+    "popularity": 0.6192,
+    "poster_path": "/ki6FKlJNwlrdV5K5wwaCCSlVLZ1.jpg",
+    "first_air_date": "1963-04-01",
+    "name": "heute",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 82771,
+    "origin_country": [],
+    "original_language": "en",
+    "original_name": "Snuffy Smith and Barney Google",
+    "overview": "There's feudin', fussin' and a whole lot of good ol' fashioned fun goin' on as those back woods rascals, Barney Google and Snuffy Smith, rustle up a rib-ticklin' tub of mountain mirth. Barney and Snuffy are joined by the craziest collection of cantankerous characters ever to come out of them thar' hills, including Loweezy, Jughaid and Jerky Jockey for hours of down home country comedy.",
+    "popularity": 0.618,
+    "poster_path": "/fO1EvLUGbfDrr69qWxHex5Eih9g.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Snuffy Smith and Barney Google",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80
+    ],
+    "id": 79508,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Tim Frazer",
+    "overview": "",
+    "popularity": 0.616,
+    "poster_path": "/xT7vV1JbWDsNowwwhXJbGOGz5Ri.jpg",
+    "first_air_date": "1963-01-14",
+    "name": "Tim Frazer",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 127470,
+    "origin_country": [],
+    "original_language": "en",
+    "original_name": "24-Hour Call",
+    "overview": "24-Hour Call was a 1963 British television series for ATV around the private practice of four doctors played by Godfrey Quigley as Dr Bennett and Geoffrey Frederick from a previous ATV series Call Oxbridge 2000, and newcomers Scott Forbes and Andrew Downie.",
+    "popularity": 0.6065,
+    "poster_path": null,
+    "first_air_date": "1963-02-02",
+    "name": "24-Hour Call",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 29924,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Stanley Baxter Show",
+    "overview": "",
+    "popularity": 0.6007,
+    "poster_path": null,
+    "first_air_date": "1963-10-17",
+    "name": "The Stanley Baxter Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 4317,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Telegoons",
+    "overview": "The Telegoons is a comedy puppet show, adapted from the highly successful BBC radio comedy show of the 1950s.",
+    "popularity": 0.5928,
+    "poster_path": "/dHwpBoN64NZiVv7qSFgBLj8eSu6.jpg",
+    "first_air_date": "1963-10-05",
+    "name": "The Telegoons",
+    "vote_average": 4.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10751
+    ],
+    "id": 81010,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Alsterstraße",
+    "overview": "",
+    "popularity": 0.5877,
+    "poster_path": null,
+    "first_air_date": "1963-10-09",
+    "name": "Alsterstraße",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 78675,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Schwäbische Geschichten",
+    "overview": "Willy Reichert as mayor of a little Swabian town.",
+    "popularity": 0.5876,
+    "poster_path": "/ltOeiHOCIXTWj60XSOdXd6tZK7z.jpg",
+    "first_air_date": "1963-02-23",
+    "name": "Swabian Stories",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 85465,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Die sanfte Tour",
+    "overview": "",
+    "popularity": 0.5775,
+    "poster_path": null,
+    "first_air_date": "1963-01-22",
+    "name": "Die sanfte Tour",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 119199,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Es spielt für Sie...",
+    "overview": "",
+    "popularity": 0.5754,
+    "poster_path": null,
+    "first_air_date": "1963-04-22",
+    "name": "Es spielt für Sie...",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      10766
+    ],
+    "id": 229519,
+    "origin_country": [
+      "BR"
+    ],
+    "original_language": "pt",
+    "original_name": "Corações em Conflito",
+    "overview": "",
+    "popularity": 0.5741,
+    "poster_path": null,
+    "first_air_date": "1963-12-10",
+    "name": "Corações em Conflito",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99,
+      80
+    ],
+    "id": 154814,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Lawbreakers",
+    "overview": "Lee Marvin narrates this series which reenact various crimes that occurred around the United States. Although some were based on well-known events, others were more obscure.",
+    "popularity": 0.5708,
+    "poster_path": "/dMtzgjYeHFLeknIxZjOO7WMMKAC.jpg",
+    "first_air_date": "1963-09-15",
+    "name": "The Lawbreakers",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 12419,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Meet the Wife",
+    "overview": "Meet the Wife is a 1960s BBC situation comedy written by Ronald Chesney and Ronald Wolfe, which featured Freddie Frinton as Freddie Blacklock with Thora Hird as his tyrannical wife, Thora. It ran to five series.\n\nThe series was based on a 1963 BBC television Comedy Playhouse production, \"The Bed\". The theme tune was by Russ Conway and incidental music by Norman Percival and later Dennis Wilson. The producers were John Paddy Carstairs and later Robin Nash.\n\nThe Beatles song \"Good Morning, Good Morning\" on Sgt. Pepper's Lonely Hearts Club Band includes the lyric \"It's time for tea and Meet the Wife\".",
+    "popularity": 0.5678,
+    "poster_path": null,
+    "first_air_date": "1963-12-28",
+    "name": "Meet the Wife",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 25431,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "A Little Big Business",
+    "overview": "Marcus Lieberman passes on the secrets of the furniture trade to his young son, Simon.",
+    "popularity": 0.5563,
+    "poster_path": "/aHI7JdYwE9v2G8sk0IvhdILVgbw.jpg",
+    "first_air_date": "1963-08-08",
+    "name": "A Little Big Business",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 136144,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Mit Karl May im Orient",
+    "overview": "",
+    "popularity": 0.5508,
+    "poster_path": "/znJiYMfFuDLsB3twJ6pj4t8XeSd.jpg",
+    "first_air_date": "1963-10-01",
+    "name": "Mit Karl May im Orient",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 29252,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Secret Beneath the Sea",
+    "overview": "",
+    "popularity": 0.5443,
+    "poster_path": "/zuuSjm8f9vA6IiyRTKmjn0S2GsD.jpg",
+    "first_air_date": "1963-02-16",
+    "name": "Secret Beneath the Sea",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 294673,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Taxi!",
+    "overview": "Sidney James stars as a cabbie who takes Ray Brooks under his wing and helps him become a taxi driver. They become pals and share working a London black cab.",
+    "popularity": 0.5416,
+    "poster_path": null,
+    "first_air_date": "1963-07-10",
+    "name": "Taxi!",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10751
+    ],
+    "id": 40830,
+    "origin_country": [
+      "AT"
+    ],
+    "original_language": "de",
+    "original_name": "Mario",
+    "overview": "Mario is a German television series.",
+    "popularity": 0.523,
+    "poster_path": null,
+    "first_air_date": "1963-01-01",
+    "name": "Mario",
+    "vote_average": 1,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 224536,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Teletale",
+    "overview": "TV Show Details",
+    "popularity": 0.5217,
+    "poster_path": null,
+    "first_air_date": "1963-11-01",
+    "name": "Teletale",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80
+    ],
+    "id": 84947,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Privatdetektiv Harry Holl",
+    "overview": "",
+    "popularity": 0.5213,
+    "poster_path": null,
+    "first_air_date": "1963-10-09",
+    "name": "Privatdetektiv Harry Holl",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 5913,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Swallows and Amazons",
+    "overview": "While on holiday, the Walker children spot an island. Borrowing a boat, they meet pirates seeking their uncle's trunk. After adventures with storms and cakes, the children and pirates learn friendship.",
+    "popularity": 0.5055,
+    "poster_path": "/bUZaIrLDNAvUe31tptyDUjThS6u.jpg",
+    "first_air_date": "1963-09-03",
+    "name": "Swallows and Amazons",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/a6jPyCEa3YHBFzUckBOAqROAJeQ.jpg",
+    "genre_ids": [
+      10751
+    ],
+    "id": 104871,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Augsburger Puppenkiste - Der kleine dicke Ritter - Oblong Fitz Oblong",
+    "overview": "",
+    "popularity": 0.5006,
+    "poster_path": "/poIxDwOVkqRntVx3OT9ukN8rheW.jpg",
+    "first_air_date": "1963-11-03",
+    "name": "Augsburger Puppenkiste - Der kleine dicke Ritter - Oblong Fitz Oblong",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 12148,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Jimmy Dean Show",
+    "overview": "The Jimmy Dean Show is the name of several similar music and variety series on American local and network television between 1957 and 1975. Each starred country music singer Jimmy Dean as host.",
+    "popularity": 0.4887,
+    "poster_path": null,
+    "first_air_date": "1963-09-19",
+    "name": "The Jimmy Dean Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10762
+    ],
+    "id": 58733,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Puffin's Pla(i)ce",
+    "overview": "Puffin's Pla(i)ce is a British regional children's programme named after it's star, Oscar Puffin, that's broadcast on ITV Channel Television on weekend afternoons. The programme, one of the longest-running children's series to air on the ITV network, has been broadcast since 3 March 1963.\n\nOriginally presented by Channel Television's team of continuity announcers, recent Puffin's Pla(i)ce presenters have included Stewart McDonald, Kevin Pamplin, Sam Palmano, Lucy Anderson and currently, Jenny Mullin.\n\nIn September 2013 it was announced the show would no longer be broadcast on TV, but would move to an online format at the Channel Online website. The last TV edition was broadcast on 15th September 2013.",
+    "popularity": 0.4879,
+    "poster_path": null,
+    "first_air_date": "1963-03-03",
+    "name": "Puffin's Pla(i)ce",
+    "vote_average": 10,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 294315,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Best of Friends",
+    "overview": "The story about a clerk in an insurance office situated next door to a cafe.",
+    "popularity": 0.4847,
+    "poster_path": null,
+    "first_air_date": "1963-01-06",
+    "name": "Best of Friends",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 7565,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "People Will Talk",
+    "overview": "People Will Talk was an American game show that aired on NBC from July 1 to December 27, 1963. The host was Dennis James, with Kenny Williams announcing. In 1964, packager Heatter-Quigley Productions revamped the program under the name The Celebrity Game, with host Carl Reiner at CBS Television City in Hollywood.",
+    "popularity": 0.4817,
+    "poster_path": null,
+    "first_air_date": "1963-07-01",
+    "name": "People Will Talk",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 292877,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Chem. Lab. Mystery",
+    "overview": "Children's slot mystery serial in six parts.",
+    "popularity": 0.4792,
+    "poster_path": null,
+    "first_air_date": "1963-01-05",
+    "name": "The Chem. Lab. Mystery",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10765,
+      16
+    ],
+    "id": 14946,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Mr. Piper",
+    "overview": "Mr. Piper is a Canadian children's TV series made in 1963. The series was created by Martin Andrews and Allan Wargon, who was also the producer.",
+    "popularity": 0.4743,
+    "poster_path": "/9WrJ1FpROHTVP0dKoFy44my5UYg.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Mr. Piper",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10751
+    ],
+    "id": 18911,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "NBC Children's Theatre",
+    "overview": "NBC Children's Theatre is an American television anthology series airing from 1963 to 1973. Its stories were primarily drawn from classical and contemporary children's literature.",
+    "popularity": 0.4632,
+    "poster_path": null,
+    "first_air_date": "1963-11-02",
+    "name": "NBC Children's Theatre",
+    "vote_average": 5.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 80217,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Der Fall Rohrbach",
+    "overview": "",
+    "popularity": 0.4589,
+    "poster_path": null,
+    "first_air_date": "1963-05-08",
+    "name": "Der Fall Rohrbach",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 10694,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Missing Links",
+    "overview": "Missing Links is a Goodson-Todman game show hosted by Ed McMahon which originally ran on NBC from September 9, 1963 to March 27, 1964.",
+    "popularity": 0.4464,
+    "poster_path": null,
+    "first_air_date": "1963-09-09",
+    "name": "Missing Links",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/fUMOxRnYPCMCwnPTTZ5aqmUUIA.jpg",
+    "genre_ids": [],
+    "id": 16154,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Funny Company",
+    "overview": "THE FUNNY COMPANY was an American animated cartoon produced in 1963 and seen in syndication. Ken Snyder and Charles Koren produced 260 six-minute long episodes. The Mattel Corporation provided financial backing. Snyder conceived the program in response to then-Federal Communications Commission chairman Newton N. Minow's call for more educational children's programs.\n\nTHE FUNNY COMPANY group resembled a club not unlike a Junior Achievement organization, and most of the time, the stories would revolve around the Company being hired for various jobs to make a little money or doing something for charity. As time went on, the Company decided to make Shrinkin' Violette a movie star and were on their way to Hollywood.\n\nMembers included leader Buzzer Bell, inventor Jasper N. Park, club secretary Polly Plum, rotund Merry Twitter, club mascot Terry Dactyl, shy Shrinkin' Violette, and two Native American adults--Super Chief whose voice was an air horn of a single-chime railroad locomotive, and his translator Broken Feather. Another adult lending a hand was Professor Todd Goodheart with his supercomputer, the Weisenheimer.",
+    "popularity": 0.444,
+    "poster_path": "/i3rSW20AsmOj6FeTGEzbwu8eZkM.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "The Funny Company",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 118348,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Und Ihr Steckenpferd?",
+    "overview": "",
+    "popularity": 0.4408,
+    "poster_path": null,
+    "first_air_date": "1963-05-03",
+    "name": "Und Ihr Steckenpferd?",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 256868,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Badger's Bend",
+    "overview": "Young Tim Cordon moves to the countryside and discovers an interest in the care of animals. Befriending local vet Mr Francis and his assistant Sheila, Tim is given some abandoned hamsters to look after and soon hits upon the idea of setting himself up as an animal hotel.",
+    "popularity": 0.4395,
+    "poster_path": null,
+    "first_air_date": "1963-01-04",
+    "name": "Badger's Bend",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23419,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Alumni Fun",
+    "overview": "",
+    "popularity": 0.4264,
+    "poster_path": null,
+    "first_air_date": "1963-01-20",
+    "name": "Alumni Fun",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 15360,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "100 Grand",
+    "overview": "100 Grand is an American game show hosted by Jack Clark. The series ran for three episodes, weekly on Sunday nights from September 15 to 29, 1963 on the highly-touted \"New ABC\" as the network's attempt to bring back high-stakes game shows after the quiz show scandals of 1958.\n\nWhen 100 Grand made its debut, it had been two years since any large jackpots comparable to the quiz shows had aired on any broadcast network, and it would be over a decade more before six-figure jackpots returned to television.",
+    "popularity": 0.4242,
+    "poster_path": null,
+    "first_air_date": "1963-09-15",
+    "name": "100 Grand",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 60355,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Password",
+    "overview": "Password was a panel game show based on the US version of the same name. It was orginally aired on ITV produced by ATV from 12 March to 10 September 1963 hosted by Shaw Taylor, then it aired on BBC2 from 24 March to 28 April 1973 hosted by Brian Redhead before moving to its flagship channel BBC1 from 7 January 1974 to 1976 first hosted by Eleanor Summerfield then by Esther Rantzen, it was then aired on Channel 4 produced by Thames from 6 November 1982 to 14 May 1983 hosted by Tom O'Connor and then finally aired back on ITV produced by Ulster from 22 July 1987 to 5 August 1988 hosted by Gordon Burns.",
+    "popularity": 0.421,
+    "poster_path": null,
+    "first_air_date": "1963-03-12",
+    "name": "Password",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 217899,
+    "origin_country": [
+      "SE"
+    ],
+    "original_language": "sv",
+    "original_name": "Villervalle i Söderhavet",
+    "overview": "",
+    "popularity": 0.4208,
+    "poster_path": "/jBIeXhfiehpjRQXuSJTHFzbXM0z.jpg",
+    "first_air_date": "1963-02-16",
+    "name": "Villervalle i Söderhavet",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 256455,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Zirkus Dahl",
+    "overview": "",
+    "popularity": 0.4205,
+    "poster_path": null,
+    "first_air_date": "1963-09-29",
+    "name": "Zirkus Dahl",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/gHmkfa1xTOowo1qnr4cqQK6n7f2.jpg",
+    "genre_ids": [
+      10762
+    ],
+    "id": 216491,
+    "origin_country": [
+      "PL"
+    ],
+    "original_language": "pl",
+    "original_name": "Jacek i Agatka",
+    "overview": "It was the first Polish television show intended for bedtime. Featuring finger puppetry, the show centers on the young siblings Jacek and Agatka who explore children's topics and curiously crafted ideas",
+    "popularity": 0.4171,
+    "poster_path": "/eBaFwYSB708X4lkV3zqkDyhvBUF.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Jacek i Agatka",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23390,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Ray Anthony Show",
+    "overview": "",
+    "popularity": 0.4129,
+    "poster_path": null,
+    "first_air_date": "1963-01-26",
+    "name": "The Ray Anthony Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qVhZAeQzIWJlrQCZd8D71pzLBME.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 30559,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Hancock",
+    "overview": "",
+    "popularity": 0.4125,
+    "poster_path": "/hBQ7j2AtNI6XCwLRRvNXLjRxCxi.jpg",
+    "first_air_date": "1963-01-03",
+    "name": "Hancock",
+    "vote_average": 6.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 272229,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "That's My Boy!",
+    "overview": "A half-hour sitcom, the series starred radio and theatre star Jimmy Clitheroe. Using his four-foot three-inch stature and mischievous persona to comic effect, causing further mischief and mayhem for his fictional family. It ran for one series of seven episodes in 1963.",
+    "popularity": 0.404,
+    "poster_path": "/iQZMbNje0Ju4e8zBgzPdZX3m0Z.jpg",
+    "first_air_date": "1963-11-10",
+    "name": "That's My Boy!",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 256068,
+    "origin_country": [
+      "NL"
+    ],
+    "original_language": "nl",
+    "original_name": "Stiefbeen & Zoon",
+    "overview": "",
+    "popularity": 0.4021,
+    "poster_path": "/l0bsmqDpIytD1Je0vicKRTd3ixo.jpg",
+    "first_air_date": "1963-10-11",
+    "name": "Stiefbeen & Zoon",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 203672,
+    "origin_country": [
+      "PL"
+    ],
+    "original_language": "pl",
+    "original_name": "Przygody Błękitnego Rycerzyka",
+    "overview": "",
+    "popularity": 0.3991,
+    "poster_path": null,
+    "first_air_date": "1963-01-01",
+    "name": "Przygody Błękitnego Rycerzyka",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 215174,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Götter der Könige – Emire des Propheten",
+    "overview": "",
+    "popularity": 0.3953,
+    "poster_path": null,
+    "first_air_date": "1963-05-26",
+    "name": "Götter der Könige – Emire des Propheten",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24513,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Handy Gang",
+    "overview": "",
+    "popularity": 0.3919,
+    "poster_path": null,
+    "first_air_date": "1963-05-03",
+    "name": "The Handy Gang",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/nDuMUAftjg8lgmAUbH1CkzTpPU5.jpg",
+    "genre_ids": [],
+    "id": 196005,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Les Contes Fantastiques : Une école Belge de l'Etrange",
+    "overview": "",
+    "popularity": 0.3892,
+    "poster_path": "/shH9voxJbvAwDytRBhgtuExdwzs.jpg",
+    "first_air_date": "1963-01-01",
+    "name": "Les Contes Fantastiques : Une école Belge de l'Etrange",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 158176,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Peter Alexander: Spaziergänge",
+    "overview": "",
+    "popularity": 0.3892,
+    "poster_path": null,
+    "first_air_date": "1963-12-26",
+    "name": "Peter Alexander: Spaziergänge",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 295207,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Stories of Guy de Maupassant",
+    "overview": "A series of dramas based on the works of Guy de Maupassant which aired in 1963 from Granada Television",
+    "popularity": 0.3876,
+    "poster_path": "/295G9SQwIH0IjDaFdCULiQhDKyj.jpg",
+    "first_air_date": "1963-06-20",
+    "name": "The Stories of Guy de Maupassant",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/ayIqhezYlXgQxnhJzekjJftng3S.jpg",
+    "genre_ids": [],
+    "id": 259487,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Mord in Riverport",
+    "overview": "",
+    "popularity": 0.3868,
+    "poster_path": "/erYlq3LhAmxojOO6vXaw0XlOGsZ.jpg",
+    "first_air_date": "1963-09-10",
+    "name": "Mord in Riverport",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 237147,
+    "origin_country": [
+      "XG"
+    ],
+    "original_language": "de",
+    "original_name": "Jeff und Andy",
+    "overview": "",
+    "popularity": 0.3727,
+    "poster_path": null,
+    "first_air_date": "1963-11-02",
+    "name": "Jeff und Andy",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/z5j18FEGKQSaQNo039vUf79FWDw.jpg",
+    "genre_ids": [],
+    "id": 295177,
+    "origin_country": [
+      "SE"
+    ],
+    "original_language": "sv",
+    "original_name": "Petter kommer igen",
+    "overview": "",
+    "popularity": 0.3724,
+    "poster_path": "/hfgwDY48H9SXOPupANNi53viq6B.jpg",
+    "first_air_date": "1963-12-22",
+    "name": "Petter kommer igen",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 29158,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "No Cloak - No Dagger",
+    "overview": "",
+    "popularity": 0.3713,
+    "poster_path": null,
+    "first_air_date": "1963-09-01",
+    "name": "No Cloak - No Dagger",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16
+    ],
+    "id": 287241,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Sam Bassett: Hound for Hire",
+    "overview": "Produced in 1963, \"Sam Bassett, Hound for Hire\" is a quirky, bizarre and hilarious series of short cartoons that almost defy description. Sam Bassett, a Bogart-esque Bassett Hound and his partner, a mute Chihuahua named Chapultepec (who \"talks\" by playing his mariachi guitar) attempt to solve mysteries that somehow usually involve psychotherapy.",
+    "popularity": 0.3688,
+    "poster_path": null,
+    "first_air_date": "1963-01-01",
+    "name": "Sam Bassett: Hound for Hire",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25030,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Talent Scouts",
+    "overview": "",
+    "popularity": 0.3672,
+    "poster_path": null,
+    "first_air_date": "1963-07-02",
+    "name": "Talent Scouts",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/n09vBsO7LSsBy5lXz9Y4hFeEayE.jpg",
+    "genre_ids": [],
+    "id": 293811,
+    "origin_country": [
+      "PL"
+    ],
+    "original_language": "pl",
+    "original_name": "Bolek i Lolek",
+    "overview": "",
+    "popularity": 0.3666,
+    "poster_path": "/udIEjHurmu4rxUOjcn7NcwYhb23.jpg",
+    "first_air_date": "1963-06-20",
+    "name": "Bolek i Lolek",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 207471,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "戦友",
+    "overview": "Japanese TV drama set in World War 2.",
+    "popularity": 0.3577,
+    "poster_path": null,
+    "first_air_date": "1963-10-01",
+    "name": "Comrade In Arms",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/uESJvH6heDgS1SAG6xoYQJhOz2U.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 26459,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Dick Emery Show",
+    "overview": "A British sketch comedy show broadcast on the BBC from 1963 to 1981, with frequent performers including Pat Coombs, Deryck Guyler, Roy Kinnear, Joan Sims and Josephine Tewson.",
+    "popularity": 0.132,
+    "poster_path": "/emmzK5emSeC4xP1G4FSfkqnDnJE.jpg",
+    "first_air_date": "1963-07-13",
+    "name": "The Dick Emery Show",
+    "vote_average": 8,
+    "vote_count": 3
+  }
+]

@@ -1,0 +1,2496 @@
+[
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 13126,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Matinee Theater",
+    "overview": "Matinee Theater is an American anthology series that aired on NBC during the Golden Age of Television, from 1955 to 1958. The series, which ran daily in the afternoon, was frequently live. It was produced by Albert McCleery, Darrell Ross, George Cahan and Frank Price with executive producer George Lowther. McCleery had previously produced the live series Cameo Theatre which introduced to television the concept of theater-in-the-round, TV plays staged with minimal sets.\n\nJim Buckley of the Pewter Plough Playhouse recalled:\n\nWhen Al McCleery got back to the States, he originated a most ambitious theatrical TV series for NBC called Matinee Theater: to televise five different stage plays per week live, airing around noon in order to promote color TV to the American housewife as she labored over her ironing. Al was the producer. He hired five directors and five art directors. Richard Bennett, one of our first early presidents of the Pewter Plough Corporation, was one of the directors and I was one of the art directors and, as soon as we were through televising one play, we had lunch and then met to plan next week’s show. That was over 50 years ago, and I’m trying to think; I believe the TV art director is his own set decorator —yes, of course! It had to be, since one of McCleery’s chief claims to favor with the producers was his elimination of the setting per se and simply decorating the scene with a minimum of props. It took a bit of ingenuity.",
+    "popularity": 18.2427,
+    "poster_path": "/sL6FFh0JultfM2K7PJq4iDVu8AL.jpg",
+    "first_air_date": "1955-10-31",
+    "name": "Matinee Theater",
+    "vote_average": 5,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/wvnAIBwDLdDHOj60HZFi9BBtxCZ.jpg",
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 947,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Cheyenne",
+    "overview": "Cheyenne Bodie was a big man, a former army scout who went west after the American Civil War and drifted from job to job, here a cowboy, there a lawman, and always a larger-than-life hero.\n\nCHEYENNE is an American western television series of 108 black-and-white episodes broadcast on ABC from 1955 to 1963. The show was the first hour-long western, and in fact the first hour-long dramatic series of any kind, with continuing characters, to last more than one season. It was also the first series to be made by a major Hollywood film studio which did not derive from its established film properties, and the first of a long chain of Warner Brothers original series produced by William T. Orr.",
+    "popularity": 17.3792,
+    "poster_path": "/osdglTGStAMbThkUsVJ0DRzvwrq.jpg",
+    "first_air_date": "1955-09-20",
+    "name": "Cheyenne",
+    "vote_average": 5.8,
+    "vote_count": 21
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/1vtc8g1iTqH6nNM1m9M9yqYLPyj.jpg",
+    "genre_ids": [
+      18,
+      37
+    ],
+    "id": 12337,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Life and Legend of Wyatt Earp",
+    "overview": "The Life and Legend of Wyatt Earp is a television western series loosely based on the life of frontier marshal Wyatt Earp. The half-hour black-and-white program aired for 229 episodes on ABC from 1955 to 1961 and featured Hugh O'Brian in the title role.",
+    "popularity": 12.5678,
+    "poster_path": "/sq7meZ5XvxFKZmsTcM54q28IqHp.jpg",
+    "first_air_date": "1955-09-06",
+    "name": "The Life and Legend of Wyatt Earp",
+    "vote_average": 6.8,
+    "vote_count": 20
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/np2bdMQZ2uUiEVVxLiyPG1JzLXW.jpg",
+    "genre_ids": [
+      37,
+      10759,
+      18
+    ],
+    "id": 3713,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Gunsmoke",
+    "overview": "Gunsmoke is an American radio and television Western drama series created by director Norman MacDonnell and writer John Meston. The stories take place in and around Dodge City, Kansas, during the settlement of the American West. The central character is lawman Marshal Matt Dillon, played by William Conrad on radio and James Arness on television.",
+    "popularity": 9.1523,
+    "poster_path": "/x7WjYizqcrA64xi9XLqUWCz5DNk.jpg",
+    "first_air_date": "1955-09-10",
+    "name": "Gunsmoke",
+    "vote_average": 6.59,
+    "vote_count": 105
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/6CBJ8v9KWwFOy2qcjRqUBNinZ1F.jpg",
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 14503,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Crackerjack",
+    "overview": "Crackerjack was a British children's comedy/variety BBC television series. It started on 14 September 1955 and ran for over 400 shows, first in black and white and later in colour, until 21 December 1984. It was revived in 2020 on CBBC.",
+    "popularity": 9.2351,
+    "poster_path": "/j8OFOasUilWesHNcWS1y4zjsfoP.jpg",
+    "first_air_date": "1955-09-14",
+    "name": "Crackerjack",
+    "vote_average": 5,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767,
+      10764
+    ],
+    "id": 81871,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Was bin ich?",
+    "overview": "",
+    "popularity": 8.755,
+    "poster_path": null,
+    "first_air_date": "1955-01-02",
+    "name": "What Am I?",
+    "vote_average": 6.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/yc5zhFNhFi0mhqIeUrkFPDq9kVe.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 3451,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "This Is Your Life",
+    "overview": "This is Your Life is a British biographical television documentary, based on the 1952 American show of the same name. It was hosted by Eamonn Andrews from 1955 until 1964, and then from 1969 until his death in 1987 aged 64. Michael Aspel then took up the role of host until the show ended in 2003. It returned in 2007 as a one-off special presented by Trevor McDonald, which to date was its most recent airing.\n\nIn the show the host surprises a special guest, before taking them through their life with the assistance of the 'big red book'. Both celebrities and non-celebrities have been 'victims' of the show. The show was originally broadcast live, and over its run it has alternated between being broadcast on the BBC and on ITV.",
+    "popularity": 8.3032,
+    "poster_path": "/zMCF2uU9dleso6iKpFkHfrBxsQ6.jpg",
+    "first_air_date": "1955-07-29",
+    "name": "This Is Your Life",
+    "vote_average": 6.4,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/pdyvOVTMCI6OAmsZrH6sESxmTmb.jpg",
+    "genre_ids": [
+      35,
+      10762
+    ],
+    "id": 15495,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Sooty Show",
+    "overview": "The Sooty Show is a British children's Puppet series which aired on the BBC from 1955 to 1967 and ITV from 1968 to 1992. It follows the adventures and comedic day to day life of puppets Sooty, Sweep and Soo with their owner Harry Corbett, and in later years, his son Matthew.",
+    "popularity": 7.5532,
+    "poster_path": "/yXypqULA3DdVZK67Nai3LnMDzDj.jpg",
+    "first_air_date": "1955-01-16",
+    "name": "The Sooty Show",
+    "vote_average": 6,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 12089,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Millionaire",
+    "overview": "An anthology series that explored the ways sudden and unexpected wealth changed life for better or for worse. It told the stories of people who were given one million dollars from a benefactor who insisted they never know him, with one exception.",
+    "popularity": 7.5291,
+    "poster_path": "/2z8hYihBiUQuxGVR38Q8uDXgUOO.jpg",
+    "first_air_date": "1955-01-19",
+    "name": "The Millionaire",
+    "vote_average": 5,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 10642,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The 20th Century Fox Hour",
+    "overview": "The 20th Century Fox Hour is an American drama anthology series televised in the United States on CBS from 1955 to 1957. Some of the shows in this series were restored, remastered and shown on the Fox Movie Channel in 2002 under the title Hour of Stars. The season one episode Overnight Haul, starring Richard Conte and Lizabeth Scott, was released in Australia as a feature film.",
+    "popularity": 7.1006,
+    "poster_path": "/rZ60QHto5O2GfFcylHKfdAHLwyI.jpg",
+    "first_air_date": "1955-10-05",
+    "name": "The 20th Century Fox Hour",
+    "vote_average": 5.4,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/aiZEtOKUfUY0zEeLupeLhnJlW7u.jpg",
+    "genre_ids": [
+      9648,
+      18,
+      80
+    ],
+    "id": 5273,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Alfred Hitchcock Presents",
+    "overview": "A television anthology series hosted by Alfred Hitchcock featuring dramas, thrillers, and mysteries.",
+    "popularity": 7.054,
+    "poster_path": "/c9ZiCq8MVRifBDGi4VHNU3FPf79.jpg",
+    "first_air_date": "1955-10-02",
+    "name": "Alfred Hitchcock Presents",
+    "vote_average": 7.8,
+    "vote_count": 239
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/lYpzACVspcp86uYnyalwNHQ9oSL.jpg",
+    "genre_ids": [
+      10759,
+      18
+    ],
+    "id": 11920,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Highway Patrol",
+    "overview": "Highway Patrol was a syndicated, fictional police action series produced from 1955 to 1959, concerning the activities of the highway patrol and their leader, Dan Matthews (who held no rank).  Although filmed in and around the Los Angeles area, the state setting for the stories was never identified, and city and street names were fictionalized.",
+    "popularity": 8.478,
+    "poster_path": "/oc0Z6yqZzMdHS35Ran8Zpg2rrBy.jpg",
+    "first_air_date": "1955-10-03",
+    "name": "Highway Patrol",
+    "vote_average": 5.8,
+    "vote_count": 9
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vNleBASRzlBrmRrHGu1c3A8zHz2.jpg",
+    "genre_ids": [
+      10759,
+      10751
+    ],
+    "id": 10393,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures of Robin Hood",
+    "overview": "The legendary character Robin Hood and his band of merry men in Sherwood Forest and the surrounding vicinity. While some episodes dramatised the traditional Robin Hood tales, most episodes were original dramas created by the show's writers and producers.",
+    "popularity": 9.0873,
+    "poster_path": "/hDlzPHsz0iVNjspLZlsSKWfLc3g.jpg",
+    "first_air_date": "1955-09-26",
+    "name": "The Adventures of Robin Hood",
+    "vote_average": 6.1,
+    "vote_count": 17
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      35
+    ],
+    "id": 48104,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "ITV Play of the Week",
+    "overview": "A UK anthology series of single plays from major playwrights old and new. It ran from 1955 to 1974, producing about five hundred ninety-minute episodes from Granada Television.\n\nSeason 1 also incorporates the Plays from the 'H.M. Tennant Globe Theatre' series, some of which were incorporated and labelled in listings as official Play of the Week episodes and some of which were played in place of Play of the Week episodes in alternative ITV regions. All 8 plays have been incorporated into this entry for convenience.",
+    "popularity": 5.7608,
+    "poster_path": "/nHaRQDRQnQwCdyMuFb9t7O7vQoo.jpg",
+    "first_air_date": "1955-09-27",
+    "name": "ITV Play of the Week",
+    "vote_average": 4,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10768,
+      18
+    ],
+    "id": 13813,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Navy Log",
+    "overview": "Navy Log is an American drama anthology series that initially aired for one season on CBS. It relates the greatest survival war stories in the history of the United States Navy. This series premiered on September 20, 1955, but the following year, it was moved to ABC, where it aired until September 25, 1958. The program aired for a total of three seasons and 102 episodes.",
+    "popularity": 5.9497,
+    "poster_path": null,
+    "first_air_date": "1955-09-20",
+    "name": "Navy Log",
+    "vote_average": 4.5,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sNtbA6IgrMr7dhH2m8hxnyJDRbj.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 11747,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Phil Silvers Show",
+    "overview": "The Phil Silvers Show, originally titled You'll Never Get Rich, was a sitcom which ran on CBS from 1955 to 1959 for 142 episodes, plus a 1959 special. The series starred Phil Silvers as Master Sergeant Ernest G. Bilko of the United States Army.\n\nThe series was created and largely written by Nat Hiken, and won three consecutive Emmy Awards for Best Comedy Series. The show is sometimes titled Sergeant Bilko or simply Bilko in reruns, and is very often referred to by these names, both on-screen and by viewers. The show's success transformed Silvers from a journeyman comedian into a star, and writer-producer Hiken from a highly-regarded behind-the-scenes comedy writer into a publicly recognized creator.",
+    "popularity": 4.9432,
+    "poster_path": "/r6PVPzI3Crqd7jUmnpxdtSrHwGa.jpg",
+    "first_air_date": "1955-09-20",
+    "name": "The Phil Silvers Show",
+    "vote_average": 7,
+    "vote_count": 21
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 42402,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Miss Universe",
+    "overview": "Miss Universe is an annual international beauty pageant that is run by the United States-based Miss Universe Organization. The contest is the largest pageant in the world in terms of live TV coverage, airing yearly in more than 190 countries worldwide to an audience of over 2.5 billion people. Along with Miss World, Miss International, and Miss Earth, Miss Universe is one of the Big Four international beauty pageants. The Miss Universe Organization and its brand, along with Miss USA and Miss Teen USA, are currently owned by the WME/IMG talent agency.",
+    "popularity": 6.2994,
+    "poster_path": "/vzEfMwbEfdW6nMo0DmhIUh1lLS4.jpg",
+    "first_air_date": "1955-07-22",
+    "name": "Miss Universe",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/n8PICamZ41y3hE2jVr8nBXzG7id.jpg",
+    "genre_ids": [
+      37,
+      10759
+    ],
+    "id": 3232,
+    "origin_country": [
+      "US",
+      "NO"
+    ],
+    "original_language": "en",
+    "original_name": "Fury",
+    "overview": "Fury is an American western television series that aired on NBC from 1955 to1960. It stars Peter Graves as Jim Newton, who operates the Broken Wheel Ranch in California; Bobby Diamond as Jim's adopted son, Joey Clark Newton, and William Fawcett as ranch hand Pete Wilkey. Roger Mobley co-starred in the two final seasons as Homer \"Packy\" Lambert, a friend of Joey's.\n\nThe frequent introduction to the show depicts the beloved stallion running inside the corral and approaching the camera as the announcer reads: \"FURY!..The story of a horse..and a boy who loves him.\" Fury is the first American series produced originally by Television Programs of America and later by the British-based company ITC Entertainment.",
+    "popularity": 4.5868,
+    "poster_path": "/zevaClItrM7FrNcypkYDkjjwgsc.jpg",
+    "first_air_date": "1955-10-15",
+    "name": "Fury",
+    "vote_average": 5.9,
+    "vote_count": 13
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/huu7VGQz5x5vBXgEDtsN7UnQdRH.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 4399,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Dixon of Dock Green",
+    "overview": "Dixon of Dock Green was a BBC television series following the activities of police officers at a fictional Metropolitan Police station in the East End of London from 1955 to 1976. Some episodes were later remade as a BBC radio series in 2005 and 2006.",
+    "popularity": 4.1076,
+    "poster_path": "/qN4eZtr2ZUCJ44Z3OXybEiC5wQN.jpg",
+    "first_air_date": "1955-07-09",
+    "name": "Dixon of Dock Green",
+    "vote_average": 5.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/iD3FaP71cAOy5u9D3WaizSdJhMm.jpg",
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 27575,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Screen Director's Playhouse",
+    "overview": "Presented by Eastman Kodak, this show was a series of original scripts directed by acclaimed directors and featuring well-known performers. The stories ranged from musicals to comedies and dramas.",
+    "popularity": 4.1178,
+    "poster_path": "/s1LPx21vNJ37IDGqLqDC0e8ygQC.jpg",
+    "first_air_date": "1955-10-05",
+    "name": "Screen Director's Playhouse",
+    "vote_average": 6.5,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10762
+    ],
+    "id": 2208,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Mickey Mouse Club",
+    "overview": "A variety show featuring a cast of child performers.",
+    "popularity": 5.6245,
+    "poster_path": "/rXC5rbj05g56U93LQsllj3ycF8k.jpg",
+    "first_air_date": "1955-10-03",
+    "name": "The Mickey Mouse Club",
+    "vote_average": 6.3,
+    "vote_count": 16
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qMp3jxxGGW7qlSDIPzcWx5gkyIx.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 21504,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Crossroads",
+    "overview": "An anthology series based on the activities of clergymen from different denominations.",
+    "popularity": 2.6582,
+    "poster_path": "/aaHodbImRMTGCAXwyfegOFmeFWb.jpg",
+    "first_air_date": "1955-10-07",
+    "name": "Crossroads",
+    "vote_average": 5.667,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 11188,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Bob Cummings Show",
+    "overview": "The Bob Cummings Show is an American sitcom starring Robert \"Bob\" Cummings which was produced from January 2, 1955 to September 15, 1959. The Bob Cummings Show was the first series ever to debut as a midseason replacement.\n\nThe program began with a half-season run on NBC, then ran for two full seasons on CBS, and returned to NBC for its final two seasons. The program was later rerun in the daytime hours on ABC and then syndicated under the title Love That Bob. A similar, but less successful, follow-up series, The New Bob Cummings Show, was broadcast on CBS during the 1961-62 television season.",
+    "popularity": 3.2994,
+    "poster_path": "/ucdaOflgKjiWQU9QsUTWonid81Q.jpg",
+    "first_air_date": "1955-01-02",
+    "name": "The Bob Cummings Show",
+    "vote_average": 6.1,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/nTB21wfQPX1IirpGXTmxr2VsWTC.jpg",
+    "genre_ids": [
+      10763,
+      99
+    ],
+    "id": 221053,
+    "origin_country": [
+      "AT"
+    ],
+    "original_language": "de",
+    "original_name": "Zeit im Bild",
+    "overview": "Zeit im Bild (ZIB in the logo, otherwise also ZiB) has been the name for the nationally and internationally oriented television news programs of the Austrian Broadcasting Corporation (ORF) since December 1955.",
+    "popularity": 2.3817,
+    "poster_path": "/axK66NpM828m1vdBvsfYZaXadIp.jpg",
+    "first_air_date": "1955-11-26",
+    "name": "Zeit im Bild",
+    "vote_average": 4.2,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/7dM4JldwctiayHJNBiXYYKhdXYP.jpg",
+    "genre_ids": [
+      35,
+      10751
+    ],
+    "id": 4439,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Honeymooners",
+    "overview": "A bus driver and his sewer worker friend struggle to strike it rich while their wives look on with weary patience. One of the most influential situation comedy television series in American history.",
+    "popularity": 2.4606,
+    "poster_path": "/vBXD45yVIjvucXAwes8vu7SqgSy.jpg",
+    "first_air_date": "1955-10-01",
+    "name": "The Honeymooners",
+    "vote_average": 7.4,
+    "vote_count": 65
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vJmAIyQQioTOFZehObO5mKUzT43.jpg",
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 21149,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures of the Scarlet Pimpernel",
+    "overview": "The second collection of short stories written by Baroness Orczy about the gallant English hero, the Scarlet Pimpernel and his League.",
+    "popularity": 3.5858,
+    "poster_path": "/8Ursq4oLL5kTvMxLIuBWi9hqWhs.jpg",
+    "first_air_date": "1955-09-28",
+    "name": "The Adventures of the Scarlet Pimpernel",
+    "vote_average": 7.6,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/eOvomZmZjAh4pdWE2WZ9SsLaWil.jpg",
+    "genre_ids": [
+      37
+    ],
+    "id": 23365,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Sergeant Preston of the Yukon",
+    "overview": "Canadian Mountie Sgt. Preston patrols the wilds of the Yukon with his horse Rex and his faithful dog Yukon King, battling both the elements and criminals.",
+    "popularity": 2.5669,
+    "poster_path": "/9kZZat1xuy19mRGITZrI57w0aC5.jpg",
+    "first_air_date": "1955-09-29",
+    "name": "Sergeant Preston of the Yukon",
+    "vote_average": 5.7,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 17534,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Frontier",
+    "overview": "Frontier is an American Western anthology series that aired on NBC from September 1955, to September 1956. The series de-emphasizes gunplay and focuses on the hazards of the settlement of the American West. It was only the second anthology Western series in television history, having been preceded by Death Valley Days.\n\nFrontier aired premiered on September 25, 1955, and ran sporadically in its last five months. Walter Coy narrated the series and starred in occasional episodes, which are dramatizations based on actual events. The program was produced by Worthington Miner.",
+    "popularity": 1.9871,
+    "poster_path": "/eRwWIQGKPLfzNnsprZJIDpVGwZn.jpg",
+    "first_air_date": "1955-09-25",
+    "name": "Frontier",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/vC2jehOZhDnxZrwb6CdU7tftLmn.jpg",
+    "genre_ids": [],
+    "id": 240655,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Folio",
+    "overview": "Folio, a precursor to CBC's renowned fine-arts series Festival, aired for four years starting in 1956. The series showcased original dramas, music compositions, and ballets, many originating from diverse regions across Canada. Notable episodes featured Barry Morse in a new staging of MacBeth, along with performances by Canadian talents like Robert Goulet and Sharon Acker. One of the highlights included a musical adaptation of the beloved Canadian classic, Anne of Green Gables. Airing without sponsorship, Folio thrived until its conclusion in the fall of 1960.\n\nProducers: Robert Allen, Harvey Hart, David Greene, Mario Prizek and Ronald Weyman.",
+    "popularity": 2.7112,
+    "poster_path": "/lnmZCFTSA5daYco153K8Eo1AXPM.jpg",
+    "first_air_date": "1955-09-25",
+    "name": "Folio",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/3OSfpZcgex3bXqZdMFou7NqdQ4s.jpg",
+    "genre_ids": [
+      18,
+      10759,
+      10765
+    ],
+    "id": 28390,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Sheena: Queen of the Jungle",
+    "overview": "The adventures of a woman who grew up in the jungle as she protects the beasts and the natives while encountering white hunters, native Africans, wild animals and slave traders.",
+    "popularity": 2.9318,
+    "poster_path": "/t8St3pZRkn1q9rlLsDbKuxmY3Cv.jpg",
+    "first_air_date": "1955-09-01",
+    "name": "Sheena: Queen of the Jungle",
+    "vote_average": 4.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      10765
+    ],
+    "id": 1602,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Science Fiction Theatre",
+    "overview": "Science Fiction Theatre is an American science fiction anthology series that aired in syndication from April 1955 to April 1957. It was produced by Ivan Tors and Maurice Ziv.",
+    "popularity": 2.9593,
+    "poster_path": "/u3fOsfYyYtkiqIiSGzcaIO7OeN.jpg",
+    "first_air_date": "1955-04-09",
+    "name": "Science Fiction Theatre",
+    "vote_average": 6.2,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 14291,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Buffalo Bill, Jr.",
+    "overview": "Buffalo Bill, Jr. is an American Western television series starring Dickie Jones that aired in syndication from March 1, 1955, until September 21, 1956.",
+    "popularity": 3.0938,
+    "poster_path": "/aCPTsRcAxR5rwnzQgWCumPKATZP.jpg",
+    "first_air_date": "1955-03-01",
+    "name": "Buffalo Bill Jr.",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/4k30cs2GcHmfjaejwO1M0FhRzNx.jpg",
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 18001,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "My Friend Flicka",
+    "overview": "My Friend Flicka is a 39-episode western television series set at the fictitious Goose Bar Ranch in Wyoming at the turn of the 20th century. The program was filmed in color but initially aired in black and white on CBS at 7:30 p.m. Fridays from February 10, 1956, to February 1, 1957. It was a mid-season replacement for Gene Autry's The Adventures of Champion. Both series, however failed in the ratings against ABC's The Adventures of Rin Tin Tin.\n\nAfter the initial Friday airing, viewers could still find the series on CBS Saturdays at 7 p.m. Eastern during March 1957, on Sundays at 6 p.m. from April to May 1957, and on Wednesdays at 7:30 p.m. from June to August 1957. NBC carried the program in color at 6:30 p.m. Sunday from September to December 1957 and at 7 p.m. Sunday from January to May 1958. In subsequent years, the series aired mostly on Saturday mornings on all networks. The Disney Channel ran it on Monday evenings in the mid-1980s. Over the years many viewers were unaware that the series produced episodes for only a single season.\n\nMy Friend Flicka starred native Canadian Johnny Washbrook as Ken McLaughlin, a boy devoted to his horse Flicka, Swedish for \"little girl\", but actually an Arabian sorrel named Wahana. Gene Evans played the authoritarian father Rob McLaughlin, a former U.S. Army cavalry officer. Anita Louise was cast as the gentle-spirited mother, Nell. Frank Ferguson portrayed Gus Broeberg, the loyal ranch hand. Flicka is based on a novel by Mary O'Hara, written at the Remount Ranch, located between Laramie and Cheyenne, Wyoming. Some Internet sites say that the series is set in Montana, where some of the filming was done. The majority of the filming, however, was at Fox Movie Ranch. My Friend Flicka holds the distinction of having been the first television series filmed by 20th Century Fox. A 1943 film, My Friend Flicka, starred Roddy McDowall as Ken.",
+    "popularity": 1.9309,
+    "poster_path": "/kW4V7oXEUsqBTAnpLjbVI2lNhu3.jpg",
+    "first_air_date": "1955-09-30",
+    "name": "My Friend Flicka",
+    "vote_average": 5.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23586,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Playwrights '56",
+    "overview": "",
+    "popularity": 1.6289,
+    "poster_path": null,
+    "first_air_date": "1955-10-04",
+    "name": "Playwrights '56",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 14964,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The People's Choice",
+    "overview": "The People's Choice is an American television sitcom that aired on NBC from 1955 to 1958, primarily sponsored by The Borden Company.\n\nIt stars Jackie Cooper as Socrates \"Sock\" Miller, an ex-Marine and a young politician in fictitious New City, California. Sock has a basset hound named \"Cleo\", whose thoughts, as she balefully observes Sock's dilemmas, are recorded on the soundtrack for the viewers' amusement. Cleo's real name was Bernadette. Much of Cleo's dialog consists of wisecracks. The popularity of the basset hound breed increased markedly with the run of the show. During the last season of The People's Choice, Croft began her eight-year role as Clara Randolph on ABC's The Adventures of Ozzie and Harriet. The versatile Croft had also been a semi-regular on Our Miss Brooks and I Love Lucy and a regular on The Lucy Show and Here's Lucy.",
+    "popularity": 2.0339,
+    "poster_path": "/5oU4ORo0OKFUFczrr61aZ985jm.jpg",
+    "first_air_date": "1955-10-06",
+    "name": "The People's Choice",
+    "vote_average": 5.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759
+    ],
+    "id": 31938,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Jungle Jim",
+    "overview": "Jungle Jim is a 26-episode syndicated adventure television series which aired from 1955 till 1956, starring Johnny Weismuller, as Jim \"Jungle Jim\" Bradley, a hunter, guide, and explorer in, primarily, Africa. The program should not be confused with Ramar of the Jungle, but is based on the Jungle Jim comic strip created by Alex Raymond and Don Moore. Starring with Weismuller were Martin Huston as Jungle Jim's teenage son, Skipper; Dean Fredericks as Haseem, the Hindu manservant, and Neal, a chimpanzee from the World Jungle Compound, as Tamba. Paul Cavanagh played Commissioner Morrison in nine episodes.\n\nProduced by Harold Greene, the series was filmed by Screen Gems, a subsidiary of Columbia Pictures. The program aired in 158 American media markets and in thirty-eight other nations.Earl Bellamy directed the first four episodes of the new series. The series capitalized on the popularity of Weismuller, who had just completed his last film of Tarzan, the jungle character created by Edgar Rice Burroughs. Jungle Jim was a low-budget offering that relied heavily on stock footage and was not renewed beyond its original episodes.",
+    "popularity": 2.5552,
+    "poster_path": "/8G71G76CQpoN3DNIHDQTH1Aeb7.jpg",
+    "first_air_date": "1955-09-26",
+    "name": "Jungle Jim",
+    "vote_average": 5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/g8Bbd2Kreg8fGtBXcnXNrMAECl1.jpg",
+    "genre_ids": [
+      10751,
+      10762
+    ],
+    "id": 1222,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Captain Kangaroo",
+    "overview": "Captain Kangaroo was an American children's television series which aired weekday mornings on the American television network CBS for nearly 30 years, from October 3, 1955 until December 8, 1984, making it the longest-running nationally broadcast children's television program of its day. In 1986, the American Program Service integrated some newly produced segments into reruns of past episodes, distributing the newer version of the series until 1993.\n\nThe show was conceived and the title character played by Bob Keeshan, who based the show on \"the warm relationship between grandparents and children.\" Keeshan had portrayed the original Clarabell the Clown on The Howdy Doody Show when it aired on NBC. Captain Kangaroo had a loose structure, built around life in the \"Treasure House\" where the Captain would tell stories, meet guests, and indulge in silly stunts with regular characters, both humans and puppets.\n\nThe show was telecast live to the East Coast and the Midwest for its first four years and broadcast on kinescope for the West Coast, as Keeshan would not perform the show live three times a day, and was in black-and-white until 1966. The May 17, 1971 episode saw two major changes on the show: The Treasure House was renovated and renamed \"The Captain's Place\" and the Captain replaced his navy blue coat with a red coat. In September 1981, CBS shortened the hour-long show to a half-hour, briefly retitled it Wake Up with the Captain, and moved it to an earlier time slot; it was later moved to weekends in September 1982, and returned to an hour-long format. It was canceled by CBS at the end of 1984.",
+    "popularity": 1.7164,
+    "poster_path": "/k2QZmHnnCTNRFdyBz1mS01M9shX.jpg",
+    "first_air_date": "1955-10-03",
+    "name": "Captain Kangaroo",
+    "vote_average": 6.6,
+    "vote_count": 13
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      10759
+    ],
+    "id": 35401,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Appointment with Adventure",
+    "overview": "Appointment with Adventure is a half-hour adventure/dramatic anthology television series broadcast live on CBS from 1955-1956. The program has no host. It aired at 10 p.m. EST on the Sunday evening schedule between the better known Alfred Hitchcock Presents and What's My Line? It ran opposite The Loretta Young Show on NBC and Life Begins at Eighty, a panel discussion series hosted by Jack Barry on ABC.\n\nThe series aired fifty-three episodes, having premiered on April 3, 1955, near the end of the regular 1954-1955 television season. It ran throughout the spring and summer of 1955 and began its fall run on October 2, 1955, concluding new segments on April 1, 1956. In effect, the series ran for a full year without the summer rebroadcast period standard for most programs.\n\nEpisodes centered upon wars in U.S. history as well as dramatizations from events from many places throughout the world, then and in the past. In the episode which aired on May 1, 1955, Polly Bergen, Dane Clark, and Hugh Reilly starred in \"Rendezvous in Paris.\" Tony Randall and Jack Klugman, fifteen years prior to their television roles as Felix Unger and Oscar Madison, respectively, in ABC's The Odd Couple, appeared with Gena Rowlands, later on NBC's 87th Precinct, in the September 4, 1955, episode entitled \"The Pirate's House.\" Randall also appeared two months earlier in the Appointment with Adventure episode \"Caribbean Cruise.\"",
+    "popularity": 1.5353,
+    "poster_path": null,
+    "first_air_date": "1955-04-03",
+    "name": "Appointment with Adventure",
+    "vote_average": 6.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10762
+    ],
+    "id": 37795,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Playbox",
+    "overview": "Playbox was a British children's television show that ran on BBC from 1955 to 1964. Presenters who appeared on it included Eamonn Andrews, Rolf Harris, Tony Hart, Cliff Michelmore and Johnny Morris",
+    "popularity": 1.505,
+    "poster_path": null,
+    "first_air_date": "1955-09-21",
+    "name": "Playbox",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/tcb8lKWpvVLRQYWV1DNKYcjMzIn.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 11447,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Alcoa Hour",
+    "overview": "The Alcoa Hour is an American anthology television series that was aired live on NBC from 1955 to 1957. The series was sponsored by Alcoa.",
+    "popularity": 2.0066,
+    "poster_path": "/7Ukr68xwat4BzMwVcraYnT02EEo.jpg",
+    "first_air_date": "1955-10-16",
+    "name": "The Alcoa Hour",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/kIkI3Dg8biXzrAIUCDiaukhxHId.jpg",
+    "genre_ids": [
+      10751,
+      37
+    ],
+    "id": 5609,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures of Champion",
+    "overview": "The Adventures of Champion follow a wild stallion named Champion, who remarkably becomes friends with a young boy named Ricky North.The show followed the boy and the horse as they went on crazy adventures in the Southern West during the late 1800s.",
+    "popularity": 1.6702,
+    "poster_path": "/7xNySIMP7fgFKKRgl3LeOsY08Uy.jpg",
+    "first_air_date": "1955-09-23",
+    "name": "The Adventures of Champion",
+    "vote_average": 5.3,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28143,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "A Date With Life",
+    "overview": "",
+    "popularity": 1.3309,
+    "poster_path": null,
+    "first_air_date": "1955-10-10",
+    "name": "A Date With Life",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28584,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Star and the Story",
+    "overview": "Each show features a different star or stars in this dramatic anthology produced by the successful team by Four Star Productions, there are many young actors that went onto bigger things.",
+    "popularity": 1.4973,
+    "poster_path": "/tF7tBfCvlJykegb2rkFn035tKus.jpg",
+    "first_air_date": "1955-01-08",
+    "name": "The Star and the Story",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 233459,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Television Playhouse",
+    "overview": "British drama anthology television series that ran from 1955 to 1965 on ITV and later transformed into ITV Playhouse in 1967. Each drama was usually 60 minutes.",
+    "popularity": 1.4494,
+    "poster_path": null,
+    "first_air_date": "1955-09-24",
+    "name": "Television Playhouse",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 21868,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Jane Wyman Show",
+    "overview": "The Jane Wyman Show is an American anthology drama series that ran on NBC from 1955 to 1958.",
+    "popularity": 1.1768,
+    "poster_path": null,
+    "first_air_date": "1955-08-30",
+    "name": "The Jane Wyman Show",
+    "vote_average": 4.8,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 17645,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Judge Roy Bean",
+    "overview": "Judge Roy Bean is a syndicated American Western series starring Edgar Buchanan as the legendary Kentucky-born Judge Roy Bean, a justice of the peace known as \"The Law West of the Pecos\".",
+    "popularity": 1.3033,
+    "poster_path": "/kyv6FXHU9jxKn6zns114sW23ciZ.jpg",
+    "first_air_date": "1955-09-01",
+    "name": "Judge Roy Bean",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 18435,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Crusader",
+    "overview": "Crusader is a half-hour black-and-white American adventure/drama series that aired on CBS for two seasons from October 7, 1955 to December 28, 1956.",
+    "popularity": 1.222,
+    "poster_path": null,
+    "first_air_date": "1955-10-07",
+    "name": "Crusader",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 28784,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Great Gildersleeve",
+    "overview": "",
+    "popularity": 1.3696,
+    "poster_path": null,
+    "first_air_date": "1955-09-20",
+    "name": "The Great Gildersleeve",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      35
+    ],
+    "id": 127467,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Lilli Palmer Theatre",
+    "overview": "A half-hour anthology series.",
+    "popularity": 1.6886,
+    "poster_path": "/6ZJphTu1wb7SRzwkT8nxnJOXsXP.jpg",
+    "first_air_date": "1955-09-25",
+    "name": "Lilli Palmer Theatre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10762
+    ],
+    "id": 121939,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Kinderstunde",
+    "overview": "",
+    "popularity": 1.7167,
+    "poster_path": null,
+    "first_air_date": "1955-05-06",
+    "name": "Kinderstunde",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 28376,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Those Whiting Girls",
+    "overview": "Those Whiting Girls is an American sitcom that aired on CBS from July 4, 1955 to September 30, 1957. The series stars sisters Barbara and Margaret Whiting, playing themselves and living with their mother in Los Angeles.",
+    "popularity": 1.7135,
+    "poster_path": null,
+    "first_air_date": "1955-07-04",
+    "name": "Those Whiting Girls",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 24365,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Star Stage",
+    "overview": "The show featured two-act plays. Two-thirds were live, and the rest on film.",
+    "popularity": 1.0548,
+    "poster_path": "/5hKcGzCUJi2RKfapb5a0t6BVhaY.jpg",
+    "first_air_date": "1955-09-09",
+    "name": "Star Stage",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 21576,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "TV Reader's Digest",
+    "overview": "TV Reader's Digest is the title of a 30 minute American television anthology drama series which aired on the ABC from 1955 to 1956.\n\nBased on articles that appeared in Reader's Digest magazine, the episodes based on true stories which were varied in their themes, plots and content. Themes included crime, heroism, mystery, romance, and human interest. Episode writers included Frederick Hazlitt Brennan, Cleveland Amory and Frank Gruber.\n\nSome of the actors who were cast in the episodes included: Claude Akins, Leon Askin, Jean Byron, Chuck Connors, Peter Graves, Tod Griffin, Francis McDonald, Max Showalter, John Howard, Lee Marvin, Gene Raymond, Jerry Paris, and Michael Winkelman.",
+    "popularity": 0.9921,
+    "poster_path": null,
+    "first_air_date": "1955-01-17",
+    "name": "TV Reader's Digest",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/bmfc3EEKIVCq6JZKvJFC7RbHGhU.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 1565,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Quatermass II",
+    "overview": "The serial sees Professor Bernard Quatermass of the British Experimental Rocket Group being asked to examine strange meteorite showers. His investigations lead to his uncovering a conspiracy involving alien infiltration at the highest levels of the British Government. As even some of Quatermass's closest colleagues fall victim to the alien influence, he is forced to use his own unsafe rocket prototype, which recently caused a nuclear disaster at an Australian testing range, to prevent the aliens from taking over mankind.",
+    "popularity": 0.8544,
+    "poster_path": "/9dV59VWbfbkTPrkkrnRg5bnAO9c.jpg",
+    "first_air_date": "1955-10-22",
+    "name": "Quatermass II",
+    "vote_average": 5.9,
+    "vote_count": 15
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/j27k766ehrXwcrDTTSiB9utmf6n.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 24115,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Casablanca",
+    "overview": "This was the first attempt by Warner Brothers to make the movie classic into a series. It was part of a revolving group of shows that included Kings Row on a show called Warner Brothers Presents.",
+    "popularity": 1.2348,
+    "poster_path": "/aENcDqc33yiFnIMwX2fUgoddLZp.jpg",
+    "first_air_date": "1955-09-27",
+    "name": "Casablanca",
+    "vote_average": 10,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/a3gX4VsJtqdRSKmzZpTFjQC2sDH.jpg",
+    "genre_ids": [
+      10764
+    ],
+    "id": 12020,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The $64,000 Question",
+    "overview": "The $64,000 Question is an American game show broadcast from 1955–1958, which became embroiled in the scandals involving TV quiz shows of the day. The $64,000 Challenge was its popular spin-off show.",
+    "popularity": 0.8916,
+    "poster_path": "/eaFHZU9A0slIEJx20rrN03Y6yEm.jpg",
+    "first_air_date": "1955-06-07",
+    "name": "The $64,000 Question",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      10767
+    ],
+    "id": 121721,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hollywood Preview",
+    "overview": "",
+    "popularity": 1.137,
+    "poster_path": null,
+    "first_air_date": "1955-09-14",
+    "name": "Hollywood Preview",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10765
+    ],
+    "id": 13498,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Commando Cody: Sky Marshal of the Universe",
+    "overview": "Masked scientific government agent is pitted against a rogue army, led by a mystery man known only as \"The Ruler\",  which is attempting to conquer the solar system by first decimating earth's climate through various futuristic devices which Cody must meet with earth's own futuristic technology. \n\n[Intended to be a limited-run television series, Commando Cody: Sky Marshal Of The Universe was first released theatrically in 1953 as a twelve-chapter movie serial; it was not shown on television until 1955.\n\nThe Commando Cody character was first introduced in Republic's earlier movie serial Radar Men from the Moon; however, \"Sky Marshal\" is actually a prequel, with the first chapter dealing with Cody's origins and the acquisiton of his staff as seen in \"Radar Men\".]",
+    "popularity": 1.4914,
+    "poster_path": "/6uwjur0fCPVdUZPLAROYAaWrg1m.jpg",
+    "first_air_date": "1955-07-16",
+    "name": "Commando Cody: Sky Marshal of the Universe",
+    "vote_average": 5,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 36678,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Kings Row",
+    "overview": "",
+    "popularity": 1.0431,
+    "poster_path": null,
+    "first_air_date": "1955-09-13",
+    "name": "Kings Row",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/rw8WDEdF5hfq0Q9UTV94732RifQ.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 24131,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Around the World with Orson Welles",
+    "overview": "Around the World with Orson Welles is a British miniseries, consisting of six 26-minute travelogues hosted by Welles. Produced by Louis Dolivet for then-new network ITV and dedicated to Welles and following his 'Sketch Book'.\n\nThe first filmed episode is the one dedicated to Vienna. Two episodes are devoted to the Basque Country, another to bullfighting, then to a district of Paris, Saint-Germain-des-Prés, and finally, the last to retirees from Chelsea (London). The one dedicated to the Domenici Affair was left unfinished, but could have been the first documentary dedicated to the affair, which hit the headlines in France in 1952.",
+    "popularity": 1.3666,
+    "poster_path": "/xerzUUvaSzBxABXXFwTQhRfafEO.jpg",
+    "first_air_date": "1955-10-07",
+    "name": "Around the World with Orson Welles",
+    "vote_average": 6.9,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 21531,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Celebrity Playhouse",
+    "overview": "Celebrity Playhouse is an American drama series that aired on NBC from September 1955, to June 1956.",
+    "popularity": 0.8779,
+    "poster_path": null,
+    "first_air_date": "1955-09-27",
+    "name": "Celebrity Playhouse",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 22106,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Norby",
+    "overview": "Norby is an American sitcom television series that aired from January 5 until April 6, 1955 on NBC in color. RCA's color system wasn't used until the fall of 1954. This is the first color show that I'm aware of.",
+    "popularity": 0.7869,
+    "poster_path": null,
+    "first_air_date": "1955-01-05",
+    "name": "Norby",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/l9vpQtKKueaZSuRB1u69GD0YHBN.jpg",
+    "genre_ids": [
+      37,
+      10762,
+      10751
+    ],
+    "id": 12001,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Adventures of Spin and Marty",
+    "overview": "Marty Markham, a rich orphan, attends summer camp at a dude ranch where he gradually learns to love outdoor life and becomes best friends with the popular Spin Evans.",
+    "popularity": 0.7483,
+    "poster_path": "/5zshBTKnJyiJWWkFzywYC55DWDw.jpg",
+    "first_air_date": "1955-11-04",
+    "name": "The Adventures of Spin and Marty",
+    "vote_average": 6.2,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759
+    ],
+    "id": 33378,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Soldiers of Fortune",
+    "overview": "Soldiers of Fortune is a 1955 syndicated half hour American television adventure series. It starred John Russell as Tim Kelly and Chick Chandler as his sidekick Toubo Smith who were international adventurers. Each episode would take place in a different country. Many of the film crew had worked at Republic Pictures studios with the show filmed on Republic's backlot then used by television's Revue Productions. The show was constantly rerun on American television into the 1960s.\n\nThe show was sponsored for two years by 7 Up soft drink. One year after Soldiers of Fortune was cancelled, John Russell went on to star as Marshal Dan Troup in the successful ABC/Warner Brothers western series Lawman.",
+    "popularity": 1.889,
+    "poster_path": "/uVPv4BxOHvesqOCOtPKPRuVPWYj.jpg",
+    "first_air_date": "1955-01-10",
+    "name": "Soldiers of Fortune",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 1249,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Ford Star Jubilee",
+    "overview": "Ford Star Jubilee is an American anthology series that aired once a month on Saturday nights on CBS at 9:00 P.M., E.S.T. from the fall of 1955 to the fall of 1956. The series was approximately 90 minutes long, aired in black-and-white and color, and was typically broadcast live. Ford Star Jubilee was sponsored by the Ford Motor Company.",
+    "popularity": 1.1195,
+    "poster_path": null,
+    "first_air_date": "1955-09-24",
+    "name": "Ford Star Jubilee",
+    "vote_average": 7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 29202,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "It's Always Jan",
+    "overview": "It's Always Jan is an American sitcom that aired on CBS from September 10, 1955 to April 28, 1956. The series stars Janis Paige as single mother 10-year old daughter and night club singer Jan Stewart. ",
+    "popularity": 1.164,
+    "poster_path": null,
+    "first_air_date": "1955-09-10",
+    "name": "It's Always Jan",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/x7RWn6CdVQJ2ynKaLBTaWYxqJUx.jpg",
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 16200,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Brave Eagle",
+    "overview": "Brave Eagle is a 26-episode half-hour western television series which aired on CBS from September 28, 1955, to March 14, 1956, with rebroadcasts continuing until June 6. Keith Larsen, who was of Norwegian descent, starred as Brave Eagle, a peaceful young Cheyenne chief.\n\nThe program was unconventional in that it\n\n⁕ reflects the Native American viewpoint in the settlement of the American West and\n\n⁕ was the first series to feature an American Indian as a lead character.\n\nLarsen's co-stars were Kim Winona, a Sioux Indian, as Morning Star, Brave Eagle's romantic interest; Anthony Numkena of Arizona, a Hopi Indian then using the stage name Keena Nomkeena, appeared as Keena, the adopted son of Brave Eagle; Pat Hogan as Black Cloud, and Bert Wheeler of the comedy team Wheeler & Woolsey, as the halfbreed Smokey Joe, full of tribal tall tales but accompanying wisdom.\n\nThe episodes center upon routine activities among the Cheyenne, clashes with other tribes, attempts to prevent war, encroachment from white settlers, racial prejudice, and a threat of smallpox.",
+    "popularity": 0.9059,
+    "poster_path": "/9i4XYZkWUFFKxcaxaulILRXnoC4.jpg",
+    "first_air_date": "1955-09-28",
+    "name": "Brave Eagle",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759
+    ],
+    "id": 17087,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Captain Gallant of the Foreign Legion",
+    "overview": "Captain Gallant of the Foreign Legion was a half-hour black-and-white television series about the French Foreign Legion starring Buster Crabbe in the title role. Crabbe's real-life son Cullen Crabbe played the Legion mascot, with cowboy sidekick Fuzzy Knight playing himself as Legion comedy relief. The series premiered on NBC on 13 February 1955 and ended its first run with the 65th episode shown on 7 December 1957. It was shown for many years in syndication on American television under the title Foreign Legionnaire.",
+    "popularity": 0.7075,
+    "poster_path": null,
+    "first_air_date": "1955-02-13",
+    "name": "Captain Gallant of the Foreign Legion",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/wj7Y2QBRIcXEvd6U4b0sItrumYI.jpg",
+    "genre_ids": [],
+    "id": 135236,
+    "origin_country": [],
+    "original_language": "en",
+    "original_name": "MGM Parade",
+    "overview": "The original concept of the show was to allow the viewer to see the inner workings of a movie studio and featured interviews with MGM stars and explanations of how movies were made. Later, the format changed to show edited versions of MGM films.",
+    "popularity": 1.1395,
+    "poster_path": "/oso0jA0fxVfb0VUFRT5WN4F7gdz.jpg",
+    "first_air_date": "1955-09-14",
+    "name": "MGM Parade",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 26093,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "First Performance",
+    "overview": "First Performance is a Canadian dramatic television series which aired on CBC Television from 1956 to 1958.",
+    "popularity": 0.7528,
+    "poster_path": null,
+    "first_air_date": "1955-10-06",
+    "name": "First Performance",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 292688,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Strange Experiences",
+    "overview": "A series of three minute strange tales narrated by Peter Williams.",
+    "popularity": 0.6122,
+    "poster_path": null,
+    "first_air_date": "1955-09-24",
+    "name": "Strange Experiences",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 117147,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Airs de France",
+    "overview": "",
+    "popularity": 0.8665,
+    "poster_path": null,
+    "first_air_date": "1955-01-15",
+    "name": "Airs de France",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 28221,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Damon Runyon Theater",
+    "overview": "Damon Runyon Theater is an American television program that presented dramatized versions of Damon Runyon's short stories. Hosted by Donald Woods, the program, sponsored by Anheuser-Busch's Budweiser beer, aired for a total of 39 episodes on CBS from April 1955 through February 1956.",
+    "popularity": 0.7247,
+    "poster_path": null,
+    "first_air_date": "1955-04-16",
+    "name": "Damon Runyon Theater",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 251089,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "His Honor, Homer Bell",
+    "overview": "Homer Bell, an elected judge/practicing attorney and widower, looks after his orphaned niece Casey with the help of his housekeeper Maude.",
+    "popularity": 0.7266,
+    "poster_path": "/jzB21ijP1qk1uOzGkcyYSrmRTZd.jpg",
+    "first_air_date": "1955-02-24",
+    "name": "His Honor, Homer Bell",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/lNvbPjYvJ2jP92SjULmtGnt1V6u.jpg",
+    "genre_ids": [
+      16,
+      10762
+    ],
+    "id": 262832,
+    "origin_country": [
+      "CN"
+    ],
+    "original_language": "zh",
+    "original_name": "上海美术动画合集",
+    "overview": "",
+    "popularity": 0.915,
+    "poster_path": "/jRRZyofX300yLwd4NJUNXSOBYam.jpg",
+    "first_air_date": "1955-01-01",
+    "name": "上海美术动画合集",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28556,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Caesar Presents",
+    "overview": "",
+    "popularity": 0.6455,
+    "poster_path": null,
+    "first_air_date": "1955-07-04",
+    "name": "Caesar Presents",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 15094,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Big Surprise",
+    "overview": "The Big Surprise is a television quiz show broadcast in the United States by NBC from October 8, 1955 to June 9, 1956 and from September 18, 1956 to April 2, 1957. It was hastily created by NBC in response to the overwhelming ratings success of The $64,000 Question, which had premiered on CBS in Summer 1955 and almost instantly became a smash hit. The Big Surprise offered a grand prize of $100,000.\n\nThe series was originally hosted by game-show entrepreneur Jack Barry through March 3, 1956, after which he was replaced by journalist Mike Wallace for the rest of the run.",
+    "popularity": 0.5552,
+    "poster_path": "/tmptxGTV6UA4PHcMrbQZ8q0W9Mu.jpg",
+    "first_air_date": "1955-10-08",
+    "name": "The Big Surprise",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/y3W5NqkzdLcU26aAT3VWe0xgIPU.jpg",
+    "genre_ids": [
+      10767
+    ],
+    "id": 59456,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Orson Welles' Sketch Book",
+    "overview": "Orson Welles' Sketch Book is a series of six short television commentaries by Orson Welles for the BBC in 1955. Written and directed by Welles, the 15-minute episodes present the filmmaker's commentaries on a range of subjects. Welles frequently draws from his own experiences and often illustrates the episodes with his own sketches.",
+    "popularity": 0.677,
+    "poster_path": "/hvaH5EaiFT9GyPXEfKaSzqGgME7.jpg",
+    "first_air_date": "1955-04-24",
+    "name": "Orson Welles' Sketch Book",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26904,
+    "origin_country": [
+      "US",
+      "FR"
+    ],
+    "original_language": "en",
+    "original_name": "Paris Precinct",
+    "overview": "The investigations of two French detectives. Filmed in Paris, the series is also known as `World Crime Hunt.'",
+    "popularity": 0.5914,
+    "poster_path": "/gUwaaiJNO1tPut9nS7VwG05NVNm.jpg",
+    "first_air_date": "1955-04-03",
+    "name": "Paris Precinct",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24185,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Windows",
+    "overview": "",
+    "popularity": 0.6337,
+    "poster_path": null,
+    "first_air_date": "1955-07-29",
+    "name": "Windows",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 4445,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Sam and Friends",
+    "overview": "Sam and Friends was an early live-action/puppet television show created by puppeteer Jim Henson and his eventual wife Jane. It was taped and aired locally in Washington, D.C. on WRC-TV in black-and-white, and later, color on weekdays from May 9, 1955 to December 15, 1961.",
+    "popularity": 0.5984,
+    "poster_path": "/o7LjWs8CeaHoXfZuy3huM72xRlo.jpg",
+    "first_air_date": "1955-05-09",
+    "name": "Sam and Friends",
+    "vote_average": 9,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28129,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Joan And Leslie / Leslie Randall Entertains",
+    "overview": "",
+    "popularity": 0.5877,
+    "poster_path": null,
+    "first_air_date": "1955-10-02",
+    "name": "Joan And Leslie / Leslie Randall Entertains",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 21529,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Stage 7",
+    "overview": "Stage 7 is the title of a United States TV drama anthology series that aired in 1955. This program premiered in December 1954 with the title Your Favorite Playhouse with all episodes being repeats from other series. The program's 25 episodes showcased the talents of actors and actresses such as Charles Bronson, Edmond O'Brien, Gene Barry, Phyllis Coates, Frances Rafferty, Macdonald Carey, and Phyllis Thaxter. Some directing was done by Quinn Martin.",
+    "popularity": 0.4637,
+    "poster_path": null,
+    "first_air_date": "1955-01-30",
+    "name": "Stage 7",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 3250,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Captain Z-Ro",
+    "overview": "Captain Z-Ro is an American children's television show that ran locally on KRON in San Francisco beginning in November 1951, and was later nationally syndicated in the United States, ending its run of original episodes on June 10, 1956. It remained in syndication until 1960. Modeled on the science fiction space operas popular at the time, it featured sets and costumes emulating the futuristic designs of Buck Rogers and Flash Gordon.",
+    "popularity": 0.593,
+    "poster_path": "/moV0MImNyMJsUlqZKBQ73UfQZ6K.jpg",
+    "first_air_date": "1955-12-18",
+    "name": "Captain Z-Ro",
+    "vote_average": 5.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37
+    ],
+    "id": 17996,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Steve Donovan, Western Marshal",
+    "overview": "Steve Donovan, Western Marshal is an American Western series that aired in syndication from September 1955, to June 1956. The series stars Douglas Kennedy as Marshal Steve Donovan and Eddy Waller as his sidekick, Rusty Lee. The series, set in Wyoming, was also broadcast under the title Western Marshal.",
+    "popularity": 0.553,
+    "poster_path": null,
+    "first_air_date": "1955-09-24",
+    "name": "Steve Donovan, Western Marshal",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 9134,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Life with the Lyons",
+    "overview": "Life with the Lyons is a British radio and television domestic sitcom dating from the 1950s.",
+    "popularity": 0.482,
+    "poster_path": null,
+    "first_air_date": "1955-02-11",
+    "name": "Life with the Lyons",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      9648
+    ],
+    "id": 11322,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Star Tonight",
+    "overview": "Star Tonight, an American television anthology series, aired on ABC from February 1955 to August 1956.",
+    "popularity": 0.5072,
+    "poster_path": null,
+    "first_air_date": "1955-02-03",
+    "name": "Star Tonight",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80,
+      9648,
+      18
+    ],
+    "id": 127405,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Une enquête de l'inspecteur Ollivier",
+    "overview": "",
+    "popularity": 0.4824,
+    "poster_path": null,
+    "first_air_date": "1955-11-19",
+    "name": "Une enquête de l'inspecteur Ollivier",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 44292,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Secret File, U.S.A",
+    "overview": "William Thompson, an American intelligence agent, goes on missions deep behind enemy lines to gather information about threats to American security and protect American diplomats abroad.",
+    "popularity": 0.5597,
+    "poster_path": "/yze7K6QC3aYhPtlz8Li3O796kCF.jpg",
+    "first_air_date": "1955-01-01",
+    "name": "Secret File, U.S.A",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      99
+    ],
+    "id": 14044,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Wide Wide World",
+    "overview": "Wide Wide World was a 90-minute documentary series telecast live on NBC on Sunday afternoons at 4pm Eastern. Conceived by network head Pat Weaver and hosted by Dave Garroway, Wide Wide World was introduced on the Producers' Showcase series on June 27, 1955. The premiere episode, featuring entertainment from the US, Canada and Mexico, was the first international North American telecast in the history of the medium.\n\nIt returned in the fall as a regular Sunday series, telecast from October 16, 1955 to June 8, 1958. The program was sponsored by General Motors and Barry Wood was the executive producer. In March 1956, Time magazine reported that it was the highest-rated daytime show on television.",
+    "popularity": 0.4404,
+    "poster_path": "/58CksMQcEwB1G1w6ApFroKEq3ni.jpg",
+    "first_air_date": "1955-06-27",
+    "name": "Wide Wide World",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10751,
+      10762
+    ],
+    "id": 215010,
+    "origin_country": [
+      "SE"
+    ],
+    "original_language": "sv",
+    "original_name": "Sigges cirkus",
+    "overview": "",
+    "popularity": 0.8109,
+    "poster_path": null,
+    "first_air_date": "1955-01-16",
+    "name": "Sigges cirkus",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 30522,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Trans-Antarctic Expedition 1955-1958",
+    "overview": "",
+    "popularity": 0.5075,
+    "poster_path": null,
+    "first_air_date": "1955-10-25",
+    "name": "Trans-Antarctic Expedition 1955-1958",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/hgjKgIziwiBaKsL51vSQ9K8nkf5.jpg",
+    "genre_ids": [],
+    "id": 29250,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Val Parnell's Sunday Night at the London Palladium",
+    "overview": "",
+    "popularity": 0.4586,
+    "poster_path": "/lOj8og86k2a6wDLcrtwonbBYrMK.jpg",
+    "first_air_date": "1955-09-25",
+    "name": "Val Parnell's Sunday Night at the London Palladium",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 3601,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Make the Connection",
+    "overview": "Make the Connection is an American game show, sponsored by Borden, that ran on Thursday nights from July 7 to September 29, 1955 on NBC. Originally hosted by Jim McKay, he was replaced after the first four episodes by future Match Game host Gene Rayburn for the final nine episodes.\n\nThe series was a Mark Goodson-Bill Todman Production, and as such it had many things in common with the other panel shows developed by the company. Like I've Got a Secret, there were four celebrity panelists who were each given a timed period in which to ask questions. Each panelist that was stumped earned the contestants money.\n\nBetty White made one of her earliest game show appearances as a panelist on the series. White would later be a frequent panelist on every version of the Rayburn-hosted Match Game.",
+    "popularity": 0.4978,
+    "poster_path": null,
+    "first_air_date": "1955-07-07",
+    "name": "Make the Connection",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24490,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "America's Greatest Bands",
+    "overview": "",
+    "popularity": 0.4377,
+    "poster_path": null,
+    "first_air_date": "1955-06-25",
+    "name": "America's Greatest Bands",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/izCCVAaQZbjtN4mraQd1AlsA1Nb.jpg",
+    "genre_ids": [
+      35,
+      10767
+    ],
+    "id": 15263,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Johnny Carson Show",
+    "overview": "While working as a staff writer on The Red Skelton Show, local Los Angeles television comedian Carson filled in as host when Skelton was injured during a show rehearsal. As a result of Carson’s performance, CBS created the primetime variety program: The Johnny Carson Show, a traditional potpourri of comedy, music, dance, skits and monologues.\n\nThe short-lived 1955-56 series served as a precursor of what would come later for Carson, planting the seeds for sketches he would perform on the later The Tonight Show Starring Johnny Carson such as \"Mighty Carson Art Players\".",
+    "popularity": 0.6862,
+    "poster_path": "/2m9dyxjR1TTs0fSPAHfc2ZV1SWl.jpg",
+    "first_air_date": "1955-06-30",
+    "name": "The Johnny Carson Show",
+    "vote_average": 7.8,
+    "vote_count": 4
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 30170,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Chevy Show",
+    "overview": "",
+    "popularity": 0.7638,
+    "poster_path": "/c43KibsMqs5Y156HLgQudPT7LQf.jpg",
+    "first_air_date": "1955-10-04",
+    "name": "The Chevy Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 27359,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Music 55",
+    "overview": "",
+    "popularity": 0.4997,
+    "poster_path": null,
+    "first_air_date": "1955-07-12",
+    "name": "Music 55",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 30272,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Julius Larosa Show",
+    "overview": "",
+    "popularity": 0.4955,
+    "poster_path": null,
+    "first_air_date": "1955-06-27",
+    "name": "The Julius Larosa Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 18149,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Professional Father",
+    "overview": "Professional Father is a 1955 CBS situation comedy television series starring Stephen Dunne as Dr. Tom Wilson, a child psychologist successful with his patients but less than effective with his own family. Barbara Billingsley, two years before she was cast as the concerned mother in Leave It to Beaver, played Tom's wife, Helen Wilson.Beverly Washburn, later in the Walt Disney film Old Yeller and in CBS's The New Loretta Young Show, starred as daughter Kathryn \"Kit\" Wilson. Ted Marc portrayed the son, Tom Wilson, Jr., or \"Twig\", who played for a baseball team called \"The Beavers\", ironic in view of Billingsley's later June Cleaver role. Billingsley's characters on both Professional Father and Leave It to Beaver had an aunt named Martha.\n\nPhyllis Coates and Joseph Kearns played the neighbors, Madge and Fred Allen. Ann O'Neal starred as the housekeeper \"Nana\", and Arthur Q. Bryan played Mr. Boggs, the handyman. The series was created and produced by Harry Kronman, directed by Sherman Marks, and partly written by Bob Schiller.\n\nIn the May 14 episode, Larry J. Blake appeared as a neighbor, Donald Peterson, whom Dr. Wilson invites on a fishing trip. Blake had the distinction of having been the first actor to portray Adolf Hitler in a film.",
+    "popularity": 0.5537,
+    "poster_path": null,
+    "first_air_date": "1955-01-08",
+    "name": "Professional Father",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sN7kQQtU6ZWLx0vXlvPorVLWs1v.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 295743,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Perspective",
+    "overview": "A groundbreaking Canadian anthology series blending documentary and dramatization, Perspective explored social issues, Canadian identity, and everyday life through a mix of real-life stories and fictional dramatizations. Hosted by Fred Davis and produced by the National Film Board of Canada, the series ran for three seasons on CBC Television between 1955 and 1958.",
+    "popularity": 0.4653,
+    "poster_path": "/mWZdlIxyb1uw2YOB0njYmH0rTl3.jpg",
+    "first_air_date": "1955-01-01",
+    "name": "Perspective",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24699,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Harry Secombe Show",
+    "overview": "",
+    "popularity": 0.8027,
+    "poster_path": null,
+    "first_air_date": "1955-09-24",
+    "name": "The Harry Secombe Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80,
+      9648,
+      18
+    ],
+    "id": 127403,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Une enquête de l'inspecteur Grégoire",
+    "overview": "",
+    "popularity": 0.4731,
+    "poster_path": null,
+    "first_air_date": "1955-03-01",
+    "name": "Une enquête de l'inspecteur Grégoire",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 107110,
+    "origin_country": [],
+    "original_language": "fr",
+    "original_name": "Le Survenant",
+    "overview": "",
+    "popularity": 0.4755,
+    "poster_path": "/pWigRvXFuI7EZm2BdZbfsH1XDmR.jpg",
+    "first_air_date": "1955-04-28",
+    "name": "Le Survenant",
+    "vote_average": 10,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26215,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "So This Is Hollywood",
+    "overview": "",
+    "popularity": 0.3917,
+    "poster_path": null,
+    "first_air_date": "1955-01-01",
+    "name": "So This Is Hollywood",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22066,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Eddie Cantor Comedy Theatre",
+    "overview": "",
+    "popularity": 0.418,
+    "poster_path": null,
+    "first_air_date": "1955-01-23",
+    "name": "The Eddie Cantor Comedy Theatre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 215279,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "N.O.P.D.",
+    "overview": "New Orleans PD",
+    "popularity": 0.4653,
+    "poster_path": null,
+    "first_air_date": "1955-11-10",
+    "name": "N.O.P.D.",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/pU1aFEytldco9Kn964VNfdkU1Bs.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 113668,
+    "origin_country": [
+      "BE"
+    ],
+    "original_language": "nl",
+    "original_name": "Schipper naast Mathilde",
+    "overview": "",
+    "popularity": 0.4338,
+    "poster_path": "/mQvwMHcpKQdaFCBPv6A0VikLJcs.jpg",
+    "first_air_date": "1955-05-10",
+    "name": "Schipper naast Mathilde",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 8283,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "It's Alec Templeton Time",
+    "overview": "It's Alec Templeton Time was an early American television program broadcast on the now defunct DuMont Television Network. The series ran during the summer of 1955. It was a musical program hosted by blind satirist and musician Alec Templeton. The program, produced and distributed by DuMont, aired on Friday nights on most DuMont affiliates.\n\nIt's Alec Templeton Time has the distinction of being one of the last programs to air on the dying DuMont Television Network, along with Have a Heart, What's the Story and Boxing From St. Nicholas Arena. The struggling network was already beginning to shut down network operations before It's Alec Templeton Time even aired its first episode, and Paramount Pictures would take control of DuMont during the summer; as a result, the series' run was brief, and did not last past the summer months.",
+    "popularity": 0.4138,
+    "poster_path": null,
+    "first_air_date": "1955-06-03",
+    "name": "It's Alec Templeton Time",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 287265,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Eddie Cantor Comedy Theater",
+    "overview": "Sketch comedy starring Eddie Cantor as host",
+    "popularity": 0.4263,
+    "poster_path": "/i8Pcl34jfZBow5iEGkq5MHSEHPU.jpg",
+    "first_air_date": "1955-01-23",
+    "name": "The Eddie Cantor Comedy Theater",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qfm1gSgr432ct4Fzm9gRDlfWBtJ.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 242353,
+    "origin_country": [
+      "ES"
+    ],
+    "original_language": "es",
+    "original_name": "La Pandilla",
+    "overview": "",
+    "popularity": 0.4104,
+    "poster_path": "/pzBogam57vs37t5PGfVeyHiePld.jpg",
+    "first_air_date": "1955-11-16",
+    "name": "La Pandilla",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22089,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Max Bygraves",
+    "overview": "",
+    "popularity": 0.3858,
+    "poster_path": null,
+    "first_air_date": "1955-09-08",
+    "name": "Max Bygraves",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22951,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Mr. Citizen",
+    "overview": "",
+    "popularity": 0.4588,
+    "poster_path": null,
+    "first_air_date": "1955-04-20",
+    "name": "Mr. Citizen",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 33011,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Key to the Ages",
+    "overview": "Key to the Ages was the name of an American television series that was broadcast on the now-defunct DuMont Television Network between February and May 1955.\n\nHosted by Dr. Theodore Low, the program aired from February 27 to May 22, 1955. This literary series originated from WAAM-TV in Baltimore, and may have also aired on ABC stations. The series should not be confused with the similarly titled Key to the Missing, a documentary series which aired on DuMont from 1948-1949.\n\nKey to the Ages lasted only a few months on the air; just a little over one month after the program debuted, in April 1955, the DuMont Television Network began shutting down network operations. This made Key to the Ages one of the last DuMont Network programs. Key aired until May 22, 1955; DuMont itself ceased network operations in August 1956.",
+    "popularity": 0.3878,
+    "poster_path": null,
+    "first_air_date": "1955-02-27",
+    "name": "Key to the Ages",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 15010,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Musical Chairs",
+    "overview": "Musical Chairs was a short-lived NBC game show that ran from July 9 to September 17, 1955; The host was Bill Leyden and the series featured voice actor Mel Blanc, composer Johnny Mercer, and orchestra leader Bobby Troup as regular panelists.\n\nTroup's band, the Troup Group, provided the music for the series, often with the assistance of the Cheerleaders singing group or members of the panel itself.\n\nThe show was a summer replacement series on NBC after a successful two-year run in Los Angeles.",
+    "popularity": 0.3712,
+    "poster_path": null,
+    "first_air_date": "1955-07-09",
+    "name": "Musical Chairs",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 32808,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Have a Heart",
+    "overview": "Have a Heart was a game show broadcast on the now-defunct DuMont Television Network. The 30-minute show ran from May 3, 1955 to June 14, 1955, and was hosted by John Reed King.\n\nHave a Heart was one of the last shows broadcast on the DuMont network, along with It's Alec Templeton Time, What's the Story, and Boxing From St. Nicholas Arena.",
+    "popularity": 0.3826,
+    "poster_path": null,
+    "first_air_date": "1955-05-03",
+    "name": "Have a Heart",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/cpkzzf3POKTevvY81QnkpCnfCbc.jpg",
+    "genre_ids": [],
+    "id": 242659,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "ゆく年くる年",
+    "overview": "An annual New Year's Eve television program featuring live coverage from various temples and shrines across the country, capturing the traditional ringing of the bells and other cultural events as Japan transitions from the old year to the new year.",
+    "popularity": 0.3937,
+    "poster_path": null,
+    "first_air_date": "1955-12-31",
+    "name": "Old Year, New Year",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 153283,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "La Course Aux Etoiles",
+    "overview": "",
+    "popularity": 0.3718,
+    "poster_path": "/yPBicPVP76hPKf8CRfqsdSL5JHD.jpg",
+    "first_air_date": "1955-01-01",
+    "name": "La Course Aux Etoiles",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28903,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Grand Ole Opry",
+    "overview": "",
+    "popularity": 0.367,
+    "poster_path": null,
+    "first_air_date": "1955-10-15",
+    "name": "Grand Ole Opry",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 14392,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Ozark Jubilee",
+    "overview": "Ozark Jubilee is the first U.S. network television program to feature country music's top stars, and featured performers located in Springfield, Missouri which has long emulated Nashville, Tennessee as a center of American country music. The weekly live stage show premiered on ABC-TV on January 22, 1955, was renamed Country Music Jubilee on July 6, 1957, and was finally named Jubilee USA on August 2, 1958. Originating \"from the heart of the Ozarks,\" the Saturday night variety series helped popularize country music in America's cities and suburbs, drawing more than nine million viewers. The ABC Radio version was heard by millions more starting in August 1954.\n\nA typical program included a mix of vocal and instrumental performances, comedy routines, square dancing and an occasional novelty act. The host was Red Foley, the nation's top country music personality. Big names such as Patsy Cline, Eddy Arnold, Johnny Cash and Faron Young were interspersed with a regular cast, including a group of young talent the Jubilee brought to national fame: 11-year-old Brenda Lee, Porter Wagoner, Wanda Jackson, Sonny James, Jean Shepard and The Browns. Other featured cast members were Webb Pierce, Bobby Lord, Leroy Van Dyke, Norma Jean and Carl Smith.",
+    "popularity": 0.4331,
+    "poster_path": null,
+    "first_air_date": "1955-01-22",
+    "name": "Ozark Jubilee",
+    "vote_average": 3,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25121,
+    "origin_country": [
+      "BR"
+    ],
+    "original_language": "en",
+    "original_name": "Oliver Twist",
+    "overview": "",
+    "popularity": 0.3659,
+    "poster_path": null,
+    "first_air_date": "1955-01-05",
+    "name": "Oliver Twist",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23237,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Conrad Nagel Theater",
+    "overview": "",
+    "popularity": 0.3677,
+    "poster_path": null,
+    "first_air_date": "1955-01-27",
+    "name": "Conrad Nagel Theater",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 116302,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Mainz bleibt Mainz, wie es singt und lacht",
+    "overview": "",
+    "popularity": 0.3629,
+    "poster_path": null,
+    "first_air_date": "1955-02-17",
+    "name": "Mainz bleibt Mainz, wie es singt und lacht",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 256494,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Zu Gast bei Margot Hielscher",
+    "overview": "",
+    "popularity": 0.464,
+    "poster_path": null,
+    "first_air_date": "1955-01-12",
+    "name": "Zu Gast bei Margot Hielscher",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 237288,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "London Playhouse",
+    "overview": "An early series of individual plays that ran on ITV from 1955-1956",
+    "popularity": 0.3604,
+    "poster_path": null,
+    "first_air_date": "1955-09-29",
+    "name": "London Playhouse",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/i4yJoNbZhqKojPyHioj6JRfE0wo.jpg",
+    "genre_ids": [],
+    "id": 289580,
+    "origin_country": [
+      "LU"
+    ],
+    "original_language": "fr",
+    "original_name": "L'école buissonnière",
+    "overview": "",
+    "popularity": 0.3778,
+    "poster_path": "/2bqu6GHiPj8Bv9m6JM4nJRs0FVS.jpg",
+    "first_air_date": "1955-09-18",
+    "name": "L'école buissonnière",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/2IODVyY9SlgFq1M76xK0ftcaO80.jpg",
+    "genre_ids": [
+      10763
+    ],
+    "id": 295206,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "ITN - News at Ten",
+    "overview": "Independent Television News (ITN) is a UK-based media production and broadcast journalism company. ITN is based in London, with bureaux and offices in Beijing, Brussels, Jerusalem, Johannesburg, New York, Paris, Sydney and Washington, D.C.",
+    "popularity": 0.3563,
+    "poster_path": "/eBrAXbbNIOeDp7kkEpNK5bI0Yui.jpg",
+    "first_air_date": "1955-05-04",
+    "name": "ITN - News at Ten",
+    "vote_average": 0,
+    "vote_count": 0
+  }
+]

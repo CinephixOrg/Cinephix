@@ -1,0 +1,187 @@
+[
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10762,
+      10751
+    ],
+    "id": 34847,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Muffin the Mule",
+    "overview": "Muffin the Mule is a puppet character in British television programmes for children. The original programmes featuring the character were presented by Annette Mills, sister of John Mills, and broadcast live by the BBC from their studios at Alexandra Palace from 1946 to 1952. Mills and the puppet continued with programmes that were broadcast until 1955, when Mills died. The series then transferred to ITV in 1956 and 1957. A modern animated version of Muffin appeared on the BBC in 2005.\n\nThe original mule puppet was created in 1933 by Punch and Judy puppet maker Fred Tickner for husband-and-wife puppeteers Jan Bussell and Ann Hogarth to form part of a puppet circus for the Hogarth Puppet Theatre. The act was soon put away, and the puppet was not taken out again until 1946, when Bussell and Hogarth were working with presenter Annette Mills. Shes named the puppet mule \"Muffin\", and it first appeared on television in an edition of For The Children broadcast on 20 October 1946.",
+    "popularity": 0.5779,
+    "poster_path": "/gvSjM7bzQNGolCcMsAoBA74yB9l.jpg",
+    "first_air_date": "1946-05-15",
+    "name": "Muffin the Mule",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qfDppIBfWJOiL79EPU3BlWXJxsL.jpg",
+    "genre_ids": [
+      10763
+    ],
+    "id": 219809,
+    "origin_country": [
+      "FR"
+    ],
+    "original_language": "fr",
+    "original_name": "Météo",
+    "overview": "",
+    "popularity": 0.9225,
+    "poster_path": "/eUKpDiNfjZdfWDGAjsNRz9cvpNO.jpg",
+    "first_air_date": "1946-12-17",
+    "name": "Météo",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 7904,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Paging You",
+    "overview": "Paging You was a BBC comedy series which debuted on 3 November 1946 and was subsequently cancelled in 1948.",
+    "popularity": 0.4541,
+    "poster_path": null,
+    "first_air_date": "1946-11-03",
+    "name": "Paging You",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 10921,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Winner Take All",
+    "overview": "Winner Take All, an American radio-television game show, ran from 1946-1952 on CBS and NBC. It was the first game show produced by the Mark Goodson-Bill Todman partnership. The series was originally hosted by Ward Wilson, but is best known for being the first game hosted by Bill Cullen.\n\nAlthough the game format was very simple, Winner Take All served as the genesis for many future game-show formats. It was the first game to use lockout devices, and the first to use returning champions.",
+    "popularity": 0.4517,
+    "poster_path": null,
+    "first_air_date": "1946-06-03",
+    "name": "Winner Take All",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 13728,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hour Glass",
+    "overview": "Hour Glass is the first regularly scheduled variety show shown on American network television. It ran on NBC from May 9, 1946 until March 1947.",
+    "popularity": 0.5683,
+    "poster_path": null,
+    "first_air_date": "1946-05-09",
+    "name": "Hour Glass",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21069,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Geographically Speaking",
+    "overview": "Geographically Speaking was an American travel series that debuted on June 9, 1946 on NBC, and aired Sundays at 8:15 pm EST immediately following the game show Face to Face.\n\nThe weekly 15-minute program was one of the first TV shows to have a regular sponsor, Bristol-Myers. The show consisted of hostess Mrs. Carveth Wells narrating her 16mm home movies of her trips with her husband to unusual and exotic places. When she ran out of home movies, the series ended in October 1947.\n\nMrs. Wells later appeared as a contestant on Groucho Marx's You Bet Your Life, on TV and radio, in February 1958.",
+    "popularity": 0.462,
+    "poster_path": null,
+    "first_air_date": "1946-06-09",
+    "name": "Geographically Speaking",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 2773,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Face to Face",
+    "overview": "Face to Face is an early American television game show running 15 minutes. It began broadcasting on the NBC Television network on June 9, 1946 and ran until January 26, 1947 on Sundays at 8:00 pm EST, immediately before Geographically Speaking.",
+    "popularity": 0.4272,
+    "poster_path": "/78bYZdoZ2b7zy2noPgf5KzFoPr8.jpg",
+    "first_air_date": "1946-06-09",
+    "name": "Face to Face",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21063,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Let's Rhumba",
+    "overview": "Let's Rhumba was an American dance instruction program that aired on NBC from November 1946 to January 1947. Each 15 minute episode was hosted by D'Avalos. No episodes are known to survive as NBC had no archival policy at the time.",
+    "popularity": 0.388,
+    "poster_path": null,
+    "first_air_date": "1946-11-15",
+    "name": "Let's Rhumba",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 3012,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Gillette Cavalcade of Sports",
+    "overview": "The Gillette Cavalcade of Sports is an American network radio program and later television program that included broadcasts of a variety of sports, although it is primarily remembered by many for its focus on boxing.",
+    "popularity": 0.3957,
+    "poster_path": null,
+    "first_air_date": "1946-11-08",
+    "name": "Gillette Cavalcade of Sports",
+    "vote_average": 9,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 8050,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Campus Hoopla",
+    "overview": "Campus Hoopla is an American game show that ran on the NBC Television network from December 27, 1946 until its cancellation in 1947. The show was centered around a group of teenagers in a soda shop.",
+    "popularity": 0.3622,
+    "poster_path": null,
+    "first_air_date": "1946-12-27",
+    "name": "Campus Hoopla",
+    "vote_average": 0,
+    "vote_count": 0
+  }
+]

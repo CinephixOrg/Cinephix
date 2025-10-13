@@ -1,0 +1,669 @@
+[
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 89293,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Bambi",
+    "overview": "The Bambi, often called the Bambi Award and stylised as BAMBI, is a German award presented annually by Hubert Burda Media to recognize excellence in international media and television to personalities in the media, arts, culture, sports, and other fields \"with vision and creativity who affected and inspired the German public that year\", both domestic and foreign. First held in 1948, it is the oldest media award in Germany. The trophy is named after Felix Salten's book Bambi, A Life in the Woods and its statuettes are in the shape of the novel's titular fawn character. They were originally made of porcelain until 1958, when the organizers switched to using gold, with the casting done by the art casting workshop of Ernst Strassacker in Süßen.",
+    "popularity": 17.2874,
+    "poster_path": "/7Bc1fE5mKIYmhhgl0fVcw3nvDra.jpg",
+    "first_air_date": "1948-01-01",
+    "name": "Bambi",
+    "vote_average": 9,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/sWaYMwzkJrhc4ZrgAvJhE4Nl5Pz.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 4259,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Studio One",
+    "overview": "An American radio–television anthology series, created in 1947 by Canadian director Fletcher Markle, who came to CBS from the CBC. Studio One, presented by Westinghouse, was one of the first of the anthology TV programs. The episodes were often abridged remakes of movies from years gone by and many future well-known television and movie actors appeared in the productions.",
+    "popularity": 14.2287,
+    "poster_path": "/rTauMq9Zi9KM2gGzX0qO80JoBmS.jpg",
+    "first_air_date": "1948-11-07",
+    "name": "Studio One",
+    "vote_average": 5,
+    "vote_count": 12
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/mnASvq84XWrEpyDJzt1NzXdcREp.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 10809,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Philco Television Playhouse",
+    "overview": "The Philco Television Playhouse is an American anthology series that was broadcast live on NBC from 1948 to 1955. Produced by Fred Coe, the series was sponsored by Philco. It was one of the most respected dramatic shows of the Golden Age of Television, winning a 1954 Peabody Award and receiving eight Emmy nominations between 1951 and 1956.",
+    "popularity": 14.0141,
+    "poster_path": "/nnsKNCd14JjRTnaz6OZh4sQoNV6.jpg",
+    "first_air_date": "1948-10-03",
+    "name": "The Philco Television Playhouse",
+    "vote_average": 6.3,
+    "vote_count": 7
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/e1UMtpKhOJSz7QCbR6bmM39Fziv.jpg",
+    "genre_ids": [
+      35,
+      10767
+    ],
+    "id": 5307,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Ed Sullivan Show",
+    "overview": "The Ed Sullivan Show is an American TV variety show that originally ran on CBS from Sunday June 20, 1948 to Sunday June 6, 1971, and was hosted by New York entertainment columnist Ed Sullivan. It was replaced in September 1971 by the CBS Sunday Night Movie, which ran only one season and was eventually replaced by other shows.\n\nIn 2002, The Ed Sullivan Show was ranked #15 on TV Guide's 50 Greatest TV Shows of All Time.",
+    "popularity": 8.6506,
+    "poster_path": "/gUEfDXUxwhgXBX7LSk57vJKXCTp.jpg",
+    "first_air_date": "1948-06-20",
+    "name": "The Ed Sullivan Show",
+    "vote_average": 6.8,
+    "vote_count": 22
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/tiYN17pse6a7ue1wwEkKfBfTCxE.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 10643,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Ford Theatre",
+    "overview": "Ford Theatre, spelled Ford Theater for the radio version and known as Ford Television Theatre for the TV version, was a radio and television anthology series broadcast in the United States in the 1940s and 1950s. At various times the television series appeared on all three major television networks, while the radio version was broadcast on two separate networks and on two separate coasts. Ford Theatre was named for its sponsor, the Ford Motor Company, which had an earlier success with its concert music series, The Ford Sunday Evening Hour.",
+    "popularity": 2.7393,
+    "poster_path": null,
+    "first_air_date": "1948-10-17",
+    "name": "Ford Theatre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/w2e8vh4tXkIOmOfMoAhHQuUxXRw.jpg",
+    "genre_ids": [],
+    "id": 5730,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Macy's Thanksgiving Day Parade",
+    "overview": "The Macy's Thanksgiving Day Parade is an annual parade presented by the U.S. chain store business Macy's. The tradition started in 1924, tying it for the second-oldest Thanksgiving parade in the United States along with America's Thanksgiving Parade in Detroit, with both parades four years younger than the 6abc Dunkin' Donuts Thanksgiving Day Parade in Philadelphia. The three-hour Macy's event is held in New York City starting at 9:00 a.m. EST on Thanksgiving Day.",
+    "popularity": 2.6076,
+    "poster_path": "/ssk5SmXK4jHANKH6bvboGP4N1up.jpg",
+    "first_air_date": "1948-11-25",
+    "name": "Macy's Thanksgiving Day Parade",
+    "vote_average": 7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/58h091Sr7BFDF2f0X22tEkrt3gf.jpg",
+    "genre_ids": [
+      10763
+    ],
+    "id": 1770,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "World News Tonight with David Muir",
+    "overview": "ABC World News is the flagship daily evening television news program of ABC News, the news division of the American Broadcasting Company television network in the United States. Currently the weekday editions (going by title ABC World News Tonight with David Muir) are anchored by David Muir. ABC World News has been anchored at various times by a number of other people since its debut in 1953. It also has used various titles, including ABC Evening News from 1970 to 1978 and World News Tonight from 1978 to 2006.",
+    "popularity": 2.5512,
+    "poster_path": "/e5bUkDlEOqPR7M4Mz3a5n9qA1x2.jpg",
+    "first_air_date": "1948-08-11",
+    "name": "World News Tonight with David Muir",
+    "vote_average": 6,
+    "vote_count": 12
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 18914,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Lamp Unto My Feet",
+    "overview": "Lamp Unto My Feet is an American religious television program that was produced by CBS and broadcast on Sunday mornings from 1948 to 1979.",
+    "popularity": 2.1243,
+    "poster_path": null,
+    "first_air_date": "1948-11-21",
+    "name": "Lamp Unto My Feet",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 14282,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Actors Studio",
+    "overview": "Actors Studio is an American TV show which aired for 65 episodes, from September 26, 1948 to October 26 on the fledgling ABC Television Network; then from November 1, 1949 to June 23, 1950 on CBS Television. It was hosted by Mark Connelly.\n\nThe series showcased short pieces of adapted, classic and original drama, performed and produced live each week. Among some of the known authors were William Saroyan, James Thurber, Ring Lardner, Edgar Allan Poe, Irwin Shaw and Budd Schulberg. Featured actors included Martin Balsam, Richard Boone, Marlon Brando, Hume Cronyn, Julie Harris, Jean Muir and Jessica Tandy. Recurring performers included Jocelyn Brando, Tom Ewell, Steven Hill, Kim Hunter and Cloris Leachman.\n\nIn February 1950, the series moved to Friday nights and was expanded to one hour, alternating every other week with broadcasts of Ford Theatre. In March, the name of the show was changed to The Play's the Thing.\n\nThe series received a Peabody Award in 1948 for pioneering in the field of televised drama.",
+    "popularity": 1.4701,
+    "poster_path": null,
+    "first_air_date": "1948-09-26",
+    "name": "Actors Studio",
+    "vote_average": 7.6,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/kUzukEm0JTBX3iFvXYxIlZcitQL.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 469,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Texaco Star Theater",
+    "overview": "Texaco Star Theater is an American comedy-variety show, broadcast on radio from 1938 to 1949 and telecast from 1948 to 1956. It was one of the first successful examples of American television broadcasting, remembered as the show that gave Milton Berle the nickname \"Mr. Television\".\n\nThe classic 1940–44 version of the program, hosted by radio's Fred Allen, was followed by a radio series on ABC in the spring of 1948. When Texaco first took it to television on NBC on June 8, 1948, the show had a huge cultural impact.",
+    "popularity": 0.9578,
+    "poster_path": null,
+    "first_air_date": "1948-06-08",
+    "name": "Texaco Star Theater",
+    "vote_average": 7.4,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 207734,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Ford Theatre Hour",
+    "overview": "An anthology series based in New York City which attracted a high caliber group of actors, often Broadway stars. Stories were both drama and comedies, some original but others adaptions of films and plays.",
+    "popularity": 0.8503,
+    "poster_path": "/mVOB3g0dQFyYeXCGPY0VMCi2ZJd.jpg",
+    "first_air_date": "1948-10-17",
+    "name": "The Ford Theatre Hour",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 19093,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Chevrolet Tele-Theatre",
+    "overview": "The Chevrolet Tele-Theatre is an American anthology series that aired live on NBC Mondays at 8 pm EST from September 27, 1948 to June 26, 1950. Guests who appeared on the series included Faye Emerson, Edward Everett Horton, Basil Rathbone, Nina Foch, and Boris Karloff.",
+    "popularity": 0.7305,
+    "poster_path": null,
+    "first_air_date": "1948-09-27",
+    "name": "The Chevrolet Tele-Theatre",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/hWihL5S55l46tC1o9YuahFLmH3N.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 5392,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Morey Amsterdam Show",
+    "overview": "The Morey Amsterdam Show is an American sitcom which ran from 1948-1949 on CBS Television and 1949-1950 on the DuMont Television Network, for a total of 71 episodes.",
+    "popularity": 0.6329,
+    "poster_path": "/zRSvrN8V6bOXqz2R3r5o1G2HLK0.jpg",
+    "first_air_date": "1948-12-17",
+    "name": "The Morey Amsterdam Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 113385,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "fr",
+    "original_name": "We, the People",
+    "overview": "We the People was a 30-minute talk show, first on CBS for one season and then on NBC for two seasons. The host interviewed politicians, celebrities, and everyday people.",
+    "popularity": 0.5902,
+    "poster_path": null,
+    "first_air_date": "1948-06-01",
+    "name": "We, the People",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 8336,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Alan Dale Show",
+    "overview": "The Alan Dale Show is an early American television program which ran on the DuMont Television Network in 1948, and then on CBS Television from 1950-1951.",
+    "popularity": 0.5843,
+    "poster_path": null,
+    "first_air_date": "1948-08-10",
+    "name": "The Alan Dale Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 20148,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Hayloft Hoedown",
+    "overview": "Hayloft Hoedown was an early American country music program on local, and then national, radio and television from Philadelphia, Pennsylvania. The show began in December 1944 as a live radio show from Town Hall on WFIL-AM, and was picked up by ABC Radio in 1945.\n\nWFIL-TV produced a TV version for ABC-TV, which carried the show from July 10–September 16, 1948, on Saturday nights from 9–9:30 p.m. Eastern Time. The program, one of the first on ABC, was televised from Town Hall in Center City. It included square dancing, singing yodeling and comedy routinesand was hosted by Jack Steck w/ Brothers Elmer and \"Pancake\" Pete Newman, who held summer shows and rodeos at their Sleepy Hollow Ranch near Quakertown, Pennsylvania, and headed the Sleepy Hollow Ranch Gang. The Murray Sisters were the brothers' wives. The cast included:\n\n⁕Florence Bendon aka Carol Wynn\n\n⁕Jack Day\n\n⁕The Stump Jumpers\n\n⁕The Murray Sisters\n\n⁕The Circle A Ranch Square Dancers\n\n⁕Elton Britt\n\n⁕Ray Whitley\n\n⁕Bill Haley and the Saddlemen\n\n⁕Jesse Rogers\n\n⁕Wesley Tuttle\n\n⁕The Sleepy Hollow Ranch Gang",
+    "popularity": 0.5819,
+    "poster_path": null,
+    "first_air_date": "1948-07-10",
+    "name": "Hayloft Hoedown",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 88988,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Critic at Large",
+    "overview": "Author and critic John Mason Brown, who once commented that \"some television programs are so much chewing gum for the eyes,\" offered this intellectual alternative in 1948-1949. It consisted of an informal living-room discussion on the arts with two or three guests, of the caliber of author James Michener, producer Billy Rose, publishrer Bennet Cerf, and critic Bosley Crowther. The subjects ranged from modern art to new novels, films, the theater and fashions.",
+    "popularity": 0.5729,
+    "poster_path": "/c4f14fEkStB2sWCAuyFJZgUOVnQ.jpg",
+    "first_air_date": "1948-08-18",
+    "name": "Critic at Large",
+    "vote_average": 4,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24792,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Captain Billy's Mississippi Music Hall",
+    "overview": "",
+    "popularity": 0.5238,
+    "poster_path": null,
+    "first_air_date": "1948-10-01",
+    "name": "Captain Billy's Mississippi Music Hall",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 22053,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Broadway Jamboree",
+    "overview": "",
+    "popularity": 0.5181,
+    "poster_path": null,
+    "first_air_date": "1948-05-10",
+    "name": "Broadway Jamboree",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 26959,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Douglas Edwards with the News",
+    "overview": "On May 3, 1948, Edwards began anchoring CBS Television News, as a regular 15-minute nightly newscast on the CBS television network, including WCBS-TV. It aired every weeknight at 7:30 pm, and was the first regularly scheduled, network television news program featuring an anchor.[5] (WCBW/WCBS-TV newscasts prior to this time were local television broadcasts seen only in New York City.) NBC's offering at the time, NBC Television Newsreel, which premiered in February 1948, was simply film footage with voice narration.",
+    "popularity": 0.5157,
+    "poster_path": null,
+    "first_air_date": "1948-05-03",
+    "name": "Douglas Edwards with the News",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 13383,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Chesterfield Supper Club",
+    "overview": "The Chesterfield Supper Club, an NBC musical variety radio program, was also telecast by NBC from 1948 to 1950.",
+    "popularity": 0.5011,
+    "poster_path": null,
+    "first_air_date": "1948-12-24",
+    "name": "The Chesterfield Supper Club",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35,
+      10764
+    ],
+    "id": 5818,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Candid Camera",
+    "overview": "Candid Camera is an American hidden camera/practical joke reality television series created and produced by Allen Funt, which initially began on radio as Candid Microphone June 28, 1947. After a series of theatrical film shorts, also titled Candid Microphone, Funt's concept came to television on August 10, 1948. The show last aired  for 10 episodes in 2014 on the TV Land network. A documentary about Allen Funt is currently in the works by the Candid Camera crew.\n\nThe format has appeared on U.S. TV networks and in syndication in each succeeding decade, as either a regular show or a series of specials. Allen Funt himself hosted or co-hosted almost all of the TV versions until a 1993 stroke from which he never recovered. His son Peter Funt, who had co-hosted the specials with his father since 1987, became the producer and host.",
+    "popularity": 0.4973,
+    "poster_path": null,
+    "first_air_date": "1948-08-10",
+    "name": "Candid Camera",
+    "vote_average": 6,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24396,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Buzzy Wuzzy",
+    "overview": "",
+    "popularity": 0.4892,
+    "poster_path": null,
+    "first_air_date": "1948-11-17",
+    "name": "Buzzy Wuzzy",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 18943,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Swift Show",
+    "overview": "The Swift Show is an American variety/game show that aired on Thursdays at 8:30pm EST on NBC premiering April 1, 1948 and running to 1949.",
+    "popularity": 0.4779,
+    "poster_path": null,
+    "first_air_date": "1948-04-01",
+    "name": "The Swift Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763
+    ],
+    "id": 12171,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Camel News Caravan",
+    "overview": "The Camel News Caravan was a 15-minute American television news program aired by NBC News from February 14, 1949, to October 26, 1956. Sponsored by the Camel cigarette brand and anchored by John Cameron Swayze, it was the first NBC news program to use NBC filmed news stories rather than movie newsreels. On February 16, 1954, the Camel News Caravan became the first news program broadcast in color, making use of 16mm color film. In early 1955, the R.J. Reynolds Tobacco Company, maker of Camel cigarettes, cut back its sponsorship to three days a week. Chrysler's Plymouth division sponsored the other days, and on those days, the program was labelled the Plymouth News Caravan. The program featured a young Washington correspondent named David Brinkley, and competed against Douglas Edwards with the News on rival CBS. With greater resources, the News Caravan attracted a larger audience than its CBS competition until 1955.\n\nLaunched on February 16, 1948, by NBC as NBC Television Newsreel, and later Camel Newsreel Theatre it began as a 10-minute program that featured Fox Movietone News newsreels. John Cameron Swayze provided voice-over for the series. The Camel News Caravan was an expanded version of the Camel Newsreel Theatre feature Swayze on-camera.",
+    "popularity": 0.4776,
+    "poster_path": null,
+    "first_air_date": "1948-02-16",
+    "name": "Camel News Caravan",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 27490,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Bigelow Show",
+    "overview": "",
+    "popularity": 0.4455,
+    "poster_path": null,
+    "first_air_date": "1948-10-14",
+    "name": "The Bigelow Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 6803,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Champagne and Orchids",
+    "overview": "Champagne and Orchids is an American variety show broadcast on the now defunct DuMont Television Network. The network series ran from September 6, 1948 to January 10, 1949. Champagne and Orchids was a variety show hosted by Adrienne Meyerberg, billed simply as 'Adrienne', who sang in English, French, and Spanish.\n\nThe musical program, produced and distributed by DuMont, aired live at 8 pm EST on Monday nights on most DuMont affiliates. The show had premiered on Dumont's New York station in December 1947. The network series was cancelled in 1949. DuMont replaced the series with Newsweek Views the News.",
+    "popularity": 0.44,
+    "poster_path": null,
+    "first_air_date": "1948-09-06",
+    "name": "Champagne and Orchids",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24394,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Earl Wrightson Show",
+    "overview": "",
+    "popularity": 0.428,
+    "poster_path": null,
+    "first_air_date": "1948-11-27",
+    "name": "The Earl Wrightson Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 9803,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Break the Bank",
+    "overview": "Break the Bank is an American quiz show which aired variously on Mutual Radio and ABC, CBS and NBC television from 1945 to 1957.",
+    "popularity": 0.424,
+    "poster_path": null,
+    "first_air_date": "1948-10-22",
+    "name": "Break the Bank",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28153,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Welcome Aboard",
+    "overview": "Welcome Aboard is an American variety show that was televised live on Sundays at 7:30pm EST on NBC. The series was initially titled Admiral Presents the Five Star Revue—Welcome Aboard, when it was sponsored by Admiral but was retitled when sponsorship was dropped in December 1948.\n\nThe premiere episode featured Martin and Lewis, and Phil Silvers. The second episode on October 10 also featured Martin and Lewis, and a kinescope of this latter show is preserved in the UCLA Film and Television Archive. Three additional episodes are held by the Library of Congress",
+    "popularity": 0.4124,
+    "poster_path": null,
+    "first_air_date": "1948-10-03",
+    "name": "Welcome Aboard",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10763,
+      10764
+    ],
+    "id": 39507,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Who Said That?",
+    "overview": "Who Said That? is a 1947-55 NBC radio-television game show, in which a panel of celebrities attempts to determine the speaker of a quotation from recent news reports. The series was first proposed and edited by Fred W. Friendly, later of CBS News.",
+    "popularity": 0.4077,
+    "poster_path": null,
+    "first_air_date": "1948-12-09",
+    "name": "Who Said That?",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 14690,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Celebrity Time",
+    "overview": "Celebrity Time was an American game and audience participation television series which aired originally aired on CBS and ABC from November 1948 to September 1952. The original host was Douglas Edwards.",
+    "popularity": 0.3912,
+    "poster_path": null,
+    "first_air_date": "1948-11-20",
+    "name": "Celebrity Time",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28801,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Louisiana Hayride",
+    "overview": "",
+    "popularity": 0.3844,
+    "poster_path": null,
+    "first_air_date": "1948-04-03",
+    "name": "Louisiana Hayride",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24674,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "At Liberty Club",
+    "overview": "",
+    "popularity": 0.3844,
+    "poster_path": null,
+    "first_air_date": "1948-06-25",
+    "name": "At Liberty Club",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21075,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "America Song",
+    "overview": "America Song was a live television series which aired on the NBC Television Network during primetime, premiering on 21 April 1948 and running to 1949. The series was hosted by Paul Arnold and featured performances of United States folk music. Each episode was 15 or 20 minutes long.\n\nAmerica Song aired on NBC at 7:30pm ET, followed by Camel Newsreel Theatre at either 7:45 or 7:50pm.",
+    "popularity": 0.3694,
+    "poster_path": null,
+    "first_air_date": "1948-04-21",
+    "name": "America Song",
+    "vote_average": 0,
+    "vote_count": 0
+  }
+]
