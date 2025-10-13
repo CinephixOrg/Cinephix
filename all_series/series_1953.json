@@ -1,0 +1,1479 @@
+[
+  {
+    "adult": false,
+    "backdrop_path": "/fv3K9SWlXQaCzVsnh6RnzLu84xA.jpg",
+    "genre_ids": [
+      99,
+      10763
+    ],
+    "id": 5675,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Panorama",
+    "overview": "Current affairs programme, featuring interviews and investigative reports on a wide variety of subjects.",
+    "popularity": 10.6706,
+    "poster_path": "/iIJ7magQx7z1rtkr3HotrBD2JK7.jpg",
+    "first_air_date": "1953-11-11",
+    "name": "Panorama",
+    "vote_average": 6.2,
+    "vote_count": 13
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/AvydGD3Y03ad7QLxQ3tAZ3VVkng.jpg",
+    "genre_ids": [],
+    "id": 27023,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Oscars",
+    "overview": "An annual American awards ceremony honoring cinematic achievements in the film industry. The various category winners are awarded a copy of a statuette, officially the Academy Award of Merit, that is better known by its nickname Oscar.",
+    "popularity": 6.5811,
+    "poster_path": "/sSsBn4CeTAnSF6uWCwr3zpKknYV.jpg",
+    "first_air_date": "1953-03-19",
+    "name": "The Oscars",
+    "vote_average": 7,
+    "vote_count": 75
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/4L5Au79IA9q4kUj4PWy28ZhqEi7.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 22902,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Life Of Riley",
+    "overview": "Riley worked in an aircraft plant in California, but viewers usually saw him at home, cheerfully disrupting life with his malapropisms and ill timed intervention into minor problems.",
+    "popularity": 5.2741,
+    "poster_path": "/tYnX6Fw3X0kdmIc9LwPq8N544QR.jpg",
+    "first_air_date": "1953-01-02",
+    "name": "The Life Of Riley",
+    "vote_average": 6,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 12450,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The United States Steel Hour",
+    "overview": "The United States Steel Hour is an anthology series which brought hour-long dramas to television from 1953 to 1963. The television series and the radio program that preceded it were both sponsored by the United States Steel Corporation.",
+    "popularity": 4.4744,
+    "poster_path": "/15Lz0tLjmTswcp46Buc3jxvhUoL.jpg",
+    "first_air_date": "1953-10-27",
+    "name": "The United States Steel Hour",
+    "vote_average": 6.2,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/bqNEDOyL8qqqLn4Iz59Sl0DmsSg.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 981,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Danny Thomas Show",
+    "overview": "Danny Thomas, an entertainer, tries to balance his home life with the needs of his career, with hilarious results.",
+    "popularity": 3.9874,
+    "poster_path": "/l2ovIZjDq2PelProVtBXmK2SkkY.jpg",
+    "first_air_date": "1953-09-29",
+    "name": "The Danny Thomas Show",
+    "vote_average": 6,
+    "vote_count": 17
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 12045,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "I Led Three Lives",
+    "overview": "I Led Three Lives is an American drama series which was syndicated by Ziv Television Programs from October 1, 1953 to January 1, 1956. The series stars Richard Carlson. The show was a companion piece of sorts to the radio drama I Was a Communist for the FBI, which dealt with a similar subject and was also syndicated by Ziv from 1952 to 1954.",
+    "popularity": 3.1636,
+    "poster_path": "/y9dv0qKA6HPSZZlojjMdd2z0uLY.jpg",
+    "first_air_date": "1953-01-01",
+    "name": "I Led Three Lives",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      80
+    ],
+    "id": 17514,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "City Detective",
+    "overview": "Crime drama starring Rod Cameron as 43-year-old Bart Grant, a tough 1950s New York City police lieutenant.",
+    "popularity": 3.4086,
+    "poster_path": "/3eF2EuE2fvXHQ5gm6sTt0fE2pbc.jpg",
+    "first_air_date": "1953-09-07",
+    "name": "City Detective",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 12238,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Pepsi-Cola Playhouse",
+    "overview": "The Pepsi-Cola Playhouse is an American dramatic anthology series that aired on ABC from 1953 to 1955, sponsored by Pepsi-Cola. The show was hosted by Arlene Dahl, Anita Colby, and, finally, Polly Bergen",
+    "popularity": 3.1597,
+    "poster_path": null,
+    "first_air_date": "1953-10-02",
+    "name": "The Pepsi-Cola Playhouse",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/tIPTvlADElrK6B48a1q6rqUXZ8V.jpg",
+    "genre_ids": [
+      10765,
+      35
+    ],
+    "id": 12145,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Topper",
+    "overview": "Topper is an American fantasy sitcom based on the 1937 film of the same name. The series was broadcast on CBS from October 9, 1953 to July 15, 1955, and stars Leo G. Carroll in the title role.",
+    "popularity": 3.7217,
+    "poster_path": "/z7arSKmtwiEwKgy9XCxa4neWktf.jpg",
+    "first_air_date": "1953-10-09",
+    "name": "Topper",
+    "vote_average": 5.8,
+    "vote_count": 8
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10766
+    ],
+    "id": 32979,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Valiant Lady",
+    "overview": "Valiant Lady is an American soap opera which ran daily on CBS radio and television from October 12, 1953 to August 16, 1957 at 12:00 PM. The show's title was taken from a 1930s radio soap opera about a young woman struggling through life but is otherwise very different. Like many early soap operas, the show was broadcast live from CBS studios in New York City.\n\nThe series was created by Adrian Spies; the head writer was Charles Elwyn.",
+    "popularity": 2.9788,
+    "poster_path": null,
+    "first_air_date": "1953-10-12",
+    "name": "Valiant Lady",
+    "vote_average": 3,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80,
+      18
+    ],
+    "id": 21585,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Man Behind the Badge",
+    "overview": "The Man Behind the Badge is the title of a half-hour American television police drama series which aired on the CBS from 1953-1955 starring and hosted by character actor Charles Bickford. Years later, Bickford appeared as one of the owners of Shiloh Ranch in the NBC western series, The Vrginian.\n\nIn its first season, The Man Behind the Badge aired on Sundays at 9:30 p.m. EST opposite ABC's Jukebox Jury.",
+    "popularity": 2.419,
+    "poster_path": "/dso5MH8yRxW9LQ5NwLY0fTK8kL.jpg",
+    "first_air_date": "1953-10-11",
+    "name": "The Man Behind the Badge",
+    "vote_average": 5.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 13178,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "You Are There",
+    "overview": "You Are There is an American historical educational television and radio series broadcast over the CBS Radio and CBS Television networks.",
+    "popularity": 2.7838,
+    "poster_path": "/dXApQQpOLmHUz7p9QmYM6j4OZI1.jpg",
+    "first_air_date": "1953-02-01",
+    "name": "You Are There",
+    "vote_average": 5.7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/tfcw5Ty27nPqtaNRBOCidZU8Cp3.jpg",
+    "genre_ids": [
+      35
+    ],
+    "id": 9459,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Life with Elizabeth",
+    "overview": "Elizabeth and Alvin are a married couple who live an ordinary suburban life, but inevitably managed to get into predicaments. At the end of most predicaments, Alvin, in variable degrees of frustration, would say, \"I shall leave you now, Elizabeth\" and would walk out of sight. The announcer would say, \"Elizabeth, aren't you ashamed?\" She would slowly nod, but then, with a slightly devilish grin, would vigorously shake her head to indicate she wasn't.",
+    "popularity": 2.9123,
+    "poster_path": "/gX9S53W9t3x7piVYkhWPrpBEjMo.jpg",
+    "first_air_date": "1953-10-07",
+    "name": "Life with Elizabeth",
+    "vote_average": 4.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 10666,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Private Secretary",
+    "overview": "Private Secretary is an American sitcom that aired from February 1, 1953 to September 10, 1957 on CBS, alternating with The Jack Benny Program on Sundays at 7:30pm EST. The series stars Ann Sothern as Susan Camille \"Susie\" MacNamara, devoted secretary to handsome talent agent Peter Sands, played by Don Porter.",
+    "popularity": 2.0288,
+    "poster_path": null,
+    "first_air_date": "1953-02-01",
+    "name": "Private Secretary",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/qGpDtkm61cFqgL5kpgg291hSrlY.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 27616,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Letter to Loretta",
+    "overview": "Letter to Loretta is an American anthology drama series telecast on NBC from September 1953 to June 1961 for a total of 165 episodes. The filmed show was hosted by Loretta Young who also played the lead in various episodes.\n\nLetter to Loretta was sponsored by Procter & Gamble from 1953 through 1960. The final season's sponsor was Warner-Lambert's Listerine.",
+    "popularity": 1.9882,
+    "poster_path": "/lIqe2Ypo2DOXnjj31BVkemWxf2m.jpg",
+    "first_air_date": "1953-09-20",
+    "name": "Letter to Loretta",
+    "vote_average": 6.5,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 31165,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Meet Mr. McNutley",
+    "overview": "Meet Mr. McNutley is an American situation comedy which aired on CBS Television from 1953–1955, with Ray Milland in the role of fastidious Professor Ray McNutley, the head of the English Department at the fictitious Lynnhaven College for girls. Phyllis Avery portrayed McNutley's wife, Peggy.\n\nThe half-hour series aired on Thursday evenings opposite Groucho Marx's NBC program, You Bet Your Life. The show aired concurrently on radio during its first season. Both versions were sponsored by General Electric, and originally presented under the umbrella title of The General Electric Comedy Theatre.",
+    "popularity": 1.583,
+    "poster_path": null,
+    "first_air_date": "1953-09-17",
+    "name": "Meet Mr. McNutley",
+    "vote_average": 7,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 23878,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Where's Raymond?",
+    "overview": "Where's Raymond? is an American sitcom that aired on ABC, starring Ray Bolger. The series aired from October 1953 to April 22, 1955. The series' title was spurred by Bolger's Broadway stage hit Where's Charley?.\n\nIn the 1954-1955 season, the series was renamed The Ray Bolger Show.",
+    "popularity": 3.1363,
+    "poster_path": "/hWxwehfEbtvQSDBFNKoWX5KsO9y.jpg",
+    "first_air_date": "1953-10-08",
+    "name": "Where's Raymond?",
+    "vote_average": 7,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 39156,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Pride of the Family",
+    "overview": "The Pride of the Family was a half-hour situation comedy starring Paul Hartman, Fay Wray, Natalie Wood, and Robert Hyatt, which aired for forty episodes on ABC in the 1953–1954 season.\n\nHartman portrays Albie Morrison, the father and error-prone head of the household, about whom most of the episodes are centered. Albie works in the advertising section of his local newspaper, and he often has new ideas that go awry in the workplace as well as failed handyman activities at home. Wray, remembered in particularly from her role in the horror film King Kong, plays Albie's wife, Catherine. Natalie Wood is the 15-year-old daughter, Ann, and \"Bobby\" Hyatt is the 14-year-old son, Junior Morrison. Larry J. Blake appeared fourteen times in the role of \"Frank\".\n\nHartman's Albie Morrison lacks the good judgment and wisdom exercised by the fictitious insurance agent James Anderson, Sr., the role of Robert Young on the long-running Father Knows Best, which premiered the following season on CBS. Billboard described Hartman's lead role as \"average\"; indeed the series attempted to present the \"average family.\"\n\nGuest stars included Tol Avery, Barbara Billingsley, Douglas Fowley, Frank Ferguson, Lyle Talbot, Steven Terrell, and Joey D. Vieira.",
+    "popularity": 1.2345,
+    "poster_path": "/ci7nASt5B5of2dNbHlfhokIaw8r.jpg",
+    "first_air_date": "1953-10-02",
+    "name": "The Pride of the Family",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21520,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "I'm the Law",
+    "overview": "I'm the Law is the title of a 30-minute syndicated American television police drama series which aired in 1953 starring George Raft as Lt. George Kirby, a NYPD detective involved in solving a variety of crimes in New York City.\n\nThe series first aired on February 13, 1953 and ended on July 31, 1953.",
+    "popularity": 1.7981,
+    "poster_path": "/mbly1XBWnfimkiIJ6W2rjynrWAn.jpg",
+    "first_air_date": "1953-02-13",
+    "name": "I'm the Law",
+    "vote_average": 5.7,
+    "vote_count": 3
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 21545,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Your Favorite Story",
+    "overview": "Your Favorite Story is the title of a TV comedy anthology series that aired from 1953 through 1955. It premiered in December 1954 with the title Your Favorite Playhouse. This program was adapted from the radio show Favorite Story which ran from 1946 through 1949. The program's 25 episodes starred Adolphe Menjou and featured episodes originally written by Leonard St. Clair, William Makepeace Thackeray, and Frank R. Stockton.",
+    "popularity": 1.9174,
+    "poster_path": null,
+    "first_air_date": "1953-01-11",
+    "name": "Your Favorite Story",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26754,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Follow Your Heart",
+    "overview": "",
+    "popularity": 1.1404,
+    "poster_path": null,
+    "first_air_date": "1953-08-03",
+    "name": "Follow Your Heart",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 5975,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Colonel Humphrey Flack",
+    "overview": "Colonel Humphrey Flack is an American sitcom which ran Wednesdays at 9pm ET from October 7, 1953 to July 2, 1954 on the DuMont Television Network, then revived from 1958 to 1959 for first-run syndication.\n\nThe series also aired under the titles The Fabulous Fraud, The Adventures of Colonel Flack, and The Imposter.",
+    "popularity": 1.196,
+    "poster_path": null,
+    "first_air_date": "1953-10-07",
+    "name": "Colonel Humphrey Flack",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 19449,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Douglas Fairbanks, Jr., Presents",
+    "overview": "Douglas Fairbanks, Jr., Presents, is a 1950s syndicated anthology series hosted and occasionally starring Douglas Fairbanks, Jr.. The series offered Buster Keaton in his first dramatic role in the episode entitled \"The Awakening\". British actor Christopher Lee appeared in varied role in thirteen episodes, including \"Destination Milan\". The program aired from 7 January 1953 to 11 February 1957 for a total of 117 episodes. Fairbanks himself starred in forty-eight episodes. In Melbourne, Australia the series was aired under the title Chesebrough Ponds Playhouse.",
+    "popularity": 1.4208,
+    "poster_path": "/69T0Eb4R0zAV6i6LO9CNeiN4zVP.jpg",
+    "first_air_date": "1953-01-07",
+    "name": "Douglas Fairbanks, Jr., Presents",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10759,
+      10765
+    ],
+    "id": 7399,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Space Command",
+    "overview": "Space Command was a Canadian children's science fiction television adventure series broadcast on CBC (Canadian Broadcast Company) Television in 1953 and 1954. It was the first time the network (CBC) aired its own dramatic series.\n\nThe series presented life on the fictional space ship XSW1 operated by Space Command, an international organization working to explore and colonize space. Each episode featured the activities of Frank Anderson covering many subject areas such as sunspots, asteroids, space medicine, meteors and evolution.\n\nAlthough short-lived, Space Command proved to be a hit dramatic program for CBC's earliest years. The series aired weekly from 13 March 1953 – 29 May 1954\n\nUnfortunately, only a single episode from November 1953 is know to exist at this time.",
+    "popularity": 1.0206,
+    "poster_path": null,
+    "first_air_date": "1953-03-13",
+    "name": "Space Command",
+    "vote_average": 2.5,
+    "vote_count": 2
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 26124,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Medallion Theatre",
+    "overview": "",
+    "popularity": 1.2727,
+    "poster_path": "/xVosY59zldkaC9t9LfvL2NZnezo.jpg",
+    "first_air_date": "1953-07-11",
+    "name": "Medallion Theatre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 6999,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Action in the Afternoon",
+    "overview": "Action in the Afternoon is an American western television series that aired live on CBS from February 2, 1953 to January 29, 1954. The series originated from the studios and back lot of WCAU-TV, Channel 10 in Philadelphia, Pennsylvania, and was broadcast Monday through Friday regardless of the weather. The half-hour series aired variously at 3:30 pm or 4:00 pm, throughout its run.",
+    "popularity": 1.2583,
+    "poster_path": null,
+    "first_air_date": "1953-02-02",
+    "name": "Action in the Afternoon",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 13403,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Ramar of the Jungle",
+    "overview": "Ramar of the Jungle was a syndicated American television series that starred Jon Hall as Dr. Tom Reynolds and Ray Montgomery as his associate. Episodes were set in Africa and India. Produced by Rudolph Flothow for Arrow Productions and ITC Entertainment, four sets of 13 episodes were produced for a total of 52. Each episode runs approximately 25 minutes. In season one, the first 13 episodes are set in Africa and the second 13 are set in India. For the second season, all 26 episodes take place in Africa.\n\nSeveral television episodes were combined and released as theatrical movies by producer Leon Fromkess.\n\nSelect episodes have been released on several DVDs through discount & \"dollar\" stores. Each disc contains approx. 4 episodes, with no extras available.",
+    "popularity": 0.8676,
+    "poster_path": null,
+    "first_air_date": "1953-04-18",
+    "name": "Ramar of the Jungle",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25914,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Revlon Mirror Theatre",
+    "overview": "Also known as 'Mirror Theater', this was an American anthology drama television series.",
+    "popularity": 1.0561,
+    "poster_path": "/iEv5LC1LTqEd7nJocNu99VU9qya.jpg",
+    "first_air_date": "1953-06-23",
+    "name": "Revlon Mirror Theatre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 13849,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Rod Brown of the Rocket Rangers",
+    "overview": "Rod Brown of the Rocket Rangers was a 30-minute, weekly CBS-TV network outer space adventure series, broadcast live Saturdays from April 18, 1953 to May 29, 1954. Set in 2153 and all-too-obviously inspired by Tom Corbett, Space Cadet, the series depicted the adventures of fearless Rocket Rangers, who operated from Omega Base, piloting their nuclear-powered space ship Beta throughout the solar system, to battle crime and the weird menace of extraterrestrial life-forms. The three Rangers were curly-haired Rod Brown, prickly Frank Boyd and obese Wilber Wormser. Their immediate superior was Commander Swift. Director George Gould had also been the director of ABC's Tom Corbett from 1950 to 1952, and he carried with him to CBS several of the writers for that pioneering series, plus its basic concepts, plus the major special effect, an amplifier producing travelling mattes. The very close similarity between Rod Brown and Tom Corbett generated at least one lawsuit, which seems to have resulted in the Rod Brown kinescopes never being rebroadcast.\n\nRod Brown's adventures had a sponsor, Jell-O Instant Pudding. However, there are very few premiums or toys associated with the series, as compared to its rival live space adventure series such as Captain Video, Space Patrol, and Tom Corbett, Space Cadet. A Rocket Ranger membership card and a Rocket Ranger Squadron Charter have been observed. In addition, plaid flannel shirts for young boys, featuring a solid-color flannel placket silkscreened with the Rocket Ranger title, space ship, and spaceman, were also available.",
+    "popularity": 1.0888,
+    "poster_path": null,
+    "first_air_date": "1953-04-18",
+    "name": "Rod Brown of the Rocket Rangers",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/hSgE8vCSicHyRl7xx0XzbLsvaSa.jpg",
+    "genre_ids": [
+      35,
+      18
+    ],
+    "id": 4520,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "General Electric Theater",
+    "overview": "General Electric Theater is an American anthology series hosted by Ronald Reagan that was broadcast on CBS radio and television. The series was sponsored by General Electric's Department of Public Relations.",
+    "popularity": 1.0554,
+    "poster_path": "/sNhevbrsNi11PUwz0tXsB0wh84a.jpg",
+    "first_air_date": "1953-02-01",
+    "name": "General Electric Theater",
+    "vote_average": 6.4,
+    "vote_count": 5
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 23240,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Life With Father",
+    "overview": "Life With Father is an American sitcom that aired on CBS from November 1953 to July 1955. The series centers on the patriarch of an upper-middle-class New York household family. It was the first live color program for network TV to originate in Hollywood.",
+    "popularity": 1.1012,
+    "poster_path": null,
+    "first_air_date": "1953-11-22",
+    "name": "Life With Father",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 58623,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Campbell Soundstage",
+    "overview": "The Campbell Playhouse (also known as Campbell Soundstage) is an American drama anthology television series that originally aired on NBC from June 6, 1952, to May 28, 1954.",
+    "popularity": 0.8771,
+    "poster_path": null,
+    "first_air_date": "1953-10-16",
+    "name": "Campbell Soundstage",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 37592,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Motorola Television Hour",
+    "overview": "The Motorola Television Hour is an hour-long anthology series which alternated bi-weekly with The United States Steel Hour on ABC. The show premiered on November 3, 1953 and was last aired on June 1, 1954. It was sponsored by Motorola.",
+    "popularity": 1.0847,
+    "poster_path": "/yrkVIJ0qWzUARNHxRIwiej9D0CD.jpg",
+    "first_air_date": "1953-11-03",
+    "name": "The Motorola Television Hour",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/lhvq9e9WyEojfRpC2SssKpK3jWs.jpg",
+    "genre_ids": [],
+    "id": 21967,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Scotland Yard",
+    "overview": "Scotland Yard was perhaps the best-known series to emerge from Anglo-Amalgamated’s output of crime drama. Shot as cinema support features at the company’s Merton Park Studios in South Wimbledon, these half-hour thrillers – based on real-life cases from the vaults of London’s Metropolitan Police headquarters – were a successful regular feature in cinemas over nearly a decade from the early 1950s onwards. Like sister series Scales of Justice, Scotland Yard is introduced by celebrated writer and criminologist Edgar Lustgarten and presents case after intriguing case, with many solved onscreen by the redoubtable Inspector Duggan (played by Australian-born Russell Napier).",
+    "popularity": 1.2934,
+    "poster_path": "/ywWVDU1x1XY8cnTbSqSi8SeCnjO.jpg",
+    "first_air_date": "1953-02-01",
+    "name": "Scotland Yard",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18,
+      10765
+    ],
+    "id": 352,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Quatermass Experiment",
+    "overview": "The story of the first manned flight into space, supervised by Professor Bernard Quatermass of the British Experimental Rocket Group. When the spaceship that carried the first successful crew returns to Earth, two of the three astronauts are missing, and the third is behaving strangely. It becomes apparent that an alien presence entered the ship during its flight, and Quatermass and his associates must prevent the alien from destroying the world.",
+    "popularity": 0.8029,
+    "poster_path": "/vbNUN2Jr3O0pqfTJpB2XRLLKGYT.jpg",
+    "first_air_date": "1953-07-18",
+    "name": "The Quatermass Experiment",
+    "vote_average": 6.7,
+    "vote_count": 13
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 30015,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Jamie",
+    "overview": "After the death of his parents, seven-year-old Jamie  is moved from relative to relative until he finally arrives at the home of  his aunt Laurie and grandfather.",
+    "popularity": 0.7774,
+    "poster_path": null,
+    "first_air_date": "1953-10-05",
+    "name": "Jamie",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 245555,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Kraft Television Theatre",
+    "overview": "American Anthology",
+    "popularity": 0.9042,
+    "poster_path": null,
+    "first_air_date": "1953-10-15",
+    "name": "Kraft Television Theatre",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/cMHfZuj8ofNqllWumYUkfRu770U.jpg",
+    "genre_ids": [],
+    "id": 297971,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "I Led 3 Lives",
+    "overview": "Herbert Philbrick was a young professional and pacifist in 1939 Boston. He joined an anti-war group and quickly found himself caught up in the secret world of underground communist activity. He agreed to spy on the Communists for the FBI, and spent the next 9 years of his life as a Communist, FBI spy, and Communist counter-spy, since they had asked him to follow other comrades to test their loyalty. Hence the 3 lives; and his family, co-workers, and church never knew. This TV show is based on the TRUE story of how Philbrick (played ably by Richard Carlson) could never relax, but had to sneak to secret cell meetings and meet FBI agents in clandestine places to make info drops, never knowing when he might be found out, and if he would live to see the next rendezvous.",
+    "popularity": 0.9902,
+    "poster_path": "/wAyWEk0PoIKU1O913kZdYyUQsE3.jpg",
+    "first_air_date": "1953-10-01",
+    "name": "I Led 3 Lives",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 155244,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Der Internationale Frühschoppen",
+    "overview": "",
+    "popularity": 0.6867,
+    "poster_path": null,
+    "first_air_date": "1953-08-30",
+    "name": "Der Internationale Frühschoppen",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10751
+    ],
+    "id": 10447,
+    "origin_country": [
+      "US",
+      "AU",
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Romper Room",
+    "overview": "Romper Room was a long running children's television series that ran in the United States from 1953 to 1994 as well as internationally at various times in Canada, United Kingdom, New Zealand, Australia, Puerto Rico and Japan. The program is targeted at preschoolers, children five years of age or younger.",
+    "popularity": 0.6679,
+    "poster_path": null,
+    "first_air_date": "1953-01-01",
+    "name": "Romper Room",
+    "vote_average": 6,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 29525,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Bennetts",
+    "overview": "",
+    "popularity": 0.6793,
+    "poster_path": null,
+    "first_air_date": "1953-07-06",
+    "name": "The Bennetts",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 105824,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Wer gegen wen - ferngesehen",
+    "overview": "",
+    "popularity": 0.6303,
+    "poster_path": null,
+    "first_air_date": "1953-09-03",
+    "name": "Wer gegen wen - ferngesehen",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      18
+    ],
+    "id": 23317,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Christophers",
+    "overview": "The weekly half-hour series featured individuals from various walks of life who used their gifts to make the world a better place.",
+    "popularity": 0.5254,
+    "poster_path": null,
+    "first_air_date": "1953-04-20",
+    "name": "The Christophers",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/dfkBv1lwPp28UOyB8VJtuQYe4PV.jpg",
+    "genre_ids": [
+      18
+    ],
+    "id": 14203,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Robin Hood",
+    "overview": "Robin Hood was produced in 1953 by the BBC, during which time these episodes were transmitted live and then re-acted the following Saturday or Sunday in order for a repeat to be shown. However, in some cases, television programmes were recorded onto 16mm film; the age and technology used in order to film titles such as Robin Hood mean that they no longer survive in their original quality, which means that transmission of these episodes by today's standards would be deemed as 'unacceptable'. However, short clips of this serial have aired as recently as 2007 as part of a documentary presented by Jonathan Ross, covering Robin Hood from its beginnings to the more recent BBC production, and shown as an example of television production in the BBC series of documentaries entitled Children's T.V. On Trial The 1950s.\n\nThe show lasted only for one season, and starred Patrick Troughton as Robin Hood.\n\nLater was aired the TV series The Adventures of Robin Hood.",
+    "popularity": 0.6061,
+    "poster_path": "/bcYO6qwDVnwUtxdYTtH7DGfScGg.jpg",
+    "first_air_date": "1953-03-17",
+    "name": "Robin Hood",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 6096,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "The Good Old Days",
+    "overview": "The Good Old Days was a popular BBC television light entertainment programme which ran from 1953 to 1983.\n\nIt was performed at the Leeds City Varieties and recreated an authentic atmosphere of the Victorian–Edwardian music hall with songs and sketches of the era performed by present-day performers in the style of the original artistes.\n\nThe audience dressed in period costume and joined in the singing, especially \"Down at the Old Bull and Bush\" which closed the show. The show was compered by Leonard Sachs. In the course of its run it featured about 2,000 performers.",
+    "popularity": 0.5838,
+    "poster_path": "/l7qMCVHOBOZkEguLWejdvOtH3O8.jpg",
+    "first_air_date": "1953-07-20",
+    "name": "The Good Old Days",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 8552,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Bonino",
+    "overview": "Bonino is an ethnic situation comedy television series starring Ezio Pinza as an Italian-American opera singer trying to rear his six children after the death of their mother. The program aired on live NBC from September 12 to December 26, 1953.\n\nPinza's character is named Babbo Bonino. Character actress Mary Wickes portrayed Martha the housekeeper, a role which she filled over the years in numerous other series. The actors portraying the children were Conrad Janis as eldest son Edward, Lenka Peterson as older daughter Doris, Chet Allen as Jerry; Oliver Andes as Carlo, Gaye Huston as Fancesca, and Van Dyke Parks as Andrew, the youngest. Allen had earlier appeared as Amahl in Gian Carlo Menotti's Amahl and the Night Visitors on NBC's Hallmark Hall of Fame in 1951-1952. Parks, who grew up in Lake Charles, Louisiana, became a rock-music producer and composer who cowrote with Brian Wilson the Beach Boys' hits \"Heroes and Villains\" and \"Surf's Up\".Mike Kellin, who was cast the following year in Celeste Holm's short-lived CBS sitcom Honestly, Celeste!, appeared in the role of Rusty.\n\nDavid Opatoshu, portrayed Walter Rogers, Babbo's agent, who tries to convince him to return to singing. As each episode unfolds, Bonino realizes that his children are more independent than he thought. Pinza sang in each episode.Anthony Eisley, later of ABC's detective series Hawaiian Eye, guest starred in Bonino as John Clinton.",
+    "popularity": 0.462,
+    "poster_path": null,
+    "first_air_date": "1953-09-12",
+    "name": "Bonino",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 11444,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Coke Time with Eddie Fisher",
+    "overview": "Coke Time with Eddie Fisher is an American musical variety television series starring singer Eddie Fisher which was broadcast by NBC on Wednesday nights in early prime time from 1953 to 1957. The program was aired from 7:30 to 7:45 p.m. Eastern Time on Wednesdays and Fridays, and was not seen during the summer months..",
+    "popularity": 0.5073,
+    "poster_path": null,
+    "first_air_date": "1953-04-29",
+    "name": "Coke Time with Eddie Fisher",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10765
+    ],
+    "id": 13838,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Atom Squad",
+    "overview": "Atom Squad was an American science-fiction series that was broadcast live by the NBC network, July 6, 1953 to January 22, 1954, Monday-Friday, 5:00 to 5:15 PM EST.",
+    "popularity": 0.5925,
+    "poster_path": null,
+    "first_air_date": "1953-07-06",
+    "name": "Atom Squad",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      80
+    ],
+    "id": 84783,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Der Polizeibericht meldet",
+    "overview": "",
+    "popularity": 0.5921,
+    "poster_path": null,
+    "first_air_date": "1953-10-05",
+    "name": "Der Polizeibericht meldet",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 29275,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Music at the Meadowbrook",
+    "overview": "",
+    "popularity": 0.4712,
+    "poster_path": null,
+    "first_air_date": "1953-05-23",
+    "name": "Music at the Meadowbrook",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 13588,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Person to Person",
+    "overview": "Person to Person is a popular television program in the United States that originally ran from 1953 to 1961. Edward R. Murrow hosted it until 1959, interviewing celebrities in their homes from a comfortable chair in his New York studio. In the last two years of its original run, the host was Charles Collingwood.",
+    "popularity": 0.5108,
+    "poster_path": "/45ViOxTTPpkk4dpX6aaQZcbDMzR.jpg",
+    "first_air_date": "1953-10-02",
+    "name": "Person to Person",
+    "vote_average": 7.7,
+    "vote_count": 6
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 25354,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "ABC Album",
+    "overview": "",
+    "popularity": 0.4384,
+    "poster_path": null,
+    "first_air_date": "1953-04-12",
+    "name": "ABC Album",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 31464,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Back That Fact",
+    "overview": "Back That Fact is a short-lived American game show that aired on ABC from October 22 to November 26, 1953. This was the first TV game show for creator/producers Jack Barry and Dan Enright. Borscht Belt comedian and syndicated columnist Joey Adams was the emcee, with actress Hope Lange and actor Al Kelly as his assistants and Carl Caruso as the announcer.\n\nBack That Fact was broadcast from New York City.",
+    "popularity": 0.4613,
+    "poster_path": null,
+    "first_air_date": "1953-10-22",
+    "name": "Back That Fact",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 17354,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Quick as a Flash",
+    "overview": "Quick as a Flash was a 30-minute radio quiz program which featured drama segments with guest actors from radio detective shows.\n\nCreated by director Richard Lewis and emcee Ken Roberts, the program debuted over the Mutual Network on Sunday, July 16, 1944. Sponsored by the Helbros Watch Company, the show was produced by Lewis and Bernard J. Prockter with scripts by Gene Wang. Music was by Ray Bloch and the Helbros Orchestra.\n\nSix contestants from the studio audience competed for cash and other prizes. Clues were presented in the form of dramatic sketches covering such subjects as current events, movies, books and historical situations. With a buzzer, a contestant could interrupt at any time to submit an answer.\n\nDuring the Helbros Derby, a guest detective from a radio mystery program put in an appearance. Frank Gallop and Win Elliott were announcers.\n\nThe series ended on June 29, 1951. Approximately one year later, the series made an attempt to go on television.",
+    "popularity": 0.44,
+    "poster_path": null,
+    "first_air_date": "1953-03-12",
+    "name": "Quick as a Flash",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 21251,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Look up and Live",
+    "overview": "A non-denominational Sunday morning religious show that covered issues from multiple perspectives.",
+    "popularity": 0.4636,
+    "poster_path": null,
+    "first_air_date": "1953-01-03",
+    "name": "Look up and Live",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      35
+    ],
+    "id": 39575,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Judge for Yourself",
+    "overview": "Judge for Yourself, at first subtitled The Fred Allen Show, is a Mark Goodson and Bill Todman nontraditional court show/quiz show, with comedian Fred Allen as the emcee. It aired on NBC from August 18, 1953 to May 11, 1954. Dennis James was the series announcer but took over as host in January 1954.\n\nEach week three performers – singers, dancers, musicians, or comedians – were judged by two panels, one of professional entertainers and the other from the studio audience. If one of the amateur judges rated the acts 1, 2, or 3 in the same order as the celebrities, that individual would win a $1,000 prize. Two instrumental jazz groups that appeared on Judge for Yourself had considerable success thereafter, vibraphonist Terry Gibbs and the Marian McPartland Trio.\n\nThe original intent of the series was to allow Allen to interact with guests, much as Groucho Marx did on his own NBC series, You Bet Your Life. The complicated format first employed, however, was revamped in the middle of the season. On the episode which aired on January 5, 1954, the professional judges were dropped, and the studio audience panel rated new songs to predict future hits, the comparable format of ABC's Jukebox Jury, which also aired in the 1953–1954 season.",
+    "popularity": 0.4733,
+    "poster_path": null,
+    "first_air_date": "1953-08-18",
+    "name": "Judge for Yourself",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/jgylgpOxSQnvLnk1liGOk9GKD1f.jpg",
+    "genre_ids": [],
+    "id": 155207,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "大相撲中継",
+    "overview": "Professional sumo wrestlers from all over Japan compete against each other to emerge victorious and win the coveted title, live.",
+    "popularity": 0.4167,
+    "poster_path": "/aFt7zds2hTYSkELnMjLDFZz11R1.jpg",
+    "first_air_date": "1953-05-16",
+    "name": "Grand Sumo Live",
+    "vote_average": 10,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      37,
+      18
+    ],
+    "id": 45024,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Lash of the West",
+    "overview": "Short-lived kids' series found Lash La Rue, as his U.S. Marshal alter-ego, sitting in his office recounting tales of the old west involving his grandfather.  These tales were represented by extracts from La Rue's western movies made after WWII for Ron Ormond and Western Adventures, Inc., the precursor of Howco Productions, who also made this show.  As the series episodes lasted only 15 minutes, the material from each movie stretched over several episodes, giving the series a serial-like quality.  The series aired on ABC on Sunday night at 6:30 p.m Eastern time from January 4, 1953 to April 26, 1953.",
+    "popularity": 0.4914,
+    "poster_path": "/eTEgiDora4aKTqVjAhvqGw0lytI.jpg",
+    "first_air_date": "1953-01-04",
+    "name": "Lash of the West",
+    "vote_average": 5,
+    "vote_count": 1
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 30655,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Bob Crosby Show",
+    "overview": "",
+    "popularity": 0.4072,
+    "poster_path": null,
+    "first_air_date": "1953-09-14",
+    "name": "The Bob Crosby Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      16
+    ],
+    "id": 14927,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Winky Dink and You",
+    "overview": "Winky Dink and You was a CBS children's television show that aired from 1953 to 1957, on Saturday mornings at 10:30 a.m. Eastern / 9:30 Central. It was hosted by Jack Barry and featured the exploits of a cartoon character named Winky Dink and his dog Woofer, with sound effects provided by Joseph Scholnick. The show, created by Harry Prichett, Sr. and Ed Wyckoff, featured Barry and his sidekick, the incompetent Mr. Bungle, introducing clips of Winky Dink, noted for his plaid pants, tousled hair, and large eyes.",
+    "popularity": 0.4286,
+    "poster_path": null,
+    "first_air_date": "1953-10-31",
+    "name": "Winky Dink and You",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28837,
+    "origin_country": [
+      "GB"
+    ],
+    "original_language": "en",
+    "original_name": "Worzel Gummidge Turns Detective",
+    "overview": "Worzel Gummidge Turns Detective is a British children's television series, first aired by the BBC in 1953.",
+    "popularity": 0.4547,
+    "poster_path": null,
+    "first_air_date": "1953-02-10",
+    "name": "Worzel Gummidge Turns Detective",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 17643,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Music Show",
+    "overview": "The Music Show was an early American television program which was broadcast on the now defunct DuMont Television Network.",
+    "popularity": 0.4081,
+    "poster_path": null,
+    "first_air_date": "1953-05-19",
+    "name": "The Music Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10767
+    ],
+    "id": 236627,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Ich seh’ etwas, was du nicht siehst",
+    "overview": "",
+    "popularity": 0.375,
+    "poster_path": null,
+    "first_air_date": "1953-11-23",
+    "name": "Ich seh’ etwas, was du nicht siehst",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 292786,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Chilly Willy",
+    "overview": "The adventures of an anthropomorphic penguin, living near Fairbanks, Alaska. Chilly Willy is constantly trying to get warm and find food (preferably pancakes). His nemesis is Smedley the dog.",
+    "popularity": 0.4024,
+    "poster_path": "/xM4jsfJhMGpyCF4e1kLiFCWivoQ.jpg",
+    "first_air_date": "1953-12-23",
+    "name": "Chilly Willy",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 39151,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "The Comeback Story",
+    "overview": "The Comeback Story is a half-hour drama reality show which aired on ABC from October 2, 1953 to February 5, 1954, in which celebrities explain how they overcame physical disabilities or other kinds of adverse fortunes in their lives.",
+    "popularity": 0.3735,
+    "poster_path": null,
+    "first_air_date": "1953-10-02",
+    "name": "The Comeback Story",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 12995,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Johnny Jupiter",
+    "overview": "Johnny Jupiter is the name of two early American television programs featuring a combination of live action and hand puppets. The first version aired on the DuMont Television Network from March to June 1953. The second version aired on ABC from September 1953 to May 1954.",
+    "popularity": 0.3882,
+    "poster_path": "/bMSZW7xcxFope08EZNaeD4nXOxX.jpg",
+    "first_air_date": "1953-03-21",
+    "name": "Johnny Jupiter",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 18314,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Dr. I.Q.",
+    "overview": "Dr. I.Q. is a radio and television quiz program. Remembered as radio's first major quiz show, it popularized the catch phrase \"I have a lady in the balcony, Doctor.\"",
+    "popularity": 0.4101,
+    "poster_path": null,
+    "first_air_date": "1953-11-04",
+    "name": "Dr. I.Q.",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 28363,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Adventure",
+    "overview": "",
+    "popularity": 0.3649,
+    "poster_path": null,
+    "first_air_date": "1953-06-28",
+    "name": "Adventure",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 24279,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Eye Witness",
+    "overview": "",
+    "popularity": 0.3643,
+    "poster_path": null,
+    "first_air_date": "1953-03-30",
+    "name": "Eye Witness",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 33455,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "Floor Show",
+    "overview": "Floor Show was a Canadian music variety television series which aired on CBC Television in 1953.",
+    "popularity": 0.3823,
+    "poster_path": null,
+    "first_air_date": "1953-06-22",
+    "name": "Floor Show",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 23418,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Philip Morris Playhouse",
+    "overview": "",
+    "popularity": 0.3607,
+    "poster_path": null,
+    "first_air_date": "1953-10-08",
+    "name": "Philip Morris Playhouse",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/5XXcpKMKsRjfosPSovdOFvDodce.jpg",
+    "genre_ids": [
+      99
+    ],
+    "id": 59639,
+    "origin_country": [
+      "CA"
+    ],
+    "original_language": "en",
+    "original_name": "On the Spot",
+    "overview": "On the Spot was the first television series made specifically for TV by the National Film Board of Canada, and aired on CBC Television from 1953 to 1955. Each episode reported on a different aspect of life in Canada and was introduced with the line \"The National Film Board’s up-to-the-minute report of what’s happening somewhere in Canada”. The series was originated by Bernard Devlin, with Robert Anderson as executive producer.",
+    "popularity": 0.3566,
+    "poster_path": "/w9UbidMqwoTMCdHctr5NwGEVhmQ.jpg",
+    "first_air_date": "1953-01-01",
+    "name": "On the Spot",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/oZntBtQ85qTWRnEQOchLypk6wQo.jpg",
+    "genre_ids": [],
+    "id": 134951,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "NHKのど自慢",
+    "overview": "A popular Japanese TV show where amateur singers compete by performing live, aiming to impress the judges and audience with their vocal talent.",
+    "popularity": 0.3616,
+    "poster_path": "/23qNRMawPKzxIAJk2pQ5uWi3Dgn.jpg",
+    "first_air_date": "1953-03-15",
+    "name": "NHK Nodo Jiman",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/ovFp0cncKNpk6vSEfTd8DJwpWw9.jpg",
+    "genre_ids": [],
+    "id": 134950,
+    "origin_country": [],
+    "original_language": "ja",
+    "original_name": "NHKだめ自慢",
+    "overview": "",
+    "popularity": 0.3584,
+    "poster_path": null,
+    "first_air_date": "1953-03-15",
+    "name": "NHKだめ自慢",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [],
+    "id": 291713,
+    "origin_country": [
+      "JP"
+    ],
+    "original_language": "ja",
+    "original_name": "DRAMATIC BASEBALL",
+    "overview": "",
+    "popularity": 0.3559,
+    "poster_path": "/64JkqlDUNMMukhIPgc0k2useo0k.jpg",
+    "first_air_date": "1953-08-27",
+    "name": "DRAMATIC BASEBALL",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": "/3ddbHYvAo7Wg5743l28Tqx9yELM.jpg",
+    "genre_ids": [],
+    "id": 285811,
+    "origin_country": [
+      "US"
+    ],
+    "original_language": "en",
+    "original_name": "Portland Wrestling",
+    "overview": "Portland Wrestling was the television program for Pacific Northwest Wrestling.",
+    "popularity": 0.3559,
+    "poster_path": "/xBOHZTYA5zXloe564EVOQruZ1ZQ.jpg",
+    "first_air_date": "1953-07-10",
+    "name": "Portland Wrestling",
+    "vote_average": 0,
+    "vote_count": 0
+  },
+  {
+    "adult": false,
+    "backdrop_path": null,
+    "genre_ids": [
+      10764
+    ],
+    "id": 302474,
+    "origin_country": [
+      "DE"
+    ],
+    "original_language": "de",
+    "original_name": "Rosenmontagszug Köln",
+    "overview": "",
+    "popularity": 0.0379,
+    "poster_path": null,
+    "first_air_date": "1953-02-16",
+    "name": "Rosenmontagszug Köln",
+    "vote_average": 0,
+    "vote_count": 0
+  }
+]

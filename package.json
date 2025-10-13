@@ -1,0 +1,18 @@
+{
+  "name": "cinematch",
+  "version": "1.0.0",
+  "description": "cinematch",
+  "main": "clean_movies.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "p-limit": "^7.1.1",
+    "react-hot-toast": "^2.6.0",
+    "react-router": "^7.9.4"
+  }
+}
