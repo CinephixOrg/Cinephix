@@ -1,7 +1,7 @@
 import fs from "fs";
 
 // Filmlerin olduğu klasör
-const folder = "./all_movies";
+const folder = "./cinephixUploader/all_movies";
 
 let totalMovies = 0;
 let totalFiles = 0;

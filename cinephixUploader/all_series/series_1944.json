@@ -1,0 +1,40 @@
+[
+  {
+    "genre_ids": [],
+    "id": 71494,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "An annual awards ceremony recognizing excellence in film and television, both domestic and foreign, bestowed by the Hollywood Foreign Press Association.",
+    "poster_path": "/gYG3SHNKui9ps9RfN4u9MMwpy10.jpg",
+    "first_air_date": "1944-01-20",
+    "name": "Golden Globe Awards"
+  },
+  {
+    "genre_ids": [
+      99
+    ],
+    "id": 21070,
+    "origin_country": [
+      "US"
+    ],
+    "overview": "The World in Your Home is an NBC Television TV series which aired from December 22, 1944 to 1948, originally broadcast on WNBT, NBC's New York flagship, then broadcast on NBC-affiliate stations WRGB in New York's Capital District and WPTZ in Philadelphia starting shortly after its premiere. The program consisted of educational short films.\n\nEach episode was 15 minutes long, and is believed to be one of the first television programs in the history of the NBC Television network. The series aired after I Love to Eat with James Beard in 1946, and after Campus Hoopla in 1947. Little else is known about the series.",
+    "poster_path": null,
+    "first_air_date": "1944-12-22",
+    "name": "The World in Your Home"
+  },
+  {
+    "genre_ids": [
+      99,
+      10768
+    ],
+    "id": 203996,
+    "origin_country": [
+      "FR"
+    ],
+    "overview": "",
+    "poster_path": "/sYthAqvfCi2RNoODuNagU648UjN.jpg",
+    "first_air_date": "1944-09-05",
+    "name": "France Libre Actualités"
+  }
+]

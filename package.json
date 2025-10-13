@@ -2,7 +2,7 @@
   "name": "cinematch",
   "version": "1.0.0",
   "description": "cinematch",
-  "main": "clean_movies.js",
+  "main": "request_series.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
