@@ -39,7 +39,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
               className="w-full justify-start btn btn-ghost"
               onClick={() => onSelect("movies")}
             >
-              🎥 İzleyip Puanladığım Filmler
+              Movies
             </button>
           </li>
           <li>
@@ -47,7 +47,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
               className="w-full justify-start btn btn-ghost"
               onClick={() => onSelect("series")}
             >
-              📺 İzleyip Puanladığım Diziler
+              Series
             </button>
           </li>
           <li>
@@ -55,7 +55,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
               className="w-full justify-start btn btn-ghost"
               onClick={() => onSelect("following")}
             >
-              👥 Takip Ettiklerim
+              Followings
             </button>
           </li>
           <li>
@@ -63,7 +63,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
               className="w-full justify-start btn btn-ghost"
               onClick={() => onSelect("followers")}
             >
-              🧍‍♂️ Beni Takip Edenler
+              Followers
             </button>
           </li>
           <li>
@@ -71,7 +71,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
               className="w-full justify-start btn btn-ghost"
               onClick={() => onSelect("settings")}
             >
-              ⚙️ Ayarlar
+              Settings
             </button>
           </li>
           <li>
@@ -79,7 +79,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
               className="w-full justify-start btn btn-ghost"
               onClick={() => onSelect("avatar")}
             >
-              🧩 Avatar
+              Avatar
             </button>
           </li>
         </ul>
