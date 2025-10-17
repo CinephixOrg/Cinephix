@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -23,9 +24,15 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       await register(formData.username, formData.email, formData.password);
+      toast.success("Account created successfully! 🎉", {
+        style: { background: "#1a1a1a", color: "#fff" },
+        iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
+      });
       navigate("/home");
     } catch (err) {
-      alert("Registration failed!");
+      toast.error("Registration failed. Please try again.", {
+        style: { background: "#1a1a1a", color: "#fff" },
+      });
       console.error(err);
     }
   };
