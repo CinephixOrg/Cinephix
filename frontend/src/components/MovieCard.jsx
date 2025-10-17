@@ -6,6 +6,10 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 const MovieCard = ({ movie }) => {
   // Poster yolu yoksa veya bozuksa gösterilecek yer tutucu resim
+
+  // YENİ: Verinin yapısını görmek için konsola yazdır
+  // console.log("Gelen içerik verisi:", movie);
+
   const posterUrl = movie.poster_path 
     ? `${IMAGE_BASE_URL}${movie.poster_path}`
     : "https://placehold.co/500x750/1d232a/e0e0e0?text=Poster+Yok";
@@ -24,9 +28,9 @@ const MovieCard = ({ movie }) => {
           {movie.title || movie.name}
         </h2>
         <div className="card-actions justify-end">
-          {/* TODO: Bu linki daha sonra filmin detay sayfasına yönlendireceğiz */}
-          <Link to={`/movie/${movie._id}`} className="btn btn-primary btn-xs">
-            Detaylar
+          {/* DEĞİŞİKLİK BURADA: Link artık /content/movie/:id formatında dinamik */}
+          <Link to={`/content/movie/${movie._id}`} className="btn btn-primary btn-xs">
+            Details
           </Link>
         </div>
       </div>
@@ -35,3 +39,4 @@ const MovieCard = ({ movie }) => {
 };
 
 export default MovieCard;
+

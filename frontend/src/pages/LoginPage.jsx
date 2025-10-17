@@ -1,6 +1,8 @@
 import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,12 +14,34 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
+
+      toast.success("Successfully logged in! ✅", {
+        style: { background: "#1a1a1a", color: "#fff" },
+        iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
+      });
+
       navigate("/home");
     } catch (err) {
-      alert("Login failed! Check your credentials.");
-      console.error(err);
+      toast.error("Invalid email or password!", {
+        style: { background: "#1a1a1a", color: "#fff" },
+      });
     }
   };
+
+  const handleAdminLogin = async () => {
+    try {
+      await login('admin@email.com', 'admin123');
+      toast.success("Logged in as Admin! ☠️", {
+        style: { background: "#1a1a1a", color: "#fff" },
+        iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
+      });
+      navigate("/home");
+    } catch (error) {
+      toast.error("Admin login failed!");
+      console.error(error);
+    }
+  };
+
 
   return (
     <div
@@ -51,6 +75,13 @@ export default function LoginPage() {
             />
             <button className="btn btn-primary w-full">Login</button>
           </form>
+
+          <button
+            onClick={handleAdminLogin}
+            className="btn btn-outline btn-warning mt-2"
+          >
+            I'm an Admin
+          </button>
 
           <p className="mt-6 text-sm">
             Don’t have an account?{" "}
