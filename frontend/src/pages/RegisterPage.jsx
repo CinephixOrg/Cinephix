@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
@@ -34,14 +33,15 @@ export default function RegisterPage() {
     };
 
     return (
-        <Wrapper>
-            <RegisterCard>
-                <Logo>Cinephix 🎬</Logo>
-                <Title>Create Account</Title>
-                <Subtitle>Join the cinephile community!</Subtitle>
+        <div className="flex items-center justify-center min-h-screen bg-[radial-gradient(circle_at_top,_#eef2f3,_#8e9eab)]">
+            <div className="bg-white p-10 sm:p-12 rounded-2xl w-full max-w-md shadow-lg text-center">
+                <h1 className="text-2xl mb-4 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-400 font-bold">Cinephix 🎬</h1>
+                <h2 className="text-xl mb-1 text-gray-900">Create Account</h2>
+                <p className="text-gray-500 text-sm mb-8">Join the cinephile community!</p>
 
-                <Form onSubmit={handleSubmit}>
-                    <Input
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <input
+                        className="px-4 py-3 rounded-lg border border-gray-300 text-base outline-none focus:border-blue-500"
                         type="text"
                         name="username"
                         placeholder="Username"
@@ -49,7 +49,8 @@ export default function RegisterPage() {
                         onChange={handleChange}
                         required
                     />
-                    <Input
+                    <input
+                        className="px-4 py-3 rounded-lg border border-gray-300 text-base outline-none focus:border-blue-500"
                         type="email"
                         name="email"
                         placeholder="Email"
@@ -57,7 +58,8 @@ export default function RegisterPage() {
                         onChange={handleChange}
                         required
                     />
-                    <Input
+                    <input
+                        className="px-4 py-3 rounded-lg border border-gray-300 text-base outline-none focus:border-blue-500"
                         type="password"
                         name="password"
                         placeholder="Password"
@@ -65,95 +67,19 @@ export default function RegisterPage() {
                         onChange={handleChange}
                         required
                     />
-                    <Button type="submit">Sign Up</Button>
-                </Form>
+                    <button
+                        type="submit"
+                        className="bg-gradient-to-r from-pink-500 to-yellow-400 text-white py-3 rounded-lg font-bold hover:opacity-90"
+                    >
+                        Sign Up
+                    </button>
+                </form>
 
-                <FooterText>
-                    Already have an account? <Link to="/login">Login</Link>
-                </FooterText>
-            </RegisterCard>
-        </Wrapper>
+                <p className="mt-6 text-sm text-gray-600">
+                    Already have an account? <Link to="/login" className="text-pink-500 font-semibold">Login</Link>
+                </p>
+            </div>
+        </div>
     );
 }
 
-const Wrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background: radial-gradient(circle at top, #eef2f3, #8e9eab);
-`;
-
-const RegisterCard = styled.div`
-  background-color: #fff;
-  padding: 3rem 2.5rem;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  text-align: center;
-`;
-
-const Logo = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(90deg, #ff6b6b, #feca57);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-const Title = styled.h2`
-  margin-bottom: 0.3rem;
-  color: #222;
-`;
-
-const Subtitle = styled.p`
-  color: #777;
-  font-size: 0.9rem;
-  margin-bottom: 2rem;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const Input = styled.input`
-  padding: 0.8rem 1rem;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  outline: none;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    border-color: #0077ff;
-  }
-`;
-
-const Button = styled.button`
-  background: linear-gradient(90deg, #ff6b6b, #feca57);
-  border: none;
-  color: white;
-  padding: 0.9rem;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const FooterText = styled.p`
-  margin-top: 1.5rem;
-  font-size: 0.9rem;
-  color: #555;
-
-  a {
-    color: #ff6b6b;
-    font-weight: 600;
-  }
-`;
