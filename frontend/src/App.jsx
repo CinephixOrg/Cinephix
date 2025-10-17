@@ -1,55 +1,50 @@
 // App.jsx
 import React from "react";
-import styled, { createGlobalStyle } from "styled-components";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, NavLink } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 
 // 🌍 Global stiller
-const GlobalStyle = createGlobalStyle`
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: "Poppins", sans-serif;
-    background-color: #f7f8fa;
-    color: #333;
-  }
-
-  a {
-    text-decoration: none;
-    color: #0077ff;
-  }
-
-  a:hover {
-    text-decoration: underline;
-  }
-`;
+// Tailwind will handle base/reset and fonts via its base styles and your global CSS.
 
 
 
 // 🧱 Navigation (geçici)
-const Nav = styled.nav`
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  padding: 1rem;
-  background: radial-gradient(circle at top, #eef2f3, #8e9eab);
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
-`;
+const Nav = ({ children }) => (
+  <nav className="flex gap-4 justify-center p-4 bg-[radial-gradient(circle_at_top,_#eef2f3,_#8e9eab)] shadow-sm">
+    {children}
+  </nav>
+);
 
 export default function App() {
   return (
     <>
-      <GlobalStyle />
       <Nav>
-        <Link to="/">Home</Link>
-        <Link to="/login">Login</Link>
-        <Link to="/register">Register</Link>
+        <div role="tablist" className="tabs tabs-boxed">
+          <NavLink
+            to="/"
+            end
+            role="tab"
+            className={({ isActive }) => (isActive ? "tab tab-active" : "tab")}
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/login"
+            role="tab"
+            className={({ isActive }) => (isActive ? "tab tab-active" : "tab")}
+          >
+            Login
+          </NavLink>
+          <NavLink
+            to="/register"
+            role="tab"
+            className={({ isActive }) => (isActive ? "tab tab-active" : "tab")}
+          >
+            Register
+          </NavLink>
+        </div>
       </Nav>
 
       <Routes>

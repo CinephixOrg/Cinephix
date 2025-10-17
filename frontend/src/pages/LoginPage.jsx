@@ -1,6 +1,5 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from "react";
-import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
@@ -26,116 +25,35 @@ export default function LoginPage() {
     };
 
     return (
-        <Wrapper>
-            <LoginCard>
-                <Logo>Cinephix 🎬</Logo>
-                <Title>Welcome Back</Title>
-                <Subtitle>Find your movie match again!</Subtitle>
+        <div className="flex items-center justify-center min-h-screen bg-[radial-gradient(circle_at_top,_#eef2f3,_#8e9eab)]">
+            <div className="bg-white p-10 sm:p-12 rounded-2xl w-full max-w-md shadow-lg text-center">
+                <h1 className="text-2xl mb-4 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-400 font-bold">Cinephix 🎬</h1>
+                <h2 className="text-xl mb-1 text-gray-900">Welcome Back</h2>
+                <p className="text-gray-500 text-sm mb-8">Find your movie match again!</p>
 
-                <Form onSubmit={handleSubmit}>
-                    <Input
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <input
+                        className="px-4 py-3 rounded-lg border border-gray-300 text-base outline-none focus:border-blue-500"
                         type="email"
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
-                    <Input
+                    <input
+                        className="px-4 py-3 rounded-lg border border-gray-300 text-base outline-none focus:border-blue-500"
                         type="password"
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    <Button type="submit">Login</Button>
-                </Form>
+                    <button className="btn btn-primary">Login</button>
+                </form>
 
-                <FooterText>
-                    Don’t have an account? <Link to="/register">Sign up</Link>
-                </FooterText>
-            </LoginCard>
-        </Wrapper>
+                <p className="mt-6 text-sm text-gray-600">Don’t have an account? <Link to="/register" className="text-pink-500 font-semibold">Sign up</Link></p>
+            </div>
+        </div>
     );
 }
 
-const Wrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background: radial-gradient(circle at top, #eef2f3, #8e9eab);
-`;
-
-const LoginCard = styled.div`
-  background-color: #fff;
-  padding: 3rem 2.5rem;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  text-align: center;
-`;
-
-const Logo = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(90deg, #ff6b6b, #feca57);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-const Title = styled.h2`
-  margin-bottom: 0.3rem;
-  color: #222;
-`;
-
-const Subtitle = styled.p`
-  color: #777;
-  font-size: 0.9rem;
-  margin-bottom: 2rem;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const Input = styled.input`
-  padding: 0.8rem 1rem;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  outline: none;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    border-color: #0077ff;
-  }
-`;
-
-const Button = styled.button`
-  background: linear-gradient(90deg, #ff6b6b, #feca57);
-  border: none;
-  color: white;
-  padding: 0.9rem;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const FooterText = styled.p`
-  margin-top: 1.5rem;
-  font-size: 0.9rem;
-  color: #555;
-
-  a {
-    color: #ff6b6b;
-    font-weight: 600;
-  }
-`;
