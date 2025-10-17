@@ -1,58 +1,67 @@
-// App.jsx
 import React from "react";
 import { Routes, Route, NavLink } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 
-// 🌍 Global stiller
-// Tailwind will handle base/reset and fonts via its base styles and your global CSS.
-
-
-
-// 🧱 Navigation (geçici)
+// 🧭 Tema uyumlu navigation bar
 const Nav = ({ children }) => (
-  <nav className="flex gap-4 justify-center p-4 bg-[radial-gradient(circle_at_top,_#eef2f3,_#8e9eab)] shadow-sm">
-    {children}
+  <nav className="flex justify-center bg-base-200 shadow-md p-4">
+    <div role="tablist" className="tabs tabs-boxed bg-base-100">
+      {children}
+    </div>
   </nav>
 );
 
 export default function App() {
   return (
-    <>
+    <div data-theme="forest" className="min-h-screen bg-base-200 text-base-content">
       <Nav>
-        <div role="tablist" className="tabs tabs-boxed">
-          <NavLink
-            to="/"
-            end
-            role="tab"
-            className={({ isActive }) => (isActive ? "tab tab-active" : "tab")}
-          >
-            Home
-          </NavLink>
-          <NavLink
-            to="/login"
-            role="tab"
-            className={({ isActive }) => (isActive ? "tab tab-active" : "tab")}
-          >
-            Login
-          </NavLink>
-          <NavLink
-            to="/register"
-            role="tab"
-            className={({ isActive }) => (isActive ? "tab tab-active" : "tab")}
-          >
-            Register
-          </NavLink>
-        </div>
+        <NavLink
+          to="/"
+          end
+          role="tab"
+          className={({ isActive }) =>
+            isActive ? "tab tab-active text-primary" : "tab"
+          }
+        >
+          Home
+        </NavLink>
+        <NavLink
+          to="/login"
+          role="tab"
+          className={({ isActive }) =>
+            isActive ? "tab tab-active text-primary" : "tab"
+          }
+        >
+          Login
+        </NavLink>
+        <NavLink
+          to="/register"
+          role="tab"
+          className={({ isActive }) =>
+            isActive ? "tab tab-active text-primary" : "tab"
+          }
+        >
+          Register
+        </NavLink>
       </Nav>
 
-      <Routes>
-        <Route path="/" element={<h1>🎬 Cinephix'e Hoş Geldin!</h1>} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/home" element={<HomePage />} />
-      </Routes>
-    </>
+      <main className="flex flex-col items-center justify-center p-8">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <h1 className="text-3xl font-bold text-primary">
+                🎬 Welcome to Cinephix!
+              </h1>
+            }
+          />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/home" element={<HomePage />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
