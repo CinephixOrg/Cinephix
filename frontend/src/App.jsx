@@ -1,16 +1,13 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import {
-  BrowserRouter as Router,
   Routes,
   Route,
   NavLink,
   Navigate,
-  useNavigate
+  useNavigate,
 } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 
-
-// Context ve Sayfaları import edelim
 import { AuthContext } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
@@ -19,7 +16,8 @@ import WelcomePage from "./pages/WelcomePage.jsx";
 import MoviesPage from "./pages/MoviesPage.jsx";
 import SeriesPage from "./pages/SeriesPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
-import ContentDetailPage from "./pages/ContentDetailPage.jsx"; // YENİ: Detay sayfasını import ettik
+import ContentDetailPage from "./pages/ContentDetailPage.jsx";
+import ProfileSidebar from "./components/ProfileSidebar.jsx"; // ← EKLENDİ
 
 // 1. GİRİŞ YAPMAMIŞ KULLANICI İÇİN NAVİGASYON
 const GuestNav = () => (
@@ -40,44 +38,70 @@ const GuestNav = () => (
 
 // 2. GİRİŞ YAPMIŞ KULLANICI İÇİN NAVİGASYON
 const UserNav = ({ user, logout }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     toast.success("Successfully logged out! 👋", {
-      style: {
-        background: "#1a1a1a",
-        color: "#fff",
-        border: "1px solid #333",
-      },
-      iconTheme: {
-        primary: "#22c55e",
-        secondary: "#1a1a1a",
-      },
+      style: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" },
+      iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
     });
     navigate("/login");
   };
 
-  return (
-    <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-50">
-      <div className="flex-1">
-        <NavLink to="/home" className="btn btn-ghost text-xl">
-          🎬 Cinephix
-        </NavLink>
-        <ul className="menu menu-horizontal p-0">
-          <li><NavLink to="/home">Home</NavLink></li>
-          <li><NavLink to="/movies">Movies</NavLink></li>
-          <li><NavLink to="/series">Series</NavLink></li>
-        </ul>
-      </div>
+  const handleProfileClick = (e) => {
+    e.preventDefault();
+    setSidebarOpen(true);
+  };
 
-      <div className="flex-none gap-4 items-center">
-        <NavLink to="/profile" className="btn btn-ghost">Profile</NavLink>
-        <button onClick={handleLogout} className="btn btn-error btn-sm">
-          Log out
-        </button>
-      </div>
-    </nav>
+  const handleSelect = (section) => {
+    console.log("Selected:", section);
+    setSidebarOpen(false);
+  };
+
+  // Sidebar dışına tıklayınca kapat
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (sidebarOpen && !e.target.closest(".sidebar")) {
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [sidebarOpen]);
+
+  return (
+    <>
+      <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-40">
+        <div className="flex-1">
+          <NavLink to="/home" className="btn btn-ghost text-xl">
+            🎬 Cinephix
+          </NavLink>
+          <ul className="menu menu-horizontal p-0">
+            <li><NavLink to="/home">Home</NavLink></li>
+            <li><NavLink to="/movies">Movies</NavLink></li>
+            <li><NavLink to="/series">Series</NavLink></li>
+          </ul>
+        </div>
+
+        <div className="flex-none gap-4 items-center">
+          <button onClick={handleProfileClick} className="btn btn-ghost">
+            Profile
+          </button>
+          <button onClick={handleLogout} className="btn btn-error btn-sm">
+            Log out
+          </button>
+        </div>
+      </nav>
+
+      <ProfileSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        user={user}
+        onSelect={handleSelect}
+      />
+    </>
   );
 };
 
@@ -100,28 +124,22 @@ export default function App() {
 
       <main>
         <Routes>
-          {/* Genel Rotalar */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Koşullu Ana Rota */}
           <Route
             path="/"
             element={user ? <Navigate to="/home" /> : <WelcomePage />}
           />
 
-          {/* Korumalı Rotalar */}
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />
           <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-
-          {/* YENİ: Dinamik İçerik Detay Rotası */}
           <Route
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
-
         </Routes>
       </main>
 
