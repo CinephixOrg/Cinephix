@@ -1,14 +1,19 @@
-import axios from "axios";
+import axios from 'axios';
 
+// Backend'imizin temel adresini burada tanımlıyoruz.
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // backend adresin burada
+  baseURL: 'http://localhost:5000/api' 
 });
 
-// Eğer token varsa her isteğe otomatik ekle
+// Bu kısım, bir kullanıcı giriş yaptığında token'ı otomatik olarak
+// tüm isteklere eklememizi sağlayacak.
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
+  const user = localStorage.getItem('user');
+  if (user) {
+    const token = JSON.parse(user).token;
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return req;
 });
