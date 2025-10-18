@@ -7,7 +7,16 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        // 'sans' ana font ailemiz olarak kalıyor (paragraflar, butonlar vb. için)
+        sans: ['Playfair Display'], 
+        
+        // YENİ FONT AİLESİ: 'display' adını veriyoruz.
+        // Bu, başlıklar ve logolar gibi özel yerlerde kullanacağımız font olacak.
+        display: ['Oswald'],
+      },
+    },
   },
   plugins: [daisyui],
   daisyui: {
