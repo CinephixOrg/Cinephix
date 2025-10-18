@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global font ayarları */
+@layer base {
+  /* Tüm body'de varsayılan olarak Poppins (sans) kullan */
+  body {
+    @apply font-sans;
+  }
+
+  /* Başlıklar için Niagara Solid (display) fontu kullanmak istersen */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
