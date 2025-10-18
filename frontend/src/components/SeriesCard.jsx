@@ -8,7 +8,10 @@ const SeriesCard = ({ series }) => {
   // Poster yolu yoksa veya bozuksa gösterilecek yer tutucu resim
   const posterUrl = series.poster_path 
     ? `${IMAGE_BASE_URL}${series.poster_path}`
-    : "https://placehold.co/500x750/1d232a/e0e0e0?text=Poster+Yok";
+    : "https://placehold.co/500x750/1d232a/e0e0e0?text=Poster+Not Found";
+
+  // İYİLEŞTİRME: Diziler için 'name' alanını öncelikli kontrol ediyoruz.
+  const displayName = series.name || series.title; 
 
   return (
     // DaisyUI card component'ini kullanıyoruz
@@ -16,17 +19,17 @@ const SeriesCard = ({ series }) => {
       <figure>
         <img
           src={posterUrl}
-          alt={`${series.title || series.name} poster`}
+          alt={`${displayName} poster`} // displayName değişkeni kullanıldı
         />
       </figure>
       <div className="card-body justify-end p-4">
         <h2 className="card-title text-sm text-white drop-shadow-md">
-          {series.title || series.name}
+          {displayName} {/* displayName değişkeni kullanıldı */}
         </h2>
         <div className="card-actions justify-end">
-          {/* DEĞİŞİKLİK BURADA: Link artık /content/series/:id formatında dinamik */}
+          {/* Link /content/series/:id formatında olmalı, ki zaten öyle */}
           <Link to={`/content/series/${series._id}`} className="btn btn-primary btn-xs">
-            Detaylar
+            Details
           </Link>
         </div>
       </div>
@@ -35,4 +38,3 @@ const SeriesCard = ({ series }) => {
 };
 
 export default SeriesCard;
-

@@ -12,7 +12,7 @@ const MovieCard = ({ movie }) => {
 
   const posterUrl = movie.poster_path 
     ? `${IMAGE_BASE_URL}${movie.poster_path}`
-    : "https://placehold.co/500x750/1d232a/e0e0e0?text=Poster+Yok";
+    : "https://placehold.co/500x750/1d232a/e0e0e0?text=Poster+Not Found";
 
   return (
     // DaisyUI card component'ini kullanıyoruz
