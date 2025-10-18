@@ -14,13 +14,13 @@ import { createMovieModel } from "./models/Movie.js";
 import { createSeriesModel } from "./models/Series.js";
 import moviesRouteFactory from "./routes/movieRoute.js";
 import seriesRouteFactory from "./routes/seriesRoute.js";
-import userRoutes from "./routes/userRoute.js";
+import userRoute from "./routes/userRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
 
 // User rotalarını en başta tanımlıyoruz
-app.use("/api/users", userRoutes);
+app.use("/api/users", userRoute);
 
 // Bağlantının açılmasını bekleyen yardımcı fonksiyon
 function waitOpen(conn) {

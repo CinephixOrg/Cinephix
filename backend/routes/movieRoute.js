@@ -5,25 +5,68 @@ export default async function(movieModel) {
   // GET /api/movies?year=2020&genre=Drama&title=star&page=1&limit=20
  router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 50, year, genre, title } = req.query;
-    const filter = {};
-
-    // --- DÜZELTME BURADA ---
-    // Eğer bir 'year' parametresi geldiyse, 'release_date' alanında
-    // bu yılla başlayan kayıtları bulmak için bir regular expression (regex) kullan.
-    if (year) {
-      filter.release_date = { $regex: `^${year}` };
-    }
-    
-    if (genre) filter.genre = { $regex: genre, $options: "i" }; // Bu satırlar doğru varsayılıyor
-    if (title) filter.title = { $regex: title, $options: "i" };
-
+    const { page = 1, limit = 18, year, genre, title } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
-    const docs = await movieModel.find(filter).skip(skip).limit(Number(limit));
-    const total = await movieModel.countDocuments(filter);
-    
+    const pipeline = [];
+
+    // 🔹 Atlas Search fuzzy query
+    if (title) {
+      pipeline.push({
+        $search: {
+          index: "default", // Atlas'ta oluşturduğun index ismini yaz
+          compound: {
+            should: [
+              {
+                autocomplete: {
+                  query: title,
+                  path: "title",
+                  fuzzy: {
+                    maxEdits: 2, // 2 harf hatasına kadar izin verir
+                    prefixLength: 1
+                  }
+                }
+              },
+              {
+                text: {
+                  query: title,
+                  path: "title",
+                  fuzzy: {
+                    maxEdits: 2
+                  }
+                }
+              }
+            ]
+          }
+        }
+      });
+    }
+
+    // Diğer filtreleri uygula
+    if (year) {
+      pipeline.push({
+        $match: { release_date: { $regex: `^${year}` } }
+      });
+    }
+    if (genre) {
+      pipeline.push({
+        $match: { genre: { $regex: genre, $options: "i" } }
+      });
+    }
+
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: Number(limit) });
+
+    const docs = await movieModel.aggregate(pipeline);
+
+    // toplam doküman sayısı
+    const countPipeline = pipeline.filter(p => !('$skip' in p || '$limit' in p));
+    countPipeline.push({ $count: "total" });
+    const countResult = await movieModel.aggregate(countPipeline);
+    const total = countResult[0]?.total || docs.length;
+
     res.json({ total, page: Number(page), limit: Number(limit), results: docs });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: e.message });
   }
 });
