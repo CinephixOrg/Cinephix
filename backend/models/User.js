@@ -3,6 +3,13 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
+const WatchItemSchema = new mongoose.Schema({
+  itemId: { type: mongoose.Schema.Types.ObjectId, required: true }, // veya eğer id'ler string ise String
+  itemType: { type: String, enum: ["movie", "series"], required: true },
+  addedAt: { type: Date, default: Date.now },
+});
+
+
 const userSchema = new Schema({
   username: {
     type: String,
@@ -20,7 +27,8 @@ const userSchema = new Schema({
     type: String,
     required: [true, 'Parola zorunludur.'],
     minlength: 6 // Minimum parola uzunluğu
-  }
+  },
+  watchlist: { type: [WatchItemSchema], default: [] }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

@@ -13,7 +13,8 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      const { data } = await API.post("/users/login", { email, password });
+      localStorage.setItem("token", data.token); // 🔹 token’ı localStorage’a kaydet
 
       toast.success("Successfully logged in! ✅", {
         style: { background: "#1a1a1a", color: "#fff" },
