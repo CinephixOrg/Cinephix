@@ -18,6 +18,7 @@ import SeriesPage from "./pages/SeriesPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ContentDetailPage from "./pages/ContentDetailPage.jsx";
 import ProfileSidebar from "./components/ProfileSidebar.jsx"; // ← EKLENDİ
+import ListPage from "./pages/ListPage.jsx";
 
 // 1. GİRİŞ YAPMAMIŞ KULLANICI İÇİN NAVİGASYON
 const GuestNav = () => (
@@ -82,6 +83,7 @@ const UserNav = ({ user, logout }) => {
             <li><NavLink to="/home">Home</NavLink></li>
             <li><NavLink to="/movies">Movies</NavLink></li>
             <li><NavLink to="/series">Series</NavLink></li>
+            <li><NavLink to="/list">List</NavLink></li>
           </ul>
         </div>
 
@@ -135,6 +137,7 @@ export default function App() {
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />
           <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
+          <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route
             path="/content/:type/:contentId"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import API from '../api/axios'; // Merkezi API yapılandırmamız
+import toast from 'react-hot-toast';
 
 // Yükleniyor... animasyonu için basit bir component
 const LoadingSpinner = () => (
@@ -10,46 +11,98 @@ const LoadingSpinner = () => (
 );
 
 export default function ContentDetailPage() {
-    // 1. URL'den :type ve :id parametrelerini alıyoruz
+    // URL'den :type ve :contentId parametrelerini alıyoruz
     const { type, contentId } = useParams();
 
+    // 🔹 useState düzeltildi
+    const [added, setAdded] = useState(false);
     const [content, setContent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [userWatchlist, setUserWatchlist] = useState([]);
 
+    const handleAddToList = async () => {
+        const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
+        try {
+            const response = await API.post("/users/me/watchlist", {
+                id: content._id,
+                type: contentType
+            });
+
+            setAdded(true);
+            setUserWatchlist(response.data); // güncel watchlist'i sakla
+            toast.success("Added to your list", {
+                style: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" },
+                iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
+            });
+        } catch (error) {
+            console.error(error.response?.data?.message || error.message);
+            toast.error(error.response?.data?.message || "An error occurred", {
+                style: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" },
+                iconTheme: { primary: "#b61616ff", secondary: "#1a1a1a" },
+            });
+        }
+    };
+
+    const handleRemoveFromList = async () => {
+        try {
+            await API.delete(`/users/me/watchlist/${content._id}`);
+            setAdded(false);
+            toast.success("Removed from your list", {
+                style: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" },
+                iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
+            });
+        } catch (err) {
+            console.error(err.response?.data?.message || err.message);
+            toast.error(error.response?.data?.message || "An error occurred", {
+                style: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" },
+                iconTheme: { primary: "#b61616ff", secondary: "#1a1a1a" },
+            });
+        }
+    };
+
+
+    // 1️⃣ Sayfa açılınca içerik ve kullanıcı watchlistini çek
     useEffect(() => {
-        const fetchContent = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                // 2. Gelen 'type' bilgisine göre doğru API endpoint'ini oluşturuyoruz
-                // örn: /movies/:id veya /series/:id
-                // 'type' movie ise 'movies', değilse (series ise) 'series' endpoint'ini kullan
+
+                // Content çek
                 const endpoint = type === 'movie' ? `/movies/${contentId}` : `/series/${contentId}`;
-                const res = await API.get(endpoint);
-                setContent(res.data);
+                const contentRes = await API.get(endpoint);
+                setContent(contentRes.data);
+
+                // Kullanıcı verisi ve watchlist
+                const userRes = await API.get("/users/me"); // token ile auth gerekli
+                setUserWatchlist(userRes.data.watchlist);
+
+                // 2️⃣ Eğer içerik watchlist'te varsa added = true
+                const exists = userRes.data.watchlist.find(
+                    item => item.itemId === contentRes.data._id
+                );
+                setAdded(!!exists);
+
             } catch (err) {
-                setError("Content not found.");
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchContent();
-    }, [contentId, type]); // id veya type değiştiğinde yeniden veri çek
+        fetchData();
+    }, [contentId, type]);
 
     if (loading) return <LoadingSpinner />;
     if (error) return <div className="alert alert-error m-4">{error}</div>;
     if (!content) return null;
 
-    // 3. Veriyi Göster: Koşullu render'lama ile film/dizi farklarını yönetiyoruz
     const title = content.title || content.name;
     const releaseDate = content.release_date || content.first_air_date;
     const posterUrl = `https://image.tmdb.org/t/p/w500${content.poster_path}`;
     const backdropUrl = content.backdrop_path ? `https://image.tmdb.org/t/p/w1280${content.backdrop_path}` : '';
 
     return (
-        // Arkaplan resmi olarak filmin/dizinin kendi görselini kullanıyoruz
         <div className="hero min-h-screen bg-base-200" style={{ backgroundImage: `url(${backdropUrl})` }}>
             <div className="hero-overlay bg-opacity-80 bg-base-300"></div>
             <div className="hero-content flex-col lg:flex-row text-neutral-content animate-fade-in">
@@ -58,7 +111,6 @@ export default function ContentDetailPage() {
                     <h1 className="text-4xl md:text-5xl font-bold">{title}</h1>
                     <p className="py-2 text-lg">{releaseDate}</p>
 
-                    {/* Sadece diziler için gösterilecek ekstra bilgi */}
                     {type === 'series' && content.number_of_seasons && (
                         <div className="badge badge-secondary mr-2">
                             {content.number_of_seasons} Sezon
@@ -67,11 +119,23 @@ export default function ContentDetailPage() {
 
                     <p className="py-6">{content.overview}</p>
 
-                    {/* TODO: Puanlama ve listeye ekleme butonları */}
-                    <button className="btn btn-primary">Add to list</button>
+                    {added ? (
+                        <div className="flex gap-2">
+                            <button className="btn btn-success" disabled>
+                                Added
+                            </button>
+                            <button className="btn btn-error" onClick={handleRemoveFromList}>
+                                Remove from List
+                            </button>
+                        </div>
+                    ) : (
+                        <button className="btn btn-primary" onClick={handleAddToList}>
+                            Add to List
+                        </button>
+                    )}
+
                 </div>
             </div>
         </div>
     );
 }
-
