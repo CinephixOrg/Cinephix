@@ -5,6 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 // import axios from "axios"; // 1. BU SATIRA İHTİYACIMIZ YOK, silebilirsiniz.
+import logo from "../assets/cinephix_logo.svg";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -19,7 +21,7 @@ export default function LoginPage() {
       // API isteğini, token kaydetmeyi ve yönlendirmeyi
       // AuthContext'teki 'login' fonksiyonuna bırakıyoruz.
       // Tıpkı admin girişinde olduğu gibi.
-      await login(email, password); 
+      await login(email, password);
 
       toast.success("Successfully logged in! ✅", {
         style: { background: "#1a1a1a", color: "#fff" },
@@ -60,7 +62,10 @@ export default function LoginPage() {
     >
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
-          <h1 className="text-3xl font-bold text-primary">Cinephix 🎬</h1>
+          <h1 className="text-3xl font-bold text-primary flex items-center gap-2">            
+            <span>Cinephix</span>
+            {/* <img src={logo} alt="Cinephix Logo" className="w-8 h-8" /> */}
+          </h1>
           <h2 className="text-lg text-base-content mt-2">Welcome Back</h2>
           <p className="text-sm text-base-content/70 mb-6">
             Find your movie match again!
