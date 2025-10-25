@@ -13,6 +13,7 @@ import {
   getMyFollowing,
   getMyFollowers,
   searchUsers,
+  updateFavorites
   // --- BİTİŞ ---
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js"; // Bu sizde zaten vardı
@@ -69,19 +70,24 @@ router.delete("/me/watchlist/:itemId", authMiddleware, async (req, res) => {
   }
 });
 
-// Kullanıcının kendi bilgilerini ve watchlistini getir
+// backend/routes/user.js
+
+// ... (diğer rotalarınız) ...
+
+// KULLANICININ KENDİ BİLGİLERİNİ GETİRME ROTASI (ESKİ HALİNE DÖNDÜ)
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const user = req.user; // authMiddleware ile req.user hazır
-    res.json(user); // watchlist dahil tüm kullanıcı verisi
+    // authMiddleware'den gelen req.user'ı (parolası hariç) döndür.
+    // Bu, populate denemez ve çökmez.
+    // Not: Bu, req.user'ın favori ID listelerini içermesini sağlar.
+    res.json(req.user); 
   } catch (error) {
     res.status(500).json({ message: "Sunucu hatası", error: error.message });
   }
 });
-// --- MEVCUT ROTALARIN BİTİŞİ ---
+// --- GÜNCELLEME BİTTİ ---
 
-// --- 2. DEĞİŞİKLİK: YENİ TAKİP VE BİLDİRİM ROTALARI ---
-// (Sizin authMiddleware'inizi kullanarak)
+// ... (diğer rotalarınız: /me/watchlist, /:id/follow vb.) ...
 
 // Bir kullanıcıyı takip et / takipten çık
 // :id -> Eylemin yapılacağı (takip edilecek/çıkılacak) kullanıcının ID'si
@@ -96,6 +102,9 @@ router.get("/me/followers", authMiddleware, getMyFollowers);
 // Bildirim rotası
 // (Bu, /api/users/notifications adresini oluşturur)
 router.get("/notifications", authMiddleware, getNotifications);
+
+// 3. YENİ FAVORİ GÜNCELLEME ROTASINI EKLEYİN
+router.put("/me/favorites", authMiddleware, updateFavorites);
 
 // --- 3. YENİ ARAMA ROTASI ---
 // (NetworkPage.jsx bu ikisini kullanacak)
