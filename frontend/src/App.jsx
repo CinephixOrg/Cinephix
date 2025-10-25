@@ -18,6 +18,9 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import ContentDetailPage from "./pages/ContentDetailPage.jsx";
 import ProfileMenu from "./components/ProfileMenu.jsx";
 import ListPage from "./pages/ListPage.jsx";
+import logo from "./assets/cinephix_logo.svg";
+import SplashScreen from "./pages/SplashScreen.jsx";
+
 
 // --- SİLİNDİ (1. Değişiklik) ---
 // Artık bu sayfalara ihtiyacımız yok.
@@ -33,9 +36,10 @@ import NetworkPage from "./pages/NetworkPage.jsx";
 const GuestNav = () => (
   <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-50">
     <div className="flex-1">
-      <NavLink to="/" className="btn btn-ghost text-xl">
-        🎬 Cinephix
+      <NavLink to="/home" className="btn btn-ghost normal-case text-xl flex items-center gap-2">
+        <img src={logo} alt="Cinephix Logo" className="w-8 h-8" />
       </NavLink>
+
     </div>
     <div className="flex-none">
       <ul className="menu menu-horizontal p-0">
@@ -65,7 +69,7 @@ const UserNav = ({ user, logout }) => {
       <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-40">
         <div className="flex-1">
           <NavLink to="/home" className="btn btn-ghost text-xl">
-            🎬 Cinephix
+            <img src={logo} alt="Cinephix Logo" className="w-8 h-8" />
           </NavLink>
           <ul className="menu menu-horizontal p-0">
             <li><NavLink to="/home">Home</NavLink></li>
@@ -77,6 +81,8 @@ const UserNav = ({ user, logout }) => {
           </ul>
         </div>
         <div className="flex-none gap-4 items-center">
+          {/* Kullanıcı adını göster */}
+          <span className="text-sm font-medium text-base-content">{user.username}</span>
           <ProfileMenu user={user} onLogout={handleLogout} />
         </div>
       </nav>
@@ -97,6 +103,25 @@ const ProtectedRoute = ({ children }) => {
 // 4. ANA UYGULAMA COMPONENT'İ
 export default function App() {
   const { user, logout } = useContext(AuthContext);
+  const [showSplash, setShowSplash] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Sadece ana route'a ilk girişte splash screen'i göster
+    if (window.location.pathname === "/") {
+      setShowSplash(true);
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+        navigate("/home"); // Ana route'tan sonra home'a yönlendir
+      }, 3500); // 3.5 saniye sonra splash ekranını gizle
+
+      return () => clearTimeout(timer);
+    }
+  }, [navigate]);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-base-200" data-theme="forest">
@@ -115,21 +140,21 @@ export default function App() {
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          
+
           {/* --- YENİ ROTAYI BURAYA EKLEYİN (ProtectedRoute ile sarılmış) --- */}
           <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
           {/* --- BİTİŞ --- */}
-          
+
           <Route
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
-          
+
           {/* --- SİLİNDİ (3. Değişiklik) --- */}
           {/* Artık bu route'lara ihtiyacımız yok. */}
           {<Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />}
           {<Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />}
-          
+
         </Routes>
       </main>
 
