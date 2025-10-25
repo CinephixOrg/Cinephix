@@ -5,63 +5,65 @@ import { useParams } from 'react-router-dom';
 import API from '../api/axios'; 
 import toast from 'react-hot-toast';
 
-// --- YENİ İMPORT ---
 import StarRating from '../components/StarRating';
+import FavoritesModal from '../components/FavoritesModal';
 
+// --- HATA BURADAYDI, DÜZELTİLDİ ---
+// Yükleniyor... animasyonu için basit bir component
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center min-h-screen">
         <span className="loading loading-spinner loading-lg text-primary"></span>
     </div>
 );
+// --- BİTİŞ ---
 
 export default function ContentDetailPage() {
     const { type, contentId } = useParams();
-
     const [content, setContent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [userWatchlist, setUserWatchlist] = useState([]);
-    const [added, setAdded] = useState(false); // Listede mi?
+    const [added, setAdded] = useState(false); // Watchlist'te mi?
+    const [rating, setRating] = useState(0); 
+    const [isRatingLoading, setIsRatingLoading] = useState(false);
 
     // --- YENİ STATE'LER ---
-    const [rating, setRating] = useState(0); // 0 = Puanlanmamış
-    const [isRatingLoading, setIsRatingLoading] = useState(false); // Puan kaydı yükleniyor mu?
-
-    // 1️⃣ Sayfa açılınca içerik, watchlist VE PUAN BİLGİSİNİ çek
+    const [isFavModalOpen, setIsFavModalOpen] = useState(false);
+    const [favoriteMovies, setFavoriteMovies] = useState([]);
+    const [favoriteSeries, setFavoriteSeries] = useState([]);
+    
+    // 1. Veri Çekme (useEffect)
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-
-                // 1. Content çek
                 const endpoint = type === 'movie' ? `/movies/${contentId}` : `/series/${contentId}`;
                 const contentRes = await API.get(endpoint);
                 const currentContentId = contentRes.data._id;
                 setContent(contentRes.data);
 
-                // 2. Kullanıcı verisi ve watchlist
+                // GÜNCELLEME: /users/me rotası artık favorileri de getiriyor
                 const userRes = await API.get("/users/me");
-                setUserWatchlist(userRes.data.watchlist);
-
-                // 3. İçerik watchlist'te var mı kontrol et
-                const exists = userRes.data.watchlist.find(
+                const userData = userRes.data;
+                
+                // Watchlist'i ayarla
+                const existsInWatchlist = userData.watchlist.find(
                     item => item.itemId === currentContentId
                 );
-                setAdded(!!exists);
+                setAdded(!!existsInWatchlist);
 
-                // 4. --- YENİ KISIM: KULLANICININ MEVCUT PUANINI ÇEK ---
+                // --- YENİ: Favori listelerini ayarla ---
+                setFavoriteMovies(userData.favoriteMovies || []);
+                setFavoriteSeries(userData.favoriteSeries || []);
+
+                // Mevcut Puanı Çek (Bu kod aynı kalır)
                 try {
                     const ratingRes = await API.get(`/ratings/me/${currentContentId}`);
-                    // Puanı varsa, state'i güncelle
                     setRating(ratingRes.data.value); 
                 } catch (ratingErr) {
                     if (ratingErr.response && ratingErr.response.status === 404) {
-                        setRating(0); // Puan vermemiş (hata değil)
-                    } else {
-                        console.error("Puan çekilirken hata:", ratingErr);
-                    }
+                        setRating(0); 
+                    } else { console.error("Puan çekilirken hata:", ratingErr); }
                 }
-                // --- BİTİŞ ---
 
             } catch (err) {
                 console.error(err);
@@ -74,18 +76,16 @@ export default function ContentDetailPage() {
         fetchData();
     }, [contentId, type]);
 
-    // --- YENİ FONKSİYON: Puan verildiğinde tetiklenir ---
+    // Puanlama Fonksiyonu (Değişiklik yok)
     const handleRatingChange = async (newValue) => {
         const currentContentId = content._id;
         const contentType = content.type || type;
-        const oldValue = rating; // Hata olursa geri almak için
+        const oldValue = rating; 
 
-        // 1. UI'ı anında güncelle
         setRating(newValue);
-        setIsRatingLoading(true); // "Kaydediliyor..." göstergesi için (isteğe bağlı)
+        setIsRatingLoading(true);
 
         try {
-            // 2. Backend'e puanı kaydet (yeni /ratings API'mizi kullan)
             await API.post("/ratings", {
                 contentId: currentContentId,
                 contentType: contentType,
@@ -95,14 +95,13 @@ export default function ContentDetailPage() {
         } catch (err) {
             console.error("Puan kaydetme hatası:", err);
             toast.error("Couldn't save rating.");
-            // 3. Hata olursa eski puana geri dön
             setRating(oldValue);
         } finally {
             setIsRatingLoading(false);
         }
     };
     
-    // (handleAddToList ve handleRemoveFromList fonksiyonları DEĞİŞMEDİ)
+    // Watchlist'e Ekleme (Değişiklik yok)
     const handleAddToList = async () => {
         const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
         try {
@@ -111,24 +110,52 @@ export default function ContentDetailPage() {
                 type: contentType
             });
             setAdded(true);
-            setUserWatchlist(response.data); 
-            toast.success("Added to your list", { /* ... stiller ... */ });
+            toast.success("Added to your list");
         } catch (error) {
             console.error(error.response?.data?.message || error.message);
-            toast.error(error.response?.data?.message || "An error occurred", { /* ... stiller ... */ });
+            toast.error(error.response?.data?.message || "An error occurred");
         }
     };
 
+    // Watchlist'ten Çıkarma (Değişiklik yok)
     const handleRemoveFromList = async () => {
         try {
             await API.delete(`/users/me/watchlist/${content._id}`);
             setAdded(false);
-            toast.success("Removed from your list", { /* ... stiller ... */ });
+            toast.success("Removed from your list");
         } catch (err) {
             console.error(err.response?.data?.message || err.message);
-            toast.error(error.response?.data?.message || "An error occurred", { /* ... stiller ... */ });
+            toast.error(error.response?.data?.message || "An error occurred");
         }
     };
+
+
+    // --- YENİ FONKSİYONLAR ---
+
+    // "Add to Favorites" butonuna basıldığında
+    const handleOpenFavModal = async () => {
+        // Kural 3: Favoriye eklerken, watchlist'te değilse, otomatik ekle
+        if (!added) {
+            // "Add to List" butonuna basılmış gibi davran
+            // Not: handleAddToList zaten setAdded(true) yapıyor
+            await handleAddToList(); 
+        }
+        setIsFavModalOpen(true); // Modalı aç
+    };
+
+    // Modal'daki "Save" butonuna basıldığında
+    const handleSaveFavorites = (updatedList) => {
+        // Modal'dan gelen güncel listeyi state'e kaydet
+        if (type === 'movie') {
+            setFavoriteMovies(updatedList);
+        } else {
+            setFavoriteSeries(updatedList);
+        }
+        toast.success("Favorites saved!");
+        setIsFavModalOpen(false); // Modalı kapat
+    };
+
+    // --- BİTİŞ ---
 
 
     if (loading) return <LoadingSpinner />;
@@ -140,8 +167,14 @@ export default function ContentDetailPage() {
     const posterUrl = `https://image.tmdb.org/t/p/w500${content.poster_path}`;
     const backdropUrl = content.backdrop_path ? `https://image.tmdb.org/t/p/w1280${content.backdrop_path}` : '';
     
-    // --- YENİ MANTIK: Puanlanmış mı? ---
     const isRated = rating > 0;
+    
+// --- YENİ KONTROL: Mevcut favori listesinde mi? ---
+    const currentFavList = type === 'movie' ? favoriteMovies : favoriteSeries;
+    
+    // DEĞİŞİKLİK: .find(item => item._id === ...) yerine .includes(...)
+    const isFavorite = currentFavList.includes(content._id);
+
 
     return (
         <div className="hero min-h-screen bg-base-200" style={{ backgroundImage: `url(${backdropUrl})` }}>
@@ -160,7 +193,7 @@ export default function ContentDetailPage() {
 
                     <p className="py-6">{content.overview}</p>
 
-                    {/* --- YENİ KISIM: YILDIZ PUANLAMA --- */}
+                    {/* Yıldız Puanlama (Değişiklik yok) */}
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold mb-2">Your Rating</h3>
                         <StarRating 
@@ -173,44 +206,67 @@ export default function ContentDetailPage() {
                             </span>
                         )}
                     </div>
-                    {/* --- BİTİŞ --- */}
+                    
+                    {/* --- GÜNCELLENMİŞ BUTON GRUBU --- */}
+                    <div className="flex flex-wrap gap-4 items-start">
+                        {/* 1. Watchlist Butonu */}
+                        {added ? (
+                            <div className="flex flex-col gap-2">
+                                <button className="btn btn-success" disabled>
+                                    ✓ Added to List
+                                </button>
+                                <button className="btn btn-error btn-sm" onClick={handleRemoveFromList}>
+                                    Remove
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col">
+                                <button 
+                                    className="btn btn-primary" 
+                                    onClick={handleAddToList}
+                                    disabled={!isRated} // Kural: Puanlanmadıysa kilitli
+                                >
+                                    Add to List
+                                </button>
+                                {!isRated && (
+                                    <p className="text-sm italic opacity-70 mt-2">
+                                        (Rate first to add)
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
-
-                    {/* --- GÜNCELLENMİŞ BUTON MANTIĞI --- */}
-                    {added ? (
-                        // Eğer listedeyse, Puanlamadan bağımsız olarak kaldırabilir
-                        <div className="flex gap-2">
-                            <button className="btn btn-success" disabled>
-                                ✓ Added to List
-                            </button>
-                            <button className="btn btn-error" onClick={handleRemoveFromList}>
-                                Remove from List
-                            </button>
-                        </div>
-                    ) : (
-                        // Eğer listede DEĞİLSE
-                        <div>
+                        {/* 2. Favorites Butonu */}
+                        <div className="flex flex-col">
                             <button 
-                                className="btn btn-primary" 
-                                onClick={handleAddToList}
-                                // Mantık: Puanlanmadıysa (isRated=false) butonu kilitle
-                                disabled={!isRated} 
+                                className={`btn ${isFavorite ? 'btn-warning' : 'btn-outline'}`}
+                                onClick={handleOpenFavModal}
+                                disabled={!isRated} // Kural: Puanlanmadıysa kilitli
                             >
-                                Add to List
+                                {isFavorite ? '★ Manage Favorites' : 'Add to Favorites'}
                             </button>
-                            
-                            {/* Puanlanmadıysa kullanıcıyı uyar */}
                             {!isRated && (
                                 <p className="text-sm italic opacity-70 mt-2">
-                                    You must rate this {type} to add it to your list.
+                                    (Rate first to favorite)
                                 </p>
                             )}
                         </div>
-                    )}
+                    </div>
                     {/* --- BİTİŞ --- */}
 
                 </div>
             </div>
+            
+            {/* --- YENİ MODAL RENDER --- */}
+            {isFavModalOpen && (
+                <FavoritesModal
+                    type={type}
+                    initialList={type === 'movie' ? favoriteMovies : favoriteSeries}
+                    newItem={content}
+                    onClose={() => setIsFavModalOpen(false)}
+                    onSaveSuccess={handleSaveFavorites}
+                />
+            )}
         </div>
     );
 }

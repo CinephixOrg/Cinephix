@@ -291,4 +291,39 @@ export const searchUsers = async (req, res) => {
     res.status(500).json({ message: "Sunucu hatası", error: error.message });
   }
 };
-// --- BİTİŞ ---
+
+// backend/controllers/userController.js
+
+// ... (searchUsers fonksiyonunun bittiği yer)
+
+// @desc    Kullanıcının favori listesini (film veya dizi) günceller
+// @route   PUT /api/users/me/favorites
+// @access  Private
+export const updateFavorites = async (req, res) => {
+  const { type, list } = req.body; // type: 'movie' or 'series', list: string[] of _ids
+  const userId = req.user.id;
+
+  if (!type || !list) {
+    return res.status(400).json({ message: "Tip ve liste gerekli." });
+  }
+  if (list.length > 5) {
+    return res.status(400).json({ message: "Favori listesi en fazla 5 öğe içerebilir." });
+  }
+
+  try {
+    const fieldToUpdate = type === 'movie' ? 'favoriteMovies' : 'favoriteSeries';
+    
+    // 1. Kullanıcının listesini güncelle
+    await User.findByIdAndUpdate(
+      userId,
+      { [fieldToUpdate]: list }, // Listeyi doğrudan gelen yeni listeyle değiştir
+      { new: true, runValidators: true }
+    );
+    
+    // 2. GÜNCELLEME: Populate etme. Sadece güncel ID listesini geri döndür.
+    res.status(200).json(list);
+
+  } catch (error) {
+    res.status(500).json({ message: "Favoriler güncellenemedi.", error: error.message });
+  }
+};

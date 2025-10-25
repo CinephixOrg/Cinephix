@@ -39,7 +39,15 @@ const userSchema = new Schema({
   following: [{
     type: Schema.Types.ObjectId,
     ref: 'User' // 'User' modeline referans veriyoruz
-  }]
+  }],
+  favoriteMovies: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Movie' // Sizin 'Movie' modelinizin adına referans
+  }],
+  favoriteSeries: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Series' // Sizin 'Series' modelinizin adına referans
+  }]
   // --- BİTİŞ ---
 
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
