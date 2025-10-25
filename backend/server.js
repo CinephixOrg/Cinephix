@@ -15,13 +15,15 @@ import { createSeriesModel } from "./models/Series.js";
 import moviesRouteFactory from "./routes/movieRoute.js";
 import seriesRouteFactory from "./routes/seriesRoute.js";
 import userRoute from "./routes/userRoute.js";
+import userRoutes from './models/User.js';
+import ratingRoutes from './routes/rating.js'; // <-- YENİ ROTAYI İMPORT ET
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
 
 // User rotalarını en başta tanımlıyoruz
 app.use("/api/users", userRoute);
-
+app.use('/api/ratings', ratingRoutes); // <-- YENİ ROTAYI EKLE
 // Bağlantının açılmasını bekleyen yardımcı fonksiyon
 function waitOpen(conn) {
   return new Promise((resolve, reject) => {

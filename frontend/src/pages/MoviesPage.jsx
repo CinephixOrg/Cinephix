@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios.js'; // Your central API configuration
 import MovieCard from '../components/MovieCard.jsx'; // Your movie card component
+import SearchBar from '../components/SearchBar.jsx';
 
 // Yükleniyor... animasyonu
 const LoadingSpinner = () => (
@@ -82,20 +83,19 @@ export default function MoviesPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 md:p-8 animate-fade-in">
-      {/* Arama Çubuğu */}
-      <div className="mb-8 p-6 bg-base-100 rounded-lg shadow-lg">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Search for a movie..."
-            className="input input-bordered w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? <span className="loading loading-spinner loading-xs"></span> : 'Search'}
-          </button>
-        </form>
+      {/* Arama Çubuğu (SearchBar bileşeni) */}
+      <div className="mb-8 p-6 bg-base-100 rounded-lg shadow-lg flex justify-between items-start">
+        <SearchBar
+          initialCategory="movies"
+          onSearch={(q, category) => {
+            // sadece movies kategori için burada kullanılacak
+            if (category !== 'movies') return;
+            const newFilters = { title: q, year: null };
+            setActiveFilters(newFilters);
+            setCurrentPage(1);
+            fetchMovies(1, newFilters);
+          }}
+        />
       </div>
 
       {/* Film Grid'i ve Sonuçlar */}
