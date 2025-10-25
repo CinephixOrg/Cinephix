@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import API from '../api/axios.js'; // Your central API configuration
-import MovieCard from '../components/MovieCard.jsx'; // Your movie card component
-import SearchBar from '../components/SearchBar.jsx';
+import { useSearchParams } from 'react-router-dom';
+import API from '../api/axios.js';
+import MovieCard from '../components/MovieCard.jsx';
+import MovieSearchBar from '../components/MovieSearchBar.jsx';
 
 // Yükleniyor... animasyonu
 const LoadingSpinner = () => (
@@ -14,96 +15,77 @@ export default function MoviesPage() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Arama ve filtreleme durumlarını tek bir state'de yönetelim
-  // Bu, neye göre sayfalama yapacağımızı bilmemizi sağlar
-  const [activeFilters, setActiveFilters] = useState({ title: '', year: 2025 });
-  const [searchTerm, setSearchTerm] = useState(''); // Sadece input'u kontrol etmek için
-  
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = parseInt(searchParams.get('page')) || 1;
 
   // Veri Çekme Fonksiyonu
-  const fetchMovies = useCallback(async (page, filters) => {
+  const fetchMovies = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = new URLSearchParams({
-        page: page,
+        page: currentPage,
         limit: 18,
+        title: searchParams.get('query') || '',
+        years: searchParams.get('years') || '',
+        hasPoster: searchParams.get('hasPoster') || '',
+        genres: searchParams.get('genres') || '',
       });
-      // Aktif filtrelere göre parametreleri ekle
-      if (filters.title) {
-        params.append('title', filters.title);
-      }
-      if (filters.year) {
-        params.append('year', filters.year);
-      }
+
+      console.log("Fetching movies with params:", params.toString()); // Debugging log
 
       const response = await API.get(`/movies?${params.toString()}`);
 
-      setMovies(response.data.results);
-      setCurrentPage(response.data.page);
-      setTotalPages(Math.ceil(response.data.total / response.data.limit));
+      console.log("API response:", response.data); // Debugging log
 
+      setMovies(response.data.results);
+      setTotalPages(Math.ceil(response.data.total / response.data.limit));
     } catch (err) {
       console.error("Error fetching movies:", err);
+      console.error("Error response:", err.response?.data); // Debugging log
       setError("Could not load movies. Please try again later.");
       setMovies([]);
       setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, searchParams]);
 
-  // Sadece ilk yüklemede çalışır
-  useEffect(() => {
-    fetchMovies(1, activeFilters);
-  }, [fetchMovies]); // activeFilters'ı buradan kaldırdık ki arama yapınca tekrar tetiklenmesin
-
-  // Arama İşlemi
-  const handleSearch = (event) => {
-    event.preventDefault();
-    const newFilters = { title: searchTerm, year: null }; // Arama yapınca yıl filtresini kaldır
-    setActiveFilters(newFilters); // Aktif filtreyi güncelle
-    setCurrentPage(1);
-    fetchMovies(1, newFilters);
+  const handleSearchResults = ({ query, years, hasPoster, genres }) => {
+    const params = { page: 1 };
+    if (query) params.query = query;
+    if (years && years.length > 0) params.years = years.join(',');
+    if (hasPoster) params.hasPoster = hasPoster;
+    if (genres && genres.length > 0) params.genres = genres.join(',');
+    setSearchParams(params);
   };
+
+  // Sadece ilk yüklemede ve searchParams değiştiğinde çalışır
+  useEffect(() => {
+    fetchMovies();
+  }, [fetchMovies]);
 
   // Sayfa Değiştirme
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= totalPages) {
-      // --- İŞTE DÜZELTME BURADA ---
-      // Sayfa değiştirirken, arama terimiyle değil,
-      // o anki AKTİF FİLTRELER ile istek atıyoruz.
-      fetchMovies(newPage, activeFilters);
+      setSearchParams({ ...Object.fromEntries(searchParams.entries()), page: newPage });
     }
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 md:p-8 animate-fade-in">
-      {/* Arama Çubuğu (SearchBar bileşeni) */}
+      {/* MovieSearchBar bileşeni */}
       <div className="mb-8 p-6 bg-base-100 rounded-lg shadow-lg flex justify-between items-start">
-        <SearchBar
-          initialCategory="movies"
-          onSearch={(q, category) => {
-            // sadece movies kategori için burada kullanılacak
-            if (category !== 'movies') return;
-            const newFilters = { title: q, year: null };
-            setActiveFilters(newFilters);
-            setCurrentPage(1);
-            fetchMovies(1, newFilters);
-          }}
-        />
+        <MovieSearchBar onResults={handleSearchResults} />
       </div>
 
       {/* Film Grid'i ve Sonuçlar */}
       <section>
-        <h2 className="text-2xl font-bold mb-4">
-          {activeFilters.title ? `Results for "${activeFilters.title}"` : `Movies from ${activeFilters.year}`}
-        </h2>
-        
+        <h2 className="text-2xl font-bold mb-4">Movies</h2>
+
         {error && <div className="alert alert-error mb-4">{error}</div>}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
