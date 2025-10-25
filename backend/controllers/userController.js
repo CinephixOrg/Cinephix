@@ -3,9 +3,15 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// --- YENİ EKLENEN IMPORT ---
+// Notification modelini de buraya import ediyoruz
+import Notification from "../models/Notification.js";
+// --- BİTİŞ ---
+
 // @desc    Yeni bir kullanıcı kaydeder
 // @route   POST /api/users/register
 export const registerUser = async (req, res) => {
+  // (Mevcut kodunuz - dokunulmadı)
   const { username, email, password } = req.body;
 
   try {
@@ -50,6 +56,7 @@ export const registerUser = async (req, res) => {
 // @desc    Kullanıcı girişi yapar ve token döndürür
 // @route   POST /api/users/login
 export const loginUser = async (req, res) => {
+  // (Mevcut kodunuz - dokunulmadı)
   const { email, password } = req.body;
 
   try {
@@ -80,6 +87,7 @@ export const loginUser = async (req, res) => {
 // @desc    Tüm kullanıcıları getirir (yalnızca test amaçlı)
 // @route   GET /api/users
 export const getUsers = async (req, res) => {
+  // (Mevcut kodunuz - dokunulmadı)
   try {
     const users = await User.find({}).select("-password");
     res.json(users);
@@ -87,3 +95,200 @@ export const getUsers = async (req, res) => {
     res.status(500).json({ message: "Sunucu hatası", error: error.message });
   }
 };
+
+// controllers/userController.js
+
+// ... (registerUser, loginUser, getUsers fonksiyonları aynı kalır)
+
+// @desc    Bir kullanıcıyı takip etme
+// @route   POST /api/users/:id/follow
+// @access  Private (Giriş Gerekli)
+export const followUser = async (req, res) => {
+  const loggedInUserId = req.user.id; // Giriş yapan kişi (test2)
+  const userToFollowId = req.params.id; // Takip edilecek kişi (test1)
+
+  // 1. Kendini takip edemez
+  if (loggedInUserId === userToFollowId) {
+    return res.status(400).json({ message: "Kendinizi takip edemezsiniz." });
+  }
+
+  try {
+    // 2. Takip edilecek kullanıcının var olduğundan emin olalım
+    const userToFollow = await User.findById(userToFollowId);
+    if (!userToFollow) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    }
+    
+    // 3. Zaten takip ediyor mu? (req.user'dan kontrol edebiliriz)
+    if (req.user.following.includes(userToFollowId)) {
+        return res.status(400).json({ message: "Bu kullanıcıyı zaten takip ediyorsunuz." });
+    }
+
+    // 4. DEĞİŞİKLİK: .save() yerine .updateOne() kullanarak
+    //    doğrudan veritabanına komut gönderiyoruz.
+
+    // Takip eden kişinin (test2) 'following' listesine 'test1'in ID'sini ekle
+    await User.updateOne(
+        { _id: loggedInUserId },
+        { $addToSet: { following: userToFollowId } }
+    );
+
+    // Takip edilen kişinin (test1) 'followers' listesine 'test2'nin ID'sini ekle
+    await User.updateOne(
+        { _id: userToFollowId },
+        { $addToSet: { followers: loggedInUserId } }
+    );
+
+    // 5. BİLDİRİM OLUŞTUR (Bu kısım aynı kalır)
+    await Notification.findOneAndDelete({
+      user: userToFollowId,
+      sender: loggedInUserId,
+      type: 'follow'
+    });
+    
+    await Notification.create({
+      user: userToFollowId,
+      sender: loggedInUserId,
+      type: 'follow'
+    });
+
+    res.status(200).json({ message: "Kullanıcı başarıyla takip edildi." });
+
+  } catch (error) {
+    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  }
+};
+
+// @desc    Bir kullanıcıyı takipten çıkma
+// @route   POST /api/users/:id/unfollow
+// @access  Private (Giriş Gerekli)
+export const unfollowUser = async (req, res) => {
+  const loggedInUserId = req.user.id;
+  const userToUnfollowId = req.params.id;
+
+  try {
+    // 1. DEĞİŞİKLİK: .save() yerine .updateOne() kullan
+
+    // Takip eden kişinin 'following' listesinden ID'yi çıkar
+    await User.updateOne(
+        { _id: loggedInUserId },
+        { $pull: { following: userToUnfollowId } }
+    );
+
+    // Takip edilen kişinin 'followers' listesinden ID'yi çıkar
+    await User.updateOne(
+        { _id: userToUnfollowId },
+        { $pull: { followers: loggedInUserId } }
+    );
+    
+    // Takipten çıkınca 'follow' bildirimini sil
+    await Notification.deleteOne({
+      user: userToUnfollowId,
+      sender: loggedInUserId,
+      type: 'follow'
+    });
+
+    res.status(200).json({ message: "Kullanıcı takipten çıkıldı." });
+
+  } catch (error) {
+    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  }
+};
+
+// ... (getNotifications, getMyFollowing, getMyFollowers, searchUsers aynı kalır)
+
+
+// @desc    Giriş yapan kullanıcının bildirimlerini getirme
+// @route   GET /api/notifications
+// @access  Private (Giriş Gerekli)
+export const getNotifications = async (req, res) => {
+    try {
+        const notifications = await Notification.find({ user: req.user.id })
+            .populate('sender', 'username') // Bildirimi gönderenin sadece username'ini al
+            .sort({ createdAt: -1 }); // En yeniden eskiye sırala
+
+        res.status(200).json(notifications);
+
+        // İPUCU: Bildirimleri getirdikten sonra 'okundu' olarak işaretlemek iyi bir yöntemdir.
+        // Bunu frontend'den ayrı bir istek (PUT /api/notifications/read) ile yapabilir
+        // veya burada otomatik olarak yapabilirsiniz:
+        // await Notification.updateMany({ user: req.user.id, read: false }, { $set: { read: true } });
+
+    } catch (error) {
+        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    }
+};
+
+// @desc    Giriş yapan kullanıcının TAKİP ETTİKLERİ listesini getirir
+// @route   GET /api/users/me/following
+// @access  Private (Giriş Gerekli)
+export const getMyFollowing = async (req, res) => {
+    try {
+        // 1. Giriş yapan kullanıcıyı bul
+        const user = await User.findById(req.user.id)
+            // 2. 'following' alanını populate et (sadece ID değil, tüm kullanıcı objesini al)
+            .populate('following', '_id username'); // Sadece id ve username'i al
+
+        if (!user) {
+            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+        }
+
+        // 3. Sadece following listesini döndür
+        res.status(200).json(user.following);
+
+    } catch (error) {
+        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    }
+};
+
+// @desc    Giriş yapan kullanıcının TAKİPÇİLERİ listesini getirir
+// @route   GET /api/users/me/followers
+// @access  Private (Giriş Gerekli)
+export const getMyFollowers = async (req, res) => {
+    try {
+        // 1. Giriş yapan kullanıcıyı bul
+        const user = await User.findById(req.user.id)
+            // 2. 'followers' alanını populate et
+            .populate('followers', '_id username'); // Sadece id ve username'i al
+
+        if (!user) {
+            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+        }
+        
+        // 3. Sadece followers listesini döndür
+        res.status(200).json(user.followers);
+
+    } catch (error) {
+        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    }
+};
+
+// ... (getMyFollowers fonksiyonunun bittiği yer)
+
+// @desc    Kullanıcı adlarına göre kullanıcı ara
+// @route   GET /api/users/search?q=[query]
+// @access  Private (Giriş Gerekli)
+export const searchUsers = async (req, res) => {
+  const query = req.query.q; // Arama sorgusunu al (örn: 'test')
+
+  if (!query) {
+    return res.status(400).json({ message: "Arama sorgusu gerekli." });
+  }
+
+  try {
+    // MongoDB'de 'username' alanında, büyük/küçük harf duyarsız ($options: 'i')
+    // ve kısmi eşleşmeli ($regex) bir arama yap.
+    const users = await User.find({
+      username: { $regex: query, $options: 'i' },
+      _id: { $ne: req.user.id } // Arayan kişinin kendisini sonuçlardan çıkar
+    })
+    .select('_id username') // Sadece ID ve username'i döndür
+    .limit(10); // Sonuçları 10 ile sınırla
+
+    res.status(200).json(users);
+
+  } catch (error) {
+    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  }
+};
+// --- BİTİŞ ---

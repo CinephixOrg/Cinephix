@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useContext, useState, useEffect } from "react";
 import {
   Routes,
@@ -13,14 +14,22 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import WelcomePage from "./pages/WelcomePage.jsx";
-import MoviesPage from "./pages/MoviesPage.jsx";
-import SeriesPage from "./pages/SeriesPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ContentDetailPage from "./pages/ContentDetailPage.jsx";
-import ProfileSidebar from "./components/ProfileSidebar.jsx"; // ← EKLENDİ
+import ProfileMenu from "./components/ProfileMenu.jsx";
 import ListPage from "./pages/ListPage.jsx";
 
+// --- SİLİNDİ (1. Değişiklik) ---
+// Artık bu sayfalara ihtiyacımız yok.
+import MoviesPage from "./pages/MoviesPage.jsx";
+import SeriesPage from "./pages/SeriesPage.jsx";
+
+// --- YENİ NETWORK SAYFASINI İMPORT EDİN ---
+import NetworkPage from "./pages/NetworkPage.jsx";
+// --- BİTİŞ ---
+
 // 1. GİRİŞ YAPMAMIŞ KULLANICI İÇİN NAVİGASYON
+// (Değişiklik yok)
 const GuestNav = () => (
   <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-50">
     <div className="flex-1">
@@ -38,8 +47,8 @@ const GuestNav = () => (
 );
 
 // 2. GİRİŞ YAPMIŞ KULLANICI İÇİN NAVİGASYON
+// (Değişiklik yok)
 const UserNav = ({ user, logout }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -51,27 +60,6 @@ const UserNav = ({ user, logout }) => {
     navigate("/login");
   };
 
-  const handleProfileClick = (e) => {
-    e.preventDefault();
-    setSidebarOpen(true);
-  };
-
-  const handleSelect = (section) => {
-    console.log("Selected:", section);
-    setSidebarOpen(false);
-  };
-
-  // Sidebar dışına tıklayınca kapat
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (sidebarOpen && !e.target.closest(".sidebar")) {
-        setSidebarOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, [sidebarOpen]);
-
   return (
     <>
       <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-40">
@@ -81,33 +69,23 @@ const UserNav = ({ user, logout }) => {
           </NavLink>
           <ul className="menu menu-horizontal p-0">
             <li><NavLink to="/home">Home</NavLink></li>
-            <li><NavLink to="/movies">Movies</NavLink></li>
-            <li><NavLink to="/series">Series</NavLink></li>
+            {/* --- SİLİNDİ (2. Değişiklik) --- */}
+            {/* Artık bu linklere ihtiyacımız yok. */}
+            {<li><NavLink to="/movies">Movies</NavLink></li>}
+            {<li><NavLink to="/series">Series</NavLink></li>}
             <li><NavLink to="/list">List</NavLink></li>
           </ul>
         </div>
-
         <div className="flex-none gap-4 items-center">
-          <button onClick={handleProfileClick} className="btn btn-ghost">
-            Profile
-          </button>
-          <button onClick={handleLogout} className="btn btn-error btn-sm">
-            Log out
-          </button>
+          <ProfileMenu user={user} onLogout={handleLogout} />
         </div>
       </nav>
-
-      <ProfileSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        user={user}
-        onSelect={handleSelect}
-      />
     </>
   );
 };
 
 // 3. KORUMALI ROTA COMPONENT'İ
+// (Değişiklik yok)
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   if (!user) {
@@ -135,14 +113,23 @@ export default function App() {
           />
 
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-          <Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />
-          <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          
+          {/* --- YENİ ROTAYI BURAYA EKLEYİN (ProtectedRoute ile sarılmış) --- */}
+          <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
+          {/* --- BİTİŞ --- */}
+          
           <Route
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
+          
+          {/* --- SİLİNDİ (3. Değişiklik) --- */}
+          {/* Artık bu route'lara ihtiyacımız yok. */}
+          {<Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />}
+          {<Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />}
+          
         </Routes>
       </main>
 
@@ -150,5 +137,3 @@ export default function App() {
     </div>
   );
 }
-
-
