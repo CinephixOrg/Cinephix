@@ -23,6 +23,7 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.4",
+    "react-select": "^5.10.2",
     "styled-components": "^6.1.19",
     "toaster": "^0.1.2",
     "yup": "^1.7.1"
