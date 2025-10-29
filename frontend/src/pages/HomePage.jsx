@@ -1,6 +1,7 @@
 // pages/Homepage.jsx (GÜNCELLENMİŞ TAM DOSYA)
 import React, { useState } from "react";
 import SearchBar from "../components/SearchBar.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import MovieCard from "../components/MovieCard.jsx";
 import SeriesCard from "../components/SeriesCard.jsx";
 import UserSearchCard from "../components/UserSearchCard.jsx"; // <-- 1. YENİ KARTI İMPORT ET

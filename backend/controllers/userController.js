@@ -6,7 +6,9 @@ import jwt from "jsonwebtoken";
 // --- YENİ EKLENEN IMPORT ---
 // Notification modelini de buraya import ediyoruz
 import Notification from "../models/Notification.js";
+import Rating from "../models/Rating.js";
 // --- BİTİŞ ---
+
 
 // @desc    Yeni bir kullanıcı kaydeder
 // @route   POST /api/users/register
@@ -325,5 +327,146 @@ export const updateFavorites = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: "Favoriler güncellenemedi.", error: error.message });
+  }
+};
+
+// controllers/userController.js dosyasının sonuna ekle:
+
+// ... (mevcut updateFavorites fonksiyonunun bittiği yer)
+
+/**
+ * @desc   Kullanıcının public profil bilgilerini getirir (ProfilePage için)
+ * @route  GET /api/users/profile/:id
+ * @access Private
+ */
+export const getUserProfile = async (req, res) => {
+  try {
+    // .findById() kullanarak :id parametresindeki kullanıcının
+    // şifresi HARİÇ tüm bilgilerini getiriyoruz.
+    const user = await User.findById(req.params.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+    }
+    
+    // Frontend'e kullanıcının bio, username, createdAt gibi bilgilerini yolla
+    res.status(200).json(user);
+
+  } catch (error) {
+    console.error("Profil getirme hatası:", error);
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
+};
+
+// controllers/userController.js
+
+// ... (mevcut getUserProfile fonksiyonunun hemen altına)
+
+// controllers/userController.js
+
+// ... (getUserProfile fonksiyonunun bittiği yerin hemen altına)
+
+// controllers/userController.js
+
+// ... (getUserProfile fonksiyonunun bittiği yerin hemen altına)
+
+/**
+ * @desc   Kullanıcının AYRIŞTIRILMIŞ favori listesini getirir
+ * @route  GET /api/users/favorites/:id
+ * @access Private
+ */
+export const getUserFavorites = async (req, res) => {
+  try {
+    // 1. Kullanıcıyı bul ve favorileri doldur
+    const user = await User.findById(req.params.id)
+      .populate('favoriteMovies')
+      .populate('favoriteSeries');
+
+    // 2. Kritik kontrol
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+    }
+    
+    // 3. --- DEĞİŞİKLİK BURADA ---
+    // Artık listeleri birleştirmiyoruz (mergedFavorites YOK).
+    // Frontend'e iki ayrı anahtar (key) ile bir obje yolluyoruz.
+    res.status(200).json({
+      movies: user.favoriteMovies || [],
+      series: user.favoriteSeries || []
+    });
+
+  } catch (error) {
+    // 5. Hata cevabını gönder
+    console.error("Favori getirme hatası:", error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+};
+
+// controllers/userController.js dosyasının sonuna ekle:
+
+// ... (mevcut getUserFavorites fonksiyonunun bittiği yer)
+
+/**
+ * @desc   Kullanıcının biosunu günceller
+ * @route  PATCH /api/users/profile/:id/bio
+ * @access Private
+ */
+export const updateUserBio = async (req, res) => {
+  try {
+    // 1. Güvenlik Kontrolü:
+    // Sadece giriş yapmış kullanıcının kendi profilini güncelleyebildiğinden emin ol.
+    // req.params.id -> URL'den gelen ID
+    // req.user.id   -> Token'dan (authMiddleware) gelen, giriş yapmış kullanıcının ID'si
+    if (req.params.id !== req.user.id) {
+      return res.status(403).json({ message: "Sadece kendi profilinizi güncelleyebilirsiniz." });
+    }
+
+    // 2. Frontend'den gelen yeni bio metnini al
+    const { bio } = req.body;
+
+    // 3. Kullanıcıyı bul ve biosunu güncelle
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id, // Güvenlik için req.user.id'yi kullan
+      { bio: bio },
+      { new: true, runValidators: true } // 'new: true' güncellenmiş belgeyi döndürür
+    ).select('-password'); // ŞİFREYİ ASLA geri gönderme
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    }
+
+    // 4. Frontend'e güncellenmiş profil verisini geri yolla
+    // (ProfilePage.jsx'teki setProfile(response.data) bu veriyi bekliyor)
+    res.status(200).json(updatedUser);
+
+  } catch (error) {
+    console.error("Bio güncelleme hatası:", error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+};
+
+// controllers/userController.js (içinde)
+
+/**
+ * @desc   Bir kullanıcının verdiği tüm oyları getirir
+ * @route  GET /api/users/ratings/:id
+ * @access Private
+ */
+export const getUserRatings = async (req, res) => {
+  try {
+    // Veritabanından, 'user' alanı 'req.params.id' ile eşleşen tüm oyları bul.
+    
+    // --- DEĞİŞİKLİK BURADA ---
+    // 'content' ve 'rating' yerine, senin modelindeki
+    // 'contentId' ve 'value' alanlarını seçiyoruz.
+    const ratings = await Rating.find({ user: req.params.id })
+      .select("contentId value"); // <-- DÜZELTİLDİ
+    // --- BİTİŞ ---
+
+    res.status(200).json(ratings);
+
+  } catch (error) {
+    console.error("Oylar çekilirken hata:", error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 };

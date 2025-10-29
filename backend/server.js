@@ -39,10 +39,9 @@ async function start() {
     const seriesConn = mongoose.createConnection(MONGO_URI, { dbName: "cleaned_db" });
 
     // 2. TÜM DİĞER MODELLERİN KULLANACAĞI VARSAYILAN BAĞLANTIYI OLUŞTUR
-    // mongoose.connect() bir promise döndürür, bu yüzden await ile bekleyebiliriz.
     const mainConnectionPromise = mongoose.connect(MONGO_URI, { dbName: "cleaned_db" });
 
-    // 3. Tüm bağlantıların (2 özel + 1 ana) kurulmasını bekle
+    // 3. Tüm bağlantıların kurulmasını bekle
     await Promise.all([
       waitOpen(moviesConn),
       waitOpen(seriesConn),
@@ -55,7 +54,19 @@ async function start() {
     const Series = createSeriesModel(seriesConn);
     app.use("/api/movies", await moviesRouteFactory(Movie));
     app.use("/api/series", await seriesRouteFactory(Series));
+
+    // --- YENİ EKLENECEK 2 SATIR BURADA ---
+    // User modelinin populate() yapabilmesi için, 
+    // Movie ve Series modellerini VARSAYILAN bağlantıya da kaydetmeliyiz.
+    // mongoose.connection, mongoose.connect() tarafından oluşturulan varsayılan bağlantıdır.
     
+    createMovieModel(mongoose.connection);
+    createSeriesModel(mongoose.connection);
+    
+    console.log('Movie ve Series modelleri varsayılan bağlantıya da kaydedildi.');
+    // --- BİTİŞ ---
+
+
     // Sunucuyu başlat
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (e) {

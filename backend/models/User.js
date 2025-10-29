@@ -29,6 +29,13 @@ const userSchema = new Schema({
     required: [true, 'Parola zorunludur.'],
     minlength: 6 // Minimum parola uzunluğu
   },
+// --- YENİ ALANI BURAYA EKLE ---
+  bio: {
+    type: String,
+    default: "",       // Varsayılan olarak boş bir string olsun
+    maxlength: 250     // İsteğe bağlı: Maksimum karakter limiti
+  },
+  // --- BİTİŞ ---
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
 
   // --- YENİ EKLENEN TAKİP ALANLARI ---
