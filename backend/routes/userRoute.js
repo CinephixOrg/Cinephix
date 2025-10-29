@@ -13,7 +13,12 @@ import {
   getMyFollowing,
   getMyFollowers,
   searchUsers,
-  updateFavorites
+  updateFavorites,
+  // --- YENİ EKLENENLER (ProfilePage için) ---
+  getUserProfile,
+  getUserFavorites,
+  updateUserBio,
+  getUserRatings, // --- BİTİŞ ---
   // --- BİTİŞ ---
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js"; // Bu sizde zaten vardı
@@ -110,5 +115,10 @@ router.put("/me/favorites", authMiddleware, updateFavorites);
 // (NetworkPage.jsx bu ikisini kullanacak)
 router.get("/search", authMiddleware, searchUsers); // <-- 2. YENİ ROTAYI EKLE
 // --- BİTİŞ ---
+router.get("/profile/:id", authMiddleware, getUserProfile);
+router.get("/favorites/:id", authMiddleware, getUserFavorites);
 
+router.patch("/profile/:id/bio", authMiddleware, updateUserBio);
+
+router.get("/ratings/:id", authMiddleware, getUserRatings);
 export default router;
