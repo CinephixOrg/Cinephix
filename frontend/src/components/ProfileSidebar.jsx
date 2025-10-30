@@ -13,7 +13,7 @@ export default function ProfileSidebar({ open, onClose, user, onSelect }) {
         <div className="flex items-center gap-3">
             <div className="avatar">
               <div className="ring-primary ring-offset-base-100 w-9 rounded-full ring ring-offset-2">
-                <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                <img src={user?.profile_pic_url} alt="Profile Picture" />
                 {user.username?.[0]?.toUpperCase()}
               </div>
             </div>

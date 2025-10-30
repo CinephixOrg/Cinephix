@@ -2,6 +2,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
 
 // --- YENİ EKLENEN IMPORT ---
 // Notification modelini de buraya import ediyoruz
@@ -197,9 +198,6 @@ export const unfollowUser = async (req, res) => {
   }
 };
 
-// ... (getNotifications, getMyFollowing, getMyFollowers, searchUsers aynı kalır)
-
-
 // @desc    Giriş yapan kullanıcının bildirimlerini getirme
 // @route   GET /api/notifications
 // @access  Private (Giriş Gerekli)
@@ -264,8 +262,6 @@ export const getMyFollowers = async (req, res) => {
         res.status(500).json({ message: "Sunucu hatası", error: error.message });
     }
 };
-
-// ... (getMyFollowers fonksiyonunun bittiği yer)
 
 // @desc    Kullanıcı adlarına göre kullanıcı ara
 // @route   GET /api/users/search?q=[query]
@@ -468,5 +464,33 @@ export const getUserRatings = async (req, res) => {
   } catch (error) {
     console.error("Oylar çekilirken hata:", error);
     res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+};
+
+/**
+ * @desc   Profil resmi yükler
+ * @route  POST /api/users/profile-pic/:userId
+ * @access Private
+ */
+export const uploadProfilePic = async (req, res) => {
+  try {
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "profile_pics",
+    });
+
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { profile_pic_url: result.secure_url }, // Cloudinary'den dönen URL'yi kaydedin
+      { new: true } // Güncellenmiş kullanıcıyı döndür
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    }
+
+    res.status(200).json({ profilePicUrl: user.profile_pic_url });
+  } catch (error) {
+    console.error("Profil resmi yüklenirken hata:", error);
+    res.status(500).json({ message: "Profil resmi yüklenemedi." });
   }
 };
