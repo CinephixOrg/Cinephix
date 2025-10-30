@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
-export default function ProfileMenu({ user, onLogout }) {
-  // Simple dropdown menu matching Letterboxd-like options
+export default function ProfileMenu({ onLogout }) {
+  const { user } = useContext(AuthContext); // `AuthContext`'ten `user` nesnesini alın
+
   return (
     <div className="dropdown dropdown-end">
       <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
         <div className="w-9 rounded-full ring ring-primary ring-offset-2">
-          <img src={user?.avatar || "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"} alt="avatar" />
+          <img
+            src={user?.profile_pic_url}
+            alt="avatar"
+          />
         </div>
       </label>
       <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 mt-2">

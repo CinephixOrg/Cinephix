@@ -35,6 +35,10 @@ const userSchema = new Schema({
     default: "",       // Varsayılan olarak boş bir string olsun
     maxlength: 250     // İsteğe bağlı: Maksimum karakter limiti
   },
+  profile_pic_url: {
+    type: String,
+    default: "", // Varsayılan olarak boş bir string
+  },
   // --- BİTİŞ ---
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
 

@@ -22,8 +22,12 @@ import {
   // --- BİTİŞ ---
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js"; // Bu sizde zaten vardı
+import multer from "multer";
+import cloudinary from "../config/cloudinaryConfig.js";
+import User from "../models/User.js";
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // --- MEVCUT ROTALARINIZ (DOKUNULMADI) ---
 router.post("/register", registerUser);
@@ -75,7 +79,45 @@ router.delete("/me/watchlist/:itemId", authMiddleware, async (req, res) => {
   }
 });
 
-// backend/routes/user.js
+router.post('/profile/:id/upload-profile-pic', upload.single('profilePic'), async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    // Cloudinary'ye yükle
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'profile_pics' },
+        (error, uploadResult) => {
+          if (error) return reject(error);
+          resolve(uploadResult);
+        }
+      );
+      uploadStream.end(file.buffer);
+    });
+
+    // Kullanıcıyı güncelle
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profile_pic_url: result.secure_url },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.json({ message: 'Profile picture updated successfully!', profilePicUrl: user.profile_pic_url });
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    res.status(500).json({ message: 'Failed to upload profile picture.' });
+  }
+});
+
 
 // ... (diğer rotalarınız) ...
 
