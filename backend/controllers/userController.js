@@ -9,7 +9,7 @@ import { v2 as cloudinary } from "cloudinary";
 import Notification from "../models/Notification.js";
 import Rating from "../models/Rating.js";
 // --- BİTİŞ ---
-
+import mongoose from 'mongoose'; // <-- YENİ IMPORT (GEREKLİ)
 
 // @desc    Yeni bir kullanıcı kaydeder
 // @route   POST /api/users/register
@@ -492,5 +492,99 @@ export const uploadProfilePic = async (req, res) => {
   } catch (error) {
     console.error("Profil resmi yüklenirken hata:", error);
     res.status(500).json({ message: "Profil resmi yüklenemedi." });
+  }
+};
+
+// controllers/userController.js (içinde)
+
+/**
+ * @desc   Kullanıcının watchlist'ine göre CineGraph (tür) istatistiklerini getirir
+ * @route  GET /api/users/me/cinegraph
+ * @access Private
+ */
+
+// --- 1. TMDB TÜR SÖZLÜKLERİ (ID'leri isme çevirmek için) ---
+const MOVIE_GENRE_MAP = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
+  9648: "Mystery", 10749: "Romance", 878: "Science Fiction",
+  10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
+};
+
+const SERIES_GENRE_MAP = {
+  10759: "Action & Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  10762: "Kids", 9648: "Mystery", 10763: "News", 10764: "Reality",
+  10765: "Sci-Fi & Fantasy", 10766: "Soap", 10767: "Talk",
+  10768: "War & Politics", 37: "Western"
+};
+// --- BİTİŞ ---
+
+export const getUserCineGraph = async (req, res) => {
+  try {
+    // 1. Modelleri global bağlantıdan çağır
+    const Movie = mongoose.model('Movie');
+    const Series = mongoose.model('Series');
+
+    // 2. Watchlist'i DB'den çek
+    const user = await User.findById(req.user.id).select('watchlist');
+    if (!user || !user.watchlist) {
+      return res.status(404).json({ message: "Watchlist bulunamadı" });
+    }
+    const watchlist = user.watchlist;
+
+    // 3. Watchlist'i ID'lere ayır
+    const movieIds = watchlist
+      .filter(item => item.itemType === 'movie')
+      .map(item => item.itemId);
+      
+    const seriesIds = watchlist
+      .filter(item => item.itemType === 'series')
+      .map(item => item.itemId);
+
+    // 4. --- DÜZELTME: 'genres' YERİNE 'genre_ids' ÇEK ---
+    const movies = await Movie.find({ '_id': { $in: movieIds } }).select('genre_ids');
+    const series = await Series.find({ '_id': { $in: seriesIds } }).select('genre_ids');
+    // --- BİTİŞ ---
+
+    // 5. --- DÜZELTME: TÜR ADLARINI SÖZLÜKTEN BUL VE SAY ---
+    const movieGenreCounts = {};
+    const seriesGenreCounts = {};
+
+    // Film türlerini say
+    for (const movie of movies) {
+      if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+        for (const genreId of movie.genre_ids) {
+          const genreName = MOVIE_GENRE_MAP[genreId]; // ID'yi isme çevir (örn: 14 -> "Fantasy")
+          if (genreName) { // Eğer sözlükte varsa
+            movieGenreCounts[genreName] = (movieGenreCounts[genreName] || 0) + 1;
+          }
+        }
+      }
+    }
+    
+    // Dizi türlerini say
+    for (const show of series) {
+      if (show.genre_ids && Array.isArray(show.genre_ids)) {
+        for (const genreId of show.genre_ids) {
+          const genreName = SERIES_GENRE_MAP[genreId]; // ID'yi isme çevir
+          if (genreName) {
+            seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
+          }
+        }
+      }
+    }
+    // --- BİTİŞ ---
+    
+    // 6. Frontend'e yolla (Bu kısım aynı)
+    res.status(200).json({
+      movieStats: movieGenreCounts, // Örn: { "Fantasy": 1, "Action": 5 }
+      seriesStats: seriesGenreCounts
+    });
+
+  } catch (error) {
+    console.error("CineGraph verisi çekilirken hata:", error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 };

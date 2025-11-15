@@ -19,6 +19,7 @@ import {
   getUserFavorites,
   updateUserBio,
   getUserRatings, // --- BİTİŞ ---
+  getUserCineGraph // <-- YENİ EKLENDİ
   // --- BİTİŞ ---
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js"; // Bu sizde zaten vardı
@@ -163,4 +164,5 @@ router.get("/favorites/:id", authMiddleware, getUserFavorites);
 router.patch("/profile/:id/bio", authMiddleware, updateUserBio);
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);
+router.get("/me/cinegraph", authMiddleware, getUserCineGraph);
 export default router;

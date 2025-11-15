@@ -1,6 +1,6 @@
-// src/pages/ProfilePage.jsx (GÜNCELLENMİŞ VE TEMİZLENMİŞ TAM DOSYA)
+// src/pages/ProfilePage.jsx (FAVORİLER BÖLÜMÜ DÜZELTİLMİŞ TAM DOSYA)
 
-import React, { useState, useEffect, useContext } from "react"; // useMemo'yu sildik
+import React, { useState, useEffect, useContext } from "react";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { AuthContext } from "../context/AuthContext";
@@ -8,27 +8,26 @@ import API from '../api/axios.js';
 import MovieCard from '../components/MovieCard.jsx';
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import SeriesCard from '../components/SeriesCard.jsx';
-// DisplayRating import'unu sildik, çünkü artık kartların içinde
+import CineGraph from "../components/CineGraph.jsx"; // CineGraph component'ini import et
 
 export default function ProfilePage() {
   const { user } = useContext(AuthContext);
 
-  // --- State'ler (Ratings state'ini sildik) ---
+  // --- State'ler GÜNCELLENDİ ---
   const [profile, setProfile] = useState(null);
   const [favorites, setFavorites] = useState({ movies: [], series: [] });
-  // const [ratings, setRatings] = useState([]); // <-- SİLİNDİ
+  const [cineGraphData, setCineGraphData] = useState(null); // <-- CINEGRAPH VERİSİ
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Profil resmi yükleme için multer ayarları
   const [profilePic, setProfilePic] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Bio düzenleme için state'ler
+  // Bio state'leri (Değişiklik yok)
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioText, setBioText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // --- useEffect (fetchData) GÜNCELLENDİ (Sadeleşti) ---
+  // --- useEffect (fetchData) GÜNCELLENDİ (CineGraph eklendi) ---
   useEffect(() => {
     if (!user?._id) return;
 
@@ -36,18 +35,19 @@ export default function ProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        // --- ARTIK SADECE 2 İSTEK ATIYORUZ ---
-        const [profileResponse, favoritesResponse] = await Promise.all([
-          API.get(`/users/profile/${user._id}`),    // Profil
-          API.get(`/users/favorites/${user._id}`), // Favoriler
-          // Ratings isteği buradan SİLİNDİ
+        // --- ARTIK 3 İSTEK ATIYORUZ ---
+        const [profileResponse, favoritesResponse, cineGraphResponse] = await Promise.all([
+          API.get(`/users/profile/${user._id}`),    // 1: Profil
+          API.get(`/users/favorites/${user._id}`), // 2: Favoriler
+          API.get(`/users/me/cinegraph`)            // 3: YENİ: CineGraph verisi
         ]);
 
         setProfile(profileResponse.data);
         setFavorites(favoritesResponse.data);
-        // setRatings(ratingsResponse.data); // <-- SİLİNDİ
+        setCineGraphData(cineGraphResponse.data); // <-- YENİ STATE'İ AYARLA
+        
         setBioText(profileResponse.data.bio || "");
-        setProfilePic(profileResponse.data.profile_pic_url || "default-profile-pic-url");
+        setProfilePic(profileResponse.data.profile_pic_url); 
 
       } catch (err) {
         console.error("Profil verisi çekilirken hata:", err);
@@ -60,11 +60,12 @@ export default function ProfilePage() {
     fetchData();
   }, [user?._id]);
 
-  // Profil resmi yükleme fonksiyonu
+  // Profil resmi yükleme fonksiyonu (Değişiklik yok)
   const handleUploadProfilePic = async (file) => {
+    if (!file) return;
     const formData = new FormData();
     formData.append("profilePic", file);
-
+    setIsUploading(true);
     try {
       const response = await API.post(`/users/profile/${user._id}/upload-profile-pic`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -74,31 +75,24 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("Profil resmi yüklenirken hata:", error);
       toast.error("Profil resmi yüklenemedi.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  // --- ratingsMap (useMemo) bloğu buradan SİLİNDİ ---
-
-
-  // Bio'yu kaydetme fonksiyonu (Değişiklik yok)
+  // Bio kaydetme (Değişiklik yok)
   const handleSaveBio = async () => {
     setIsSaving(true);
     try {
-      const response = await API.patch(`/users/profile/${user._id}/bio`, {
-        bio: bioText
-      });
+      const response = await API.patch(`/users/profile/${user._id}/bio`, { bio: bioText });
       setProfile(response.data);
       setIsEditingBio(false);
       toast.success("Bio güncellendi!");
-    } catch (err) {
-      console.error("Bio güncellenirken hata:", err);
-      toast.error("Hata: Bio güncellenemedi.");
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (err) { console.error("Bio güncellenirken hata:", err); toast.error("Hata: Bio güncellenemedi."); }
+    finally { setIsSaving(false); }
   };
 
-  // Bio düzenlemeyi iptal etme (Değişiklik yok)
+  // Bio iptal (Değişiklik yok)
   const handleCancelEdit = () => {
     setIsEditingBio(false);
     setBioText(profile.bio || "");
@@ -114,19 +108,26 @@ export default function ProfilePage() {
 
       {/* --- Profil Bilgileri Alanı (Değişiklik yok) --- */}
       <section className="bg-base-100 p-8 rounded-lg shadow-lg flex flex-col items-center">
-        <div>
-          <img
-            src={profilePic || null} // Eğer profilePic boşsa, null atanır
-            alt="Profile"
-            className="w-32 h-32 rounded-full object-cover ring ring-primary ring-offset-base-100 ring-offset-2"
-          />
-          <input
-            type="file"
-            accept="image/*"
-            className="mt-4"
-            onChange={(e) => handleUploadProfilePic(e.target.files[0])}
-          />
+        <div className="avatar mb-4 relative">
+          {isUploading && (
+            <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 rounded-full z-10">
+              <span className="loading loading-spinner loading-md"></span>
+            </div>
+          )}
+          <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+            <img 
+              src={profilePic || `https://ui-avatars.com/api/?name=${user.username}&size=128`} 
+              alt="Profile" 
+            />
+          </div>
         </div>
+        <input
+          type="file"
+          accept="image/*"
+          className="file-input file-input-bordered file-input-xs w-full max-w-xs"
+          onChange={(e) => handleUploadProfilePic(e.target.files[0])}
+          disabled={isUploading}
+        />
         <h1 className="text-3xl font-bold mt-4">{profile?.username || user.username}</h1>
         <p className="text-sm text-base-content/70 mt-2">
           {profile?.createdAt ?
@@ -177,21 +178,42 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* --- FAVORİ FİLMLER ALANI (GÜNCELLENDİ) --- */}
+      {/* --- YENİ: CineGraph Bölümü --- */}
+      <section className="mt-12">
+        <h2 className="text-3xl font-bold mb-6 text-center">CineGraph</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {cineGraphData ? (
+            <>
+              <CineGraph 
+                data={cineGraphData.movieStats} 
+                title="Watchlist Movie Genres" 
+              />
+              <CineGraph 
+                data={cineGraphData.seriesStats} 
+                title="Watchlist Series Genres" 
+              />
+            </>
+          ) : (
+            <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner col-span-2">
+               <p className="text-base-content/70">No CineGraph data available.</p>
+            </div>
+          )}
+        </div>
+      </section>
+      {/* --- BİTİŞ: CineGraph Bölümü --- */}
+
+
+      {/* --- DÜZELTME: FAVORİ FİLMLER ALANI (GERİ GETİRİLDİ) --- */}
       <section className="mt-12">
         <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
-
-        {favorites.movies && favorites.movies.length > 0 ? (
+        {/* favorites.movies objesinin varlığını ve uzunluğunu kontrol et */}
+        {favorites && favorites.movies && favorites.movies.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
-
             {favorites.movies.map((movie) => (
               <div key={movie._id} className="flex-none w-36">
-                {/* --- userRating prop'u SİLİNDİ --- */}
-                {/* Kart artık oyu global context'ten kendi alıyor */}
                 <MovieCard movie={movie} />
               </div>
             ))}
-
           </div>
         ) : (
           <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
@@ -199,21 +221,19 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+      {/* --- BİTİŞ: FAVORİ FİLMLER --- */}
 
-      {/* --- FAVORİ DİZİLER ALANI (GÜNCELLENDİ) --- */}
+      {/* --- DÜZELTME: FAVORİ DİZİLER ALANI (GERİ GETİRİLDİ) --- */}
       <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
-
+        {/* favorites.series objesinin varlığını ve uzunluğunu kontrol et */}
         {favorites.series && favorites.series.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
-
             {favorites.series.map((series) => (
               <div key={series._id} className="flex-none w-36">
-                {/* --- userRating prop'u SİLİNDİ --- */}
                 <SeriesCard series={series} />
               </div>
             ))}
-
           </div>
         ) : (
           <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
@@ -221,6 +241,7 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+      {/* --- BİTİŞ: FAVORİ DİZİLER --- */}
 
     </div>
   );
