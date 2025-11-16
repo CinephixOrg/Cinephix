@@ -20,6 +20,7 @@ import ProfileMenu from "./components/ProfileMenu.jsx";
 import ListPage from "./pages/ListPage.jsx";
 import logo from "./assets/cinephix_logo.svg";
 import SplashScreen from "./pages/SplashScreen.jsx";
+import PublicProfilePage from "./pages/PublicProfilePage.jsx";
 
 
 // --- SİLİNDİ (1. Değişiklik) ---
@@ -141,17 +142,18 @@ export default function App() {
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
-          {/* --- YENİ ROTAYI BURAYA EKLEYİN (ProtectedRoute ile sarılmış) --- */}
+          {/* Protected network page */}
           <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
-          {/* --- BİTİŞ --- */}
 
           <Route
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
 
-          {/* --- SİLİNDİ (3. Değişiklik) --- */}
-          {/* Artık bu route'lara ihtiyacımız yok. */}
+          {/* Public (read-only) profile page for other users */}
+          <Route path="/users/:id" element={<PublicProfilePage />} />
+
+          {/* legacy movie/series routes (kept if needed) */}
           {<Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />}
           {<Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />}
 
