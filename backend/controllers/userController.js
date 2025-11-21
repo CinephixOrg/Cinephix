@@ -588,3 +588,176 @@ export const getUserCineGraph = async (req, res) => {
     res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 };
+
+// controllers/userController.js
+
+// ... (Önceki tüm kodlar ve genre map'ler burada) ...
+
+/**
+ * @desc   Kullanıcıyı diğerleriyle eşleştirir (CineMatch Algoritması)
+ * @route  POST /api/users/matches
+ * @access Private
+ * @body   { type: 'movie'|'series', genres: ['Action', 'Horror'] (opsiyonel) }
+ */
+export const findMatches = async (req, res) => {
+  const { type, genres } = req.body; // Filtreler
+  const currentUserId = req.user.id;
+
+  if (!type || (type !== 'movie' && type !== 'series')) {
+    return res.status(400).json({ message: "Geçerli bir tür (movie veya series) seçmelisiniz." });
+  }
+
+  try {
+    const Movie = mongoose.model('Movie');
+    const Series = mongoose.model('Series');
+    const TargetModel = type === 'movie' ? Movie : Series;
+    const GenreMap = type === 'movie' ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
+
+    // 1. TÜM KULLANICILARI VE WATCHLIST'LERİNİ ÇEK (Kendin hariç)
+    // (Gerçek bir app'te bu limitli olmalı, şimdilik 100 kişiyle sınırlı)
+    const allUsers = await User.find({ _id: { $ne: currentUserId } })
+      .select('_id username profile_pic_url watchlist')
+      .limit(100)
+      .lean();
+
+    // Kendi verini çek
+    const currentUser = await User.findById(currentUserId).select('watchlist').lean();
+    
+    if (!currentUser.watchlist || currentUser.watchlist.length === 0) {
+      return res.status(400).json({ message: "Eşleşme yapmak için önce watchlist'ine bir şeyler eklemelisin." });
+    }
+
+    // 2. VERİMLİLİK: Tüm kullanıcıların watchlist'indeki içerik ID'lerini topla
+    // Böylece DB'ye tek bir sorgu atıp tüm filmlerin türlerini öğrenebiliriz.
+    let allContentIds = new Set();
+    
+    // Kendi listendekiler
+    currentUser.watchlist.forEach(item => {
+      if (item.itemType === type) allContentIds.add(item.itemId);
+    });
+
+    // Diğerlerinin listesindekiler
+    allUsers.forEach(u => {
+      u.watchlist.forEach(item => {
+        if (item.itemType === type) allContentIds.add(item.itemId);
+      });
+    });
+
+    // 3. İÇERİK DETAYLARINI (TÜRLERİNİ) ÇEK
+    const contentDetails = await TargetModel.find({ _id: { $in: Array.from(allContentIds) } })
+      .select('_id genre_ids')
+      .lean();
+
+    // Hızlı erişim için Map yap: { "film_id": ["Action", "Comedy"] }
+    const contentGenreMap = {};
+    contentDetails.forEach(c => {
+      const genreNames = c.genre_ids?.map(id => GenreMap[id]).filter(Boolean) || [];
+      contentGenreMap[c._id.toString()] = genreNames;
+    });
+
+    // 4. OYLARI ÇEK (Tüm ilgili oylar)
+    const allRatings = await Rating.find({ 
+      contentType: type,
+      contentId: { $in: Array.from(allContentIds) }
+    }).select('user contentId value').lean();
+
+    // Oyları kullanıcıya göre grupla: { "user_id": { "film_id": 8 } }
+    const userRatingsMap = {};
+    allRatings.forEach(r => {
+      if (!userRatingsMap[r.user]) userRatingsMap[r.user] = {};
+      userRatingsMap[r.user][r.contentId] = r.value;
+    });
+
+    // --- YARDIMCI FONKSİYON: KULLANICI PROFİLİ (VEKTÖR) OLUŞTUR ---
+    const calculateUserVector = (userObj) => {
+      const vector = {}; // { "Action": 8.5, "Horror": 4.0 }
+      const counts = {}; // { "Action": 2, "Horror": 1 }
+
+      // Kullanıcının oylarına bak (Yoksa varsayılan 5 puan verelim ki izlemesi de saysın)
+      const myRatings = userRatingsMap[userObj._id] || {};
+
+      userObj.watchlist.forEach(item => {
+        if (item.itemType !== type) return;
+        
+        const itemGenres = contentGenreMap[item.itemId] || [];
+        // Eğer kullanıcı oy vermişse onu al, yoksa nötr (5) kabul et
+        // (veya sadece izlemiş olmayı puan olarak sayma, tercih meselesi. Şimdilik puanı alıyoruz)
+        const rating = myRatings[item.itemId] || 5; 
+
+        itemGenres.forEach(genre => {
+          if (!vector[genre]) { vector[genre] = 0; counts[genre] = 0; }
+          vector[genre] += rating;
+          counts[genre] += 1;
+        });
+      });
+
+      // Ortalamayı al
+      Object.keys(vector).forEach(g => {
+        vector[g] = vector[g] / counts[g];
+      });
+
+      return vector;
+    };
+
+    // 5. PROFİLLERİ HESAPLA
+    const myVector = calculateUserVector(currentUser);
+    
+    // Eğer kullanıcının hiç verisi yoksa
+    if (Object.keys(myVector).length === 0) {
+        return res.status(200).json([]);
+    }
+
+    const matches = allUsers.map(otherUser => {
+      const otherVector = calculateUserVector(otherUser);
+      
+      // BENZERLİK HESAPLA (Algoritma Çekirdeği)
+      let score = 0;
+      let commonGenres = 0;
+
+      // Hangi türleri karşılaştıracağız?
+      // Eğer frontend'den 'genres' filtresi geldiyse SADECE onları karşılaştır.
+      // Yoksa tüm ortak türleri karşılaştır.
+      const genresToCompare = (genres && genres.length > 0) 
+        ? genres 
+        : Object.keys(myVector); // Benim izlediğim her şeyi karşılaştır
+
+      genresToCompare.forEach(genre => {
+        // Eğer karşı tarafta bu tür varsa farkı hesapla
+        if (otherVector[genre]) {
+          const myScore = myVector[genre];
+          const otherScore = otherVector[genre];
+          
+          // Fark ne kadar azsa, puan o kadar yüksek olmalı.
+          // 10 üzerinden farkı alıyoruz.
+          // Fark 0 ise -> 10 puan. Fark 9 ise -> 1 puan.
+          const diff = Math.abs(myScore - otherScore);
+          score += (10 - diff); 
+          commonGenres++;
+        }
+      });
+
+      // Ortak hiçbir şey yoksa uyum 0'dır
+      if (commonGenres === 0) return null;
+
+      // Ortalama uyum puanı (0-100 arası yüzdeye çevirelim)
+      // score / commonGenres -> 0-10 arası ortalama benzerlik
+      // * 10 -> 0-100 arası yüzde
+      const matchPercentage = (score / commonGenres) * 10;
+
+      return {
+        user: otherUser,
+        matchPercentage: Math.round(matchPercentage),
+        sharedGenres: commonGenres
+      };
+    })
+    .filter(Boolean) // null olanları (ortak noktası olmayanları) at
+    .sort((a, b) => b.matchPercentage - a.matchPercentage) // En yüksek puana göre sırala
+    .slice(0, 10); // İlk 10 kişiyi al
+
+    res.status(200).json(matches);
+
+  } catch (error) {
+    console.error("Eşleşme hatası:", error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+};

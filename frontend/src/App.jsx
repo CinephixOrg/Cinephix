@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useContext, useState, useEffect } from "react";
 import {
   Routes,
@@ -21,25 +20,24 @@ import ListPage from "./pages/ListPage.jsx";
 import logo from "./assets/cinephix_logo.svg";
 import SplashScreen from "./pages/SplashScreen.jsx";
 
-
-// --- SİLİNDİ (1. Değişiklik) ---
-// Artık bu sayfalara ihtiyacımız yok.
-import MoviesPage from "./pages/MoviesPage.jsx";
-import SeriesPage from "./pages/SeriesPage.jsx";
-
-// --- YENİ NETWORK SAYFASINI İMPORT EDİN ---
+// --- MEVCUT SAYFALAR ---
+// MoviesPage ve SeriesPage silindiği için yorumda veya kaldırılmış olabilir
+// import MoviesPage from "./pages/MoviesPage.jsx"; 
+// import SeriesPage from "./pages/SeriesPage.jsx";
 import NetworkPage from "./pages/NetworkPage.jsx";
+
+// --- 1. YENİ IMPORT: MatchPage'i ekle ---
+import MatchPage from "./pages/MatchPage.jsx";
 // --- BİTİŞ ---
 
+
 // 1. GİRİŞ YAPMAMIŞ KULLANICI İÇİN NAVİGASYON
-// (Değişiklik yok)
 const GuestNav = () => (
   <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-50">
     <div className="flex-1">
       <NavLink to="/home" className="btn btn-ghost normal-case text-xl flex items-center gap-2">
         <img src={logo} alt="Cinephix Logo" className="w-8 h-8" />
       </NavLink>
-
     </div>
     <div className="flex-none">
       <ul className="menu menu-horizontal p-0">
@@ -51,7 +49,6 @@ const GuestNav = () => (
 );
 
 // 2. GİRİŞ YAPMIŞ KULLANICI İÇİN NAVİGASYON
-// (Değişiklik yok)
 const UserNav = ({ user, logout }) => {
   const navigate = useNavigate();
 
@@ -73,11 +70,16 @@ const UserNav = ({ user, logout }) => {
           </NavLink>
           <ul className="menu menu-horizontal p-0">
             <li><NavLink to="/home">Home</NavLink></li>
-            {/* --- SİLİNDİ (2. Değişiklik) --- */}
-            {/* Artık bu linklere ihtiyacımız yok. */}
-            {<li><NavLink to="/movies">Movies</NavLink></li>}
-            {<li><NavLink to="/series">Series</NavLink></li>}
             <li><NavLink to="/list">List</NavLink></li>
+            
+            {/* --- 2. YENİ LINK: CineMatch --- */}
+            <li>
+              <NavLink to="/match" className="text-primary font-bold">
+                🔮 CineMatch
+              </NavLink>
+            </li>
+            {/* --- BİTİŞ --- */}
+
           </ul>
         </div>
         <div className="flex-none gap-4 items-center">
@@ -91,7 +93,6 @@ const UserNav = ({ user, logout }) => {
 };
 
 // 3. KORUMALI ROTA COMPONENT'İ
-// (Değişiklik yok)
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   if (!user) {
@@ -140,20 +141,17 @@ export default function App() {
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-
-          {/* --- YENİ ROTAYI BURAYA EKLEYİN (ProtectedRoute ile sarılmış) --- */}
+          
           <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
+
+          {/* --- 3. YENİ ROTA: CineMatch Sayfası --- */}
+          <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
           {/* --- BİTİŞ --- */}
 
           <Route
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
-
-          {/* --- SİLİNDİ (3. Değişiklik) --- */}
-          {/* Artık bu route'lara ihtiyacımız yok. */}
-          {<Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />}
-          {<Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />}
 
         </Routes>
       </main>
