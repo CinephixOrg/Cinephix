@@ -19,6 +19,8 @@ import ProfileMenu from "./components/ProfileMenu.jsx";
 import ListPage from "./pages/ListPage.jsx";
 import logo from "./assets/cinephix_logo.svg";
 import SplashScreen from "./pages/SplashScreen.jsx";
+import MoviePage from "./pages/MoviesPage.jsx";
+import SeriesPage from "./pages/SeriesPage.jsx";
 
 // --- MEVCUT SAYFALAR ---
 // MoviesPage ve SeriesPage silindiği için yorumda veya kaldırılmış olabilir
@@ -28,6 +30,7 @@ import NetworkPage from "./pages/NetworkPage.jsx";
 
 // --- 1. YENİ IMPORT: MatchPage'i ekle ---
 import MatchPage from "./pages/MatchPage.jsx";
+import PublicProfilePage from "./pages/PublicProfilePage.jsx";
 // --- BİTİŞ ---
 
 
@@ -143,7 +146,8 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           
           <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
-
+          <Route path="/movies" element={<ProtectedRoute><MoviePage /></ProtectedRoute>} />
+          <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
           {/* --- 3. YENİ ROTA: CineMatch Sayfası --- */}
           <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
           {/* --- BİTİŞ --- */}
@@ -152,6 +156,8 @@ export default function App() {
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
+          {/* Public read-only profile route for other users */}
+          <Route path="/users/:id" element={<PublicProfilePage />} />
 
         </Routes>
       </main>

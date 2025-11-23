@@ -3,8 +3,14 @@ import API from "../api/axios.js"; // Oluşturduğumuz merkezi API'yi import edi
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   // Uygulama açıldığında localStorage'ı kontrol et
@@ -15,6 +21,16 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
+
+  // --- NEW: updateUser helper to keep context + localStorage in sync ---
+  const updateUser = (updatedFields) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...updatedFields };
+      try { localStorage.setItem("user", JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+  // --- END NEW ---
 
   const login = async (email, password) => {
     try {
@@ -55,12 +71,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // loading state'ini de dışarıya veriyoruz, bu sayede ilk yüklemede
-  // kullanıcı bilgilerinin gelmesini bekleyebiliriz.
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
-};
+  const value = {
+    user,
+    setUser,
+    updateUser,
+    login,
+    register,
+    logout,
+  };
 
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}

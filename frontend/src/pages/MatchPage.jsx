@@ -182,8 +182,14 @@ export default function MatchPage() {
                       
                       {/* Avatar */}
                       <div className="avatar">
-                        <div className="w-16 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                          <img src={match.user.profilePicUrl || `https://ui-avatars.com/api/?name=${match.user.username}`} alt="avatar" />
+                        <div className="w-16 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-gray-200">
+                          <img
+                            src={
+                              match.user?.profile_pic_url || match.user?.profilePicUrl || match.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.user?.username || 'U')}`
+                            }
+                            alt="avatar"
+                            className="w-full h-full object-cover object-center"
+                          />
                         </div>
                       </div>
 
@@ -196,8 +202,8 @@ export default function MatchPage() {
                           {match.sharedGenres} genres compared
                         </p>
                         <div className="mt-2">
-                            <Link to={`/profile/${match.user._id}`} className="btn btn-xs btn-outline">
-                                View Profile
+                            <Link to={`/users/${match.user._id || match.user.id}`} className="btn btn-xs btn-outline">
+                              View Profile
                             </Link>
                         </div>
                       </div>

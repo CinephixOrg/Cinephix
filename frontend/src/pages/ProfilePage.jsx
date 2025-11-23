@@ -1,26 +1,31 @@
 // src/pages/ProfilePage.jsx (FAVORİLER BÖLÜMÜ DÜZELTİLMİŞ TAM DOSYA)
 
 import React, { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
-import { AuthContext } from "../context/AuthContext";
 import API from '../api/axios.js';
 import MovieCard from '../components/MovieCard.jsx';
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import SeriesCard from '../components/SeriesCard.jsx';
 import CineGraph from "../components/CineGraph.jsx"; // CineGraph component'ini import et
+import ImageCropper from '../components/ImageCropper.jsx';
 
 export default function ProfilePage() {
-  const { user } = useContext(AuthContext);
+  const { user, updateUser } = useContext(AuthContext); // use updateUser from context
 
   // --- State'ler GÜNCELLENDİ ---
   const [profile, setProfile] = useState(null);
+  const [profilePic, setProfilePic] = useState("");
   const [favorites, setFavorites] = useState({ movies: [], series: [] });
   const [cineGraphData, setCineGraphData] = useState(null); // <-- CINEGRAPH VERİSİ
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [profilePic, setProfilePic] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+  const [selectedFileForCrop, setSelectedFileForCrop] = useState(null);
+  const [lastSelectedFile, setLastSelectedFile] = useState(null); // keep last chosen file so user can re-edit before upload
+  const [viewerOpen, setViewerOpen] = useState(false); // <-- YENİ: Görüntüleyici durumu
 
   // Bio state'leri (Değişiklik yok)
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -45,10 +50,12 @@ export default function ProfilePage() {
         setProfile(profileResponse.data);
         setFavorites(favoritesResponse.data);
         setCineGraphData(cineGraphResponse.data); // <-- YENİ STATE'İ AYARLA
-        
-        setBioText(profileResponse.data.bio || "");
-        setProfilePic(profileResponse.data.profile_pic_url); 
 
+        setBioText(profileResponse.data.bio || "");
+        setProfilePic(profileResponse.data.profile_pic_url);
+
+        // Sync context user with latest fields from backend so navbar updates
+        updateUser({ ...profileResponse.data });
       } catch (err) {
         console.error("Profil verisi çekilirken hata:", err);
         setError("Profil yüklenemedi. Lütfen daha sonra tekrar deneyin.");
@@ -70,7 +77,12 @@ export default function ProfilePage() {
       const response = await API.post(`/users/profile/${user._id}/upload-profile-pic`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setProfilePic(response.data.profilePicUrl);
+      const newUrl = response.data.profilePicUrl || response.data.profile_pic_url || "";
+      setProfilePic(newUrl);
+      // Sync context so ProfileMenu avatar updates immediately
+      updateUser({ profile_pic_url: newUrl });
+      // Also update local profile if you keep it
+      setProfile((p) => ({ ...(p || {}), profile_pic_url: newUrl }));
       toast.success("Profil resmi başarıyla güncellendi!");
     } catch (error) {
       console.error("Profil resmi yüklenirken hata:", error);
@@ -102,6 +114,38 @@ export default function ProfilePage() {
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="alert alert-error max-w-lg mx-auto mt-10">{error}</div>;
 
+  // File selected handler for crop modal
+  const handleFileSelected = (file, inputEl) => {
+    if (!file) return;
+    // store so user can re-edit same file later
+    setLastSelectedFile(file);
+    setSelectedFileForCrop(file);
+    setIsCropOpen(true);
+
+    // clear input value so the same file can be selected again later
+    if (inputEl) inputEl.value = "";
+  };
+
+  // Crop modal cancel handler
+  const handleCropCancel = () => {
+    setSelectedFileForCrop(null);
+    setIsCropOpen(false);
+  };
+
+  // Crop modal confirm handler
+  const handleCropConfirm = async (blob) => {
+    // create File from blob and upload
+    const croppedFile = new File([blob], "profile.png", { type: blob.type });
+    setIsCropOpen(false);
+    setSelectedFileForCrop(null);
+
+    // keep this file as lastSelectedFile so user can re-edit if needed
+    setLastSelectedFile(croppedFile);
+
+    // call existing upload handler (assumes handleUploadProfilePic accepts File)
+    await handleUploadProfilePic(croppedFile);
+  };
+
   // Render
   return (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8 animate-fade-in">
@@ -114,10 +158,17 @@ export default function ProfilePage() {
               <span className="loading loading-spinner loading-md"></span>
             </div>
           )}
-          <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-            <img 
-              src={profilePic || `https://ui-avatars.com/api/?name=${user.username}&size=128`} 
-              alt="Profile" 
+          <div
+            onClick={() => { if (profilePic) setViewerOpen(true); }}
+            role="button"
+            tabIndex={0}
+            className="w-32 h-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-transparent cursor-pointer"
+            onKeyDown={(e) => { if (e.key === "Enter") { if (profilePic) setViewerOpen(true); } }}
+          >
+            <img
+              src={profilePic || `https://ui-avatars.com/api/?name=${user.username}&size=128`}
+              alt="Profile"
+              className="w-full h-full object-cover object-center"
             />
           </div>
         </div>
@@ -125,9 +176,14 @@ export default function ProfilePage() {
           type="file"
           accept="image/*"
           className="file-input file-input-bordered file-input-xs w-full max-w-xs"
-          onChange={(e) => handleUploadProfilePic(e.target.files[0])}
+          onChange={(e) => handleFileSelected(e.target.files[0], e.target)}
           disabled={isUploading}
         />
+        {/* {lastSelectedFile && (
+          <button className="btn btn-sm btn-outline ml-2" onClick={() => { setSelectedFileForCrop(lastSelectedFile); setIsCropOpen(true); }}>
+            Re-edit last
+          </button>
+        )} */}
         <h1 className="text-3xl font-bold mt-4">{profile?.username || user.username}</h1>
         <p className="text-sm text-base-content/70 mt-2">
           {profile?.createdAt ?
@@ -184,18 +240,18 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {cineGraphData ? (
             <>
-              <CineGraph 
-                data={cineGraphData.movieStats} 
-                title="Watchlist Movie Genres" 
+              <CineGraph
+                data={cineGraphData.movieStats}
+                title="Watchlist Movie Genres"
               />
-              <CineGraph 
-                data={cineGraphData.seriesStats} 
-                title="Watchlist Series Genres" 
+              <CineGraph
+                data={cineGraphData.seriesStats}
+                title="Watchlist Series Genres"
               />
             </>
           ) : (
             <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner col-span-2">
-               <p className="text-base-content/70">No CineGraph data available.</p>
+              <p className="text-base-content/70">No CineGraph data available.</p>
             </div>
           )}
         </div>
@@ -242,6 +298,37 @@ export default function ProfilePage() {
         )}
       </section>
       {/* --- BİTİŞ: FAVORİ DİZİLER --- */}
+
+      {/* Crop modal */}
+      {isCropOpen && selectedFileForCrop && (
+        <ImageCropper
+          file={selectedFileForCrop}
+          onCancel={handleCropCancel}
+          onConfirm={handleCropConfirm}
+        />
+      )}
+
+      {/* Image viewer modal — add this near the end of return(), before closing tags */}
+      {viewerOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-75 p-4">
+          <div className="relative max-w-4xl w-full">
+            <button
+              className="absolute right-2 top-2 btn btn-ghost btn-sm z-50"
+              onClick={() => setViewerOpen(false)}
+            >
+              Close
+            </button>
+            <div className="bg-base-100 p-4 rounded shadow-lg flex flex-col items-center">
+              <img
+                src={profilePic || `https://ui-avatars.com/api/?name=${user.username}&size=512`}
+                alt="Profile large"
+                className="max-h-[80vh] object-contain rounded-md"
+              />
+              
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
