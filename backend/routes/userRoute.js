@@ -20,7 +20,9 @@ import {
   updateUserBio,
   getUserRatings, // --- BİTİŞ ---
   getUserCineGraph, // <-- YENİ EKLENDİ
-  findMatches
+  findMatches,
+  updatePassword,
+  deleteAccount
   // --- BİTİŞ ---
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js"; // Bu sizde zaten vardı
@@ -165,8 +167,11 @@ router.get("/favorites/:id", authMiddleware, getUserFavorites);
 router.patch("/profile/:id/bio", authMiddleware, updateUserBio);
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);
-router.get("/me/cinegraph", authMiddleware, getUserCineGraph);
+// Benzersiz bir URL yapısı kullanıyoruz:
+router.get("/cinegraph-data/:id", authMiddleware, getUserCineGraph);
 // --- EŞLEŞME ROTASI ---
 // POST kullanıyoruz çünkü body içinde filtre (genres) göndereceğiz
 router.post("/matches", authMiddleware, findMatches);
+router.put("/profile/password", authMiddleware, updatePassword);
+router.delete("/profile", authMiddleware, deleteAccount);
 export default router;

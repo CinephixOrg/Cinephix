@@ -521,67 +521,80 @@ const SERIES_GENRE_MAP = {
 };
 // --- BİTİŞ ---
 
+// backend/controllers/userController.js (Sadece bu fonksiyonu güncelle)
+
 export const getUserCineGraph = async (req, res) => {
+  console.log("--- getUserCineGraph BAŞLADI ---"); // LOG 1
+
   try {
-    // 1. Modelleri global bağlantıdan çağır
     const Movie = mongoose.model('Movie');
     const Series = mongoose.model('Series');
 
-    // 2. Watchlist'i DB'den çek
-    const user = await User.findById(req.user.id).select('watchlist');
-    if (!user || !user.watchlist) {
-      return res.status(404).json({ message: "Watchlist bulunamadı" });
+    let targetUserId = req.params.id;
+    console.log("Gelen ID (req.params.id):", targetUserId); // LOG 2
+
+    if (targetUserId === 'me' || !targetUserId) {
+        targetUserId = req.user.id;
+        console.log("ID 'me' olduğu için giriş yapan kullanıcının ID'si kullanılıyor:", targetUserId); // LOG 3
+    }
+
+    const user = await User.findById(targetUserId).select('watchlist');
+    
+    if (!user) {
+        console.log("Kullanıcı BULUNAMADI!"); // LOG 4
+        return res.status(200).json({ movieStats: {}, seriesStats: {} });
+    }
+    
+    console.log("Kullanıcı bulundu. Watchlist uzunluğu:", user.watchlist.length); // LOG 5
+
+    if (!user.watchlist || user.watchlist.length === 0) {
+      console.log("Watchlist boş, boş veri dönülüyor."); // LOG 6
+      return res.status(200).json({ movieStats: {}, seriesStats: {} });
     }
     const watchlist = user.watchlist;
 
-    // 3. Watchlist'i ID'lere ayır
-    const movieIds = watchlist
-      .filter(item => item.itemType === 'movie')
-      .map(item => item.itemId);
-      
-    const seriesIds = watchlist
-      .filter(item => item.itemType === 'series')
-      .map(item => item.itemId);
+    const movieIds = watchlist.filter(item => item.itemType === 'movie').map(item => item.itemId);
+    const seriesIds = watchlist.filter(item => item.itemType === 'series').map(item => item.itemId);
 
-    // 4. --- DÜZELTME: 'genres' YERİNE 'genre_ids' ÇEK ---
+    console.log(`Film ID'leri (${movieIds.length}):`, movieIds); // LOG 7
+
     const movies = await Movie.find({ '_id': { $in: movieIds } }).select('genre_ids');
     const series = await Series.find({ '_id': { $in: seriesIds } }).select('genre_ids');
-    // --- BİTİŞ ---
 
-    // 5. --- DÜZELTME: TÜR ADLARINI SÖZLÜKTEN BUL VE SAY ---
+    console.log(`Veritabanından çekilen Film sayısı:`, movies.length); // LOG 8
+    if (movies.length > 0) {
+        console.log("İlk filmin genre_ids'i:", movies[0].genre_ids); // LOG 9 - BU ÇOK ÖNEMLİ
+    }
+
     const movieGenreCounts = {};
     const seriesGenreCounts = {};
 
-    // Film türlerini say
     for (const movie of movies) {
       if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
         for (const genreId of movie.genre_ids) {
-          const genreName = MOVIE_GENRE_MAP[genreId]; // ID'yi isme çevir (örn: 14 -> "Fantasy")
-          if (genreName) { // Eğer sözlükte varsa
-            movieGenreCounts[genreName] = (movieGenreCounts[genreName] || 0) + 1;
+          const genreName = MOVIE_GENRE_MAP[genreId];
+          if (genreName) {
+             movieGenreCounts[genreName] = (movieGenreCounts[genreName] || 0) + 1;
+          } else {
+             console.log(`Uyarı: ${genreId} ID'si MOVIE_GENRE_MAP içinde bulunamadı.`); // LOG 10
           }
         }
       }
     }
     
-    // Dizi türlerini say
+    // ... (Dizi döngüsü aynı kalabilir) ...
     for (const show of series) {
       if (show.genre_ids && Array.isArray(show.genre_ids)) {
         for (const genreId of show.genre_ids) {
-          const genreName = SERIES_GENRE_MAP[genreId]; // ID'yi isme çevir
-          if (genreName) {
-            seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
-          }
+          const genreName = SERIES_GENRE_MAP[genreId];
+          if (genreName) seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
         }
       }
     }
-    // --- BİTİŞ ---
     
-    // 6. Frontend'e yolla (Bu kısım aynı)
-    res.status(200).json({
-      movieStats: movieGenreCounts, // Örn: { "Fantasy": 1, "Action": 5 }
-      seriesStats: seriesGenreCounts
-    });
+    console.log("Hesaplanan Film İstatistikleri:", movieGenreCounts); // LOG 11
+    
+    res.status(200).json({ movieStats: movieGenreCounts, seriesStats: seriesGenreCounts });
 
   } catch (error) {
     console.error("CineGraph verisi çekilirken hata:", error);
@@ -758,6 +771,79 @@ export const findMatches = async (req, res) => {
 
   } catch (error) {
     console.error("Eşleşme hatası:", error);
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    // Kullanıcıyı şifresiyle birlikte bul (select ile şifreyi dahil et)
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    }
+
+    // Mevcut şifreyi kontrol et
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Mevcut şifreniz hatalı.' });
+    }
+
+    // Yeni şifreyi hash'le ve kaydet
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ message: 'Şifreniz başarıyla güncellendi.' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  }
+};
+
+/**
+ * @desc   Kullanıcı hesabını kalıcı olarak siler
+ * @route  DELETE /api/users/profile
+ * @access Private
+ */
+export const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
+    }
+
+    // --- TEMİZLİK İŞLEMİ ---
+    // Kullanıcı silinmeden önce ona ait verileri de silelim.
+    
+    // 1. Verdiği oyları sil
+    await Rating.deleteMany({ user: user._id });
+    
+    // 2. Bildirimlerini sil
+    await Notification.deleteMany({ user: user._id });
+    await Notification.deleteMany({ sender: user._id }); 
+
+    // 3. Kullanıcıyı takipçi listelerinden temizle
+    await User.updateMany(
+        { following: user._id },
+        { $pull: { following: user._id } }
+    );
+    await User.updateMany(
+        { followers: user._id },
+        { $pull: { followers: user._id } }
+    );
+
+    // --- SON OLARAK KULLANICIYI SİL ---
+    await User.findByIdAndDelete(user._id);
+
+    res.status(200).json({ message: 'Hesabınız ve tüm verileriniz başarıyla silindi.' });
+
+  } catch (error) {
+    console.error("Hesap silme hatası:", error);
     res.status(500).json({ message: 'Sunucu hatası', error: error.message });
   }
 };

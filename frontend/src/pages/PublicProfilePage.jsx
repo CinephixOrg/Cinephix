@@ -3,15 +3,27 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import CineGraph from "../components/CineGraph.jsx";
 import { AuthContext } from "../context/AuthContext.jsx";
+import MovieCard from "../components/MovieCard.jsx";
+import SeriesCard from "../components/SeriesCard.jsx";
 
 export default function PublicProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: authUser } = useContext(AuthContext);
+  console.log("🔥 PublicProfilePage MOUNTED");
+  console.log("PUBLIC PROFILE ID:", id);
+
+  useEffect(() => {
+    if (!id) {
+      navigate("/home");
+      return;
+    }
+  }, [id, navigate]);
+
 
   const [profile, setProfile] = useState(null);
   const [cineGraphData, setCineGraphData] = useState(null);
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState({ movies: [], series: [] });
   const [loading, setLoading] = useState(true);
   const [loadingLists, setLoadingLists] = useState(true);
   const [isFollowed, setIsFollowed] = useState(false);
@@ -71,74 +83,53 @@ export default function PublicProfilePage() {
     const loadLists = async () => {
       setLoadingLists(true);
       try {
-        const headers = authUser?.token ? { Authorization: `Bearer ${authUser.token}` } : {};
+        const headers = authUser?.token
+          ? { Authorization: `Bearer ${authUser.token}` }
+          : {};
 
-        try {
-          const favRes = await API.get(`/users/favorites/${id}`, { headers });
-          const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
-          const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];
+        const favRes = await API.get(`/users/favorites/${id}`, { headers });
 
-          const merged = [
-            ...movies.map((m) => ({ ...(m || {}), type: 'movie', contentId: m._id || m.id || m.contentId })),
-            ...series.map((s) => ({ ...(s || {}), type: 'series', contentId: s._id || s.id || s.contentId })),
-          ];
-          setFavorites(merged);
+        const movies = Array.isArray(favRes.data?.movies)
+          ? favRes.data.movies
+          : [];
 
-          // Compute genre counts for movies/series
-          const MOVIE_GENRE_MAP = {
-            28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
-            80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
-            14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
-            9648: "Mystery", 10749: "Romance", 878: "Science Fiction",
-            10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
-          };
-          const SERIES_GENRE_MAP = {
-            10759: "Action & Adventure", 16: "Animation", 35: "Comedy",
-            80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
-            10762: "Kids", 9648: "Mystery", 10763: "News", 10764: "Reality",
-            10765: "Sci-Fi & Fantasy", 10766: "Soap", 10767: "Talk",
-            10768: "War & Politics", 37: "Western"
-          };
+        const series = Array.isArray(favRes.data?.series)
+          ? favRes.data.series
+          : [];
 
-          const buildGenreCounts = (items, map) => {
-            const counts = {};
-            (items || []).forEach((it) => {
-              if (!it) return;
-              let genres = [];
-              if (Array.isArray(it.genre_ids) && it.genre_ids.length > 0) {
-                genres = it.genre_ids.map((id) => map[id]).filter(Boolean);
-              } else if (Array.isArray(it.genres)) {
-                genres = it.genres;
-              } else if (Array.isArray(it.genres_list)) {
-                genres = it.genres_list;
-              } else if (Array.isArray(it.genre)) {
-                genres = it.genre;
-              }
-              genres.forEach((g) => { counts[g] = (counts[g] || 0) + 1; });
-            });
-            return counts;
-          };
+        // ⬇️ KRİTİK SATIR (ProfilePage ile birebir)
+        setFavorites({ movies, series });
 
-          const movieItems = merged.filter((i) => i.type === 'movie');
-          const seriesItems = merged.filter((i) => i.type === 'series');
-
-          const movieStats = buildGenreCounts(movieItems, MOVIE_GENRE_MAP);
-          const seriesStats = buildGenreCounts(seriesItems, SERIES_GENRE_MAP);
-
-          setCineGraphData({ movieStats, seriesStats });
-        } catch (e) {
-          setFavorites([]);
-          setCineGraphData(null);
-        }
       } catch (err) {
-        console.error("Failed to load lists", err);
+        console.error("Failed to load favorites", err);
+        setFavorites({ movies: [], series: [] });
       } finally {
         setLoadingLists(false);
       }
     };
 
+
+    const loadCineGraph = async () => {
+      try {
+        const headers = authUser?.token
+          ? { Authorization: `Bearer ${authUser.token}` }
+          : {};
+
+        const res = await API.get(`/users/cinegraph-data/${id}`, { headers });
+
+        console.log("🎬 PUBLIC CINEGRAPH RAW:", res.data);
+
+        setCineGraphData(res.data);
+      } catch (e) {
+        console.error("Failed to load cinegraph", e);
+        setCineGraphData(null);
+      }
+    };
+
+
     loadProfile();
     loadLists();
+    loadCineGraph();
 
     return () => { mounted = false; };
   }, [id, authUser?.token]);
@@ -220,10 +211,17 @@ export default function PublicProfilePage() {
     const map = new Map();
     const add = (obj) => { if (!obj) return; Object.entries(obj).forEach(([k,v]) => map.set(k, (map.get(k)||0)+v)); };
     if (cineGraphData) { add(cineGraphData.movieStats); add(cineGraphData.seriesStats); }
-    favorites.forEach(it => {
-      const g = it.genres || it.genre || it.genres_list || [];
-      if (Array.isArray(g)) g.forEach(gg => map.set(gg, (map.get(gg)||0)+1));
-    });
+    if (favorites?.movies) {
+      favorites.movies.forEach(m => {
+        (m.genres || []).forEach(g => map.set(g, (map.get(g) || 0) + 1));
+      });
+    }
+
+    if (favorites?.series) {
+      favorites.series.forEach(s => {
+        (s.genres || []).forEach(g => map.set(g, (map.get(g) || 0) + 1));
+      });
+    }
     return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]);
   })();
 
@@ -295,25 +293,40 @@ export default function PublicProfilePage() {
       </section>
 
       {/* Favorites section */}
-      <section className="mt-6">
-        <h3 className="text-lg font-semibold mb-3">Favorites</h3>
-        {loadingLists ? (
-          <div>Loading favorites...</div>
-        ) : favorites && favorites.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {favorites.map((f) => (
-              <div key={f._id || f.id || f.contentId} className="bg-base-100 rounded overflow-hidden">
-                <Link to={`/content/${f.type || f.contentType || 'movie'}/${f.contentId || f._id || f.id}`}>
-                  <div className="w-full h-36 bg-gray-200">
-                    <img src={f.poster || f.thumbnail || f.image || ''} alt={f.title || f.name} className="w-full h-full object-cover object-center" />
-                  </div>
-                  <div className="p-2 text-sm font-medium">{f.title || f.name}</div>
-                </Link>
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
+
+        {favorites.movies && favorites.movies.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {favorites.movies.map((movie) => (
+              <div key={movie._id} className="flex-none w-36">
+                <MovieCard movie={movie} />
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-sm text-muted">No favorites to show.</div>
+          <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
+            <p className="text-base-content/70">No favorite movies.</p>
+          </div>
+        )}
+      </section>
+
+      {/* --- FAVORİ DİZİLER --- */}
+      <section className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
+
+        {favorites.series && favorites.series.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {favorites.series.map((series) => (
+              <div key={series._id} className="flex-none w-36">
+                <SeriesCard series={series} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
+            <p className="text-base-content/70">No favorite series.</p>
+          </div>
         )}
       </section>
     </div>
