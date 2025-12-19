@@ -18,6 +18,7 @@ import userRoute from "./routes/userRoute.js";
 import userRoutes from './models/User.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import ratingRoutes from './routes/rating.js'; // <-- YENİ ROTAYI İMPORT ET
+import matchRoute from "./routes/matchRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -26,6 +27,8 @@ const PORT = process.env.PORT || 5000;
 app.use("/api/users", userRoute);
 app.use('/api/ratings', ratingRoutes); // <-- YENİ ROTAYI EKLE
 app.use('/api/reviews', reviewRoutes);
+app.use("/api/match", matchRoute);
+
 // Bağlantının açılmasını bekleyen yardımcı fonksiyon
 function waitOpen(conn) {
   return new Promise((resolve, reject) => {
