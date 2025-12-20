@@ -76,7 +76,7 @@ export default function MatchPage() {
         <header className="text-center mb-10">
           <h1 className="text-4xl font-bold mb-2">CineMatch 🔮</h1>
           <p className="text-base-content/70">
-            Algoritmamız, zevkleri seninkine en çok benzeyen kullanıcıları bulur.
+            Find users whose tastes are most similar to yours!
           </p>
         </header>
 
@@ -105,7 +105,7 @@ export default function MatchPage() {
           <div className="flex flex-col items-center gap-4 mb-6">
             <div className="form-control">
               <label className="label cursor-pointer gap-4">
-                <span className="label-text text-lg">Tüm CineGraph'ımı Eşleştir</span> 
+                <span className="label-text text-lg">Match my entire CineGraph</span> 
                 <input 
                   type="radio" 
                   name="filterMode" 
@@ -117,7 +117,7 @@ export default function MatchPage() {
             </div>
             <div className="form-control">
               <label className="label cursor-pointer gap-4">
-                <span className="label-text text-lg">Belirli Türleri Eşleştir</span> 
+                <span className="label-text text-lg">Match specific genres</span> 
                 <input 
                   type="radio" 
                   name="filterMode" 
@@ -132,7 +132,7 @@ export default function MatchPage() {
           {/* 3. Tür Seçici (Sadece 'specific' modunda görünür) */}
           {filterMode === 'specific' && (
             <div className="mb-8 animate-fade-in">
-              <h3 className="text-center font-semibold mb-4">Hangi türlerde uzman birini arıyorsun?</h3>
+              <h3 className="text-center font-semibold mb-4">Which genres do you want to match?</h3>
               <div className="flex flex-wrap justify-center gap-2">
                 {currentGenreList.map((genre) => (
                   <button
@@ -170,8 +170,8 @@ export default function MatchPage() {
 
             {matches.length === 0 ? (
               <div className="text-center p-10 opacity-60">
-                <p className="text-xl">Üzgünüz, kriterlerine uygun bir eşleşme bulunamadı.</p>
-                <p>Daha fazla film puanlayarak veya filtreleri değiştirerek tekrar dene.</p>
+                <p className="text-xl">Sorry, no matches found for your criteria.</p>
+                <p>Try rating more movies or adjust your filters.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
