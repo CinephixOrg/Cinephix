@@ -75,30 +75,7 @@ export default function SettingsPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Settings</h1>
 
-        {/* 1. GÖRÜNÜM AYARLARI */}
-        <div className="card bg-base-100 shadow-xl mb-8">
-          <div className="card-body">
-            <h2 className="card-title mb-4">Appearance</h2>
-            <div className="form-control w-full max-w-xs">
-              <label className="label">
-                <span className="label-text">Select Theme</span>
-              </label>
-              <select 
-                className="select select-bordered" 
-                value={theme} 
-                onChange={handleThemeChange}
-              >
-                <option value="forest">Forest (Default)</option>
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="synthwave">Synthwave</option>
-                <option value="cyberpunk">Cyberpunk</option>
-                <option value="luxury">Luxury</option>
-                <option value="dracula">Dracula</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        
 
         {/* 2. GÜVENLİK AYARLARI */}
         <div className="card bg-base-100 shadow-xl mb-8">

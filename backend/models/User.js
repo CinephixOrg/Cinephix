@@ -58,7 +58,23 @@ const userSchema = new Schema({
   favoriteSeries: [{
     type: Schema.Types.ObjectId,
     ref: 'Series' // Sizin 'Series' modelinizin adına referans
-  }]
+  }],
+  movieCineGraph: {
+  type: Map,
+  of: {
+    count: Number,
+    avgRating: Number
+  },
+  default: {}
+},
+seriesCineGraph: {
+  type: Map,
+  of: {
+    count: Number,
+    avgRating: Number
+  },
+  default: {}
+}
   // --- BİTİŞ ---
 
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
