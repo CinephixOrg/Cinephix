@@ -122,7 +122,7 @@ export default function NetworkPage() {
         {loading && (
           <div className="text-center p-10">
             <span className="loading loading-spinner loading-lg"></span>
-            <p>Yükleniyor...</p>
+            <p>Loading...</p>
           </div>
         )}
 
@@ -134,7 +134,7 @@ export default function NetworkPage() {
         
         {!loading && !error && activeTab === "blocked" && (
            <div className="text-center p-10 text-base-content/70">
-            Engellenen kullanıcı bulunmuyor.
+            No blocked users.
           </div>
         )}
 
@@ -142,7 +142,7 @@ export default function NetworkPage() {
           <>
             {displayedUsers.length === 0 ? (
               <div className="text-center p-10 text-base-content/70">
-                {activeTab === "following" ? "Kimseyi takip etmiyorsunuz." : "Henüz takipçiniz yok."}
+                {activeTab === "following" ? "Not following anyone." : "No followers."}
               </div>
             ) : (
               <div className="overflow-x-auto">
