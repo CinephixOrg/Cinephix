@@ -10,6 +10,7 @@ import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import SeriesCard from '../components/SeriesCard.jsx';
 import CineGraph from "../components/CineGraph.jsx"; // CineGraph component'ini import et
 import ImageCropper from '../components/ImageCropper.jsx';
+import { useParams } from "react-router-dom";
 
 export default function ProfilePage() {
   const { user, updateUser } = useContext(AuthContext); // use updateUser from context
@@ -31,45 +32,51 @@ export default function ProfilePage() {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioText, setBioText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const { userId } = useParams(); // URL'den gelen ID
+  console.log("URL userId param:", userId);
+  console.log("🔥 ProfilePage MOUNTED");
+
+
+  const targetUserId = user._id;
+  const isOwnProfile = true;
 
   // --- useEffect (fetchData) GÜNCELLENDİ (CineGraph eklendi) ---
   useEffect(() => {
-    if (!user?._id) return;
+    if (!targetUserId) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        // --- ARTIK 3 İSTEK ATIYORUZ ---
-        const [profileResponse, favoritesResponse, cineGraphResponse] = await Promise.all([
-          API.get(`/users/profile/${user._id}`),    // 1: Profil
-          API.get(`/users/favorites/${user._id}`), // 2: Favoriler
-          API.get(`/users/me/cinegraph`)            // 3: YENİ: CineGraph verisi
-        ]);
+        const [profileResponse, favoritesResponse, cineGraphResponse] =
+          await Promise.all([
+            API.get(`/users/profile/${targetUserId}`),
+            API.get(`/users/favorites/${targetUserId}`),
+            API.get(`/users/cinegraph-data/${targetUserId}`),
+          ]);
 
         setProfile(profileResponse.data);
         setFavorites(favoritesResponse.data);
-        setCineGraphData(cineGraphResponse.data); // <-- YENİ STATE'İ AYARLA
+        setCineGraphData(cineGraphResponse.data);
 
         setBioText(profileResponse.data.bio || "");
         setProfilePic(profileResponse.data.profile_pic_url);
 
-        // Sync context user with latest fields from backend so navbar updates
         updateUser({ ...profileResponse.data });
       } catch (err) {
-        console.error("Profil verisi çekilirken hata:", err);
-        setError("Profil yüklenemedi. Lütfen daha sonra tekrar deneyin.");
+        setError("Profil yüklenemedi.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user?._id]);
+  }, [targetUserId]);
+
 
   // Profil resmi yükleme fonksiyonu (Değişiklik yok)
   const handleUploadProfilePic = async (file) => {
-    if (!file) return;
+    if (!file || !isOwnProfile) return;
     const formData = new FormData();
     formData.append("profilePic", file);
     setIsUploading(true);
@@ -94,6 +101,7 @@ export default function ProfilePage() {
 
   // Bio kaydetme (Değişiklik yok)
   const handleSaveBio = async () => {
+    if (!isOwnProfile) return;
     setIsSaving(true);
     try {
       const response = await API.patch(`/users/profile/${user._id}/bio`, { bio: bioText });
@@ -116,7 +124,7 @@ export default function ProfilePage() {
 
   // File selected handler for crop modal
   const handleFileSelected = (file, inputEl) => {
-    if (!file) return;
+    if (!file || !isOwnProfile) return;
     // store so user can re-edit same file later
     setLastSelectedFile(file);
     setSelectedFileForCrop(file);
@@ -172,13 +180,17 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-        <input
-          type="file"
-          accept="image/*"
-          className="file-input file-input-bordered file-input-xs w-full max-w-xs"
-          onChange={(e) => handleFileSelected(e.target.files[0], e.target)}
-          disabled={isUploading}
-        />
+
+        {isOwnProfile && (
+            <input
+              type="file"
+              accept="image/*"
+              className="file-input file-input-bordered file-input-xs w-full max-w-xs mt-4"
+              onChange={(e) => handleFileSelected(e.target.files[0], e.target)}
+              disabled={isUploading}
+            />
+        )}
+        
         {/* {lastSelectedFile && (
           <button className="btn btn-sm btn-outline ml-2" onClick={() => { setSelectedFileForCrop(lastSelectedFile); setIsCropOpen(true); }}>
             Re-edit last
@@ -221,14 +233,17 @@ export default function ProfilePage() {
           ) : (
             <div className="relative group">
               <p className="text-base-content/80 min-h-[4rem] whitespace-pre-wrap break-words">
-                {profile?.bio || "No bio yet."}
+                {profile?.bio || (isOwnProfile ? "No bio yet. Click edit to add one." : "No bio.")}
               </p>
-              <button
-                className="btn btn-ghost btn-sm btn-circle absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => setIsEditingBio(true)}
-              >
-                ✏️
-              </button>
+
+              {isOwnProfile && (
+                  <button
+                    className="btn btn-ghost btn-sm btn-circle absolute -top-2 -right-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setIsEditingBio(true)}
+                  >
+                    ✏️
+                  </button>
+              )}
             </div>
           )}
         </div>
@@ -236,7 +251,9 @@ export default function ProfilePage() {
 
       {/* --- YENİ: CineGraph Bölümü --- */}
       <section className="mt-12">
-        <h2 className="text-3xl font-bold mb-6 text-center">CineGraph</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center">
+            {isOwnProfile ? "My CineGraph" : `${profile?.username || 'User'}'s CineGraph`}
+        </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {cineGraphData ? (
             <>

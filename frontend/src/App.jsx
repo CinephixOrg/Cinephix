@@ -1,13 +1,11 @@
-// src/App.jsx
 import React, { useContext, useState, useEffect } from "react";
 import {
   Routes,
   Route,
-  NavLink,
   Navigate,
   useNavigate,
 } from "react-router-dom";
-import { toast, Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 
 import { AuthContext } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
@@ -16,83 +14,27 @@ import HomePage from "./pages/HomePage.jsx";
 import WelcomePage from "./pages/WelcomePage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ContentDetailPage from "./pages/ContentDetailPage.jsx";
-import ProfileMenu from "./components/ProfileMenu.jsx";
 import ListPage from "./pages/ListPage.jsx";
-import logo from "./assets/cinephix_logo.svg";
 import SplashScreen from "./pages/SplashScreen.jsx";
-import PublicProfilePage from "./pages/PublicProfilePage.jsx";
-
-
-// --- SİLİNDİ (1. Değişiklik) ---
-// Artık bu sayfalara ihtiyacımız yok.
-import MoviesPage from "./pages/MoviesPage.jsx";
+import MoviePage from "./pages/MoviesPage.jsx";
 import SeriesPage from "./pages/SeriesPage.jsx";
+import SettingsPage from "./pages/SettingsPage.jsx";
+import TopBar from "./components/TopBar";
 
-// --- YENİ NETWORK SAYFASINI İMPORT EDİN ---
+// --- MEVCUT SAYFALAR ---
+// MoviesPage ve SeriesPage silindiği için yorumda veya kaldırılmış olabilir
+// import MoviesPage from "./pages/MoviesPage.jsx"; 
+// import SeriesPage from "./pages/SeriesPage.jsx";
 import NetworkPage from "./pages/NetworkPage.jsx";
+
+// --- 1. YENİ IMPORT: MatchPage'i ekle ---
+import MatchPage from "./pages/MatchPage.jsx";
+import PublicProfilePage from "./pages/PublicProfilePage.jsx";
 // --- BİTİŞ ---
 
-// 1. GİRİŞ YAPMAMIŞ KULLANICI İÇİN NAVİGASYON
-// (Değişiklik yok)
-const GuestNav = () => (
-  <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-50">
-    <div className="flex-1">
-      <NavLink to="/home" className="btn btn-ghost normal-case text-xl flex items-center gap-2">
-        <img src={logo} alt="Cinephix Logo" className="w-8 h-8" />
-      </NavLink>
 
-    </div>
-    <div className="flex-none">
-      <ul className="menu menu-horizontal p-0">
-        <li><NavLink to="/login" className="btn btn-ghost">Login</NavLink></li>
-        <li><NavLink to="/register" className="btn btn-primary">Register</NavLink></li>
-      </ul>
-    </div>
-  </nav>
-);
-
-// 2. GİRİŞ YAPMIŞ KULLANICI İÇİN NAVİGASYON
-// (Değişiklik yok)
-const UserNav = ({ user, logout }) => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    toast.success("Successfully logged out! 👋", {
-      style: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" },
-      iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
-    });
-    navigate("/login");
-  };
-
-  return (
-    <>
-      <nav className="navbar bg-base-300 shadow-lg sticky top-0 z-40">
-        <div className="flex-1">
-          <NavLink to="/home" className="btn btn-ghost text-xl">
-            <img src={logo} alt="Cinephix Logo" className="w-8 h-8" />
-          </NavLink>
-          <ul className="menu menu-horizontal p-0">
-            <li><NavLink to="/home">Home</NavLink></li>
-            {/* --- SİLİNDİ (2. Değişiklik) --- */}
-            {/* Artık bu linklere ihtiyacımız yok. */}
-            {<li><NavLink to="/movies">Movies</NavLink></li>}
-            {<li><NavLink to="/series">Series</NavLink></li>}
-            <li><NavLink to="/list">List</NavLink></li>
-          </ul>
-        </div>
-        <div className="flex-none gap-4 items-center">
-          {/* Kullanıcı adını göster */}
-          <span className="text-sm font-medium text-base-content">{user.username}</span>
-          <ProfileMenu user={user} onLogout={handleLogout} />
-        </div>
-      </nav>
-    </>
-  );
-};
 
 // 3. KORUMALI ROTA COMPONENT'İ
-// (Değişiklik yok)
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   if (!user) {
@@ -126,7 +68,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-base-200" data-theme="forest">
-      {user ? <UserNav user={user} logout={logout} /> : <GuestNav />}
+
+      {/* 🔥 GLOBAL BAR – HER SAYFADA */}
+      <TopBar />
 
       <main>
         <Routes>
@@ -140,27 +84,24 @@ export default function App() {
 
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
+          <Route path="/users/:id" element={<PublicProfilePage />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
-          {/* Protected network page */}
           <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
+          <Route path="/movies" element={<ProtectedRoute><MoviePage /></ProtectedRoute>} />
+          <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
+          <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
           <Route
             path="/content/:type/:contentId"
             element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
           />
-
-          {/* Public (read-only) profile page for other users */}
-          <Route path="/users/:id" element={<PublicProfilePage />} />
-
-          {/* legacy movie/series routes (kept if needed) */}
-          {<Route path="/movies" element={<ProtectedRoute><MoviesPage /></ProtectedRoute>} />}
-          {<Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />}
-
         </Routes>
       </main>
 
       <Toaster position="top-center" />
     </div>
   );
+
 }

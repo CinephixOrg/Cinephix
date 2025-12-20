@@ -1,5 +1,6 @@
 // src/components/UserRow.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
 /**
  * props:
@@ -16,17 +17,27 @@ export default function UserRow({ user, isFollowing, onToggle }) {
     <tr className="hover:bg-base-200">
       <td>
         <div className="flex items-center gap-3">
-          <div className="avatar placeholder">
-            <div className="bg-neutral text-neutral-content rounded-full w-10">
-              {/* Kullanıcının adının ilk harfini al, büyük harf yap */}
-              <span className="text-lg">{user.username?.[0]?.toUpperCase()}</span>
+          <Link to={`/users/${user._id}`} className="flex items-center gap-3">
+            <div className="avatar">
+              {user.profile_pic_url ? (
+                <div className="w-10 rounded-full overflow-hidden">
+                  <img
+                    src={user.profile_pic_url}
+                    alt={`${user.username}'s avatar`}
+                    className="w-10 h-10 object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center">
+                  <span className="text-lg">{user.username?.[0]?.toUpperCase()}</span>
+                </div>
+              )}
             </div>
-          </div>
-          <div>
-            <div className="font-bold">{user.username}</div>
-            {/* Buraya isterseniz kullanıcının tam adını vs. ekleyebilirsiniz */}
-          </div>
-        </div>
+            <div>
+              <div className="font-bold">{user.username}</div>
+            </div>
+          </Link>
+      </div>
       </td>
       {/* Sağ taraftaki buton için boş bir <th> ekledik */}
       <th className="text-right">

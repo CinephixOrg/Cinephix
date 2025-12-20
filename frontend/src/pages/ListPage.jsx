@@ -48,14 +48,17 @@ export default function ListPage() {
             <h2 className="text-2xl font-bold mb-2">Movies</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 {movies.length
-                    ? movies.map(m => <MovieCard
-                        movie={m}
-                        showRemove
-                        onRemove={async () => {
-                            await API.delete(`/users/me/watchlist/${m._id}`);
-                            setMovies(prev => prev.filter(x => x._id !== m._id));
-                        }}
-                    />)
+                    ? movies.map(m => (
+                        <MovieCard
+                            key={m._id || m.id}
+                            movie={m}
+                            showRemove
+                            onRemove={async () => {
+                                await API.delete(`/users/me/watchlist/${m._id}`);
+                                setMovies(prev => prev.filter(x => x._id !== m._id));
+                            }}
+                        />
+                    ))
                     : <p>No movies added yet.</p>}
             </div>
 

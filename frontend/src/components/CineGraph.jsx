@@ -10,6 +10,13 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 // Bu component'e { "Horror": 2, "Thriller": 2, "Comedy": 1 } gibi bir veri vereceğiz
 export default function CineGraph({ data, title }) {
+    if (!data || typeof data !== "object") {
+    return (
+      <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
+        <p className="text-base-content/70">No data for {title}.</p>
+      </div>
+    );
+  }
 
   // 3. Backend verisini Chart.js'in anlayacağı formata dönüştür
   const labels = Object.keys(data);  // ["Horror", "Thriller", "Comedy"]
