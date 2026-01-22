@@ -6,10 +6,10 @@ import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
 
 // Modelleri import et (Yolların doğruluğundan emin ol)
-import User from './models/User.js';
-import Rating from './models/Rating.js';
-import { createMovieModel } from './models/Movie.js';
-import { createSeriesModel } from './models/Series.js';
+import User from '../models/User.js';
+import Rating from '../models/Rating.js';
+import { createMovieModel } from '../models/Movie.js';
+import { createSeriesModel } from '../models/Series.js';
 
 dotenv.config();
 

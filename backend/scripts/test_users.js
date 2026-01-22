@@ -3,7 +3,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
-import User from "./models/User.js"; // kendi model yoluna göre değiştir (örneğin ./models/userModel.js)
+import User from "../models/User.js"; // kendi model yoluna göre değiştir (örneğin ./models/userModel.js)
 
 dotenv.config(); // .env dosyasından MONGO_URI vs. okur
 
