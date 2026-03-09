@@ -1,5 +1,5 @@
-// backend/controllers/ratingController.js (YENİ DOSYA)
-import Rating from '../models/Rating.js';
+// backend/controllers/ratingController.js
+import Rating from "../models/Rating.js";
 import User from "../models/User.js";
 
 import { conn } from "../db/connections.js";
@@ -8,6 +8,26 @@ import { createSeriesModel } from "../models/Series.js";
 
 const Movie = createMovieModel(conn);
 const Series = createSeriesModel(conn);
+
+/* ---------- TMDB GENRE MAPS ---------- */
+
+const MOVIE_GENRE_MAP = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
+  9648: "Mystery", 10749: "Romance", 878: "Science Fiction",
+  10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
+};
+
+const SERIES_GENRE_MAP = {
+  10759: "Action & Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  10762: "Kids", 9648: "Mystery", 10763: "News", 10764: "Reality",
+  10765: "Sci-Fi & Fantasy", 10766: "Soap", 10767: "Talk",
+  10768: "War & Politics", 37: "Western"
+};
+
+/* ---------- CINEGRAPH UPDATE ---------- */
 
 const updateCineGraph = async ({
   userId,
@@ -50,29 +70,32 @@ const updateCineGraph = async ({
   await user.save();
 };
 
-// @desc    Bir içeriğe puan ekle VEYA güncelle
-// @route   POST /api/ratings
-// @access  Private
+/* ---------- ADD / UPDATE RATING ---------- */
+
 export const addOrUpdateRating = async (req, res) => {
   const { contentId, contentType, value } = req.body;
   const userId = req.user.id;
 
   try {
-    const existingRating = await Rating.findOne({
-      user: userId,
-      contentId,
-    });
+    const existingRating = await Rating.findOne({ user: userId, contentId });
 
     let genres = [];
 
     if (contentType === "movie") {
       const movie = await Movie.findById(contentId).lean();
       if (!movie) return res.status(404).json({ message: "Movie not found" });
-      genres = movie.genres || [];
+
+      genres = (movie.genre_ids || [])
+        .map(id => MOVIE_GENRE_MAP[id])
+        .filter(Boolean);
+
     } else {
       const series = await Series.findById(contentId).lean();
       if (!series) return res.status(404).json({ message: "Series not found" });
-      genres = series.genres || [];
+
+      genres = (series.genre_ids || [])
+        .map(id => SERIES_GENRE_MAP[id])
+        .filter(Boolean);
     }
 
     const newRating = await Rating.findOneAndUpdate(
@@ -98,24 +121,21 @@ export const addOrUpdateRating = async (req, res) => {
   }
 };
 
+/* ---------- GET MY RATING ---------- */
 
-// @desc    Kullanıcının bir içeriğe verdiği puanı getir
-// @route   GET /api/ratings/me/:contentId
-// @access  Private
 export const getMyRating = async (req, res) => {
-    const { contentId } = req.params;
-    const userId = req.user.id;
+  const { contentId } = req.params;
+  const userId = req.user.id;
 
-    try {
-        const rating = await Rating.findOne({ user: userId, contentId: contentId });
+  try {
+    const rating = await Rating.findOne({ user: userId, contentId });
 
-        if (!rating) {
-            // Puan vermemiş olması bir hata değildir, sadece "bulunamadı"
-            return res.status(404).json({ message: "Kullanıcı bu içeriği puanlamamış." });
-        }
-
-        res.status(200).json(rating);
-    } catch (error) {
-        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    if (!rating) {
+      return res.status(404).json({ message: "Kullanıcı bu içeriği puanlamamış." });
     }
+
+    res.status(200).json(rating);
+  } catch (error) {
+    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  }
 };
