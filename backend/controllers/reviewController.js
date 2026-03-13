@@ -1,24 +1,46 @@
 // backend/controllers/reviewController.js
 import Review from '../models/Review.js';
-import User from '../models/User.js'; // Kullanıcı adını almak için
+import User from '../models/User.js';
+
+// New imports for consistent responses and error handling
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { sendSuccess, sendError } from "../utils/response.js";
 
 /**
  * @desc   Belirli bir içeriğe ait tüm yorumları getirir
  * @route  GET /api/reviews/content/:contentId
  * @access Public (Herkes görebilir)
  */
-export const getContentReviews = async (req, res) => {
-  try {
-    const reviews = await Review.find({ contentId: req.params.contentId })
-      .populate('user', 'username') // Yorumu yapanın sadece kullanıcı adını al
-      .sort({ createdAt: -1 }); // En yeniden eskiye sırala
+export const getContentReviews = asyncHandler(async (req, res) => {
+  const { contentId } = req.params;
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
 
-    res.status(200).json(reviews);
-  } catch (error) {
-    console.error("Yorumlar çekilirken hata:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  if (!contentId) {
+    return sendError(res, 'contentId is required', 400);
   }
-};
+
+  const reviews = await Review.find({ contentId })
+    .populate('user', 'username profile_pic_url')
+    .sort({ createdAt: -1 })
+    .limit(parseInt(limit))
+    .skip(skip)
+    .lean();
+
+  const total = await Review.countDocuments({ contentId });
+
+  res.json({
+    success: true,
+    message: 'Reviews fetched',
+    data: reviews,
+    pagination: {
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      pages: Math.ceil(total / Math.max(parseInt(limit), 1))
+    }
+  });
+});
 
 /**
  * @desc   Yeni bir yorum ekler veya mevcut yorumu günceller
@@ -26,63 +48,67 @@ export const getContentReviews = async (req, res) => {
  * @access Private (Giriş Gerekli)
  * @body   { contentId: "...", contentType: "movie|series", text: "..." }
  */
-export const addOrUpdateReview = async (req, res) => {
+export const addOrUpdateReview = asyncHandler(async (req, res) => {
   const { contentId, contentType, text } = req.body;
-  const userId = req.user.id; // authMiddleware'den gelir
+  const userId = req.user.id;
 
+  // Validation
   if (!contentId || !contentType || !text) {
-    return res.status(400).json({ message: 'Eksik bilgi: contentId, contentType ve text gereklidir.' });
+    return sendError(res, 'contentId, contentType, and text are required', 400);
   }
 
-  try {
-    // upsert: true -> Eğer { user, contentId } eşleşmesi yoksa YENİ oluştur, varsa GÜNCELLE.
-    // new: true -> Güncellenmiş veya yeni oluşturulmuş belgeyi geri döndür.
-    // runValidators: true -> Modeldeki maxlength gibi kuralları kontrol et.
-    const review = await Review.findOneAndUpdate(
-      { user: userId, contentId: contentId }, // Bu kullanıcı bu içeriğe daha önce yorum yapmış mı?
-      { contentType: contentType, text: text, user: userId }, // Yeni veya güncellenecek veri
-      { new: true, upsert: true, runValidators: true }
-    ).populate('user', 'username'); // Güncel yorumu kullanıcı adıyla geri döndür
-
-    res.status(201).json(review); // 201: Created (veya Updated)
-
-  } catch (error) {
-    console.error("Yorum kaydedilirken hata:", error);
-    if (error.code === 11000) { // unique index hatası (nadiren, upsert bunu genelde çözer)
-      return res.status(400).json({ message: 'Bu içeriğe zaten yorum yapmışsınız.' });
-    }
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  if (!['movie', 'series'].includes(contentType)) {
+    return sendError(res, 'contentType must be "movie" or "series"', 400);
   }
-};
+
+  if (typeof text !== 'string' || text.trim().length === 0) {
+    return sendError(res, 'Review text cannot be empty', 400);
+  }
+
+  if (text.length > 5000) {
+    return sendError(res, 'Review text cannot exceed 5000 characters', 400);
+  }
+
+  const review = await Review.findOneAndUpdate(
+    { user: userId, contentId: contentId },
+    { contentType: contentType, text: text.trim(), user: userId },
+    { new: true, upsert: true, runValidators: true }
+  ).populate('user', 'username profile_pic_url').lean();
+
+  const statusCode = review.createdAt === review.updatedAt ? 201 : 200;
+  sendSuccess(res, review, 'Review saved successfully', statusCode);
+});
 
 /**
  * @desc   Kullanıcının kendi yorumunu siler
  * @route  DELETE /api/reviews/:reviewId
  * @access Private (Giriş Gerekli)
  */
-export const deleteMyReview = async (req, res) => {
-  const reviewId = req.params.reviewId;
+export const deleteMyReview = asyncHandler(async (req, res) => {
+  const { reviewId } = req.params;
   const userId = req.user.id;
 
-  try {
-    const review = await Review.findById(reviewId);
-
-    if (!review) {
-      return res.status(404).json({ message: 'Yorum bulunamadı.' });
-    }
-
-    // Yorumu silmeye çalışan kişi, yorumun sahibi mi?
-    if (review.user.toString() !== userId) {
-      return res.status(403).json({ message: 'Bu yorumu silme yetkiniz yok.' });
-    }
-
-    await review.remove(); // Mongoose 5 ve altı için remove(), 6+ için deleteOne()
-    // Veya: await Review.deleteOne({ _id: reviewId });
-
-    res.status(200).json({ message: 'Yorum başarıyla silindi.' });
-
-  } catch (error) {
-    console.error("Yorum silinirken hata:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  if (!reviewId) {
+    return sendError(res, 'reviewId is required', 400);
   }
-};
+
+  // Validate MongoDB ID
+  if (!reviewId.match(/^[0-9a-fA-F]{24}$/)) {
+    return sendError(res, 'Invalid review ID', 400);
+  }
+
+  const review = await Review.findById(reviewId);
+
+  if (!review) {
+    return sendError(res, 'Review not found', 404);
+  }
+
+  // Authorization check
+  if (review.user.toString() !== userId) {
+    return sendError(res, 'You do not have permission to delete this review', 403);
+  }
+
+  await Review.deleteOne({ _id: reviewId });
+
+  sendSuccess(res, null, 'Review deleted successfully', 200);
+});

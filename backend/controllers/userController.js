@@ -11,93 +11,119 @@ import Rating from "../models/Rating.js";
 // --- BİTİŞ ---
 import mongoose from 'mongoose'; // <-- YENİ IMPORT (GEREKLİ)
 
+// New imports for consistent responses and error handling
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { sendSuccess, sendError } from "../utils/response.js";
+import { validateEmail } from "../middleware/validation.js";
+
 // @desc    Yeni bir kullanıcı kaydeder
 // @route   POST /api/users/register
-export const registerUser = async (req, res) => {
-  // (Mevcut kodunuz - dokunulmadı)
+export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
-  try {
-    // 1. Kullanıcı zaten var mı?
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res
-        .status(400)
-        .json({ message: "Bu e-posta adresi zaten kullanılıyor." });
-    }
-
-    // 2. Parolayı hash'le
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // 3. Yeni kullanıcıyı oluştur
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-    });
-
-    // 4. Token oluştur ve geri döndür
-    if (user) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "30d",
-      });
-      res.status(201).json({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        token,
-      });
-    } else {
-      res.status(400).json({ message: "Geçersiz kullanıcı verisi." });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  // Input validation
+  if (!username || !email || !password) {
+    return sendError(res, 'Username, email, and password are required', 400);
   }
-};
+
+  if (!validateEmail(email)) {
+    return sendError(res, 'Invalid email format', 400);
+  }
+
+  if (password.length < 6) {
+    return sendError(res, 'Password must be at least 6 characters', 400);
+  }
+
+  // Check if user already exists
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return sendError(res, 'Email already registered', 400);
+  }
+
+  // Hash password
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  // Create user
+  const user = await User.create({
+    username,
+    email,
+    password: hashedPassword,
+  });
+
+  // Generate token
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+
+  sendSuccess(res, {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    token,
+  }, 'User registered successfully', 201);
+});
 
 // @desc    Kullanıcı girişi yapar ve token döndürür
 // @route   POST /api/users/login
-export const loginUser = async (req, res) => {
-  // (Mevcut kodunuz - dokunulmadı)
+export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    // 1. Kullanıcıyı e-postaya göre bul
-    const user = await User.findOne({ email });
-
-    // 2. Kullanıcı varsa ve parola eşleşiyorsa
-    if (user && (await bcrypt.compare(password, user.password))) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "30d",
-      });
-      res.json({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        token,
-      });
-    } else {
-      res
-        .status(401)
-        .json({ message: "Geçersiz e-posta veya parola." }); // 401: Unauthorized
-    }
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  // Validation
+  if (!email || !password) {
+    return sendError(res, 'Email and password are required', 400);
   }
-};
+
+  if (!validateEmail(email)) {
+    return sendError(res, 'Invalid email format', 400);
+  }
+
+  // Find user and verify password
+  const user = await User.findOne({ email });
+
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return sendError(res, 'Invalid email or password', 401);
+  }
+
+  // Generate token
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+
+  sendSuccess(res, {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    token,
+  }, 'Login successful', 200);
+});
 
 // @desc    Tüm kullanıcıları getirir (yalnızca test amaçlı)
 // @route   GET /api/users
-export const getUsers = async (req, res) => {
-  // (Mevcut kodunuz - dokunulmadı)
-  try {
-    const users = await User.find({}).select("-password");
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
-  }
-};
+export const getUsers = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
+
+  const users = await User.find({})
+    .select('-password')
+    .limit(parseInt(limit))
+    .skip(skip)
+    .lean();
+
+  const total = await User.countDocuments();
+
+  res.json({
+    success: true,
+    message: 'Users fetched',
+    data: users,
+    pagination: {
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      pages: Math.ceil(total / Math.max(parseInt(limit), 1))
+    }
+  });
+});
 
 // controllers/userController.js
 
@@ -106,118 +132,107 @@ export const getUsers = async (req, res) => {
 // @desc    Bir kullanıcıyı takip etme
 // @route   POST /api/users/:id/follow
 // @access  Private (Giriş Gerekli)
-export const followUser = async (req, res) => {
-  const loggedInUserId = req.user.id; // Giriş yapan kişi (test2)
-  const userToFollowId = req.params.id; // Takip edilecek kişi (test1)
+export const followUser = asyncHandler(async (req, res) => {
+  const loggedInUserId = req.user.id;
+  const userToFollowId = req.params.id;
 
-  // 1. Kendini takip edemez
+  // Validation
+  if (!userToFollowId.match(/^[0-9a-fA-F]{24}$/)) {
+    return sendError(res, 'Invalid user ID', 400);
+  }
+
   if (loggedInUserId === userToFollowId) {
-    return res.status(400).json({ message: "Kendinizi takip edemezsiniz." });
+    return sendError(res, 'You cannot follow yourself', 400);
   }
 
-  try {
-    // 2. Takip edilecek kullanıcının var olduğundan emin olalım
-    const userToFollow = await User.findById(userToFollowId);
-    if (!userToFollow) {
-      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
-    }
-    
-    // 3. Zaten takip ediyor mu? (req.user'dan kontrol edebiliriz)
-    if (req.user.following.includes(userToFollowId)) {
-        return res.status(400).json({ message: "Bu kullanıcıyı zaten takip ediyorsunuz." });
-    }
-
-    // 4. DEĞİŞİKLİK: .save() yerine .updateOne() kullanarak
-    //    doğrudan veritabanına komut gönderiyoruz.
-
-    // Takip eden kişinin (test2) 'following' listesine 'test1'in ID'sini ekle
-    await User.updateOne(
-        { _id: loggedInUserId },
-        { $addToSet: { following: userToFollowId } }
-    );
-
-    // Takip edilen kişinin (test1) 'followers' listesine 'test2'nin ID'sini ekle
-    await User.updateOne(
-        { _id: userToFollowId },
-        { $addToSet: { followers: loggedInUserId } }
-    );
-
-    // 5. BİLDİRİM OLUŞTUR (Bu kısım aynı kalır)
-    await Notification.findOneAndDelete({
-      user: userToFollowId,
-      sender: loggedInUserId,
-      type: 'follow'
-    });
-    
-    await Notification.create({
-      user: userToFollowId,
-      sender: loggedInUserId,
-      type: 'follow'
-    });
-
-    res.status(200).json({ message: "Kullanıcı başarıyla takip edildi." });
-
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  const userToFollow = await User.findById(userToFollowId);
+  if (!userToFollow) {
+    return sendError(res, 'User not found', 404);
   }
-};
+
+  if (req.user.following.includes(userToFollowId)) {
+    return sendError(res, 'You are already following this user', 400);
+  }
+
+  await User.updateOne(
+    { _id: loggedInUserId },
+    { $addToSet: { following: userToFollowId } }
+  );
+
+  await User.updateOne(
+    { _id: userToFollowId },
+    { $addToSet: { followers: loggedInUserId } }
+  );
+
+  await Notification.findOneAndDelete({
+    user: userToFollowId,
+    sender: loggedInUserId,
+    type: 'follow'
+  });
+
+  await Notification.create({
+    user: userToFollowId,
+    sender: loggedInUserId,
+    type: 'follow'
+  });
+
+  sendSuccess(res, null, 'User followed successfully', 200);
+});
 
 // @desc    Bir kullanıcıyı takipten çıkma
 // @route   POST /api/users/:id/unfollow
 // @access  Private (Giriş Gerekli)
-export const unfollowUser = async (req, res) => {
+export const unfollowUser = asyncHandler(async (req, res) => {
   const loggedInUserId = req.user.id;
   const userToUnfollowId = req.params.id;
 
-  try {
-    // 1. DEĞİŞİKLİK: .save() yerine .updateOne() kullan
+  await User.updateOne(
+    { _id: loggedInUserId },
+    { $pull: { following: userToUnfollowId } }
+  );
 
-    // Takip eden kişinin 'following' listesinden ID'yi çıkar
-    await User.updateOne(
-        { _id: loggedInUserId },
-        { $pull: { following: userToUnfollowId } }
-    );
+  await User.updateOne(
+    { _id: userToUnfollowId },
+    { $pull: { followers: loggedInUserId } }
+  );
 
-    // Takip edilen kişinin 'followers' listesinden ID'yi çıkar
-    await User.updateOne(
-        { _id: userToUnfollowId },
-        { $pull: { followers: loggedInUserId } }
-    );
-    
-    // Takipten çıkınca 'follow' bildirimini sil
-    await Notification.deleteOne({
-      user: userToUnfollowId,
-      sender: loggedInUserId,
-      type: 'follow'
-    });
+  await Notification.deleteOne({
+    user: userToUnfollowId,
+    sender: loggedInUserId,
+    type: 'follow'
+  });
 
-    res.status(200).json({ message: "Kullanıcı takipten çıkıldı." });
-
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
-  }
-};
+  sendSuccess(res, null, 'User unfollowed successfully', 200);
+});
 
 // @desc    Giriş yapan kullanıcının bildirimlerini getirme
 // @route   GET /api/notifications
 // @access  Private (Giriş Gerekli)
-export const getNotifications = async (req, res) => {
-    try {
-        const notifications = await Notification.find({ user: req.user.id })
-            .populate('sender', 'username') // Bildirimi gönderenin sadece username'ini al
-            .sort({ createdAt: -1 }); // En yeniden eskiye sırala
+export const getNotifications = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
 
-        res.status(200).json(notifications);
+  const notifications = await Notification.find({ user: req.user.id })
+    .populate('sender', 'username profile_pic_url')
+    .sort({ createdAt: -1 })
+    .limit(parseInt(limit))
+    .skip(skip)
+    .lean();
 
-        // İPUCU: Bildirimleri getirdikten sonra 'okundu' olarak işaretlemek iyi bir yöntemdir.
-        // Bunu frontend'den ayrı bir istek (PUT /api/notifications/read) ile yapabilir
-        // veya burada otomatik olarak yapabilirsiniz:
-        // await Notification.updateMany({ user: req.user.id, read: false }, { $set: { read: true } });
+  const total = await Notification.countDocuments({ user: req.user.id });
 
-    } catch (error) {
-        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  res.json({
+    success: true,
+    message: 'Notifications fetched',
+    data: notifications,
+    pagination: {
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      pages: Math.ceil(total / Math.max(parseInt(limit), 1))
     }
-};
+  });
+});
 
 // @desc    Giriş yapan kullanıcının TAKİP ETTİKLERİ listesini getirir
 // @route   GET /api/users/me/following
