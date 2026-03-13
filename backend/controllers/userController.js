@@ -237,73 +237,53 @@ export const getNotifications = asyncHandler(async (req, res) => {
 // @desc    Giriş yapan kullanıcının TAKİP ETTİKLERİ listesini getirir
 // @route   GET /api/users/me/following
 // @access  Private (Giriş Gerekli)
-export const getMyFollowing = async (req, res) => {
-    try {
-        // 1. Giriş yapan kullanıcıyı bul
-        const user = await User.findById(req.user.id)
-            // 2. 'following' alanını populate et (sadece ID değil, tüm kullanıcı objesini al)
-            .populate('following', '_id username'); // Sadece id ve username'i al
+export const getMyFollowing = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id)
+        .populate('following', '_id username')
+        .lean();
 
-        if (!user) {
-            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
-        }
-
-        // 3. Sadece following listesini döndür
-        res.status(200).json(user.following);
-
-    } catch (error) {
-        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    if (!user) {
+        return sendError(res, 'User not found', 404);
     }
-};
+
+    sendSuccess(res, user.following, 'Following list fetched', 200);
+});
 
 // @desc    Giriş yapan kullanıcının TAKİPÇİLERİ listesini getirir
 // @route   GET /api/users/me/followers
 // @access  Private (Giriş Gerekli)
-export const getMyFollowers = async (req, res) => {
-    try {
-        // 1. Giriş yapan kullanıcıyı bul
-        const user = await User.findById(req.user.id)
-            // 2. 'followers' alanını populate et
-            .populate('followers', '_id username'); // Sadece id ve username'i al
+export const getMyFollowers = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id)
+        .populate('followers', '_id username')
+        .lean();
 
-        if (!user) {
-            return res.status(404).json({ message: "Kullanıcı bulunamadı." });
-        }
-        
-        // 3. Sadece followers listesini döndür
-        res.status(200).json(user.followers);
-
-    } catch (error) {
-        res.status(500).json({ message: "Sunucu hatası", error: error.message });
+    if (!user) {
+        return sendError(res, 'User not found', 404);
     }
-};
+
+    sendSuccess(res, user.followers, 'Followers list fetched', 200);
+});
 
 // @desc    Kullanıcı adlarına göre kullanıcı ara
 // @route   GET /api/users/search?q=[query]
 // @access  Private (Giriş Gerekli)
-export const searchUsers = async (req, res) => {
-  const query = req.query.q; // Arama sorgusunu al (örn: 'test')
+export const searchUsers = asyncHandler(async (req, res) => {
+  const query = req.query.query;
 
   if (!query) {
-    return res.status(400).json({ message: "Arama sorgusu gerekli." });
+    return sendError(res, 'Search query is required', 400);
   }
 
-  try {
-    // MongoDB'de 'username' alanında, büyük/küçük harf duyarsız ($options: 'i')
-    // ve kısmi eşleşmeli ($regex) bir arama yap.
-    const users = await User.find({
-      username: { $regex: query, $options: 'i' },
-      _id: { $ne: req.user.id } // Arayan kişinin kendisini sonuçlardan çıkar
-    })
-    .select('_id username') // Sadece ID ve username'i döndür
-    .limit(10); // Sonuçları 10 ile sınırla
+  const users = await User.find({
+    username: { $regex: query, $options: 'i' },
+    _id: { $ne: req.user.id }
+  })
+    .select('_id username profile_pic_url')
+    .limit(10)
+    .lean();
 
-    res.status(200).json(users);
-
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
-  }
-};
+  sendSuccess(res, users, 'Users found', 200);
+});
 
 // backend/controllers/userController.js
 
@@ -386,32 +366,22 @@ export const getUserProfile = async (req, res) => {
  * @route  GET /api/users/favorites/:id
  * @access Private
  */
-export const getUserFavorites = async (req, res) => {
-  try {
-    // 1. Kullanıcıyı bul ve favorileri doldur
-    const user = await User.findById(req.params.id)
-      .populate('favoriteMovies')
-      .populate('favoriteSeries');
+export const getUserFavorites = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id)
+    .select('favoriteMovies favoriteSeries')
+    .populate('favoriteMovies', '_id title poster_path')
+    .populate('favoriteSeries', '_id name poster_path')
+    .lean();
 
-    // 2. Kritik kontrol
-    if (!user) {
-      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
-    }
-    
-    // 3. --- DEĞİŞİKLİK BURADA ---
-    // Artık listeleri birleştirmiyoruz (mergedFavorites YOK).
-    // Frontend'e iki ayrı anahtar (key) ile bir obje yolluyoruz.
-    res.status(200).json({
-      movies: user.favoriteMovies || [],
-      series: user.favoriteSeries || []
-    });
-
-  } catch (error) {
-    // 5. Hata cevabını gönder
-    console.error("Favori getirme hatası:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  if (!user) {
+    return sendError(res, 'User not found', 404);
   }
-};
+  
+  sendSuccess(res, {
+    movies: user.favoriteMovies || [],
+    series: user.favoriteSeries || []
+  }, 'User favorites fetched', 200);
+});
 
 // controllers/userController.js dosyasının sonuna ekle:
 
@@ -422,39 +392,25 @@ export const getUserFavorites = async (req, res) => {
  * @route  PATCH /api/users/profile/:id/bio
  * @access Private
  */
-export const updateUserBio = async (req, res) => {
-  try {
-    // 1. Güvenlik Kontrolü:
-    // Sadece giriş yapmış kullanıcının kendi profilini güncelleyebildiğinden emin ol.
-    // req.params.id -> URL'den gelen ID
-    // req.user.id   -> Token'dan (authMiddleware) gelen, giriş yapmış kullanıcının ID'si
-    if (req.params.id !== req.user.id) {
-      return res.status(403).json({ message: "Sadece kendi profilinizi güncelleyebilirsiniz." });
-    }
-
-    // 2. Frontend'den gelen yeni bio metnini al
-    const { bio } = req.body;
-
-    // 3. Kullanıcıyı bul ve biosunu güncelle
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id, // Güvenlik için req.user.id'yi kullan
-      { bio: bio },
-      { new: true, runValidators: true } // 'new: true' güncellenmiş belgeyi döndürür
-    ).select('-password'); // ŞİFREYİ ASLA geri gönderme
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
-    }
-
-    // 4. Frontend'e güncellenmiş profil verisini geri yolla
-    // (ProfilePage.jsx'teki setProfile(response.data) bu veriyi bekliyor)
-    res.status(200).json(updatedUser);
-
-  } catch (error) {
-    console.error("Bio güncelleme hatası:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+export const updateUserBio = asyncHandler(async (req, res) => {
+  if (req.params.id !== req.user.id) {
+    return sendError(res, 'You can only update your own profile', 403);
   }
-};
+
+  const { bio } = req.body;
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user.id,
+    { bio },
+    { new: true, runValidators: true }
+  ).select('-password');
+
+  if (!updatedUser) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  sendSuccess(res, updatedUser, 'Bio updated successfully', 200);
+});
 
 // controllers/userController.js (içinde)
 
@@ -463,52 +419,70 @@ export const updateUserBio = async (req, res) => {
  * @route  GET /api/users/ratings/:id
  * @access Private
  */
-export const getUserRatings = async (req, res) => {
-  try {
-    // Veritabanından, 'user' alanı 'req.params.id' ile eşleşen tüm oyları bul.
-    
-    // --- DEĞİŞİKLİK BURADA ---
-    // 'content' ve 'rating' yerine, senin modelindeki
-    // 'contentId' ve 'value' alanlarını seçiyoruz.
-    const ratings = await Rating.find({ user: req.params.id })
-      .select("contentId value"); // <-- DÜZELTİLDİ
-    // --- BİTİŞ ---
+export const getUserRatings = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
 
-    res.status(200).json(ratings);
+  const ratings = await Rating.find({ user: req.params.id })
+    .select('contentId contentType value createdAt')
+    .limit(parseInt(limit))
+    .skip(skip)
+    .sort({ createdAt: -1 })
+    .lean();
 
-  } catch (error) {
-    console.error("Oylar çekilirken hata:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
-  }
-};
+  const total = await Rating.countDocuments({ user: req.params.id });
+
+  sendSuccess(res, ratings, 'User ratings fetched', 200, {
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    pages: Math.ceil(total / Math.max(parseInt(limit), 1))
+  });
+});
 
 /**
  * @desc   Profil resmi yükler
  * @route  POST /api/users/profile-pic/:userId
  * @access Private
  */
-export const uploadProfilePic = async (req, res) => {
-  try {
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "profile_pics",
-    });
+export const uploadProfilePic = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const file = req.file;
 
-    const user = await User.findByIdAndUpdate(
-      req.params.userId,
-      { profile_pic_url: result.secure_url }, // Cloudinary'den dönen URL'yi kaydedin
-      { new: true } // Güncellenmiş kullanıcıyı döndür
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
-    }
-
-    res.status(200).json({ profilePicUrl: user.profile_pic_url });
-  } catch (error) {
-    console.error("Profil resmi yüklenirken hata:", error);
-    res.status(500).json({ message: "Profil resmi yüklenemedi." });
+  // Validation
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return sendError(res, 'Invalid user ID', 400);
   }
-};
+
+  if (!file) {
+    return sendError(res, 'No file uploaded', 400);
+  }
+
+  // Upload to Cloudinary using buffer stream
+  const result = await new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: 'profile_pics' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    uploadStream.end(file.buffer);
+  });
+
+  // Update user with profile picture URL
+  const user = await User.findByIdAndUpdate(
+    id,
+    { profile_pic_url: result.secure_url },
+    { new: true }
+  ).lean();
+
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  sendSuccess(res, { profilePicUrl: user.profile_pic_url }, 'Profile picture uploaded successfully', 200);
+});
 
 // controllers/userController.js (içinde)
 
@@ -538,327 +512,360 @@ const SERIES_GENRE_MAP = {
 
 // backend/controllers/userController.js (Sadece bu fonksiyonu güncelle)
 
-export const getUserCineGraph = async (req, res) => {
-  console.log("--- getUserCineGraph BAŞLADI ---"); // LOG 1
+export const getUserCineGraph = asyncHandler(async (req, res) => {
+  const Movie = mongoose.model('Movie');
+  const Series = mongoose.model('Series');
 
-  try {
-    const Movie = mongoose.model('Movie');
-    const Series = mongoose.model('Series');
+  let targetUserId = req.params.id;
 
-    let targetUserId = req.params.id;
-    console.log("Gelen ID (req.params.id):", targetUserId); // LOG 2
-
-    if (targetUserId === 'me' || !targetUserId) {
-        targetUserId = req.user.id;
-        console.log("ID 'me' olduğu için giriş yapan kullanıcının ID'si kullanılıyor:", targetUserId); // LOG 3
-    }
-
-    const user = await User.findById(targetUserId).select('watchlist');
-    
-    if (!user) {
-        console.log("Kullanıcı BULUNAMADI!"); // LOG 4
-        return res.status(200).json({ movieStats: {}, seriesStats: {} });
-    }
-    
-    console.log("Kullanıcı bulundu. Watchlist uzunluğu:", user.watchlist.length); // LOG 5
-
-    if (!user.watchlist || user.watchlist.length === 0) {
-      console.log("Watchlist boş, boş veri dönülüyor."); // LOG 6
-      return res.status(200).json({ movieStats: {}, seriesStats: {} });
-    }
-    const watchlist = user.watchlist;
-
-    const movieIds = watchlist.filter(item => item.itemType === 'movie').map(item => item.itemId);
-    const seriesIds = watchlist.filter(item => item.itemType === 'series').map(item => item.itemId);
-
-    console.log(`Film ID'leri (${movieIds.length}):`, movieIds); // LOG 7
-
-    const movies = await Movie.find({ '_id': { $in: movieIds } }).select('genre_ids');
-    const series = await Series.find({ '_id': { $in: seriesIds } }).select('genre_ids');
-
-    console.log(`Veritabanından çekilen Film sayısı:`, movies.length); // LOG 8
-    if (movies.length > 0) {
-        console.log("İlk filmin genre_ids'i:", movies[0].genre_ids); // LOG 9 - BU ÇOK ÖNEMLİ
-    }
-
-    const movieGenreCounts = {};
-    const seriesGenreCounts = {};
-
-    for (const movie of movies) {
-      if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
-        for (const genreId of movie.genre_ids) {
-          const genreName = MOVIE_GENRE_MAP[genreId];
-          if (genreName) {
-             movieGenreCounts[genreName] = (movieGenreCounts[genreName] || 0) + 1;
-          } else {
-             console.log(`Uyarı: ${genreId} ID'si MOVIE_GENRE_MAP içinde bulunamadı.`); // LOG 10
-          }
-        }
-      }
-    }
-    
-    // ... (Dizi döngüsü aynı kalabilir) ...
-    for (const show of series) {
-      if (show.genre_ids && Array.isArray(show.genre_ids)) {
-        for (const genreId of show.genre_ids) {
-          const genreName = SERIES_GENRE_MAP[genreId];
-          if (genreName) seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
-        }
-      }
-    }
-    
-    console.log("Hesaplanan Film İstatistikleri:", movieGenreCounts); // LOG 11
-    
-    res.status(200).json({ movieStats: movieGenreCounts, seriesStats: seriesGenreCounts });
-
-  } catch (error) {
-    console.error("CineGraph verisi çekilirken hata:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  if (targetUserId === 'me' || !targetUserId) {
+      targetUserId = req.user.id;
   }
-};
+
+  const user = await User.findById(targetUserId).select('watchlist').lean();
+  
+  if (!user) {
+      return sendSuccess(res, { movieStats: {}, seriesStats: {} }, 'CineGraph fetched', 200);
+  }
+  
+  if (!user.watchlist || user.watchlist.length === 0) {
+    return sendSuccess(res, { movieStats: {}, seriesStats: {} }, 'CineGraph fetched', 200);
+  }
+
+  const watchlist = user.watchlist;
+
+  const movieIds = watchlist.filter(item => item.itemType === 'movie').map(item => item.itemId);
+  const seriesIds = watchlist.filter(item => item.itemType === 'series').map(item => item.itemId);
+
+  const movies = await Movie.find({ '_id': { $in: movieIds } }).select('genre_ids').lean();
+  const series = await Series.find({ '_id': { $in: seriesIds } }).select('genre_ids').lean();
+
+  const movieGenreCounts = {};
+  const seriesGenreCounts = {};
+
+  for (const movie of movies) {
+    if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+      for (const genreId of movie.genre_ids) {
+        const genreName = MOVIE_GENRE_MAP[genreId];
+        if (genreName) {
+           movieGenreCounts[genreName] = (movieGenreCounts[genreName] || 0) + 1;
+        }
+      }
+    }
+  }
+  
+  for (const show of series) {
+    if (show.genre_ids && Array.isArray(show.genre_ids)) {
+      for (const genreId of show.genre_ids) {
+        const genreName = SERIES_GENRE_MAP[genreId];
+        if (genreName) seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
+      }
+    }
+  }
+
+  sendSuccess(res, { movieStats: movieGenreCounts, seriesStats: seriesGenreCounts }, 'CineGraph fetched', 200);
+});
 
 // controllers/userController.js
-
-// ... (Önceki tüm kodlar ve genre map'ler burada) ...
 
 /**
  * @desc   Kullanıcıyı diğerleriyle eşleştirir (CineMatch Algoritması)
  * @route  POST /api/users/matches
  * @access Private
- * @body   { type: 'movie'|'series', genres: ['Action', 'Horror'] (opsiyonel) }
  */
-export const findMatches = async (req, res) => {
-  const { type, genres } = req.body; // Filtreler
+export const findMatches = asyncHandler(async (req, res) => {
+  const { type, genres } = req.body;
   const currentUserId = req.user.id;
 
   if (!type || (type !== 'movie' && type !== 'series')) {
-    return res.status(400).json({ message: "Geçerli bir tür (movie veya series) seçmelisiniz." });
+    return sendError(res, 'Valid type (movie or series) is required', 400);
   }
 
-  try {
-    const Movie = mongoose.model('Movie');
-    const Series = mongoose.model('Series');
-    const TargetModel = type === 'movie' ? Movie : Series;
-    const GenreMap = type === 'movie' ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
+  const Movie = mongoose.model('Movie');
+  const Series = mongoose.model('Series');
+  const TargetModel = type === 'movie' ? Movie : Series;
+  const GenreMap = type === 'movie' ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
 
-    // 1. TÜM KULLANICILARI VE WATCHLIST'LERİNİ ÇEK (Kendin hariç)
-    // (Gerçek bir app'te bu limitli olmalı, şimdilik 100 kişiyle sınırlı)
-    const allUsers = await User.find({ _id: { $ne: currentUserId } })
-      .select('_id username profile_pic_url watchlist')
-      .limit(100)
-      .lean();
+  // 1. Tüm kullanıcıları ve watchlist'lerini çek (Kendin hariç)
+  const allUsers = await User.find({ _id: { $ne: currentUserId } })
+    .select('_id username profile_pic_url watchlist')
+    .limit(100)
+    .lean();
 
-    // Kendi verini çek
-    const currentUser = await User.findById(currentUserId).select('watchlist').lean();
-    
-    if (!currentUser.watchlist || currentUser.watchlist.length === 0) {
-      return res.status(400).json({ message: "Eşleşme yapmak için önce watchlist'ine bir şeyler eklemelisin." });
-    }
+  // Kendi verini çek
+  const currentUser = await User.findById(currentUserId).select('watchlist').lean();
+  
+  if (!currentUser.watchlist || currentUser.watchlist.length === 0) {
+    return sendError(res, 'Add items to your watchlist to find matches', 400);
+  }
 
-    // 2. VERİMLİLİK: Tüm kullanıcıların watchlist'indeki içerik ID'lerini topla
-    // Böylece DB'ye tek bir sorgu atıp tüm filmlerin türlerini öğrenebiliriz.
-    let allContentIds = new Set();
-    
-    // Kendi listendekiler
-    currentUser.watchlist.forEach(item => {
+  // 2. Tüm içerik ID'lerini topla
+  let allContentIds = new Set();
+  
+  currentUser.watchlist.forEach(item => {
+    if (item.itemType === type) allContentIds.add(item.itemId);
+  });
+
+  allUsers.forEach(u => {
+    u.watchlist.forEach(item => {
       if (item.itemType === type) allContentIds.add(item.itemId);
     });
+  });
 
-    // Diğerlerinin listesindekiler
-    allUsers.forEach(u => {
-      u.watchlist.forEach(item => {
-        if (item.itemType === type) allContentIds.add(item.itemId);
-      });
-    });
+  // 3. İçerik detaylarını çek
+  const contentDetails = await TargetModel.find({ _id: { $in: Array.from(allContentIds) } })
+    .select('_id genre_ids')
+    .lean();
 
-    // 3. İÇERİK DETAYLARINI (TÜRLERİNİ) ÇEK
-    const contentDetails = await TargetModel.find({ _id: { $in: Array.from(allContentIds) } })
-      .select('_id genre_ids')
-      .lean();
+  const contentGenreMap = {};
+  contentDetails.forEach(c => {
+    const genreNames = c.genre_ids?.map(id => GenreMap[id]).filter(Boolean) || [];
+    contentGenreMap[c._id.toString()] = genreNames;
+  });
 
-    // Hızlı erişim için Map yap: { "film_id": ["Action", "Comedy"] }
-    const contentGenreMap = {};
-    contentDetails.forEach(c => {
-      const genreNames = c.genre_ids?.map(id => GenreMap[id]).filter(Boolean) || [];
-      contentGenreMap[c._id.toString()] = genreNames;
-    });
+  // 4. Oyları çek
+  const allRatings = await Rating.find({ 
+    contentType: type,
+    contentId: { $in: Array.from(allContentIds) }
+  }).select('user contentId value').lean();
 
-    // 4. OYLARI ÇEK (Tüm ilgili oylar)
-    const allRatings = await Rating.find({ 
-      contentType: type,
-      contentId: { $in: Array.from(allContentIds) }
-    }).select('user contentId value').lean();
+  const userRatingsMap = {};
+  allRatings.forEach(r => {
+    if (!userRatingsMap[r.user]) userRatingsMap[r.user] = {};
+    userRatingsMap[r.user][r.contentId] = r.value;
+  });
 
-    // Oyları kullanıcıya göre grupla: { "user_id": { "film_id": 8 } }
-    const userRatingsMap = {};
-    allRatings.forEach(r => {
-      if (!userRatingsMap[r.user]) userRatingsMap[r.user] = {};
-      userRatingsMap[r.user][r.contentId] = r.value;
-    });
+  // Helper function to calculate user vector
+  const calculateUserVector = (userObj) => {
+    const vector = {};
+    const counts = {};
+    const myRatings = userRatingsMap[userObj._id] || {};
 
-    // --- YARDIMCI FONKSİYON: KULLANICI PROFİLİ (VEKTÖR) OLUŞTUR ---
-    const calculateUserVector = (userObj) => {
-      const vector = {}; // { "Action": 8.5, "Horror": 4.0 }
-      const counts = {}; // { "Action": 2, "Horror": 1 }
-
-      // Kullanıcının oylarına bak (Yoksa varsayılan 5 puan verelim ki izlemesi de saysın)
-      const myRatings = userRatingsMap[userObj._id] || {};
-
-      userObj.watchlist.forEach(item => {
-        if (item.itemType !== type) return;
-        
-        const itemGenres = contentGenreMap[item.itemId] || [];
-        // Eğer kullanıcı oy vermişse onu al, yoksa nötr (5) kabul et
-        // (veya sadece izlemiş olmayı puan olarak sayma, tercih meselesi. Şimdilik puanı alıyoruz)
-        const rating = myRatings[item.itemId] || 5; 
-
-        itemGenres.forEach(genre => {
-          if (!vector[genre]) { vector[genre] = 0; counts[genre] = 0; }
-          vector[genre] += rating;
-          counts[genre] += 1;
-        });
-      });
-
-      // Ortalamayı al
-      Object.keys(vector).forEach(g => {
-        vector[g] = vector[g] / counts[g];
-      });
-
-      return vector;
-    };
-
-    // 5. PROFİLLERİ HESAPLA
-    const myVector = calculateUserVector(currentUser);
-    
-    // Eğer kullanıcının hiç verisi yoksa
-    if (Object.keys(myVector).length === 0) {
-        return res.status(200).json([]);
-    }
-
-    const matches = allUsers.map(otherUser => {
-      const otherVector = calculateUserVector(otherUser);
+    userObj.watchlist.forEach(item => {
+      if (item.itemType !== type) return;
       
-      // BENZERLİK HESAPLA (Algoritma Çekirdeği)
-      let score = 0;
-      let commonGenres = 0;
+      const itemGenres = contentGenreMap[item.itemId] || [];
+      const rating = myRatings[item.itemId] || 5;
 
-      // Hangi türleri karşılaştıracağız?
-      // Eğer frontend'den 'genres' filtresi geldiyse SADECE onları karşılaştır.
-      // Yoksa tüm ortak türleri karşılaştır.
-      const genresToCompare = (genres && genres.length > 0) 
-        ? genres 
-        : Object.keys(myVector); // Benim izlediğim her şeyi karşılaştır
-
-      genresToCompare.forEach(genre => {
-        // Eğer karşı tarafta bu tür varsa farkı hesapla
-        if (otherVector[genre]) {
-          const myScore = myVector[genre];
-          const otherScore = otherVector[genre];
-          
-          // Fark ne kadar azsa, puan o kadar yüksek olmalı.
-          // 10 üzerinden farkı alıyoruz.
-          // Fark 0 ise -> 10 puan. Fark 9 ise -> 1 puan.
-          const diff = Math.abs(myScore - otherScore);
-          score += (10 - diff); 
-          commonGenres++;
-        }
+      itemGenres.forEach(genre => {
+        if (!vector[genre]) { vector[genre] = 0; counts[genre] = 0; }
+        vector[genre] += rating;
+        counts[genre] += 1;
       });
+    });
 
-      // Ortak hiçbir şey yoksa uyum 0'dır
-      if (commonGenres === 0) return null;
+    Object.keys(vector).forEach(g => {
+      vector[g] = vector[g] / counts[g];
+    });
 
-      // Ortalama uyum puanı (0-100 arası yüzdeye çevirelim)
-      // score / commonGenres -> 0-10 arası ortalama benzerlik
-      // * 10 -> 0-100 arası yüzde
-      const matchPercentage = (score / commonGenres) * 10;
+    return vector;
+  };
 
-      return {
-        user: otherUser,
-        matchPercentage: Math.round(matchPercentage),
-        sharedGenres: commonGenres
-      };
-    })
-    .filter(Boolean) // null olanları (ortak noktası olmayanları) at
-    .sort((a, b) => b.matchPercentage - a.matchPercentage) // En yüksek puana göre sırala
-    .slice(0, 10); // İlk 10 kişiyi al
-
-    res.status(200).json(matches);
-
-  } catch (error) {
-    console.error("Eşleşme hatası:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  // Calculate user profile
+  const myVector = calculateUserVector(currentUser);
+  
+  if (Object.keys(myVector).length === 0) {
+    return sendSuccess(res, [], 'No matches found', 200);
   }
-};
 
-export const updatePassword = async (req, res) => {
+  // Calculate matches
+  const matches = allUsers.map(otherUser => {
+    const otherVector = calculateUserVector(otherUser);
+    
+    let score = 0;
+    let commonGenres = 0;
+
+    const genresToCompare = (genres && genres.length > 0) 
+      ? genres 
+      : Object.keys(myVector);
+
+    genresToCompare.forEach(genre => {
+      if (otherVector[genre]) {
+        const myScore = myVector[genre];
+        const otherScore = otherVector[genre];
+        const diff = Math.abs(myScore - otherScore);
+        score += (10 - diff); 
+        commonGenres++;
+      }
+    });
+
+    if (commonGenres === 0) return null;
+
+    const matchPercentage = (score / commonGenres) * 10;
+
+    return {
+      user: otherUser,
+      matchPercentage: Math.round(matchPercentage),
+      sharedGenres: commonGenres
+    };
+  })
+    .filter(Boolean)
+    .sort((a, b) => b.matchPercentage - a.matchPercentage)
+    .slice(0, 10);
+
+  sendSuccess(res, matches, 'Matches found', 200);
+});
+
+export const updatePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
-  try {
-    // Kullanıcıyı şifresiyle birlikte bul (select ile şifreyi dahil et)
-    const user = await User.findById(req.user.id).select('+password');
-
-    if (!user) {
-      return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
-    }
-
-    // Mevcut şifreyi kontrol et
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Mevcut şifreniz hatalı.' });
-    }
-
-    // Yeni şifreyi hash'le ve kaydet
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    await user.save();
-
-    res.status(200).json({ message: 'Şifreniz başarıyla güncellendi.' });
-
-  } catch (error) {
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  // Validation
+  if (!currentPassword || !newPassword) {
+    return sendError(res, 'Current password and new password are required', 400);
   }
-};
+
+  if (newPassword.length < 6) {
+    return sendError(res, 'New password must be at least 6 characters', 400);
+  }
+
+  // Kullanıcıyı şifresiyle birlikte bul (select ile şifreyi dahil et)
+  const user = await User.findById(req.user.id).select('+password');
+
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  // Mevcut şifreyi kontrol et
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    return sendError(res, 'Current password is incorrect', 400);
+  }
+
+  // Yeni şifreyi hash'le ve kaydet
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+  await user.save();
+
+  sendSuccess(res, null, 'Password updated successfully', 200);
+});
 
 /**
  * @desc   Kullanıcı hesabını kalıcı olarak siler
  * @route  DELETE /api/users/profile
  * @access Private
  */
-export const deleteAccount = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
+export const deleteAccount = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id);
 
-    if (!user) {
-      return res.status(404).json({ message: 'Kullanıcı bulunamadı.' });
-    }
-
-    // --- TEMİZLİK İŞLEMİ ---
-    // Kullanıcı silinmeden önce ona ait verileri de silelim.
-    
-    // 1. Verdiği oyları sil
-    await Rating.deleteMany({ user: user._id });
-    
-    // 2. Bildirimlerini sil
-    await Notification.deleteMany({ user: user._id });
-    await Notification.deleteMany({ sender: user._id }); 
-
-    // 3. Kullanıcıyı takipçi listelerinden temizle
-    await User.updateMany(
-        { following: user._id },
-        { $pull: { following: user._id } }
-    );
-    await User.updateMany(
-        { followers: user._id },
-        { $pull: { followers: user._id } }
-    );
-
-    // --- SON OLARAK KULLANICIYI SİL ---
-    await User.findByIdAndDelete(user._id);
-
-    res.status(200).json({ message: 'Hesabınız ve tüm verileriniz başarıyla silindi.' });
-
-  } catch (error) {
-    console.error("Hesap silme hatası:", error);
-    res.status(500).json({ message: 'Sunucu hatası', error: error.message });
+  if (!user) {
+    return sendError(res, 'User not found', 404);
   }
-};
+
+  // --- TEMİZLİK İŞLEMİ ---
+  // Kullanıcı silinmeden önce ona ait verileri de silelim.
+  
+  // 1. Verdiği oyları sil
+  await Rating.deleteMany({ user: user._id });
+  
+  // 2. Bildirimlerini sil
+  await Notification.deleteMany({ user: user._id });
+  await Notification.deleteMany({ sender: user._id }); 
+
+  // 3. Kullanıcıyı takipçi listelerinden temizle
+  await User.updateMany(
+      { following: user._id },
+      { $pull: { following: user._id } }
+  );
+  await User.updateMany(
+      { followers: user._id },
+      { $pull: { followers: user._id } }
+  );
+
+  // --- SON OLARAK KULLANICIYI SİL ---
+  await User.findByIdAndDelete(user._id);
+
+  sendSuccess(res, null, 'Account and all associated data deleted successfully', 200);
+});
+
+// @desc    Get current logged-in user's profile
+// @route   GET /api/users/me
+// @access  Private
+export const getMyProfile = asyncHandler(async (req, res) => {
+  // authMiddleware attaches req.user with user data from token
+  const user = req.user;
+
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  sendSuccess(res, user, 'Profile fetched', 200);
+});
+
+// @desc    Watchlist'e item ekle
+// @route   POST /api/users/me/watchlist
+// @access  Private
+export const addToWatchlist = asyncHandler(async (req, res) => {
+  const { id, type } = req.body;
+  const userId = req.user.id;
+
+  // Validation
+  if (!id || !type) {
+    return sendError(res, 'Item ID and type are required', 400);
+  }
+
+  if (!['movie', 'series'].includes(type)) {
+    return sendError(res, 'Type must be "movie" or "series"', 400);
+  }
+
+  // Validate MongoDB ID
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return sendError(res, 'Invalid item ID', 400);
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  // Check if already in watchlist
+  const exists = user.watchlist.find(
+    (item) => item.itemId.toString() === id && item.itemType === type
+  );
+  if (exists) {
+    return sendError(res, 'Item already in watchlist', 400);
+  }
+
+  // Add to watchlist
+  user.watchlist.push({ itemId: id, itemType: type });
+  await user.save();
+
+  sendSuccess(res, user.watchlist, 'Item added to watchlist', 200);
+});
+
+// @desc    Watchlist'ten item çıkar
+// @route   DELETE /api/users/me/watchlist/:itemId
+// @access  Private
+export const removeFromWatchlist = asyncHandler(async (req, res) => {
+  const { itemId } = req.params;
+  const userId = req.user.id;
+
+  // Validation
+  if (!itemId) {
+    return sendError(res, 'Item ID is required', 400);
+  }
+
+  if (!itemId.match(/^[0-9a-fA-F]{24}$/)) {
+    return sendError(res, 'Invalid item ID', 400);
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  // Check if item exists in watchlist
+  const itemExists = user.watchlist.find(
+    (item) => item.itemId.toString() === itemId
+  );
+  if (!itemExists) {
+    return sendError(res, 'Item not found in watchlist', 404);
+  }
+
+  // Remove from watchlist
+  user.watchlist = user.watchlist.filter(
+    (item) => item.itemId.toString() !== itemId
+  );
+  await user.save();
+
+  sendSuccess(res, user.watchlist, 'Item removed from watchlist', 200);
+});

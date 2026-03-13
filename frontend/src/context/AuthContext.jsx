@@ -37,7 +37,8 @@ export function AuthProvider({ children }) {
       // API yolunu kendi backend'imize göre kullanıyoruz: /users/login
       const res = await API.post("/users/login", { email, password });
       
-      // Bizim backend'imiz doğrudan kullanıcı nesnesini token ile birlikte döndürüyor.
+      // Response interceptor otomatik olarak { success, message, data } yapısını açıyor
+      // res.data artık doğrudan user objesini içeriyor
       const userData = res.data;
 
       localStorage.setItem("user", JSON.stringify(userData));
@@ -54,7 +55,8 @@ export function AuthProvider({ children }) {
       // API yolunu kendi backend'imize göre kullanıyoruz: /users/register
       const res = await API.post("/users/register", { username, email, password });
 
-      // Bizim backend'imiz doğrudan kullanıcı nesnesini token ile birlikte döndürüyor.
+      // Response interceptor otomatik olarak { success, message, data } yapısını açıyor
+      // res.data artık doğrudan user objesini içeriyor
       const userData = res.data;
       
       localStorage.setItem("user", JSON.stringify(userData));
