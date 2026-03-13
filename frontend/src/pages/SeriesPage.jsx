@@ -31,9 +31,10 @@ export default function SeriesPage() {
 
       const response = await API.get(`/series?${params.toString()}`);
 
-      setSeries(response.data.results);
-      setCurrentPage(response.data.page);
-      setTotalPages(Math.ceil(response.data.total / response.data.limit));
+      // response.data is the array, response.pagination has pagination info
+      setSeries(response.data);
+      setCurrentPage(response.pagination?.page || 1);
+      setTotalPages(response.pagination?.pages || 1);
 
     } catch (err) {
       console.error("Error fetching series:", err);

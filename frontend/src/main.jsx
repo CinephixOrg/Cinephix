@@ -7,6 +7,9 @@ import { AuthProvider } from "./context/AuthContext";
 import { RatingsProvider } from "./context/RatingsContext.jsx";
 import "./index.css";
 
+// Initialize cache debugging utilities (available in browser console)
+import './api/cacheDebug';
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>

@@ -16,9 +16,17 @@ export const API_ROUTES = {
 
   // User Routes
   USERS: {
-    GET_PROFILE: (userId) => `${API_BASE_URL}/users/${userId}`,
+    GET_CURRENT: `${API_BASE_URL}/users/me`,
+    GET_PROFILE: (userId) => `${API_BASE_URL}/users/profile/${userId}`,
     UPDATE_PROFILE: `${API_BASE_URL}/users/profile`,
-    UPDATE_WATCHLIST: `${API_BASE_URL}/users/watchlist`,
+    GET_FAVORITES: (userId) => `${API_BASE_URL}/users/favorites/${userId}`,
+    GET_CINE_GRAPH: (userId) => `${API_BASE_URL}/users/cinegraph-data/${userId}`,
+    UPLOAD_PROFILE_PIC: (userId) => `${API_BASE_URL}/users/profile/${userId}/upload-profile-pic`,
+    UPDATE_BIO: (userId) => `${API_BASE_URL}/users/profile/${userId}/bio`,
+    UPDATE_PASSWORD: `${API_BASE_URL}/users/profile/password`,
+    DELETE_ACCOUNT: `${API_BASE_URL}/users/profile`,
+    ADD_TO_WATCHLIST: `${API_BASE_URL}/users/me/watchlist`,
+    REMOVE_FROM_WATCHLIST: (contentId) => `${API_BASE_URL}/users/me/watchlist/${contentId}`,
     GET_WATCHLIST: `${API_BASE_URL}/users/watchlist`,
     FOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/follow`,
     UNFOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/unfollow`,
@@ -41,6 +49,7 @@ export const API_ROUTES = {
   // Ratings Routes
   RATINGS: {
     GET_ALL: `${API_BASE_URL}/ratings`,
+    GET_MY_RATING: (contentId) => `${API_BASE_URL}/ratings/me/${contentId}`,
     CREATE: `${API_BASE_URL}/ratings`,
     UPDATE: (ratingId) => `${API_BASE_URL}/ratings/${ratingId}`,
     DELETE: (ratingId) => `${API_BASE_URL}/ratings/${ratingId}`,
@@ -49,6 +58,7 @@ export const API_ROUTES = {
   // Reviews Routes
   REVIEWS: {
     GET_ALL: `${API_BASE_URL}/reviews`,
+    GET_BY_CONTENT: (contentId) => `${API_BASE_URL}/reviews/content/${contentId}`,
     CREATE: `${API_BASE_URL}/reviews`,
     UPDATE: (reviewId) => `${API_BASE_URL}/reviews/${reviewId}`,
     DELETE: (reviewId) => `${API_BASE_URL}/reviews/${reviewId}`,

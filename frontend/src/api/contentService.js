@@ -1,10 +1,11 @@
 /**
  * Content Service
- * Handles movie and series API calls
+ * Handles movie and series API calls with caching
  */
 
 import API from './axios';
 import { API_ROUTES } from '../constants/apiRoutes';
+import { setCacheItem, getCacheItem, CACHE_KEYS } from './cacheService';
 
 export const contentService = {
   // Movie Methods
@@ -21,8 +22,16 @@ export const contentService = {
 
   getMovieById: async (movieId) => {
     try {
+      // Check cache first - movies don't change frequently
+      const cached = getCacheItem(CACHE_KEYS.MOVIE(movieId));
+      if (cached) return cached;
+
       const response = await API.get(API_ROUTES.MOVIES.GET_BY_ID(movieId));
-      return response.data;
+      const data = response.data;
+      
+      // Cache for 30 minutes
+      setCacheItem(CACHE_KEYS.MOVIE(movieId), data, 30 * 60 * 1000);
+      return data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch movie' };
     }
@@ -30,10 +39,18 @@ export const contentService = {
 
   searchMovies: async (query) => {
     try {
+      // Check cache first
+      const cached = getCacheItem(CACHE_KEYS.MOVIE_SEARCH(query));
+      if (cached) return cached;
+
       const response = await API.get(API_ROUTES.MOVIES.SEARCH, {
         params: { q: query },
       });
-      return response.data;
+      const data = response.data;
+      
+      // Cache for 20 minutes
+      setCacheItem(CACHE_KEYS.MOVIE_SEARCH(query), data, 20 * 60 * 1000);
+      return data;
     } catch (error) {
       throw error.response?.data || { message: 'Search failed' };
     }
@@ -53,8 +70,16 @@ export const contentService = {
 
   getSeriesById: async (seriesId) => {
     try {
+      // Check cache first - series don't change frequently
+      const cached = getCacheItem(CACHE_KEYS.SERIES(seriesId));
+      if (cached) return cached;
+
       const response = await API.get(API_ROUTES.SERIES.GET_BY_ID(seriesId));
-      return response.data;
+      const data = response.data;
+      
+      // Cache for 30 minutes
+      setCacheItem(CACHE_KEYS.SERIES(seriesId), data, 30 * 60 * 1000);
+      return data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch series' };
     }
@@ -62,10 +87,18 @@ export const contentService = {
 
   searchSeries: async (query) => {
     try {
+      // Check cache first
+      const cached = getCacheItem(CACHE_KEYS.SERIES_SEARCH(query));
+      if (cached) return cached;
+
       const response = await API.get(API_ROUTES.SERIES.SEARCH, {
         params: { q: query },
       });
-      return response.data;
+      const data = response.data;
+      
+      // Cache for 20 minutes
+      setCacheItem(CACHE_KEYS.SERIES_SEARCH(query), data, 20 * 60 * 1000);
+      return data;
     } catch (error) {
       throw error.response?.data || { message: 'Search failed' };
     }

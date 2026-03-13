@@ -8,6 +8,6 @@ const router = express.Router();
 
 // Giriş koruması ekliyoruz
 router.post('/', authMiddleware, validateRequest(validationSchemas.addRating), addOrUpdateRating);
-router.get('/me/:contentId', authMiddleware, validateRequest(validationSchemas.mongoIdParam), getMyRating);
+router.get('/me/:contentId', authMiddleware, validateRequest(validationSchemas.contentIdParam), getMyRating);
 
 export default router;

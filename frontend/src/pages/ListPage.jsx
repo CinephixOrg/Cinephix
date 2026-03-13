@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
-import API from "../api/axios";
+import { userService } from "../api/userService";
+import { contentService } from "../api/contentService";
+import { getCacheItem, CACHE_KEYS } from "../api/cacheService";
 import MovieCard from "../components/MovieCard";
 import SeriesCard from "../components/SeriesCard";
+import { toast } from "react-hot-toast";
 
 export default function ListPage() {
     const [movies, setMovies] = useState([]);
@@ -11,29 +14,54 @@ export default function ListPage() {
     useEffect(() => {
         const fetchWatchlist = async () => {
             try {
-                setLoading(true);
-                const res = await API.get("/users/me"); // watchlist al
-                const watchlist = res.data.watchlist;
+                const user = await userService.getCurrentUser();
+                const watchlist = user.watchlist || user.data?.watchlist;
 
-                // Movies
+                // Get cached items first for immediate display
+                const movieItemsIds = watchlist
+                    .filter(item => item.itemType === "movie")
+                    .map(item => item.itemId);
+                
+                const seriesItemsIds = watchlist
+                    .filter(item => item.itemType === "series")
+                    .map(item => item.itemId);
+
+                // Check cache and get cached items immediately
+                const cachedMovies = movieItemsIds
+                    .map(id => getCacheItem(CACHE_KEYS.MOVIE(id)))
+                    .filter(Boolean);
+                
+                const cachedSeries = seriesItemsIds
+                    .map(id => getCacheItem(CACHE_KEYS.SERIES(id)))
+                    .filter(Boolean);
+
+                // If we have any cached items, show them immediately
+                if (cachedMovies.length > 0 || cachedSeries.length > 0) {
+                    setMovies(cachedMovies);
+                    setSeries(cachedSeries);
+                    setLoading(false);
+                } else {
+                    // No cached data, show loading
+                    setLoading(true);
+                }
+
+                // Always fetch fresh content data in background
                 const movieData = await Promise.all(
-                    watchlist
-                        .filter(item => item.itemType === "movie")
-                        .map(item => API.get(`/movies/${item.itemId}`).then(r => r.data))
+                    movieItemsIds
+                        .map(itemId => contentService.getMovieById(itemId).then(r => r.data || r))
                 );
 
-                // Series
                 const seriesData = await Promise.all(
-                    watchlist
-                        .filter(item => item.itemType === "series")
-                        .map(item => API.get(`/series/${item.itemId}`).then(r => r.data))
+                    seriesItemsIds
+                        .map(itemId => contentService.getSeriesById(itemId).then(r => r.data || r))
                 );
 
                 setMovies(movieData);
                 setSeries(seriesData);
+                setLoading(false);
             } catch (err) {
                 console.error(err);
-            } finally {
+                toast.error("Failed to load watchlist");
                 setLoading(false);
             }
         };
@@ -54,8 +82,13 @@ export default function ListPage() {
                             movie={m}
                             showRemove
                             onRemove={async () => {
-                                await API.delete(`/users/me/watchlist/${m._id}`);
-                                setMovies(prev => prev.filter(x => x._id !== m._id));
+                                try {
+                                    await userService.removeFromWatchlist(m._id);
+                                    setMovies(prev => prev.filter(x => x._id !== m._id));
+                                    toast.success("Removed from watchlist");
+                                } catch (err) {
+                                    toast.error("Failed to remove from watchlist");
+                                }
                             }}
                         />
                     ))
@@ -71,8 +104,9 @@ export default function ListPage() {
                         showRemove
                         onRemove={async () => {
                             try {
-                                await API.delete(`/users/me/watchlist/${s._id}`);
+                                await userService.removeFromWatchlist(s._id);
                                 setSeries(prev => prev.filter(x => x._id !== s._id));
+                                toast.success("Removed from watchlist");
                             } catch (err) {
                                 console.error(err.response?.data?.message || err.message);
                                 toast.error(err.response?.data?.message || "An error occurred!");
