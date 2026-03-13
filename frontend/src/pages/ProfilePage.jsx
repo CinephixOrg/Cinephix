@@ -1,10 +1,11 @@
-// src/pages/ProfilePage.jsx (FAVORİLER BÖLÜMÜ DÜZELTİLMİŞ TAM DOSYA)
+// src/pages/ProfilePage.jsx (Using service layer)
 
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
-import API from '../api/axios.js';
+import { userService } from '../api/userService.js';
+import { getCacheItem, CACHE_KEYS } from '../api/cacheService.js';
 import MovieCard from '../components/MovieCard.jsx';
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import SeriesCard from '../components/SeriesCard.jsx';
@@ -33,9 +34,6 @@ export default function ProfilePage() {
   const [bioText, setBioText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { userId } = useParams(); // URL'den gelen ID
-  console.log("URL userId param:", userId);
-  console.log("🔥 ProfilePage MOUNTED");
-
 
   const targetUserId = user._id;
   const isOwnProfile = true;
@@ -44,28 +42,53 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!targetUserId) return;
 
-    const fetchData = async () => {
+    const cachedProfile = getCacheItem(CACHE_KEYS.USER(targetUserId));
+    const cachedFavorites = getCacheItem(CACHE_KEYS.FAVORITES(targetUserId));
+    const cachedCineGraph = getCacheItem(CACHE_KEYS.CINE_GRAPH(targetUserId));
+
+    // If we have cached data, use it immediately
+    if (cachedProfile || cachedFavorites || cachedCineGraph) {
+      if (cachedProfile) {
+        setProfile(cachedProfile);
+        setBioText(cachedProfile.bio || "");
+        setProfilePic(cachedProfile.profile_pic_url);
+        updateUser({ ...cachedProfile });
+      }
+      if (cachedFavorites) {
+        setFavorites(cachedFavorites);
+      }
+      if (cachedCineGraph) {
+        setCineGraphData(cachedCineGraph);
+      }
+      setLoading(false);
+    } else {
+      // No cached data, show loading
       setLoading(true);
-      setError(null);
+    }
+
+    setError(null);
+
+    // Always fetch fresh data in background
+    const fetchData = async () => {
       try {
-        const [profileResponse, favoritesResponse, cineGraphResponse] =
-          await Promise.all([
-            API.get(`/users/profile/${targetUserId}`),
-            API.get(`/users/favorites/${targetUserId}`),
-            API.get(`/users/cinegraph-data/${targetUserId}`),
-          ]);
+        const [profileData, favoritesData, cineGraphData] = await Promise.all([
+          userService.getProfile(targetUserId),
+          userService.getFavorites(targetUserId),
+          userService.getCineGraphData(targetUserId),
+        ]);
 
-        setProfile(profileResponse.data);
-        setFavorites(favoritesResponse.data);
-        setCineGraphData(cineGraphResponse.data);
+        setProfile(profileData);
+        setFavorites(favoritesData);
+        setCineGraphData(cineGraphData);
 
-        setBioText(profileResponse.data.bio || "");
-        setProfilePic(profileResponse.data.profile_pic_url);
+        setBioText(profileData.bio || "");
+        setProfilePic(profileData.profile_pic_url);
 
-        updateUser({ ...profileResponse.data });
+        updateUser({ ...profileData });
+        setLoading(false);
       } catch (err) {
         setError("Profil yüklenemedi.");
-      } finally {
+        console.error("Profile fetch error:", err);
         setLoading(false);
       }
     };
@@ -81,10 +104,8 @@ export default function ProfilePage() {
     formData.append("profilePic", file);
     setIsUploading(true);
     try {
-      const response = await API.post(`/users/profile/${user._id}/upload-profile-pic`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const newUrl = response.data.profilePicUrl || response.data.profile_pic_url || "";
+      const response = await userService.uploadProfilePic(user._id, formData);
+      const newUrl = response.profilePicUrl || response.profile_pic_url || "";
       setProfilePic(newUrl);
       // Sync context so ProfileMenu avatar updates immediately
       updateUser({ profile_pic_url: newUrl });
@@ -104,12 +125,17 @@ export default function ProfilePage() {
     if (!isOwnProfile) return;
     setIsSaving(true);
     try {
-      const response = await API.patch(`/users/profile/${user._id}/bio`, { bio: bioText });
-      setProfile(response.data);
+      const response = await userService.updateBio(user._id, bioText);
+      setProfile(response);
       setIsEditingBio(false);
       toast.success("Bio güncellendi!");
-    } catch (err) { console.error("Bio güncellenirken hata:", err); toast.error("Hata: Bio güncellenemedi."); }
-    finally { setIsSaving(false); }
+    } catch (err) {
+      console.error("Bio güncellenirken hata:", err);
+      toast.error("Hata: Bio güncellenemedi.");
+    }
+    finally {
+      setIsSaving(false);
+    }
   };
 
   // Bio iptal (Değişiklik yok)

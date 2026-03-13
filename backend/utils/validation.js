@@ -345,6 +345,15 @@ export const validationSchemas = {
     },
   },
 
+  contentIdParam: {
+    params: {
+      contentId: {
+        required: true,
+        type: "mongoId",
+      },
+    },
+  },
+
   findMatches: {
     body: {
       type: {

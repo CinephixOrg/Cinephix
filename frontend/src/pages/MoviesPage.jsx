@@ -41,8 +41,9 @@ export default function MoviesPage() {
 
       console.log("API response:", response.data); // Debugging log
 
-      setMovies(response.data.results);
-      setTotalPages(Math.ceil(response.data.total / response.data.limit));
+      // response.data is the array, response.pagination has pagination info
+      setMovies(response.data);
+      setTotalPages(response.pagination?.pages || 1);
     } catch (err) {
       console.error("Error fetching movies:", err);
       console.error("Error response:", err.response?.data); // Debugging log

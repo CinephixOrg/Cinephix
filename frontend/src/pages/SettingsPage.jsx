@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
-import API from '../api/axios';
+import { userService } from '../api/userService';
 
 export default function SettingsPage() {
   const { logout } = useContext(AuthContext);
@@ -44,14 +44,11 @@ export default function SettingsPage() {
 
     setLoadingPass(true);
     try {
-      await API.put('/users/profile/password', {
-        currentPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword
-      });
+      await userService.updatePassword(passwords.currentPassword, passwords.newPassword);
       toast.success("Şifreniz başarıyla güncellendi!");
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Şifre değiştirilemedi.");
+      toast.error(err.message || "Şifre değiştirilemedi.");
     } finally {
       setLoadingPass(false);
     }
@@ -60,7 +57,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     if (window.confirm("Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
       try {
-        await API.delete('/users/profile');
+        await userService.deleteAccount();
         toast.success("Hesabınız silindi. Hoşçakalın!");
         logout();
         navigate('/');

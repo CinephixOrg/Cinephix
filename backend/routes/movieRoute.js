@@ -80,10 +80,24 @@ export default async function(movieModel) {
       const countResult = await movieModel.aggregate(countPipeline);
       const total = countResult[0]?.total || docs.length;
 
-      res.json({ total, page: Number(page), limit: Number(limit), results: docs });
+      res.json({
+        success: true,
+        message: 'Movies fetched',
+        data: docs,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          pages: Math.ceil(total / Math.max(Number(limit), 1))
+        }
+      });
     } catch (e) {
       console.error(e);
-      res.status(500).json({ error: e.message });
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching movies',
+        error: e.message
+      });
     }
   });
 
@@ -91,10 +105,23 @@ export default async function(movieModel) {
   router.get("/:id", async (req, res) => {
     try {
       const doc = await movieModel.findById(req.params.id);
-      if (!doc) return res.status(404).json({ error: "Not found" });
-      res.json(doc);
+      if (!doc) {
+        return res.status(404).json({
+          success: false,
+          message: 'Movie not found'
+        });
+      }
+      res.json({
+        success: true,
+        message: 'Movie fetched',
+        data: doc
+      });
     } catch (e) {
-      res.status(500).json({ error: e.message });
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching movie',
+        error: e.message
+      });
     }
   });
 

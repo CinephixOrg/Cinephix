@@ -4,7 +4,7 @@ import User from '../models/User.js';
 
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { sendSuccess, sendError } from "../utils/response.js";
+import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
 /**
  * @desc   Belirli bir içeriğe ait tüm yorumları getirir
@@ -29,17 +29,7 @@ export const getContentReviews = asyncHandler(async (req, res) => {
 
   const total = await Review.countDocuments({ contentId });
 
-  res.json({
-    success: true,
-    message: 'Reviews fetched',
-    data: reviews,
-    pagination: {
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / Math.max(parseInt(limit), 1))
-    }
-  });
+  sendPaginated(res, reviews, total, parseInt(page), parseInt(limit), 'Reviews fetched');
 });
 
 /**

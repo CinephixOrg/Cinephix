@@ -13,8 +13,9 @@ import mongoose from 'mongoose'; // <-- YENİ IMPORT (GEREKLİ)
 
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { sendSuccess, sendError } from "../utils/response.js";
+import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { validateEmail } from "../middleware/validation.js";
+import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 
 // @desc    Yeni bir kullanıcı kaydeder
 // @route   POST /api/users/register
@@ -112,17 +113,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 
   const total = await User.countDocuments();
 
-  res.json({
-    success: true,
-    message: 'Users fetched',
-    data: users,
-    pagination: {
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / Math.max(parseInt(limit), 1))
-    }
-  });
+  sendPaginated(res, users, total, parseInt(page), parseInt(limit), 'Users fetched');
 });
 
 // controllers/userController.js
@@ -221,47 +212,63 @@ export const getNotifications = asyncHandler(async (req, res) => {
 
   const total = await Notification.countDocuments({ user: req.user.id });
 
-  res.json({
-    success: true,
-    message: 'Notifications fetched',
-    data: notifications,
-    pagination: {
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(total / Math.max(parseInt(limit), 1))
-    }
-  });
+  sendPaginated(res, notifications, total, parseInt(page), parseInt(limit), 'Notifications fetched');
 });
 
 // @desc    Giriş yapan kullanıcının TAKİP ETTİKLERİ listesini getirir
 // @route   GET /api/users/me/following
 // @access  Private (Giriş Gerekli)
 export const getMyFollowing = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
     const user = await User.findById(req.user.id)
-        .populate('following', '_id username')
+        .populate({
+            path: 'following',
+            select: '_id username profile_pic_url',
+            options: {
+                skip: skip,
+                limit: parseInt(limit)
+            }
+        })
         .lean();
 
     if (!user) {
         return sendError(res, 'User not found', 404);
     }
 
-    sendSuccess(res, user.following, 'Following list fetched', 200);
+    const userWithCount = await User.findById(req.user.id).lean();
+    const total = userWithCount.following ? userWithCount.following.length : 0;
+
+    sendPaginated(res, user.following || [], total, parseInt(page), parseInt(limit), 'Following list fetched');
 });
 
 // @desc    Giriş yapan kullanıcının TAKİPÇİLERİ listesini getirir
 // @route   GET /api/users/me/followers
 // @access  Private (Giriş Gerekli)
 export const getMyFollowers = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
     const user = await User.findById(req.user.id)
-        .populate('followers', '_id username')
+        .populate({
+            path: 'followers',
+            select: '_id username profile_pic_url',
+            options: {
+                skip: skip,
+                limit: parseInt(limit)
+            }
+        })
         .lean();
 
     if (!user) {
         return sendError(res, 'User not found', 404);
     }
 
-    sendSuccess(res, user.followers, 'Followers list fetched', 200);
+    const userWithCount = await User.findById(req.user.id).lean();
+    const total = userWithCount.followers ? userWithCount.followers.length : 0;
+
+    sendPaginated(res, user.followers || [], total, parseInt(page), parseInt(limit), 'Followers list fetched');
 });
 
 // @desc    Kullanıcı adlarına göre kullanıcı ara
@@ -269,20 +276,29 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
 // @access  Private (Giriş Gerekli)
 export const searchUsers = asyncHandler(async (req, res) => {
   const query = req.query.query;
+  const { page = 1, limit = 20 } = req.query;
 
   if (!query) {
     return sendError(res, 'Search query is required', 400);
   }
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const users = await User.find({
     username: { $regex: query, $options: 'i' },
     _id: { $ne: req.user.id }
   })
     .select('_id username profile_pic_url')
-    .limit(10)
+    .limit(parseInt(limit))
+    .skip(skip)
     .lean();
 
-  sendSuccess(res, users, 'Users found', 200);
+  const total = await User.countDocuments({
+    username: { $regex: query, $options: 'i' },
+    _id: { $ne: req.user.id }
+  });
+
+  sendPaginated(res, users, total, parseInt(page), parseInt(limit), 'Users found');
 });
 
 // backend/controllers/userController.js
@@ -492,25 +508,7 @@ export const uploadProfilePic = asyncHandler(async (req, res) => {
  * @access Private
  */
 
-// --- 1. TMDB TÜR SÖZLÜKLERİ (ID'leri isme çevirmek için) ---
-const MOVIE_GENRE_MAP = {
-  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
-  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
-  14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music",
-  9648: "Mystery", 10749: "Romance", 878: "Science Fiction",
-  10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
-};
-
-const SERIES_GENRE_MAP = {
-  10759: "Action & Adventure", 16: "Animation", 35: "Comedy",
-  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
-  10762: "Kids", 9648: "Mystery", 10763: "News", 10764: "Reality",
-  10765: "Sci-Fi & Fantasy", 10766: "Soap", 10767: "Talk",
-  10768: "War & Politics", 37: "Western"
-};
-// --- BİTİŞ ---
-
-// backend/controllers/userController.js (Sadece bu fonksiyonu güncelle)
+// backend/controllers/userController.js
 
 export const getUserCineGraph = asyncHandler(async (req, res) => {
   const Movie = mongoose.model('Movie');

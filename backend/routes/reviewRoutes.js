@@ -11,7 +11,7 @@ import { validateRequest, validationSchemas } from '../utils/validation.js';
 const router = express.Router();
 
 // Herkese açık: Belirli bir içeriğin yorumlarını getir
-router.get('/content/:contentId', validateRequest(validationSchemas.mongoIdParam), getContentReviews);
+router.get('/content/:contentId', validateRequest(validationSchemas.contentIdParam), getContentReviews);
 
 // Sadece giriş yapanlar: Yeni yorum ekle/güncelle
 router.post('/', authMiddleware, validateRequest(validationSchemas.addReview), addOrUpdateReview);

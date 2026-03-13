@@ -4,7 +4,7 @@ import Rating from "../models/Rating.js";
 
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { sendSuccess, sendError } from "../utils/response.js";
+import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
 /* ---------- yardımcı matematik ---------- */
 
@@ -37,7 +37,9 @@ export const findMatches = asyncHandler(async (req, res) => {
     type,                 // movie | series
     genres = [],          // [] or ["Drama", "Action"]
     useCount = true,
-    useAvgRating = true
+    useAvgRating = true,
+    page = 1,
+    limit = 10
   } = req.body;
 
   const meId = req.user.id;
@@ -100,5 +102,13 @@ export const findMatches = asyncHandler(async (req, res) => {
   }
 
   results.sort((a, b) => b.matchPercentage - a.matchPercentage);
-  sendSuccess(res, results.slice(0, 10), 'Matches found', 200);
+  
+  // Apply pagination
+  const pageNum = parseInt(page) || 1;
+  const limitNum = parseInt(limit) || 10;
+  const skip = (pageNum - 1) * limitNum;
+  const paginatedResults = results.slice(skip, skip + limitNum);
+  const total = results.length;
+
+  sendPaginated(res, paginatedResults, total, pageNum, limitNum, 'Matches found');
 });

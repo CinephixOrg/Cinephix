@@ -1,8 +1,12 @@
-// frontend/pages/ContentDetailPage.jsx (YORUM ENTEGRE EDİLMİŞ - DİKKATLİ VERSİYON)
+// frontend/pages/ContentDetailPage.jsx (Using service layer)
 
 import React, { useState, useEffect, useContext } from 'react'; // useContext eklendi
 import { useParams } from 'react-router-dom';
-import API from '../api/axios';
+import { contentService } from '../api/contentService';
+import { ratingService } from '../api/ratingService';
+import { reviewService } from '../api/reviewService';
+import { userService } from '../api/userService';
+import { getCacheItem, CACHE_KEYS } from '../api/cacheService';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns'; // Yorum zamanı için
 
@@ -37,55 +41,82 @@ export default function ContentDetailPage() {
     const [userHasReviewed, setUserHasReviewed] = useState(false);
     // --- BİTİŞ ---
 
-    // 1. Veri Çekme (useEffect) GÜNCELLENDİ (Yorumları ayrı çekmek için)
+    // 1. Veri Çekme (useEffect) GÜNCELLENDİ (Service layer kullanarak)
     useEffect(() => {
         const fetchEssentialData = async () => {
-            // SADECE İÇERİK ve KULLANICI BİLGİSİNİ ÇEK (Watchlist/Fav/Rating için)
-            setLoading(true); // Ana yüklenmeyi başlat
+            // Check cache first
+            const cachedContent = type === 'movie' 
+              ? getCacheItem(CACHE_KEYS.MOVIE(contentId))
+              : getCacheItem(CACHE_KEYS.SERIES(contentId));
+            
             setError(null);
             let currentContentId = contentId;
+            
+            // If content is cached, use it immediately
+            if (cachedContent) {
+                setContent(cachedContent);
+                setLoading(false);
+                currentContentId = cachedContent._id;
+                
+                // Set watchlist/favorites/rating from cached content's user data
+                const currentUserCached = getCacheItem(CACHE_KEYS.CURRENT_USER);
+                if (currentUserCached) {
+                    const userData = currentUserCached;
+                    const existsInWatchlist = userData.watchlist.find(item => item.itemId === currentContentId);
+                    setAdded(!!existsInWatchlist);
+                    setFavoriteMovies(userData.favoriteMovies || []);
+                    setFavoriteSeries(userData.favoriteSeries || []);
+                }
+            } else {
+                // No cache, show loading
+                setLoading(true);
+            }
+
+            // Always fetch fresh data in background
             try {
-                const [contentRes, userRes] = await Promise.all([
-                    API.get(type === 'movie' ? `/movies/${contentId}` : `/series/${contentId}`),
-                    API.get("/users/me")
-                ]);
+                const contentRes = type === 'movie' 
+                  ? await contentService.getMovieById(contentId)
+                  : await contentService.getSeriesById(contentId);
+                
+                const userRes = await userService.getCurrentUser();
 
-                setContent(contentRes.data);
-                currentContentId = contentRes.data._id;
+                setContent(contentRes.data || contentRes);
+                currentContentId = (contentRes.data || contentRes)._id;
 
-                const userData = userRes.data;
+                const userData = userRes.data || userRes;
                 const existsInWatchlist = userData.watchlist.find(item => item.itemId === currentContentId);
                 setAdded(!!existsInWatchlist);
                 setFavoriteMovies(userData.favoriteMovies || []);
                 setFavoriteSeries(userData.favoriteSeries || []);
 
                 try {
-                    const ratingRes = await API.get(`/ratings/me/${currentContentId}`);
-                    setRating(ratingRes.data.value);
+                    const ratingRes = await ratingService.getMyRating(currentContentId);
+                    setRating((ratingRes.data || ratingRes).value || 0);
                 } catch (ratingErr) {
                     if (ratingErr.response && ratingErr.response.status === 404) {
                         setRating(0);
-                    } else { console.error("Puan çekilirken hata:", ratingErr); }
+                    } else { 
+                        console.error("Puan çekilirken hata:", ratingErr); 
+                    }
                 }
+                setLoading(false);
 
             } catch (err) {
                 console.error("İçerik/Kullanıcı verisi çekilirken hata:", err);
                 setError("Content could not be loaded."); // Ana hata durumu
-            } finally {
-                 setLoading(false); // Ana yüklenmeyi bitir
+                setLoading(false);
             }
         };
 
         const fetchReviews = async () => {
             // YORUMLARI AYRI ÇEK
             setLoadingReviews(true);
-             // currentContentId henüz setContent ile gelmemiş olabilir, doğrudan useParams kullan
             try {
-                const reviewsRes = await API.get(`/reviews/content/${contentId}`);
-                setReviews(reviewsRes.data);
+                const reviewsRes = await reviewService.getReviewsByContent(contentId);
+                setReviews(reviewsRes.data || reviewsRes);
 
                 // Kullanıcının mevcut yorumunu bul (user context'ten kontrol et)
-                const existingReview = reviewsRes.data.find(r => r.user?._id === user?._id);
+                const existingReview = (reviewsRes.data || reviewsRes).find(r => r.user?._id === user?._id);
                 if (existingReview) {
                     setUserHasReviewed(true);
                     setReviewText(existingReview.text);
@@ -108,7 +139,7 @@ export default function ContentDetailPage() {
     }, [contentId, type, user?._id]); // user._id'yi ekledik, yorumları kontrol etmek için
 
 
-    // --- MEVCUT FONKSİYONLARIN (Dokunulmadı) ---
+    // --- RATING HANDLER ---
     const handleRatingChange = async (newValue) => {
         const currentContentId = content._id;
         const contentType = content.type || type;
@@ -116,42 +147,87 @@ export default function ContentDetailPage() {
         setRating(newValue);
         setIsRatingLoading(true);
         try {
-            await API.post("/ratings", { contentId: currentContentId, contentType: contentType, value: newValue });
+            await ratingService.createRating({ 
+                contentId: currentContentId, 
+                contentType: contentType, 
+                value: newValue 
+            });
             toast.success("Rating saved!");
-        } catch (err) { console.error("Puan kaydetme hatası:", err); toast.error("Couldn't save rating."); setRating(oldValue); }
-        finally { setIsRatingLoading(false); }
+        } catch (err) { 
+            console.error("Puan kaydetme hatası:", err); 
+            toast.error("Couldn't save rating."); 
+            setRating(oldValue); 
+        }
+        finally { 
+            setIsRatingLoading(false); 
+        }
     };
+
+    // --- WATCHLIST HANDLER ---
     const handleAddToList = async () => {
         const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
         try {
-            await API.post("/users/me/watchlist", { id: content._id, type: contentType });
-            setAdded(true); toast.success("Added to your list");
-        } catch (error) { console.error(error.response?.data?.message || error.message); toast.error(error.response?.data?.message || "An error occurred"); }
+            await userService.addToWatchlist(content._id, contentType);
+            setAdded(true); 
+            toast.success("Added to your list");
+        } catch (error) { 
+            console.error(error.response?.data?.message || error.message); 
+            toast.error(error.response?.data?.message || "An error occurred"); 
+        }
     };
+
     const handleRemoveFromList = async () => {
         try {
-            await API.delete(`/users/me/watchlist/${content._id}`);
-            setAdded(false); toast.success("Removed from your list");
-        } catch (err) { console.error(err.response?.data?.message || err.message); toast.error(error.response?.data?.message || "An error occurred"); }
+            await userService.removeFromWatchlist(content._id);
+            setAdded(false); 
+            toast.success("Removed from your list");
+        } catch (err) { 
+            console.error(err.response?.data?.message || err.message); 
+            toast.error(err.response?.data?.message || "An error occurred"); 
+        }
     };
-    const handleOpenFavModal = async () => { if (!added) { await handleAddToList(); } setIsFavModalOpen(true); };
-    const handleSaveFavorites = (updatedList) => { if (type === 'movie') { setFavoriteMovies(updatedList); } else { setFavoriteSeries(updatedList); } toast.success("Favorites saved!"); setIsFavModalOpen(false); };
-    // --- BİTİŞ: MEVCUT FONKSİYONLAR ---
+
+    const handleOpenFavModal = async () => { 
+        if (!added) { await handleAddToList(); } 
+        setIsFavModalOpen(true); 
+    };
+
+    const handleSaveFavorites = (updatedList) => { 
+        if (type === 'movie') { setFavoriteMovies(updatedList); } 
+        else { setFavoriteSeries(updatedList); } 
+        toast.success("Favorites saved!"); 
+        setIsFavModalOpen(false); 
+    };
 
 
-    // --- YENİ: YORUM KAYDETME FONKSİYONU (Öncekiyle aynı) ---
+    // --- REVIEW SAVE HANDLER ---
     const handleSaveReview = async () => {
-        if (!reviewText.trim()) { return toast.error("Review cannot be empty."); }
+        if (!reviewText.trim()) { 
+            return toast.error("Review cannot be empty."); 
+        }
         setIsSavingReview(true);
         try {
-            const response = await API.post('/reviews', { contentId: content._id, contentType: type, text: reviewText.trim() });
-            const savedReview = response.data;
-            setReviews(prevReviews => { const otherReviews = prevReviews.filter(r => r.user?._id !== user?._id); return [savedReview, ...otherReviews]; });
-            setShowReviewInput(false); setUserHasReviewed(true); toast.success(userHasReviewed ? "Review updated!" : "Review added!");
-        } catch (err) { console.error("Yorum kaydedilirken hata:", err); toast.error("Error: Could not save review."); }
-        finally { setIsSavingReview(false); }
+            const response = await reviewService.createReview({ 
+                contentId: content._id, 
+                contentType: type, 
+                text: reviewText.trim() 
+            });
+            const savedReview = response.data || response;
+            setReviews(prevReviews => { 
+                const otherReviews = prevReviews.filter(r => r.user?._id !== user?._id); 
+                return [savedReview, ...otherReviews]; 
+            });
+            setShowReviewInput(false); 
+            setUserHasReviewed(true); 
+            toast.success(userHasReviewed ? "Review updated!" : "Review added!");
+        } catch (err) { 
+            console.error("Yorum kaydedilirken hata:", err); 
+            toast.error("Error: Could not save review."); 
+        }
+        finally { 
+            setIsSavingReview(false); 
+        }
     };
-    // --- BİTİŞ ---
 
 
     // Ana Yüklenme Durumu (İçerik yüklenmeden gösterme)

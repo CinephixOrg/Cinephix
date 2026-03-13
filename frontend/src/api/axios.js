@@ -19,10 +19,19 @@ API.interceptors.request.use((req) => {
 });
 
 // Response interceptor to unwrap the data structure
-// Backend returns { success, message, data }, we extract just the data
+// Backend returns { success, message, data, pagination? }, we extract just the data
+// But preserve pagination info if it exists
 API.interceptors.response.use(
   (res) => {
-    // If response has data property with success/message structure, unwrap it
+    // If response has pagination, keep the structure but unwrap data
+    if (res.data && res.data.pagination) {
+      const { data, pagination, ...rest } = res.data;
+      res.data = data; // response.data is now the array
+      res.pagination = pagination; // preserve pagination info
+      return res;
+    }
+    // For non-paginated responses, unwrap the nested data structure
+    // (e.g., login/register responses)
     if (res.data && res.data.data !== undefined && res.data.success !== undefined) {
       res.data = res.data.data;
     }
