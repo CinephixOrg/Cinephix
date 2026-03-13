@@ -6,6 +6,10 @@ import { conn } from "../db/connections.js";
 import { createMovieModel } from "../models/Movie.js";
 import { createSeriesModel } from "../models/Series.js";
 
+// New imports for consistent responses and error handling
+import { asyncHandler } from "../middleware/errorHandler.js";
+import { sendSuccess, sendError } from "../utils/response.js";
+
 const Movie = createMovieModel(conn);
 const Series = createSeriesModel(conn);
 
@@ -72,70 +76,76 @@ const updateCineGraph = async ({
 
 /* ---------- ADD / UPDATE RATING ---------- */
 
-export const addOrUpdateRating = async (req, res) => {
+export const addOrUpdateRating = asyncHandler(async (req, res) => {
   const { contentId, contentType, value } = req.body;
   const userId = req.user.id;
 
-  try {
-    const existingRating = await Rating.findOne({ user: userId, contentId });
-
-    let genres = [];
-
-    if (contentType === "movie") {
-      const movie = await Movie.findById(contentId).lean();
-      if (!movie) return res.status(404).json({ message: "Movie not found" });
-
-      genres = (movie.genre_ids || [])
-        .map(id => MOVIE_GENRE_MAP[id])
-        .filter(Boolean);
-
-    } else {
-      const series = await Series.findById(contentId).lean();
-      if (!series) return res.status(404).json({ message: "Series not found" });
-
-      genres = (series.genre_ids || [])
-        .map(id => SERIES_GENRE_MAP[id])
-        .filter(Boolean);
-    }
-
-    const newRating = await Rating.findOneAndUpdate(
-      { user: userId, contentId },
-      { contentType, value },
-      { upsert: true, new: true, runValidators: true }
-    );
-
-    await updateCineGraph({
-      userId,
-      contentType,
-      genres,
-      newValue: value,
-      oldValue: existingRating ? existingRating.value : null,
-    });
-
-    res.status(200).json(newRating);
-  } catch (error) {
-    res.status(500).json({
-      message: "Puan kaydedilemedi",
-      error: error.message,
-    });
+  // Validation
+  if (!contentId || !contentType || value === undefined) {
+    return sendError(res, 'contentId, contentType, and value are required', 400);
   }
-};
+
+  if (!['movie', 'series'].includes(contentType)) {
+    return sendError(res, 'contentType must be "movie" or "series"', 400);
+  }
+
+  if (typeof value !== 'number' || value < 1 || value > 10) {
+    return sendError(res, 'Rating value must be between 1 and 10', 400);
+  }
+
+  const existingRating = await Rating.findOne({ user: userId, contentId });
+
+  let genres = [];
+
+  if (contentType === "movie") {
+    const movie = await Movie.findById(contentId).lean();
+    if (!movie) return sendError(res, "Movie not found", 404);
+
+    genres = (movie.genre_ids || [])
+      .map(id => MOVIE_GENRE_MAP[id])
+      .filter(Boolean);
+
+  } else {
+    const series = await Series.findById(contentId).lean();
+    if (!series) return sendError(res, "Series not found", 404);
+
+    genres = (series.genre_ids || [])
+      .map(id => SERIES_GENRE_MAP[id])
+      .filter(Boolean);
+  }
+
+  const newRating = await Rating.findOneAndUpdate(
+    { user: userId, contentId },
+    { contentType, value },
+    { upsert: true, new: true, runValidators: true }
+  ).lean();
+
+  await updateCineGraph({
+    userId,
+    contentType,
+    genres,
+    newValue: value,
+    oldValue: existingRating ? existingRating.value : null,
+  });
+
+  sendSuccess(res, newRating, 'Rating saved successfully', 200);
+});
 
 /* ---------- GET MY RATING ---------- */
 
-export const getMyRating = async (req, res) => {
+export const getMyRating = asyncHandler(async (req, res) => {
   const { contentId } = req.params;
   const userId = req.user.id;
 
-  try {
-    const rating = await Rating.findOne({ user: userId, contentId });
-
-    if (!rating) {
-      return res.status(404).json({ message: "Kullanıcı bu içeriği puanlamamış." });
-    }
-
-    res.status(200).json(rating);
-  } catch (error) {
-    res.status(500).json({ message: "Sunucu hatası", error: error.message });
+  if (!contentId) {
+    return sendError(res, 'contentId is required', 400);
   }
-};
+
+  const rating = await Rating.findOne({ user: userId, contentId }).lean();
+
+  if (!rating) {
+    return sendError(res, 'Rating not found', 404);
+  }
+
+  sendSuccess(res, rating, 'Rating fetched', 200);
+});

@@ -4,6 +4,9 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 
+// Import error handler middleware
+import { errorHandler } from "./middleware/errorHandler.js";
+
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -71,6 +74,8 @@ async function start() {
     console.log('Movie ve Series modelleri varsayılan bağlantıya da kaydedildi.');
     // --- BİTİŞ ---
 
+    // Register global error handler middleware (must be last)
+    app.use(errorHandler);
 
     // Sunucuyu başlat
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
