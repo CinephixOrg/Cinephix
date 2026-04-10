@@ -66,7 +66,7 @@ export const API_ROUTES = {
 
   // Match Routes
   MATCH: {
-    GET_MATCHES: `${API_BASE_URL}/match/suggestions`,
+    GET_MATCHES: `${API_BASE_URL}/match`,
     GET_COMPATIBILITY: (userId) => `${API_BASE_URL}/match/compatibility/${userId}`,
   },
 
