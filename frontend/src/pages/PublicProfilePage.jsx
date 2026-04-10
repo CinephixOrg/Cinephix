@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import API from "../api/axios";
+import { matchService } from "../api/matchService.js";
 import CineGraph from "../components/CineGraph.jsx";
 import { AuthContext } from "../context/AuthContext.jsx";
 import MovieCard from "../components/MovieCard.jsx";
@@ -30,11 +32,52 @@ export default function PublicProfilePage() {
   const [followLoading, setFollowLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // YENİ: Cinematch state'leri
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [matchResult, setMatchResult] = useState(null);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchError, setMatchError] = useState(null);
+  
+  // Cinematch Filters
+  const [matchType, setMatchType] = useState('movie');
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [useCount, setUseCount] = useState(true);
+  const [useAvgRating, setUseAvgRating] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+
   const makeAbsolute = (url) => {
     if (!url) return "";
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
     const base = (API && API.defaults && API.defaults.baseURL) || window.location.origin;
     return `${base.replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
+  };
+
+  // YENİ: Cinematch işlemi
+  const handleCinematch = async () => {
+    setMatchLoading(true);
+    setMatchError(null);
+    try {
+      console.log(`🎬 Calculating cinematch with user ${id}...`);
+      const filters = {
+        type: matchType,
+        genres: selectedGenres,
+        useCount,
+        useAvgRating,
+      };
+      console.log('📋 Filters:', filters);
+      const result = await matchService.getMatchWithUser(id, matchType, filters);
+      console.log('✅ Cinematch result:', result);
+      const data = result.data || result;
+      console.log('📊 Setting matchResult:', data);
+      setMatchResult(data);
+      toast.success('Match hesaplandı!');
+    } catch (error) {
+      console.error('❌ Cinematch error:', error);
+      setMatchError(error.message || 'Cinematch hesaplandırken hata oluştu');
+      toast.error(error.message || 'Cinematch hesaplandırken hata oluştu');
+    } finally {
+      setMatchLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -264,8 +307,107 @@ export default function PublicProfilePage() {
           </div>
 
           {!isOwn && (
-            <div className="mt-4">
-              <button className={`btn ${isFollowed ? 'btn-success' : 'btn-primary'} btn-sm`} onClick={toggleFollow} disabled={followLoading}>{followLoading ? '...' : isFollowed ? 'Following' : 'Follow'}</button>
+            <div>
+              <div className="mt-4 flex gap-2">
+                <button className={`btn ${isFollowed ? 'btn-success' : 'btn-primary'} btn-sm`} onClick={toggleFollow} disabled={followLoading}>{followLoading ? '...' : isFollowed ? 'Following' : 'Follow'}</button>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="btn btn-sm btn-outline gap-2"
+                >
+                  ⚙️ Filters
+                </button>
+                <button
+                  onClick={handleCinematch}
+                  disabled={matchLoading}
+                  className="btn btn-sm btn-secondary gap-2"
+                >
+                  {matchLoading ? <span className="loading loading-spinner loading-sm"></span> : '🎬'}
+                  Cinematch
+                </button>
+              </div>
+              
+              {/* Filtreleme seçenekleri */}
+              {showFilters && (
+                <div className="mt-4 p-4 bg-base-200 rounded-lg space-y-3">
+                  {/* Type toggle */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold">Type:</span>
+                    <div className="btn-group btn-group-sm">
+                      <button
+                        className={`btn ${matchType === 'movie' ? 'btn-active' : ''}`}
+                        onClick={() => setMatchType('movie')}
+                      >
+                        🎬 Movie
+                      </button>
+                      <button
+                        className={`btn ${matchType === 'series' ? 'btn-active' : ''}`}
+                        onClick={() => setMatchType('series')}
+                      >
+                        📺 Series
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Criteria toggles */}
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useCount}
+                        onChange={(e) => setUseCount(e.target.checked)}
+                        className="checkbox checkbox-sm"
+                      />
+                      <span className="text-sm">Use Count</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useAvgRating}
+                        onChange={(e) => setUseAvgRating(e.target.checked)}
+                        className="checkbox checkbox-sm"
+                      />
+                      <span className="text-sm">Use Rating</span>
+                    </label>
+                  </div>
+                  
+                  {/* Genre selection - en yaygın türleri göster */}
+                  <div>
+                    <span className="text-sm font-semibold block mb-2">Genres:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {['Action', 'Drama', 'Comedy', 'Thriller', 'Horror', 'Romance', 'Sci-Fi', 'Fantasy', 'Animation', 'Documentary'].map((genre) => (
+                        <button
+                          key={genre}
+                          onClick={() => {
+                            if (selectedGenres.includes(genre)) {
+                              setSelectedGenres(selectedGenres.filter(g => g !== genre));
+                            } else {
+                              setSelectedGenres([...selectedGenres, genre]);
+                            }
+                          }}
+                          className={`btn btn-xs ${selectedGenres.includes(genre) ? 'btn-primary' : 'btn-outline'}`}
+                        >
+                          {genre}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* YENİ: Match Result Bar */}
+              {matchResult && (
+                <div role="alert" className="alert alert-info mt-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>Your match score is <strong>{matchResult.matchPercentage}%</strong> 🎬</span>
+                </div>
+              )}
+              
+              {matchError && (
+                <div role="alert" className="alert alert-error mt-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>{matchError}</span>
+                </div>
+              )}
             </div>
           )}
 
