@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { userService } from '../api/userService.js';
+import { matchService } from '../api/matchService.js';
 import { getCacheItem, CACHE_KEYS } from '../api/cacheService.js';
 import MovieCard from '../components/MovieCard.jsx';
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
@@ -35,8 +36,22 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const { userId } = useParams(); // URL'den gelen ID
 
-  const targetUserId = user._id;
-  const isOwnProfile = true;
+  // YENİ: Cinematch state'leri
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [matchResult, setMatchResult] = useState(null);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchError, setMatchError] = useState(null);
+  
+  // Cinematch Filters
+  const [matchType, setMatchType] = useState('movie');
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [useCount, setUseCount] = useState(true);
+  const [useAvgRating, setUseAvgRating] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Hangi profili göster? URL'den gelen ID varsa onu, yoksa kendi profilin
+  const targetUserId = userId || user._id;
+  const isOwnProfile = !userId || userId === user._id;
 
   // --- useEffect (fetchData) GÜNCELLENDİ (CineGraph eklendi) ---
   useEffect(() => {
@@ -144,6 +159,34 @@ export default function ProfilePage() {
     setBioText(profile.bio || "");
   };
 
+  // YENİ: Cinematch işlemi
+  const handleCinematch = async () => {
+    setMatchLoading(true);
+    setMatchError(null);
+    try {
+      console.log(`🎬 Calculating cinematch with user ${profile._id}...`);
+      const filters = {
+        type: matchType,
+        genres: selectedGenres,
+        useCount,
+        useAvgRating,
+      };
+      console.log('📋 Filters:', filters);
+      const result = await matchService.getMatchWithUser(profile._id, matchType, filters);
+      console.log('✅ Cinematch result:', result);
+      const data = result.data || result;
+      console.log('📊 Setting matchResult:', data);
+      setMatchResult(data);
+      toast.success('Match hesaplandı!');
+    } catch (error) {
+      console.error('❌ Cinematch error:', error);
+      setMatchError(error.message || 'Cinematch hesaplandırken hata oluştu');
+      toast.error(error.message || 'Cinematch hesaplandırken hata oluştu');
+    } finally {
+      setMatchLoading(false);
+    }
+  };
+
   // Yüklenme ve Hata durumları (Değişiklik yok)
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="alert alert-error max-w-lg mx-auto mt-10">{error}</div>;
@@ -222,7 +265,112 @@ export default function ProfilePage() {
             Re-edit last
           </button>
         )} */}
-        <h1 className="text-3xl font-bold mt-4">{profile?.username || user.username}</h1>
+        <div className="flex flex-col items-center gap-2 mt-4">
+          <h1 className="text-3xl font-bold">{profile?.username || user.username}</h1>
+          {!isOwnProfile && (
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="btn btn-sm btn-outline gap-2"
+                >
+                  ⚙️ Filters
+                </button>
+                <button
+                  onClick={handleCinematch}
+                  disabled={matchLoading}
+                  className="btn btn-sm btn-primary gap-2"
+                >
+                  {matchLoading ? <span className="loading loading-spinner loading-sm"></span> : '🎬'}
+                  Cinematch
+                </button>
+              </div>
+              
+              {/* Filtreleme seçenekleri */}
+              {showFilters && (
+                <div className="mt-3 p-4 bg-base-200 rounded-lg space-y-3 w-full max-w-md">
+                  {/* Type toggle */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold">Type:</span>
+                    <div className="btn-group btn-group-sm">
+                      <button
+                        className={`btn ${matchType === 'movie' ? 'btn-active' : ''}`}
+                        onClick={() => setMatchType('movie')}
+                      >
+                        🎬 Movie
+                      </button>
+                      <button
+                        className={`btn ${matchType === 'series' ? 'btn-active' : ''}`}
+                        onClick={() => setMatchType('series')}
+                      >
+                        📺 Series
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Criteria toggles */}
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useCount}
+                        onChange={(e) => setUseCount(e.target.checked)}
+                        className="checkbox checkbox-sm"
+                      />
+                      <span className="text-sm">Use Count</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useAvgRating}
+                        onChange={(e) => setUseAvgRating(e.target.checked)}
+                        className="checkbox checkbox-sm"
+                      />
+                      <span className="text-sm">Use Rating</span>
+                    </label>
+                  </div>
+                  
+                  {/* Genre selection */}
+                  <div>
+                    <span className="text-sm font-semibold block mb-2">Genres:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {['Action', 'Drama', 'Comedy', 'Thriller', 'Horror', 'Romance', 'Sci-Fi', 'Fantasy', 'Animation', 'Documentary'].map((genre) => (
+                        <button
+                          key={genre}
+                          onClick={() => {
+                            if (selectedGenres.includes(genre)) {
+                              setSelectedGenres(selectedGenres.filter(g => g !== genre));
+                            } else {
+                              setSelectedGenres([...selectedGenres, genre]);
+                            }
+                          }}
+                          className={`btn btn-xs ${selectedGenres.includes(genre) ? 'btn-primary' : 'btn-outline'}`}
+                        >
+                          {genre}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* YENİ: Match Result Bar */}
+              {matchResult && (
+                <div role="alert" className="alert alert-info mt-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>Your match score is <strong>{matchResult.matchPercentage}%</strong> 🎬</span>
+                </div>
+              )}
+              
+              {matchError && (
+                <div role="alert" className="alert alert-error mt-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>{matchError}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <p className="text-sm text-base-content/70 mt-2">
           {profile?.createdAt ?
             `Joined on ${format(new Date(profile.createdAt), "MMMM d, yyyy")}` :
@@ -349,6 +497,69 @@ export default function ProfilePage() {
           onCancel={handleCropCancel}
           onConfirm={handleCropConfirm}
         />
+      )}
+
+      {/* YENİ: Cinematch Modal */}
+      {matchModalOpen && matchResult && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-base-100 rounded-lg shadow-xl p-8 max-w-md w-full">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold mb-4">🎬 Cinematch Result</h3>
+              
+              <div className="mb-6">
+                <img
+                  src={matchResult.targetUser?.profile_pic_url || `https://ui-avatars.com/api/?name=${matchResult.targetUser?.username}&size=80`}
+                  alt={matchResult.targetUser?.username}
+                  className="w-20 h-20 rounded-full mx-auto mb-3 object-cover"
+                />
+                <h4 className="text-xl font-semibold">{matchResult.targetUser?.username}</h4>
+              </div>
+
+              {/* Match Percentage Large Display */}
+              <div className="mb-6">
+                <div className="text-6xl font-bold text-primary mb-2">
+                  {matchResult.matchPercentage}%
+                </div>
+                <div className="text-sm text-base-content/70">Uyum Yüzde</div>
+              </div>
+
+              {/* Breakdown */}
+              {matchResult.breakdown && (
+                <div className="mb-6 text-left bg-base-200 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>🎬 Collaborative:</span>
+                    <span className="font-semibold">{matchResult.breakdown.collaborative}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>📽️ Content-Based:</span>
+                    <span className="font-semibold">{matchResult.breakdown.contentBased}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>👥 Social:</span>
+                    <span className="font-semibold">{matchResult.breakdown.social}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>🎭 Diversity:</span>
+                    <span className="font-semibold">{matchResult.breakdown.diversity}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>⭐ Bonus:</span>
+                    <span className="font-semibold">{matchResult.breakdown.bonus}%</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-primary flex-1"
+                  onClick={() => setMatchModalOpen(false)}
+                >
+                  Kapat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Image viewer modal — add this near the end of return(), before closing tags */}

@@ -52,6 +52,24 @@ export const matchService = {
   },
 
   /**
+   * YENİ: Belirli bir kullanıcıyla olan match yüzdesini hesapla
+   */
+  getMatchWithUser: async (targetUserId, type = 'movie', filters = {}) => {
+    try {
+      const payload = {
+        type: filters.type || type,
+        genres: filters.genres || [],
+        useCount: filters.useCount !== undefined ? filters.useCount : true,
+        useAvgRating: filters.useAvgRating !== undefined ? filters.useAvgRating : true,
+      };
+      const response = await API.post(`${API_ROUTES.MATCH.GET_MATCHES}/${targetUserId}`, payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to calculate match' };
+    }
+  },
+
+  /**
    * Trending matches (şu anda diğer kullanıcılar tarafından en çok arananlar)
    */
   getTrendingMatches: async (type = 'movie', limit = 10) => {

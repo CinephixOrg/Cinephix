@@ -250,3 +250,154 @@ const calculateDiversityInMemory = (cineGraph) => {
   const maxPossibleStdDev = total / Math.sqrt(counts.length);
   return Math.min(1, stdDev / (maxPossibleStdDev || 1));
 };
+
+/* ========== YENİ ENDPOINT: Tek kullanıcıyla match hesapla ========== */
+
+/**
+ * POST /api/match/user/:targetUserId
+ * Belirli bir kullanıcıyla olan uyumu hesapla
+ */
+export const getMatchWithUser = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+  const { 
+    type = "movie",
+    genres = [],
+    useCount = true,
+    useAvgRating = true
+  } = req.body;
+
+  console.log(`[MATCH-USER] Calculating match between ${meId} and ${targetUserId}, type: ${type}, genres: ${genres}`);
+
+  if (!targetUserId) {
+    return sendError(res, 'Target user ID is required', 400);
+  }
+
+  if (meId === targetUserId) {
+    return sendError(res, 'Cannot match with yourself', 400);
+  }
+
+  const cineKey = type === "movie" ? "movieCineGraph" : "seriesCineGraph";
+
+  // Get my data
+  const me = await User.findById(meId).lean();
+  if (!me || !me[cineKey]) {
+    return sendError(res, 'Your CineGraph data not found', 400);
+  }
+
+  // Get target user data
+  const target = await User.findById(targetUserId)
+    .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`)
+    .lean();
+
+  if (!target || !target[cineKey]) {
+    return sendError(res, 'Target user or their CineGraph data not found', 404);
+  }
+
+  const myGraph = me[cineKey];
+
+  try {
+    // ===== HYBRID APPROACH (same logic as findMatches) =====
+
+    let finalScore = 0;
+
+    // 1. COLLABORATIVE FILTERING (35%)
+    const g1 = {};
+    const g2 = {};
+    const r1 = {};
+    const r2 = {};
+
+    for (const [genre, v] of Object.entries(myGraph)) {
+      // Genre filtresi uygula
+      if (genres.length && !genres.includes(genre)) continue;
+      
+      if (useCount) g1[genre] = v.count;
+      if (useAvgRating) r1[genre] = v.avgRating;
+    }
+
+    for (const [genre, v] of Object.entries(target[cineKey])) {
+      // Genre filtresi uygula
+      if (genres.length && !genres.includes(genre)) continue;
+      
+      if (useCount) g2[genre] = v.count;
+      if (useAvgRating) r2[genre] = v.avgRating;
+      g2[genre] = v.count;
+      r2[genre] = v.avgRating;
+    }
+
+    const genreScore = cosineSimilarity(g1, g2);
+    const ratingScore = avgRatingSimilarity(r1, r2);
+    const collaborativeScore = 0.5 * genreScore + 0.5 * ratingScore;
+
+    finalScore += 0.35 * collaborativeScore;
+
+    // 2. CONTENT-BASED (25%)
+    const favorites1 = (type === "movie" ? me.favoriteMovies : me.favoriteSeries) || [];
+    const favorites2 = (type === "movie" ? target.favoriteMovies : target.favoriteSeries) || [];
+    let contentScore = 0;
+
+    if (favorites1.length > 0 && favorites2.length > 0) {
+      const set1 = new Set(favorites1.map((id) => id.toString()));
+      const set2 = new Set(favorites2.map((id) => id.toString()));
+      const intersection = [...set1].filter((x) => set2.has(x)).length;
+      const union = new Set([...set1, ...set2]).size;
+      contentScore = union === 0 ? 0 : intersection / union;
+    }
+
+    finalScore += 0.25 * contentScore;
+
+    // 3. SOCIAL SCORE (20%)
+    const myFollowing = new Set((me.following || []).map((id) => id.toString()));
+    const myFollowers = new Set((me.followers || []).map((id) => id.toString()));
+    const targetFollowing = new Set((target.following || []).map((id) => id.toString()));
+    const targetFollowers = new Set((target.followers || []).map((id) => id.toString()));
+
+    const mutualFollowing = [...myFollowing].filter((x) => targetFollowing.has(x)).length;
+    const unionFollowing = new Set([...myFollowing, ...targetFollowing]).size;
+    const followingScore = unionFollowing === 0 ? 0 : mutualFollowing / unionFollowing;
+
+    const mutualFollowers = [...myFollowers].filter((x) => targetFollowers.has(x)).length;
+    const unionFollowers = new Set([...myFollowers, ...targetFollowers]).size;
+    const followersScore = unionFollowers === 0 ? 0 : mutualFollowers / unionFollowers;
+
+    const socialScore = 0.4 * followingScore + 0.4 * followersScore;
+
+    finalScore += 0.20 * socialScore;
+
+    // 4. DIVERSITY SCORE (15%)
+    const myDiversity = calculateDiversityInMemory(me[cineKey]);
+    const targetDiversity = calculateDiversityInMemory(target[cineKey]);
+    const diversityDiff = Math.abs(myDiversity - targetDiversity);
+    const diversityScore = 1 - Math.min(1, diversityDiff);
+
+    finalScore += 0.15 * diversityScore;
+
+    // 5. BONUS (5%)
+    const bonusScore = 0.5;
+    finalScore += 0.05 * bonusScore;
+
+    const matchPercentage = Math.round(finalScore * 100);
+
+    console.log(`[MATCH-USER] ✅ Match: ${matchPercentage}% (Collab: ${Math.round(collaborativeScore * 35)}%, Content: ${Math.round(contentScore * 25)}%, Social: ${Math.round(socialScore * 20)}%, Diversity: ${Math.round(diversityScore * 15)}%)`);
+
+    sendSuccess(res, {
+      matchPercentage,
+      targetUser: {
+        _id: target._id,
+        username: target.username,
+        profile_pic_url: target.profile_pic_url,
+      },
+      breakdown: {
+        collaborative: Math.round(collaborativeScore * 100),
+        contentBased: Math.round(contentScore * 100),
+        social: Math.round(socialScore * 100),
+        diversity: Math.round(diversityScore * 100),
+        bonus: 50,
+      },
+    }, 'Match calculated successfully');
+
+  } catch (error) {
+    console.error('Error calculating match:', error);
+    return sendError(res, 'Error calculating match', 500);
+  }
+});
