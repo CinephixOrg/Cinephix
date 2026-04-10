@@ -42,12 +42,24 @@ export default function MatchPage() {
         genres: filterMode === "specific" ? selectedGenres : [],
         useCount,
         useAvgRating,
+        hybridMode: true,
+        page: 1,
+        limit: 50,
       };
 
+      console.log('📤 Sending match request:', payload);
+      const startTime = Date.now();
+      
       const res = await API.post("/match", payload);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Match response received in ${duration}ms:`, res.data);
+      
       setMatches(res.data);
     } catch (err) {
-      setError("Eşleşme sırasında bir hata oluştu.");
+      console.error('❌ Match error:', err);
+      const errorMsg = err.response?.data?.message || err.message || "Eşleşme sırasında bir hata oluştu.";
+      setError(`Hata: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
