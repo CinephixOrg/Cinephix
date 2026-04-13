@@ -92,7 +92,6 @@ export default async function(movieModel) {
         }
       });
     } catch (e) {
-      console.error(e);
       res.status(500).json({
         success: false,
         message: 'Error fetching movies',

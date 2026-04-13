@@ -76,16 +76,12 @@ export const findMatches = asyncHandler(async (req, res) => {
   }
 
   const myGraph = me[cineKey];
-
-  console.log(`[MATCH] Starting match calculation for user ${meId}, type: ${type}`);
   const startTime = Date.now();
 
   const others = await User.find({ _id: { $ne: meId } })
     .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`)
     .limit(1000)  // ⚡ OPTIMIZATION: Limit to 1000 users max
     .lean();
-
-  console.log(`[MATCH] Loaded ${others.length} users in ${Date.now() - startTime}ms`);
 
   const results = [];
 
@@ -208,8 +204,7 @@ export const findMatches = asyncHandler(async (req, res) => {
         matchPercentage: Math.round(finalScore * 100),
       });
     } catch (error) {
-      console.error(`Error calculating match score for user ${u._id}:`, error);
-      // Bu kullanıcıyı atla
+      // Silently skip this user on error
       continue;
     }
   }
@@ -222,9 +217,6 @@ export const findMatches = asyncHandler(async (req, res) => {
   const skip = (pageNum - 1) * limitNum;
   const paginatedResults = results.slice(skip, skip + limitNum);
   const total = results.length;
-
-  const totalDuration = Date.now() - startTime;
-  console.log(`[MATCH] ✅ Completed in ${totalDuration}ms. Evaluated ${others.length} users, Total matches: ${total}, Returned: ${paginatedResults.length}`);
 
   sendPaginated(res, paginatedResults, total, pageNum, limitNum, 'Hybrid Matches found');
 });
@@ -266,8 +258,6 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     useCount = true,
     useAvgRating = true
   } = req.body;
-
-  console.log(`[MATCH-USER] Calculating match between ${meId} and ${targetUserId}, type: ${type}, genres: ${genres}`);
 
   if (!targetUserId) {
     return sendError(res, 'Target user ID is required', 400);
@@ -378,8 +368,6 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
 
     const matchPercentage = Math.round(finalScore * 100);
 
-    console.log(`[MATCH-USER] ✅ Match: ${matchPercentage}% (Collab: ${Math.round(collaborativeScore * 35)}%, Content: ${Math.round(contentScore * 25)}%, Social: ${Math.round(socialScore * 20)}%, Diversity: ${Math.round(diversityScore * 15)}%)`);
-
     sendSuccess(res, {
       matchPercentage,
       targetUser: {
@@ -397,7 +385,6 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     }, 'Match calculated successfully');
 
   } catch (error) {
-    console.error('Error calculating match:', error);
     return sendError(res, 'Error calculating match', 500);
   }
 });

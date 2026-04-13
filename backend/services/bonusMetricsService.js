@@ -24,7 +24,6 @@ export const calculateActivityRecency = async (userId) => {
     // 0-20 rating = 0 score, 20+ rating = 1 score
     return Math.min(1, recentRatings / 20);
   } catch (error) {
-    console.error("Activity recency calculation error:", error);
     return 0.5;
   }
 };
@@ -69,7 +68,6 @@ export const calculateTrendingAlignment = async (userId1, userId2, limit = 10) =
 
     return union === 0 ? 0 : intersection / union;
   } catch (error) {
-    console.error("Trending alignment calculation error:", error);
     return 0.5;
   }
 };
@@ -140,7 +138,6 @@ export const calculateMutualConnectionsCount = async (userId1, userId2) => {
 
     return Math.sqrt(mutualFollowers * mutualFollowing);
   } catch (error) {
-    console.error("Mutual connections count error:", error);
     return 0;
   }
 };
@@ -155,7 +152,6 @@ export const calculateNoveltyBonus = async (userId1, userId2) => {
 
     return 0.5;
   } catch (error) {
-    console.error("Novelty bonus calculation error:", error);
     return 0.5;
   }
 };

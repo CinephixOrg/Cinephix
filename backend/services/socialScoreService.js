@@ -102,7 +102,6 @@ export const calculateSocialScore = async (userId1, userId2) => {
 
     return Math.min(1, socialScore);
   } catch (error) {
-    console.error("Social score calculation error:", error);
     return 0;
   }
 };
@@ -146,7 +145,7 @@ export const calculateNetworkDistance = async (userId1, userId2) => {
     // 3+ degree (no connection)
     return 3;
   } catch (error) {
-    console.error("Network distance calculation error:", error);
+
     return 3;
   }
 };

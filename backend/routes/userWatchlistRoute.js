@@ -24,7 +24,6 @@ router.post("/me/watchlist", authMiddleware, async (req, res) => {
 
     return res.status(201).json({ message: "Eklendi", watchlist: user.watchlist });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ message: "Sunucu hatası" });
   }
 });
@@ -49,7 +48,6 @@ router.delete("/me/watchlist", authMiddleware, async (req, res) => {
     await user.save();
     return res.status(200).json({ message: "Kaldırıldı", watchlist: user.watchlist });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ message: "Sunucu hatası" });
   }
 });
@@ -60,7 +58,6 @@ router.get("/me/watchlist", authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.id).select("watchlist");
     return res.json({ watchlist: user.watchlist });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ message: "Sunucu hatası" });
   }
 });

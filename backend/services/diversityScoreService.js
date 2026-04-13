@@ -141,7 +141,6 @@ export const calculateDiversityScore = async (userId1, userId2, type = "movie") 
 
     return Math.min(1, diversityScore);
   } catch (error) {
-    console.error("Diversity score calculation error:", error);
     return 0.5; // Neutral
   }
 };
@@ -187,7 +186,6 @@ export const calculateWatchActivityScore = async (userId1, userId2, type = "movi
 
     return 1 - (ratio - 1) / 9; // Linear interpolation
   } catch (error) {
-    console.error("Watch activity score calculation error:", error);
     return 0.5;
   }
 };

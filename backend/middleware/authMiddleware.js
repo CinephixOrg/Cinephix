@@ -27,7 +27,6 @@ export default async function authMiddleware(req, res, next) {
 
     next();
   } catch (err) {
-    console.error("authMiddleware hatası:", err);
     return res.status(401).json({ message: "Token doğrulanamadı" });
   }
 }

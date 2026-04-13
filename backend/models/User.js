@@ -79,6 +79,18 @@ seriesCineGraph: {
 
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
 
+// ===== DATABASE INDEXES (Issue #13) =====
+// Fast lookups for authentication
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
+
+// Fast lookups for user profiles and connections
+userSchema.index({ followers: 1 });
+userSchema.index({ following: 1 });
+
+// Compound index for efficient watchlist queries
+userSchema.index({ _id: 1, watchlist: 1 });
+
 const User = mongoose.model('User', userSchema);
 
 export default User;

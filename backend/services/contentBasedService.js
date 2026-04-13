@@ -38,7 +38,6 @@ export const calculateFavoriteOverlap = async (userId1, userId2, type = "movie")
 
     return union === 0 ? 0 : intersection / union;
   } catch (error) {
-    console.error("Favorite overlap calculation error:", error);
     return 0;
   }
 };

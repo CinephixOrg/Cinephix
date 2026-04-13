@@ -360,7 +360,7 @@ export const getUserProfile = async (req, res) => {
     res.status(200).json(user);
 
   } catch (error) {
-    console.error("Profil getirme hatası:", error);
+
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 };

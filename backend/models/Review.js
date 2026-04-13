@@ -36,9 +36,19 @@ const reviewSchema = new Schema({
   // }
 }, { timestamps: true }); // createdAt ve updatedAt alanlarını otomatik ekler
 
-// Bir kullanıcının bir içeriğe SADECE BİR yorum yapabilmesini sağlar
-// (Eğer birden fazla yoruma izin vermek istiyorsan bu satırı kaldır)
+// ===== DATABASE INDEXES (Issue #13) =====
+// Ensure one user can review one content only once
 reviewSchema.index({ user: 1, contentId: 1 }, { unique: true });
+
+// Fast lookups by content (for getting all reviews for a movie/series)
+reviewSchema.index({ contentId: 1 });
+reviewSchema.index({ contentType: 1 });
+
+// Fast lookups by user (for getting user's all reviews)
+reviewSchema.index({ user: 1 });
+
+// Compound index for sorting reviews by creation time
+reviewSchema.index({ contentId: 1, createdAt: -1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 export default Review;

@@ -29,8 +29,16 @@ const ratingSchema = new Schema({
     }
 }, { timestamps: true });
 
-// Bir kullanıcının bir içeriğe SADECE BİR KEZ puan verebilmesini sağlar
+// ===== DATABASE INDEXES (Issue #13) =====
+// Ensure one user can rate one content only once
 ratingSchema.index({ user: 1, contentId: 1 }, { unique: true });
+
+// Fast lookups by content (for getting all ratings for a movie/series)
+ratingSchema.index({ contentId: 1 });
+ratingSchema.index({ contentType: 1 });
+
+// Fast lookups by user (for getting user's all ratings)
+ratingSchema.index({ user: 1 });
 
 const Rating = mongoose.model('Rating', ratingSchema);
 export default Rating;
