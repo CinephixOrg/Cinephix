@@ -69,15 +69,45 @@ export default async function(movieModel) {
         pipeline.push({ $match: {} });
       }
 
-      pipeline.push({ $skip: skip });
-      pipeline.push({ $limit: Number(limit) });
+      // 🔹 Optimize: Only select needed fields for search results
+      pipeline.push({
+        $project: {
+          _id: 1,
+          title: 1,
+          poster_path: 1,
+          release_date: 1,
+          overview: 1,
+          vote_average: 1,
+          genre_ids: 1
+        }
+      });
 
-      const docs = await movieModel.aggregate(pipeline);
+      // 🔹 Use $facet to get both data AND count in ONE aggregation (much faster!)
+      pipeline.push({
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: Number(limit) }
+          ]
+        }
+      });
 
-      // toplam doküman sayısı
-      const countPipeline = pipeline.filter(p => !('$skip' in p || '$limit' in p));
-      countPipeline.push({ $count: "total" });
-      const countResult = await movieModel.aggregate(countPipeline);
+      const result = await movieModel.aggregate(pipeline);
+      const total = result[0]?.metadata[0]?.total || 0;
+      const docs = result[0]?.data || [];
+
+      res.json({
+        success: true,
+        message: 'Movies fetched',
+        data: docs,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          pages: Math.ceil(total / Math.max(Number(limit), 1))
+        }
+      });
       const total = countResult[0]?.total || docs.length;
 
       res.json({

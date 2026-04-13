@@ -283,22 +283,40 @@ export const searchUsers = asyncHandler(async (req, res) => {
   }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
 
-  const users = await User.find({
-    username: { $regex: query, $options: 'i' },
-    _id: { $ne: req.user.id }
-  })
-    .select('_id username profile_pic_url')
-    .limit(parseInt(limit))
-    .skip(skip)
-    .lean();
+  // 🔹 Optimize: Use aggregation with $facet to get count + data in ONE query
+  const pipeline = [
+    {
+      $match: {
+        username: { $regex: query, $options: 'i' },
+        _id: { $ne: new mongoose.Types.ObjectId(req.user.id) }
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        username: 1,
+        profile_pic_url: 1
+      }
+    },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $skip: skip },
+          { $limit: limitNum }
+        ]
+      }
+    }
+  ];
 
-  const total = await User.countDocuments({
-    username: { $regex: query, $options: 'i' },
-    _id: { $ne: req.user.id }
-  });
+  const result = await User.aggregate(pipeline);
+  const total = result[0]?.metadata[0]?.total || 0;
+  const users = result[0]?.data || [];
 
-  sendPaginated(res, users, total, parseInt(page), parseInt(limit), 'Users found');
+  sendPaginated(res, users, total, pageNum, limitNum, 'Users found');
 });
 
 // backend/controllers/userController.js

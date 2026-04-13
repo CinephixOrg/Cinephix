@@ -84,6 +84,9 @@ seriesCineGraph: {
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
 
+// Fast text search on username and email
+userSchema.index({ username: "text", email: "text" });
+
 // Fast lookups for user profiles and connections
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });

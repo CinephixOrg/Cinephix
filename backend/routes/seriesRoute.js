@@ -53,20 +53,34 @@ export default async function (seriesModel) {
       if (hasPoster === "no") match.poster_path = null;
       if (Object.keys(match).length > 0) pipeline.push({ $match: match });
 
-      // 🔹 Sayfalama
-      pipeline.push({ $skip: skip });
-      pipeline.push({ $limit: Number(limit) });
+      // 🔹 Optimize: Only select needed fields for search results
+      pipeline.push({
+        $project: {
+          _id: 1,
+          name: 1,
+          poster_path: 1,
+          first_air_date: 1,
+          overview: 1,
+          vote_average: 1,
+          genre_ids: 1
+        }
+      });
 
-      // 🔹 Asıl veri
-      const docs = await seriesModel.aggregate(pipeline);
+      // 🔹 Use $facet to get both data AND count in ONE aggregation (much faster!)
+      pipeline.push({
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: Number(limit) }
+          ]
+        }
+      });
 
-      // 🔹 Toplam kayıt sayısı (pagination için)
-      const countPipeline = pipeline.filter(
-        (p) => !("$skip" in p || "$limit" in p)
-      );
-      countPipeline.push({ $count: "total" });
-      const countResult = await seriesModel.aggregate(countPipeline);
-      const total = countResult[0]?.total || docs.length;
+      // 🔹 Execute optimized pipeline
+      const result = await seriesModel.aggregate(pipeline);
+      const total = result[0]?.metadata[0]?.total || 0;
+      const docs = result[0]?.data || [];
 
       res.json({
         success: true,
