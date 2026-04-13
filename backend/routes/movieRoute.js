@@ -108,19 +108,6 @@ export default async function(movieModel) {
           pages: Math.ceil(total / Math.max(Number(limit), 1))
         }
       });
-      const total = countResult[0]?.total || docs.length;
-
-      res.json({
-        success: true,
-        message: 'Movies fetched',
-        data: docs,
-        pagination: {
-          total,
-          page: Number(page),
-          limit: Number(limit),
-          pages: Math.ceil(total / Math.max(Number(limit), 1))
-        }
-      });
     } catch (e) {
       res.status(500).json({
         success: false,
