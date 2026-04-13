@@ -13,7 +13,7 @@ export default async function(movieModel) {
       if (title) {
         pipeline.push({
           $search: {
-            index: "default", // Atlas'ta oluşturduğun index ismini yaz
+            index: "default", // Atlas index name
             compound: {
               should: [
                 {
@@ -21,7 +21,7 @@ export default async function(movieModel) {
                     query: title,
                     path: "title",
                     fuzzy: {
-                      maxEdits: 2, // 2 harf hatasına kadar izin verir
+                      maxEdits: 2, // Tolerates up to 2 character errors
                       prefixLength: 1
                     }
                   }
@@ -41,7 +41,7 @@ export default async function(movieModel) {
         });
       }
 
-      // Diğer filtreleri uygula
+      // Apply other filters
       if (years) {
         const yearArray = years.split(",");
         pipeline.push({
@@ -53,32 +53,49 @@ export default async function(movieModel) {
       if (genres) {
         const genreArray = genres.split(",").map(Number);
         pipeline.push({
-          $match: { genre_ids: { $in: genreArray } } // Genre ID eşleştirmesi
+          $match: { genre_ids: { $in: genreArray } } // Genre ID matching
         });
       }
       if (hasPoster) {
         pipeline.push({
           $match: {
-            poster_path: hasPoster === "yes" ? { $ne: null } : null // Poster filtresi
+            poster_path: hasPoster === "yes" ? { $ne: null } : null // Poster filteri
           }
         });
       }
 
-      // Eğer hiçbir filtre yoksa tüm filmleri getir
+      // If no filter exists, get all movies
       if (!title && !years && !genres && !hasPoster) {
         pipeline.push({ $match: {} });
       }
 
-      pipeline.push({ $skip: skip });
-      pipeline.push({ $limit: Number(limit) });
+      // 🔹 Optimize: Only select needed fields for search results
+      pipeline.push({
+        $project: {
+          _id: 1,
+          title: 1,
+          poster_path: 1,
+          release_date: 1,
+          overview: 1,
+          vote_average: 1,
+          genre_ids: 1
+        }
+      });
 
-      const docs = await movieModel.aggregate(pipeline);
+      // 🔹 Use $facet to get both data AND count in ONE aggregation (much faster!)
+      pipeline.push({
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: Number(limit) }
+          ]
+        }
+      });
 
-      // toplam doküman sayısı
-      const countPipeline = pipeline.filter(p => !('$skip' in p || '$limit' in p));
-      countPipeline.push({ $count: "total" });
-      const countResult = await movieModel.aggregate(countPipeline);
-      const total = countResult[0]?.total || docs.length;
+      const result = await movieModel.aggregate(pipeline);
+      const total = result[0]?.metadata[0]?.total || 0;
+      const docs = result[0]?.data || [];
 
       res.json({
         success: true,
@@ -92,7 +109,6 @@ export default async function(movieModel) {
         }
       });
     } catch (e) {
-      console.error(e);
       res.status(500).json({
         success: false,
         message: 'Error fetching movies',

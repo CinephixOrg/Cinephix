@@ -14,7 +14,7 @@ const WatchItemSchema = new mongoose.Schema({
 const userSchema = new Schema({
   username: {
     type: String,
-    required: [true, 'Kullanıcı adı zorunludur.'],
+    required: [true, 'Username is required.'],
     unique: true,
     trim: true // Başındaki ve sonundaki boşlukları temizler
   },
@@ -78,6 +78,21 @@ seriesCineGraph: {
   // --- BİTİŞ ---
 
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
+
+// ===== DATABASE INDEXES (Issue #13) =====
+// Fast lookups for authentication
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
+
+// Fast text search on username and email
+userSchema.index({ username: "text", email: "text" });
+
+// Fast lookups for user profiles and connections
+userSchema.index({ followers: 1 });
+userSchema.index({ following: 1 });
+
+// Compound index for efficient watchlist queries
+userSchema.index({ _id: 1, watchlist: 1 });
 
 const User = mongoose.model('User', userSchema);
 

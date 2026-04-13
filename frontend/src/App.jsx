@@ -7,6 +7,9 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
+// Import Error Boundary (Issue #19)
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+
 import { AuthContext } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
@@ -21,16 +24,10 @@ import SeriesPage from "./pages/SeriesPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import TopBar from "./components/TopBar";
 
-// --- MEVCUT SAYFALAR ---
-// MoviesPage ve SeriesPage silindiği için yorumda veya kaldırılmış olabilir
-// import MoviesPage from "./pages/MoviesPage.jsx"; 
-// import SeriesPage from "./pages/SeriesPage.jsx";
 import NetworkPage from "./pages/NetworkPage.jsx";
 
-// --- 1. YENİ IMPORT: MatchPage'i ekle ---
 import MatchPage from "./pages/MatchPage.jsx";
 import PublicProfilePage from "./pages/PublicProfilePage.jsx";
-// --- BİTİŞ ---
 
 
 
@@ -67,41 +64,43 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200" data-theme="forest">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-base-200" data-theme="forest">
 
-      {/* 🔥 GLOBAL BAR – HER SAYFADA */}
-      <TopBar />
+        {/* 🔥 GLOBAL BAR – HER SAYFADA */}
+        <TopBar />
 
-      <main>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+        <main>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-          <Route
-            path="/"
-            element={user ? <Navigate to="/home" /> : <WelcomePage />}
-          />
+            <Route
+              path="/"
+              element={user ? <Navigate to="/home" /> : <WelcomePage />}
+            />
 
-          <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-          <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
-          <Route path="/users/:id" element={<PublicProfilePage />} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+            <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
+            <Route path="/users/:id" element={<PublicProfilePage />} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
-          <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
-          <Route path="/movies" element={<ProtectedRoute><MoviePage /></ProtectedRoute>} />
-          <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
-          <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
+            <Route path="/movies" element={<ProtectedRoute><MoviePage /></ProtectedRoute>} />
+            <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
+            <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-          <Route
-            path="/content/:type/:contentId"
-            element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
-          />
-        </Routes>
-      </main>
+            <Route
+              path="/content/:type/:contentId"
+              element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
+            />
+          </Routes>
+        </main>
 
-      <Toaster position="top-center" />
-    </div>
+        <Toaster position="top-center" />
+      </div>
+    </ErrorBoundary>
   );
 
 }

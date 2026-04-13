@@ -4,12 +4,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 
-// --- YENİ EKLENEN IMPORT ---
-// Notification modelini de buraya import ediyoruz
+// --- NEW ADDED IMPORT ---
+// Import Notification model here
 import Notification from "../models/Notification.js";
 import Rating from "../models/Rating.js";
-// --- BİTİŞ ---
-import mongoose from 'mongoose'; // <-- YENİ IMPORT (GEREKLİ)
+// --- END ---
+import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
@@ -17,7 +17,7 @@ import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { validateEmail } from "../middleware/validation.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 
-// @desc    Yeni bir kullanıcı kaydeder
+// @desc    Register a new user
 // @route   POST /api/users/register
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
@@ -65,7 +65,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   }, 'User registered successfully', 201);
 });
 
-// @desc    Kullanıcı girişi yapar ve token döndürür
+// @desc    User login and return token
 // @route   POST /api/users/login
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -99,7 +99,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   }, 'Login successful', 200);
 });
 
-// @desc    Tüm kullanıcıları getirir (yalnızca test amaçlı)
+// @desc    Get all users (for testing only)
 // @route   GET /api/users
 export const getUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20 } = req.query;
@@ -118,11 +118,11 @@ export const getUsers = asyncHandler(async (req, res) => {
 
 // controllers/userController.js
 
-// ... (registerUser, loginUser, getUsers fonksiyonları aynı kalır)
+// ... (registerUser, loginUser, getUsers functions remain the same)
 
-// @desc    Bir kullanıcıyı takip etme
+// @desc    Follow a user
 // @route   POST /api/users/:id/follow
-// @access  Private (Giriş Gerekli)
+// @access  Private (Login required)
 export const followUser = asyncHandler(async (req, res) => {
   const loggedInUserId = req.user.id;
   const userToFollowId = req.params.id;
@@ -170,9 +170,9 @@ export const followUser = asyncHandler(async (req, res) => {
   sendSuccess(res, null, 'User followed successfully', 200);
 });
 
-// @desc    Bir kullanıcıyı takipten çıkma
+// @desc    Unfollow a user
 // @route   POST /api/users/:id/unfollow
-// @access  Private (Giriş Gerekli)
+// @access  Private (Login required)
 export const unfollowUser = asyncHandler(async (req, res) => {
   const loggedInUserId = req.user.id;
   const userToUnfollowId = req.params.id;
@@ -196,9 +196,9 @@ export const unfollowUser = asyncHandler(async (req, res) => {
   sendSuccess(res, null, 'User unfollowed successfully', 200);
 });
 
-// @desc    Giriş yapan kullanıcının bildirimlerini getirme
+// @desc    Get logged-in user's notifications
 // @route   GET /api/notifications
-// @access  Private (Giriş Gerekli)
+// @access  Private (Login required)
 export const getNotifications = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20 } = req.query;
   const skip = (page - 1) * limit;
@@ -215,9 +215,9 @@ export const getNotifications = asyncHandler(async (req, res) => {
   sendPaginated(res, notifications, total, parseInt(page), parseInt(limit), 'Notifications fetched');
 });
 
-// @desc    Giriş yapan kullanıcının TAKİP ETTİKLERİ listesini getirir
+// @desc    Get logged-in user's FOLLOWING list
 // @route   GET /api/users/me/following
-// @access  Private (Giriş Gerekli)
+// @access  Private (Login required)
 export const getMyFollowing = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -243,9 +243,9 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
     sendPaginated(res, user.following || [], total, parseInt(page), parseInt(limit), 'Following list fetched');
 });
 
-// @desc    Giriş yapan kullanıcının TAKİPÇİLERİ listesini getirir
+// @desc    Get logged-in user's FOLLOWERS list
 // @route   GET /api/users/me/followers
-// @access  Private (Giriş Gerekli)
+// @access  Private (Login required)
 export const getMyFollowers = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -271,9 +271,9 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
     sendPaginated(res, user.followers || [], total, parseInt(page), parseInt(limit), 'Followers list fetched');
 });
 
-// @desc    Kullanıcı adlarına göre kullanıcı ara
+// @desc    Search users by username
 // @route   GET /api/users/search?q=[query]
-// @access  Private (Giriş Gerekli)
+// @access  Private (Login required)
 export const searchUsers = asyncHandler(async (req, res) => {
   const query = req.query.query;
   const { page = 1, limit = 20 } = req.query;
@@ -283,29 +283,47 @@ export const searchUsers = asyncHandler(async (req, res) => {
   }
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
 
-  const users = await User.find({
-    username: { $regex: query, $options: 'i' },
-    _id: { $ne: req.user.id }
-  })
-    .select('_id username profile_pic_url')
-    .limit(parseInt(limit))
-    .skip(skip)
-    .lean();
+  // 🔹 Optimize: Use aggregation with $facet to get count + data in ONE query
+  const pipeline = [
+    {
+      $match: {
+        username: { $regex: query, $options: 'i' },
+        _id: { $ne: new mongoose.Types.ObjectId(req.user.id) }
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        username: 1,
+        profile_pic_url: 1
+      }
+    },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [
+          { $skip: skip },
+          { $limit: limitNum }
+        ]
+      }
+    }
+  ];
 
-  const total = await User.countDocuments({
-    username: { $regex: query, $options: 'i' },
-    _id: { $ne: req.user.id }
-  });
+  const result = await User.aggregate(pipeline);
+  const total = result[0]?.metadata[0]?.total || 0;
+  const users = result[0]?.data || [];
 
-  sendPaginated(res, users, total, parseInt(page), parseInt(limit), 'Users found');
+  sendPaginated(res, users, total, pageNum, limitNum, 'Users found');
 });
 
 // backend/controllers/userController.js
 
-// ... (searchUsers fonksiyonunun bittiği yer)
+// ... (searchUsers function ends here)
 
-// @desc    Kullanıcının favori listesini (film veya dizi) günceller
+// @desc    Update user's favorite list (movies or series)
 // @route   PUT /api/users/me/favorites
 // @access  Private
 export const updateFavorites = async (req, res) => {
@@ -313,61 +331,61 @@ export const updateFavorites = async (req, res) => {
   const userId = req.user.id;
 
   if (!type || !list) {
-    return res.status(400).json({ message: "Tip ve liste gerekli." });
+    return res.status(400).json({ message: "Type and list are required." });
   }
   if (list.length > 5) {
-    return res.status(400).json({ message: "Favori listesi en fazla 5 öğe içerebilir." });
+    return res.status(400).json({ message: "Favorite list can contain a maximum of 5 items." });
   }
 
   try {
     const fieldToUpdate = type === 'movie' ? 'favoriteMovies' : 'favoriteSeries';
     
-    // 1. Kullanıcının listesini güncelle
+    // 1. Update user's list
     await User.findByIdAndUpdate(
       userId,
-      { [fieldToUpdate]: list }, // Listeyi doğrudan gelen yeni listeyle değiştir
+      { [fieldToUpdate]: list }, // Replace list directly with the new list from request
       { new: true, runValidators: true }
     );
     
-    // 2. GÜNCELLEME: Populate etme. Sadece güncel ID listesini geri döndür.
+    // 2. UPDATE: No populate. Just return the current list of IDs.
     res.status(200).json(list);
 
   } catch (error) {
-    res.status(500).json({ message: "Favoriler güncellenemedi.", error: error.message });
+    res.status(500).json({ message: "Favorites could not be updated.", error: error.message });
   }
 };
 
 // controllers/userController.js dosyasının sonuna ekle:
 
-// ... (mevcut updateFavorites fonksiyonunun bittiği yer)
+// ... (existing updateFavorites function ends here)
 
 /**
- * @desc   Kullanıcının public profil bilgilerini getirir (ProfilePage için)
+ * @desc   Get user's public profile information (For ProfilePage)
  * @route  GET /api/users/profile/:id
  * @access Private
  */
 export const getUserProfile = async (req, res) => {
   try {
-    // .findById() kullanarak :id parametresindeki kullanıcının
-    // şifresi HARİÇ tüm bilgilerini getiriyoruz.
+    // Use .findById() to get all information of the user in :id parameter
+    // EXCEPT for password
     const user = await User.findById(req.params.id).select('-password');
     
     if (!user) {
-      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+      return res.status(404).json({ message: 'User not found' });
     }
     
-    // Frontend'e kullanıcının bio, username, createdAt gibi bilgilerini yolla
+    // Send user's bio, username, createdAt etc. to frontend
     res.status(200).json(user);
 
   } catch (error) {
-    console.error("Profil getirme hatası:", error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // controllers/userController.js
 
-// ... (mevcut getUserProfile fonksiyonunun hemen altına)
+// Right after the existing getUserProfile function
 
 // controllers/userController.js
 

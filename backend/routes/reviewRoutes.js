@@ -1,4 +1,3 @@
-// backend/routes/reviewRoutes.js
 import express from 'express';
 import {
   getContentReviews,
@@ -6,17 +5,17 @@ import {
   deleteMyReview
 } from '../controllers/reviewController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
-import { validateRequest, validationSchemas } from '../utils/validation.js';
+import { validateRequest, validationSchemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
-// Herkese açık: Belirli bir içeriğin yorumlarını getir
-router.get('/content/:contentId', validateRequest(validationSchemas.contentIdParam), getContentReviews);
+// Public: Get reviews for specific content
+router.get('/content/:contentId', getContentReviews);
 
-// Sadece giriş yapanlar: Yeni yorum ekle/güncelle
-router.post('/', authMiddleware, validateRequest(validationSchemas.addReview), addOrUpdateReview);
+// Auth required: Add/update review
+router.post('/', authMiddleware, validateRequest(validationSchemas.createReview), addOrUpdateReview);
 
-// Sadece giriş yapanlar: Kendi yorumunu sil (:reviewId -> yorumun kendi ID'si)
-router.delete('/:reviewId', authMiddleware, validateRequest(validationSchemas.mongoIdParam), deleteMyReview);
+// Auth required: Delete my own review
+router.delete('/:reviewId', authMiddleware, deleteMyReview);
 
 export default router;

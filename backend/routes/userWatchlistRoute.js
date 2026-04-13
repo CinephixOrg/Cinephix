@@ -1,67 +1,64 @@
 // routes/userWatchlistRoute.js
 import express from "express";
 import User from "../models/User.js";
-import authMiddleware from "../middleware/authMiddleware.js"; // proje içinde varsa
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Eklemek
+// Add to watchlist
 router.post("/me/watchlist", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id; // authMiddleware user'ı req.user'a koyuyor varsayılıyor
+    const userId = req.user.id;
     const { itemId, itemType } = req.body;
-    if (!itemId || !itemType) return res.status(400).json({ message: "Eksik veriler" });
+    if (!itemId || !itemType) return res.status(400).json({ message: "Missing data" });
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Aynı öğe var mı kontrol et
+    // Check if item already exists
     const exists = user.watchlist.some(w => w.itemId.toString() === itemId && w.itemType === itemType);
-    if (exists) return res.status(409).json({ message: "Zaten eklendi" });
+    if (exists) return res.status(409).json({ message: "Already added" });
 
     user.watchlist.push({ itemId, itemType });
     await user.save();
 
-    return res.status(201).json({ message: "Eklendi", watchlist: user.watchlist });
+    return res.status(201).json({ message: "Added", watchlist: user.watchlist });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Sunucu hatası" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
-// Çıkarmak
+// Remove from watchlist
 router.delete("/me/watchlist", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { itemId, itemType } = req.body;
-    if (!itemId || !itemType) return res.status(400).json({ message: "Eksik veriler" });
+    if (!itemId || !itemType) return res.status(400).json({ message: "Missing data" });
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const beforeLen = user.watchlist.length;
     user.watchlist = user.watchlist.filter(w => !(w.itemId.toString() === itemId && w.itemType === itemType));
 
     if (user.watchlist.length === beforeLen) {
-      return res.status(404).json({ message: "Öğe bulunamadı" });
+      return res.status(404).json({ message: "Item not found" });
     }
 
     await user.save();
-    return res.status(200).json({ message: "Kaldırıldı", watchlist: user.watchlist });
+    return res.status(200).json({ message: "Removed", watchlist: user.watchlist });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Sunucu hatası" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
-// Get (opsiyonel)
+// Retrieve watchlist
 router.get("/me/watchlist", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("watchlist");
     return res.json({ watchlist: user.watchlist });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Sunucu hatası" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 

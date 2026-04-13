@@ -12,7 +12,7 @@ import { calculateSocialScore } from "../services/socialScoreService.js";
 import { calculateDiversityScore, calculateWatchActivityScore } from "../services/diversityScoreService.js";
 import { calculateTrendingAlignment, calculateActivityRecency } from "../services/bonusMetricsService.js";
 
-/* ---------- yardımcı matematik ---------- */
+/* ---------- helper math ---------- */
 
 const cosineSimilarity = (a, b) => {
   let dot = 0, normA = 0, normB = 0;
@@ -41,14 +41,14 @@ const avgRatingSimilarity = (a, b) => {
 /**
  * HYBRID MATCHING ALGORITHM
  * 
- * Bileşenler:
- * 1. COLLABORATIVE (35%): Genre/Rating benzerliği (MEVCUT)
- * 2. CONTENT-BASED (25%): Favori filmler benzerliği (YENİ)
- * 3. SOCIAL (20%): Ortak takip/takipçiler (YENİ)
- * 4. DIVERSITY (15%): Çeşitlilik uyumu (YENİ)
- * 5. BONUS (5%): Activity, trending, recency (YENİ)
+ * Components:
+ * 1. COLLABORATIVE (35%): Genre/Rating similarity (CURRENT)
+ * 2. CONTENT-BASED (25%): Favorite movies similarity (NEW)
+ * 3. SOCIAL (20%): Mutual following/followers (NEW)
+ * 4. DIVERSITY (15%): Diversity alignment (NEW)
+ * 5. BONUS (5%): Activity, trending, recency (NEW)
  * 
- * Beklenen doğruluk: 60-70%
+ * Expected accuracy: 60-70%
  */
 export const findMatches = asyncHandler(async (req, res) => {
   const {
@@ -58,7 +58,7 @@ export const findMatches = asyncHandler(async (req, res) => {
     useAvgRating = true,
     page = 1,
     limit = 10,
-    hybridMode = true    // Hybrid algorithm'i kullan?
+    hybridMode = true    // Use hybrid algorithm?
   } = req.body;
 
   const meId = req.user.id;
@@ -76,16 +76,12 @@ export const findMatches = asyncHandler(async (req, res) => {
   }
 
   const myGraph = me[cineKey];
-
-  console.log(`[MATCH] Starting match calculation for user ${meId}, type: ${type}`);
   const startTime = Date.now();
 
   const others = await User.find({ _id: { $ne: meId } })
     .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`)
     .limit(1000)  // ⚡ OPTIMIZATION: Limit to 1000 users max
     .lean();
-
-  console.log(`[MATCH] Loaded ${others.length} users in ${Date.now() - startTime}ms`);
 
   const results = [];
 
@@ -208,8 +204,7 @@ export const findMatches = asyncHandler(async (req, res) => {
         matchPercentage: Math.round(finalScore * 100),
       });
     } catch (error) {
-      console.error(`Error calculating match score for user ${u._id}:`, error);
-      // Bu kullanıcıyı atla
+      // Silently skip this user on error
       continue;
     }
   }
@@ -223,15 +218,12 @@ export const findMatches = asyncHandler(async (req, res) => {
   const paginatedResults = results.slice(skip, skip + limitNum);
   const total = results.length;
 
-  const totalDuration = Date.now() - startTime;
-  console.log(`[MATCH] ✅ Completed in ${totalDuration}ms. Evaluated ${others.length} users, Total matches: ${total}, Returned: ${paginatedResults.length}`);
-
   sendPaginated(res, paginatedResults, total, pageNum, limitNum, 'Hybrid Matches found');
 });
 
 /**
  * In-memory diversity calculation
- * Nasıl değişken genre dağılımı o kadar çeşitli
+ * How variable the genre distribution determines diversity
  */
 const calculateDiversityInMemory = (cineGraph) => {
   if (!cineGraph || Object.keys(cineGraph).length === 0) return 0.5;
@@ -241,21 +233,21 @@ const calculateDiversityInMemory = (cineGraph) => {
 
   if (total === 0) return 0.5;
 
-  // Basit metric: watch dağılımı ne kadar spread
+  // Simple metric: how spread out the watch distribution is
   const avgCount = total / counts.length;
   const variance = counts.reduce((sum, c) => sum + Math.pow(c - avgCount, 2), 0) / counts.length;
   const stdDev = Math.sqrt(variance);
 
-  // Normalize: 0 = hepsi aynı, 1 = çok çeşitli
+  // Normalize: 0 = all same, 1 = very diverse
   const maxPossibleStdDev = total / Math.sqrt(counts.length);
   return Math.min(1, stdDev / (maxPossibleStdDev || 1));
 };
 
-/* ========== YENİ ENDPOINT: Tek kullanıcıyla match hesapla ========== */
+/* ========== NEW ENDPOINT: Calculate match with single user ========== */
 
 /**
  * POST /api/match/user/:targetUserId
- * Belirli bir kullanıcıyla olan uyumu hesapla
+ * Calculate compatibility with a specific user
  */
 export const getMatchWithUser = asyncHandler(async (req, res) => {
   const meId = req.user.id;
@@ -266,8 +258,6 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     useCount = true,
     useAvgRating = true
   } = req.body;
-
-  console.log(`[MATCH-USER] Calculating match between ${meId} and ${targetUserId}, type: ${type}, genres: ${genres}`);
 
   if (!targetUserId) {
     return sendError(res, 'Target user ID is required', 400);
@@ -378,8 +368,6 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
 
     const matchPercentage = Math.round(finalScore * 100);
 
-    console.log(`[MATCH-USER] ✅ Match: ${matchPercentage}% (Collab: ${Math.round(collaborativeScore * 35)}%, Content: ${Math.round(contentScore * 25)}%, Social: ${Math.round(socialScore * 20)}%, Diversity: ${Math.round(diversityScore * 15)}%)`);
-
     sendSuccess(res, {
       matchPercentage,
       targetUser: {
@@ -397,7 +385,6 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     }, 'Match calculated successfully');
 
   } catch (error) {
-    console.error('Error calculating match:', error);
     return sendError(res, 'Error calculating match', 500);
   }
 });

@@ -7,9 +7,9 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
 /**
- * @desc   Belirli bir içeriğe ait tüm yorumları getirir
+ * @desc   Get all reviews for a specific content
  * @route  GET /api/reviews/content/:contentId
- * @access Public (Herkes görebilir)
+ * @access Public (Anyone can view)
  */
 export const getContentReviews = asyncHandler(async (req, res) => {
   const { contentId } = req.params;
@@ -33,9 +33,9 @@ export const getContentReviews = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc   Yeni bir yorum ekler veya mevcut yorumu günceller
+ * @desc   Add new review or update existing review
  * @route  POST /api/reviews
- * @access Private (Giriş Gerekli)
+ * @access Private (Login required)
  * @body   { contentId: "...", contentType: "movie|series", text: "..." }
  */
 export const addOrUpdateReview = asyncHandler(async (req, res) => {
@@ -70,9 +70,9 @@ export const addOrUpdateReview = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc   Kullanıcının kendi yorumunu siler
+ * @desc   User deletes their own review
  * @route  DELETE /api/reviews/:reviewId
- * @access Private (Giriş Gerekli)
+ * @access Private (Login required)
  */
 export const deleteMyReview = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;

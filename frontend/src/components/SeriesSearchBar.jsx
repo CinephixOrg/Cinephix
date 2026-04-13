@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FaSearch, FaFilter, FaTimes } from "react-icons/fa";
+import { useDebounce } from "../hooks/index.js";
 import API from "../api/axios.js";
 import genresData from "../data/seriesGenres.json";
 
@@ -9,9 +10,11 @@ export default function SeriesSearchBar({ onResults }) {
   const [years, setYears] = useState([]);
   const [hasPoster, setHasPoster] = useState("");
   const [selectedGenres, setSelectedGenres] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Debounce query to prevent excessive API calls
+  const debouncedQuery = useDebounce(query, 300);
 
   const genres = genresData.genres;
 
@@ -22,7 +25,7 @@ export default function SeriesSearchBar({ onResults }) {
     setSelectedGenres(searchParams.get("genres")?.split(",") || []);
   }, [searchParams]);
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     const trimmedQuery = query.trim();
     const newSearchParams = {};
@@ -32,42 +35,15 @@ export default function SeriesSearchBar({ onResults }) {
     if (hasPoster) newSearchParams.hasPoster = hasPoster;
     if (selectedGenres.length > 0) newSearchParams.genres = selectedGenres.join(",");
 
-    if (!trimmedQuery && years.length === 0 && !hasPoster && selectedGenres.length === 0) {
-      newSearchParams.page = 1;
-    } else {
-      newSearchParams.page = 1;
-    }
+    newSearchParams.page = 1;
 
+    onResults({
+      query: trimmedQuery,
+      years,
+      hasPoster,
+      genres: selectedGenres,
+    });
     setSearchParams(newSearchParams);
-
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ ...newSearchParams, limit: 18 });
-      const res = await API.get(`/series?${params.toString()}`);
-
-      onResults({
-        query: trimmedQuery,
-        years,
-        hasPoster,
-        genres: selectedGenres,
-        results: res.data.results || [],
-        total: res.data.total || 0,
-      });
-    } catch (err) {
-      console.error("Search error:", err);
-      const errorMsg =
-        err.response?.data?.message || "Something went wrong. Try again later.";
-      onResults({
-        query: trimmedQuery,
-        years,
-        hasPoster,
-        genres: selectedGenres,
-        results: [],
-        error: errorMsg,
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const toggleGenreSelection = (genreId) => {
@@ -100,12 +76,8 @@ export default function SeriesSearchBar({ onResults }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : (
-            <FaSearch />
-          )}
+        <button type="submit" className="btn btn-primary">
+          <FaSearch />
         </button>
         <button
           onClick={toggleFiltersVisibility}

@@ -4,15 +4,23 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 
-// Import error handler middleware
+// Import error handler & logger middleware
 import { errorHandler } from "./middleware/errorHandler.js";
+import { requestLogger, logger } from "./middleware/logger.js";
+import { simpleRateLimiter } from "./middleware/rateLimiter.js";
 
 dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Model ve Rota import'ları
+// Apply request logging middleware
+app.use(requestLogger);
+
+// Apply rate limiting middleware (Issue #20)
+app.use('/api/', simpleRateLimiter);
+
+// Model and Route imports
 import { createMovieModel } from "./models/Movie.js";
 import { createSeriesModel } from "./models/Series.js";
 import moviesRouteFactory from "./routes/movieRoute.js";
@@ -20,19 +28,19 @@ import seriesRouteFactory from "./routes/seriesRoute.js";
 import userRoute from "./routes/userRoute.js";
 import userRoutes from './models/User.js';
 import reviewRoutes from './routes/reviewRoutes.js';
-import ratingRoutes from './routes/rating.js'; // <-- YENİ ROTAYI İMPORT ET
+import ratingRoutes from './routes/rating.js';
 import matchRoute from "./routes/matchRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
 
-// User rotalarını en başta tanımlıyoruz
+// Define User routes at the beginning
 app.use("/api/users", userRoute);
-app.use('/api/ratings', ratingRoutes); // <-- YENİ ROTAYI EKLE
+app.use('/api/ratings', ratingRoutes); // <-- ADD NEW ROUTE
 app.use('/api/reviews', reviewRoutes);
 app.use("/api/match", matchRoute);
 
-// Bağlantının açılmasını bekleyen yardımcı fonksiyon
+// Helper function waiting for connection to open
 function waitOpen(conn) {
   return new Promise((resolve, reject) => {
     conn.on("error", reject);
@@ -42,45 +50,46 @@ function waitOpen(conn) {
 
 async function start() {
   try {
-    // 1. Filmler ve diziler için özel bağlantıları oluştur
+    logger.info('Starting Cinephix server...');
+    
+    // 1. Create separate connections for movies and series
     const moviesConn = mongoose.createConnection(MONGO_URI, { dbName: "cleaned_db" });
     const seriesConn = mongoose.createConnection(MONGO_URI, { dbName: "cleaned_db" });
 
-    // 2. TÜM DİĞER MODELLERİN KULLANACAĞI VARSAYILAN BAĞLANTIYI OLUŞTUR
+    // 2. CREATE DEFAULT CONNECTION FOR ALL OTHER MODELS
     const mainConnectionPromise = mongoose.connect(MONGO_URI, { dbName: "cleaned_db" });
 
-    // 3. Tüm bağlantıların kurulmasını bekle
+    // 3. Wait for all connections to be established
     await Promise.all([
       waitOpen(moviesConn),
       waitOpen(seriesConn),
       mainConnectionPromise,
     ]);
-    console.log("Tüm veritabanı bağlantıları başarıyla kuruldu.");
+    logger.info("All database connections established successfully");
 
-    // Mevcut çalışan yapıyı koruyoruz
+    // Keep existing working structure
     const Movie = createMovieModel(moviesConn);
     const Series = createSeriesModel(seriesConn);
     app.use("/api/movies", await moviesRouteFactory(Movie));
     app.use("/api/series", await seriesRouteFactory(Series));
 
-    // --- YENİ EKLENECEK 2 SATIR BURADA ---
-    // User modelinin populate() yapabilmesi için, 
-    // Movie ve Series modellerini VARSAYILAN bağlantıya da kaydetmeliyiz.
-    // mongoose.connection, mongoose.connect() tarafından oluşturulan varsayılan bağlantıdır.
-    
+    // For User model to be able to populate(),
+    // We need to register Movie and Series models to the default connection as well.
     createMovieModel(mongoose.connection);
     createSeriesModel(mongoose.connection);
     
-    console.log('Movie ve Series modelleri varsayılan bağlantıya da kaydedildi.');
-    // --- BİTİŞ ---
+    logger.info('Movie and Series models registered to default connection');
 
     // Register global error handler middleware (must be last)
     app.use(errorHandler);
 
-    // Sunucuyu başlat
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    // Start server
+    app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+      logger.info(`Rate limiting: 100 requests per 15 minutes per IP`);
+    });
   } catch (e) {
-    console.error("Startup error:", e);
+    logger.error(`Startup error: ${e.message}`);
     process.exit(1);
   }
 }
