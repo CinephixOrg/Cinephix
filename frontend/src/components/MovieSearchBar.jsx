@@ -32,43 +32,11 @@ export default function MovieSearchBar({ onResults }) {
     if (hasPoster) newSearchParams.hasPoster = hasPoster;
     if (selectedGenres.length > 0) newSearchParams.genres = selectedGenres.join(",");
 
-    // Eğer hiçbir filtre yoksa tüm filmleri getir
-    if (!trimmedQuery && years.length === 0 && !hasPoster && selectedGenres.length === 0) {
-      newSearchParams.page = 1; // Ensure page=1 is added even when no filters are applied
-    } else {
-      newSearchParams.page = 1; // Always add page=1 after search
-    }
+    // Always add page=1 when searching
+    newSearchParams.page = 1;
 
+    // 🔹 FIX: Just update URL, let MoviesPage component handle fetching via useEffect
     setSearchParams(newSearchParams);
-
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ ...newSearchParams, limit: 18 });
-      const res = await API.get(`/movies?${params.toString()}`);
-
-      onResults({
-        query: trimmedQuery,
-        years,
-        hasPoster,
-        genres: selectedGenres,
-        results: res.data.results || [],
-        total: res.data.total || 0,
-      });
-    } catch (err) {
-      console.error("Search error:", err);
-      const errorMsg =
-        err.response?.data?.message || "Something went wrong. Try again later.";
-      onResults({
-        query: trimmedQuery,
-        years,
-        hasPoster,
-        genres: selectedGenres,
-        results: [],
-        error: errorMsg,
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const toggleGenreSelection = (genreId) => {
