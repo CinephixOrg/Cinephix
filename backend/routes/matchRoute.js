@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { findMatches, getMatchWithUser } from "../controllers/matchController.js";
-import { validateRequest, validationSchemas } from "../utils/validation.js";
+import { validateRequest, validationSchemas } from "../middleware/validation.js";
 
 const router = express.Router();
 

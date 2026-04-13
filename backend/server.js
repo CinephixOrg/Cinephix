@@ -4,13 +4,21 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 
-// Import error handler middleware
+// Import error handler & logger middleware
 import { errorHandler } from "./middleware/errorHandler.js";
+import { requestLogger, logger } from "./middleware/logger.js";
+import { simpleRateLimiter } from "./middleware/rateLimiter.js";
 
 dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Apply request logging middleware
+app.use(requestLogger);
+
+// Apply rate limiting middleware (Issue #20)
+app.use('/api/', simpleRateLimiter);
 
 // Model ve Rota import'ları
 import { createMovieModel } from "./models/Movie.js";
@@ -20,7 +28,7 @@ import seriesRouteFactory from "./routes/seriesRoute.js";
 import userRoute from "./routes/userRoute.js";
 import userRoutes from './models/User.js';
 import reviewRoutes from './routes/reviewRoutes.js';
-import ratingRoutes from './routes/rating.js'; // <-- YENİ ROTAYI İMPORT ET
+import ratingRoutes from './routes/rating.js';
 import matchRoute from "./routes/matchRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
@@ -42,6 +50,8 @@ function waitOpen(conn) {
 
 async function start() {
   try {
+    logger.info('Starting Cinephix server...');
+    
     // 1. Filmler ve diziler için özel bağlantıları oluştur
     const moviesConn = mongoose.createConnection(MONGO_URI, { dbName: "cleaned_db" });
     const seriesConn = mongoose.createConnection(MONGO_URI, { dbName: "cleaned_db" });
@@ -55,7 +65,7 @@ async function start() {
       waitOpen(seriesConn),
       mainConnectionPromise,
     ]);
-    console.log("Tüm veritabanı bağlantıları başarıyla kuruldu.");
+    logger.info("All database connections established successfully");
 
     // Mevcut çalışan yapıyı koruyoruz
     const Movie = createMovieModel(moviesConn);
@@ -63,24 +73,23 @@ async function start() {
     app.use("/api/movies", await moviesRouteFactory(Movie));
     app.use("/api/series", await seriesRouteFactory(Series));
 
-    // --- YENİ EKLENECEK 2 SATIR BURADA ---
     // User modelinin populate() yapabilmesi için, 
     // Movie ve Series modellerini VARSAYILAN bağlantıya da kaydetmeliyiz.
-    // mongoose.connection, mongoose.connect() tarafından oluşturulan varsayılan bağlantıdır.
-    
     createMovieModel(mongoose.connection);
     createSeriesModel(mongoose.connection);
     
-    console.log('Movie ve Series modelleri varsayılan bağlantıya da kaydedildi.');
-    // --- BİTİŞ ---
+    logger.info('Movie and Series models registered to default connection');
 
     // Register global error handler middleware (must be last)
     app.use(errorHandler);
 
     // Sunucuyu başlat
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+      logger.info(`Rate limiting: 100 requests per 15 minutes per IP`);
+    });
   } catch (e) {
-    console.error("Startup error:", e);
+    logger.error(`Startup error: ${e.message}`);
     process.exit(1);
   }
 }

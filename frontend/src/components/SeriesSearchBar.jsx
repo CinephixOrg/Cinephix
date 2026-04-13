@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FaSearch, FaFilter, FaTimes } from "react-icons/fa";
+import { useDebounce } from "../hooks/index.js";
 import API from "../api/axios.js";
 import genresData from "../data/seriesGenres.json";
 
@@ -11,6 +12,9 @@ export default function SeriesSearchBar({ onResults }) {
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Debounce query to prevent excessive API calls
+  const debouncedQuery = useDebounce(query, 300);
 
   const genres = genresData.genres;
 

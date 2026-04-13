@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FaSearch, FaFilter, FaTimes } from "react-icons/fa"; // Import icons
+import { FaSearch, FaFilter, FaTimes } from "react-icons/fa";
+import { useDebounce } from "../hooks/index.js";
 import API from "../api/axios.js";
-import genresData from "../data/movieGenres.json"; // Import the correct JSON structure
+import genresData from "../data/movieGenres.json";
 
 export default function MovieSearchBar({ onResults }) {
   const [query, setQuery] = useState("");
-  const [years, setYears] = useState([]); // Updated to handle multiple years
+  const [years, setYears] = useState([]);
   const [hasPoster, setHasPoster] = useState("");
-  const [selectedGenres, setSelectedGenres] = useState([]); // Updated to handle multiple genres
-  const [loading, setLoading] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState([]);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Debounce the query to prevent excessive API calls
+  const debouncedQuery = useDebounce(query, 300);
 
   const genres = genresData.genres;
 
@@ -22,8 +25,16 @@ export default function MovieSearchBar({ onResults }) {
     setSelectedGenres(searchParams.get("genres")?.split(",") || []);
   }, [searchParams]);
 
-  const handleSearch = async (e) => {
-    e.preventDefault(); // Prevent page reload
+  // Auto-search when debounced query changes (optional feature for search-as-you-type)
+  // Uncomment below if you want auto-search on type instead of requiring form submission
+  // useEffect(() => {
+  //   if (debouncedQuery) {
+  //     triggerSearch(debouncedQuery);
+  //   }
+  // }, [debouncedQuery]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
     const trimmedQuery = query.trim();
     const newSearchParams = {};
 
@@ -32,10 +43,7 @@ export default function MovieSearchBar({ onResults }) {
     if (hasPoster) newSearchParams.hasPoster = hasPoster;
     if (selectedGenres.length > 0) newSearchParams.genres = selectedGenres.join(",");
 
-    // Always add page=1 when searching
     newSearchParams.page = 1;
-
-    // 🔹 FIX: Just update URL, let MoviesPage component handle fetching via useEffect
     setSearchParams(newSearchParams);
   };
 
@@ -70,12 +78,8 @@ export default function MovieSearchBar({ onResults }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : (
-            <FaSearch />
-          )}
+        <button type="submit" className="btn btn-primary">
+          <FaSearch />
         </button>
         <button
           onClick={toggleFiltersVisibility}
