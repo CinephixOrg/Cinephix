@@ -1,17 +1,17 @@
 /**
  * Diversity Score Service
- * Hesaplar: Kullanıcılar ne kadar farklı tür izlediği
+ * Calculates: How diversely users watch different genres
  * 
- * Amaç: Sadece aynı türü izleyen insanlarla match etmesin,
- * çeşitli zevkleri olanları tercih etsin
+ * Purpose: Don't match with people who watch only the same genre,
+ * prefer people with diverse tastes
  */
 
 import User from "../models/User.js";
 
 /**
- * Genre distribution entropy hesapla
- * Düşük entropy = Sadece 1-2 tür → Low diversity
- * Yüksek entropy = Birçok türe dağılmış → High diversity
+ * Calculate genre distribution entropy
+ * Low entropy = Only 1-2 genres → Low diversity
+ * High entropy = Spread across many genres → High diversity
  * 
  * Formula: Shannon Entropy = -Σ (p_i * log(p_i))
  */
@@ -20,7 +20,7 @@ const calculateGenreDiversityEntropy = (cineGraph) => {
     return 0;
   }
 
-  // Genre count'larını al
+  // Get genre counts
   const genreCounts = Object.values(cineGraph).map((g) => g.count || 0);
   const totalCount = genreCounts.reduce((a, b) => a + b, 0);
 
@@ -39,17 +39,17 @@ const calculateGenreDiversityEntropy = (cineGraph) => {
 
   // Normalize (max entropy = log2(number of genres))
   const maxEntropy = Math.log2(genreCounts.length);
-  return maxEntropy === 0 ? 0 : entropy / maxEntropy; // 0-1 arası
+  return maxEntropy === 0 ? 0 : entropy / maxEntropy; // Between 0-1
 };
 
 /**
- * Gini coefficient: Genre dağılımının ne kadar dengesiz olduğu
- * 0 = Mükemmel denge (tüm türlere eşit film)
- * 1 = Tam dengesiz (sadece 1 türe film)
+ * Gini coefficient: How unbalanced genre distribution is
+ * 0 = Perfect balance (equal movies across all genres)
+ * 1 = Completely unbalanced (movies only in 1 genre)
  */
 const calculateGenreGiniCoefficient = (cineGraph) => {
   if (!cineGraph || Object.keys(cineGraph).length === 0) {
-    return 1; // Hiç veri yok = maksimum dengesizlik
+    return 1; // No data = maximum imbalance
   }
 
   const genreCounts = Object.values(cineGraph)
@@ -70,8 +70,8 @@ const calculateGenreGiniCoefficient = (cineGraph) => {
 };
 
 /**
- * Genre farklılığını hesapla
- * İki kullanıcının izlediği türlerin birbirinden farklı olması
+ * Calculate genre difference
+ * How different the genres watched by two users are from each other
  */
 const calculateGenreDifference = (cineGraph1, cineGraph2) => {
   if (!cineGraph1 || !cineGraph2) return 0.5; // Neutral
@@ -79,7 +79,7 @@ const calculateGenreDifference = (cineGraph1, cineGraph2) => {
   const genres1 = new Set(Object.keys(cineGraph1));
   const genres2 = new Set(Object.keys(cineGraph2));
 
-  // Fark (symmetric difference)
+  // Difference (symmetric difference)
   const difference = new Set([
     ...genres1.values(),
     ...genres2.values(),
@@ -93,21 +93,21 @@ const calculateGenreDifference = (cineGraph1, cineGraph2) => {
 };
 
 /**
- * ANA FONKSİYON: İki kullanıcının çeşitliliğinin ne kadar uyumlu olduğu
+ * MAIN FUNCTION: How compatible the diversity of two users is
  * 
- * Amaç: Benzer çeşitliliğe sahip insanları match etmek
- * Örnek:
+ * Purpose: Match people with similar diversity levels
+ * Example:
  *  - User A: Drama (80%), Action (20%) → Low diversity
  *  - User B: Drama (80%), Action (20%) → Low diversity
- *  - Uyum: Yüksek (ikisi de selective)
+ *  - Compatibility: High (both are selective)
  *
- *  - User C: 10 farklı tür eşit → High diversity
- *  - A ve C: Düşük uyum (çok farklı)
+ *  - User C: 10 different genres equally → High diversity
+ *  - A and C: Low compatibility (very different)
  * 
  * @param {String} userId1
  * @param {String} userId2
- * @param {String} type - "movie" veya "series"
- * @returns {Number} 0-1 arası score
+ * @param {String} type - "movie" or "series"
+ * @returns {Number} Score between 0-1
  */
 export const calculateDiversityScore = async (userId1, userId2, type = "movie") => {
   try {
@@ -121,21 +121,21 @@ export const calculateDiversityScore = async (userId1, userId2, type = "movie") 
     const cineGraph1 = user1[cineGraphField] || {};
     const cineGraph2 = user2[cineGraphField] || {};
 
-    // 1. HER KULLANICININ DIVERSITY'SİNİ HESAPLA
+    // 1. CALCULATE EACH USER'S DIVERSITY
     const entropy1 = calculateGenreDiversityEntropy(cineGraph1);
     const entropy2 = calculateGenreDiversityEntropy(cineGraph2);
 
-    // Entropy farkı (ne kadar benzer diversity'ye sahip)
+    // Entropy difference (how similar diversity they have)
     const entropyDifference = Math.abs(entropy1 - entropy2);
     const entropyAlignment = 1 - Math.min(1, entropyDifference);
 
-    // 2. GENRE FARKLILIĞINI HESAPLA
+    // 2. CALCULATE GENRE DIFFERENCE
     const genreDifference = calculateGenreDifference(cineGraph1, cineGraph2);
 
-    // 3. DIVERSITY SCORE HESAPLA
+    // 3. CALCULATE DIVERSITY SCORE
     // Formula:
-    // - Benzer diversity level'a sahip olması iyi (50%)
-    // - Farklı türleri birbirini tamamlaması iyi (50%)
+    // - Similar diversity level is good (50%)
+    // - Different genres complement each other is good (50%)
 
     const diversityScore = 0.5 * entropyAlignment + 0.5 * genreDifference;
 
@@ -146,8 +146,8 @@ export const calculateDiversityScore = async (userId1, userId2, type = "movie") 
 };
 
 /**
- * Total watchcount farklılığı
- * Casual watcher ile cinephile'in eşleşmesi pek iyi değil
+ * Total watchcount difference
+ * A casual watcher matching with a cinephile isn't ideal
  */
 export const calculateWatchActivityScore = async (userId1, userId2, type = "movie") => {
   try {
@@ -173,13 +173,13 @@ export const calculateWatchActivityScore = async (userId1, userId2, type = "movi
 
     if (totalCount1 === 0 || totalCount2 === 0) return 0.5;
 
-    // Watch activity ratio (1 ile 10 arası normalize)
+    // Watch activity ratio (normalize between 1-10)
     const ratio = Math.max(totalCount1, totalCount2) / Math.min(totalCount1, totalCount2);
 
-    // Ratio'nun 3'e kadar benzer kabul et (farklıysa score azal)
+    // Ratio up to 3 is considered similar (lower if too different)
     // 1.0 = identical activity → 1.0 score
     // 3.0 = 3x different → 0.5 score
-    // 10+ = çok farklı → 0.0 score
+    // 10+ = very different → 0.0 score
 
     if (ratio <= 1) return 1.0;
     if (ratio >= 10) return 0.0;

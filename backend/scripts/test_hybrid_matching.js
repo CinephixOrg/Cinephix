@@ -1,12 +1,12 @@
 /**
  * HYBRID MATCHING ALGORITHM - TEST FILE
  * 
- * Çalıştırmak için:
+ * To run:
  * node backend/scripts/test_hybrid_matching.js
  * 
- * Veya MongoDB'de direkt:
- * 1. Backend'i başlat: npm start
- * 2. Postman'de test et: POST http://localhost:5000/api/match
+ * Or directly on MongoDB:
+ * 1. Start Backend: npm start
+ * 2. Test in Postman: POST http://localhost:5000/api/match
  */
 
 import mongoose from 'mongoose';
@@ -39,15 +39,15 @@ const MONGO_URI = process.env.MONGO_URI;
 
 async function testHybridMatching() {
   try {
-    // Veritabanına bağlan
+    // Connect to database
     await mongoose.connect(MONGO_URI, { dbName: 'cleaned_db' });
-    console.log('✅ MongoDB bağlantısı kuruldu\n');
+    console.log('✅ MongoDB connection established\n');
 
-    // Test için 2 kullanıcı al
+    // Get 2 users for test
     const users = await User.find().limit(2).lean();
     
     if (users.length < 2) {
-      console.log('❌ Test için en az 2 kullanıcı gerekli');
+      console.log('❌ At least 2 users required for testing');
       process.exit(1);
     }
 
@@ -81,7 +81,7 @@ async function testHybridMatching() {
     const avgGenreScore = genreCount > 0 ? totalGenreScore / genreCount : 0;
     const collaborativeScore = avgGenreScore * 0.35;
 
-    console.log(`   Ortak türler: ${genreCount}`);
+    console.log(`   Common genres: ${genreCount}`);
     console.log(`   Ortalama benzerlik: ${(avgGenreScore * 100).toFixed(1)}%`);
     console.log(`   Final collaborative score: ${(collaborativeScore * 100).toFixed(1)}%`);
 
@@ -92,7 +92,7 @@ async function testHybridMatching() {
     const contentScore = await calculateFavoriteOverlap(user1._id, user2._id, 'movie');
     const contentScoreFinal = contentScore * 0.25;
 
-    console.log(`   Favori film benzerliği: ${(contentScore * 100).toFixed(1)}%`);
+    console.log(`   Favorite movie similarity: ${(contentScore * 100).toFixed(1)}%`);
     console.log(`   Final content score: ${(contentScoreFinal * 100).toFixed(1)}%`);
 
     // ===== SOCIAL SCORE =====
@@ -102,7 +102,7 @@ async function testHybridMatching() {
     const socialScore = await calculateSocialScore(user1._id, user2._id);
     const socialScoreFinal = socialScore * 0.20;
 
-    console.log(`   Sosyal ağ benzerliği: ${(socialScore * 100).toFixed(1)}%`);
+    console.log(`   Social network similarity: ${(socialScore * 100).toFixed(1)}%`);
     console.log(`   Final social score: ${(socialScoreFinal * 100).toFixed(1)}%`);
 
     // ===== DIVERSITY SCORE =====
@@ -112,7 +112,7 @@ async function testHybridMatching() {
     const diversityScore = await calculateDiversityScore(user1._id, user2._id, 'movie');
     const diversityScoreFinal = diversityScore * 0.15;
 
-    console.log(`   Çeşitlilik uyumu: ${(diversityScore * 100).toFixed(1)}%`);
+    console.log(`   Diversity alignment: ${(diversityScore * 100).toFixed(1)}%`);
     console.log(`   Final diversity score: ${(diversityScoreFinal * 100).toFixed(1)}%`);
 
     // ===== BONUS METRICS =====
@@ -144,7 +144,7 @@ async function testHybridMatching() {
     console.log(`
    ✅ MATCH PERCENTAGE: ${matchPercentage}%
     
-   Bileşenler:
+   Components:
    • Collaborative:  ${(collaborativeScore * 100).toFixed(1)}%
    • Content:        ${(contentScoreFinal * 100).toFixed(1)}%
    • Social:         ${(socialScoreFinal * 100).toFixed(1)}%
@@ -157,13 +157,13 @@ async function testHybridMatching() {
     // ===== INTERPRETATION =====
     console.log('\n📋 YORUM:');
     if (matchPercentage >= 80) {
-      console.log('   🔥 Mükemmel match! Çok benzer zevklere sahipler.');
+      console.log('   🔥 Perfect match! They have very similar tastes.');
     } else if (matchPercentage >= 60) {
-      console.log('   ✅ İyi match. Ortak ilgileri var.');
+      console.log('   ✅ Good match. They share common interests.');
     } else if (matchPercentage >= 40) {
-      console.log('   🤔 Orta seviye match. Bazı ortak noktalar var.');
+      console.log('   🤔 Medium match. Some common points exist.');
     } else {
-      console.log('   ❌ Düşük uyum. Zevkleri oldukça farklı.');
+      console.log('   ❌ Low alignment. Their tastes are quite different.');
     }
 
     console.log('\n' + '=' .repeat(60));
@@ -172,7 +172,7 @@ async function testHybridMatching() {
     console.error('❌ Error:', error.message);
   } finally {
     await mongoose.connection.close();
-    console.log('\n✅ Bağlantı kapatıldı');
+    console.log('\n✅ Connection closed');
     process.exit(0);
   }
 }

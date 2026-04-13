@@ -12,7 +12,7 @@ export default async function (seriesModel) {
       if (query) {
         pipeline.push({
           $search: {
-            index: "default", // kendi index adın
+            index: "default", // your index name
             compound: {
               should: [
                 {

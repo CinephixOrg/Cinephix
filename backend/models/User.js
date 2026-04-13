@@ -14,7 +14,7 @@ const WatchItemSchema = new mongoose.Schema({
 const userSchema = new Schema({
   username: {
     type: String,
-    required: [true, 'Kullanıcı adı zorunludur.'],
+    required: [true, 'Username is required.'],
     unique: true,
     trim: true // Başındaki ve sonundaki boşlukları temizler
   },

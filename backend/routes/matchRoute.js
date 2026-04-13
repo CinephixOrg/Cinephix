@@ -5,10 +5,10 @@ import { validateRequest, validationSchemas } from "../middleware/validation.js"
 
 const router = express.Router();
 
-// POST çünkü filtre göndereceğiz
+// POST because we're sending filters
 router.post("/", authMiddleware, validateRequest(validationSchemas.findMatches), findMatches);
 
-// YENİ: Tek bir kullanıcıyla match hesapla
+// NEW: Calculate match with single user
 router.post("/:targetUserId", authMiddleware, getMatchWithUser);
 
 export default router;

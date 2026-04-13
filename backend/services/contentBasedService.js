@@ -1,6 +1,6 @@
 /**
  * Content-Based Filtering Service
- * Hesaplar: Favori filmler/diziler arasındaki benzerlik
+ * Calculates: Similarity between favorite movies/series
  */
 
 import User from "../models/User.js";
@@ -8,8 +8,8 @@ import User from "../models/User.js";
 
 
 /**
- * Alternative: Basit çakışma skoru (daha hızlı)
- * Sadece ortak favori sayısına bakıyor
+ * Alternative: Simple overlap score (faster)
+ * Only looks at the number of shared favorites
  */
 export const calculateFavoriteOverlap = async (userId1, userId2, type = "movie") => {
   try {
@@ -25,7 +25,7 @@ export const calculateFavoriteOverlap = async (userId1, userId2, type = "movie")
 
     if (favorites1.length === 0 || favorites2.length === 0) return 0;
 
-    // Ortak film sayısı
+    // Count of shared movies
     const set1 = new Set(favorites1.map((id) => id.toString()));
     const intersection = favorites2.filter((id) => set1.has(id.toString()))
       .length;

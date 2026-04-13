@@ -13,7 +13,7 @@ export default async function(movieModel) {
       if (title) {
         pipeline.push({
           $search: {
-            index: "default", // Atlas'ta oluşturduğun index ismini yaz
+            index: "default", // Atlas index name
             compound: {
               should: [
                 {
@@ -21,7 +21,7 @@ export default async function(movieModel) {
                     query: title,
                     path: "title",
                     fuzzy: {
-                      maxEdits: 2, // 2 harf hatasına kadar izin verir
+                      maxEdits: 2, // Tolerates up to 2 character errors
                       prefixLength: 1
                     }
                   }
@@ -41,7 +41,7 @@ export default async function(movieModel) {
         });
       }
 
-      // Diğer filtreleri uygula
+      // Apply other filters
       if (years) {
         const yearArray = years.split(",");
         pipeline.push({
@@ -53,18 +53,18 @@ export default async function(movieModel) {
       if (genres) {
         const genreArray = genres.split(",").map(Number);
         pipeline.push({
-          $match: { genre_ids: { $in: genreArray } } // Genre ID eşleştirmesi
+          $match: { genre_ids: { $in: genreArray } } // Genre ID matching
         });
       }
       if (hasPoster) {
         pipeline.push({
           $match: {
-            poster_path: hasPoster === "yes" ? { $ne: null } : null // Poster filtresi
+            poster_path: hasPoster === "yes" ? { $ne: null } : null // Poster filteri
           }
         });
       }
 
-      // Eğer hiçbir filtre yoksa tüm filmleri getir
+      // If no filter exists, get all movies
       if (!title && !years && !genres && !hasPoster) {
         pipeline.push({ $match: {} });
       }

@@ -1,16 +1,16 @@
-// models/Notification.js (YENİ DOSYA - ES6 Modül Formatında)
+// models/Notification.js (NEW FILE - ES6 Module Format)
 import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
 const notificationSchema = new Schema({
-    // Bildirimi alan kullanıcı
+    // User who receives notification
     user: {
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    // Eylemi başlatan kullanıcı (örn: sizi takip eden kişi)
+    // User who triggered the action (e.g., person following you)
     sender: {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -19,7 +19,7 @@ const notificationSchema = new Schema({
     // Bildirim tipi (gelecekte 'like', 'comment' gibi tipler de ekleyebilirsiniz)
     type: {
         type: String,
-        enum: ['follow'], // Şimdilik sadece 'follow'
+        enum: ['follow'], // Currently only 'follow'
         required: true
     },
     // Bildirim okundu mu?
@@ -27,7 +27,7 @@ const notificationSchema = new Schema({
         type: Boolean,
         default: false
     }
-}, { timestamps: true }); // Bildirimin ne zaman geldiğini bilmek için
+}, { timestamps: true }); // To know when the notification arrived
 
 // ===== DATABASE INDEXES (Issue #13) =====
 // Fast lookups for user's notifications

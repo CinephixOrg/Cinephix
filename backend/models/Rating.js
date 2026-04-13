@@ -1,26 +1,26 @@
-// backend/models/Rating.js (YENİ DOSYA)
+// backend/models/Rating.js (NEW FILE)
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const ratingSchema = new Schema({
-    // Puanı veren kullanıcı
+    // User who gave the rating
     user: {
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    // Puanlanan içerik (movie veya series ID'si)
+    // Rated content (movie or series ID)
     contentId: {
-        type: String, // Veya ObjectId, sizin watchlist'inizle aynı olmalı
+        type: String, // Or ObjectId, should match your watchlist
         required: true
     },
-    // İçerik tipi
+    // Content type
     contentType: {
         type: String,
         enum: ['movie', 'series'],
         required: true
     },
-    // 1-10 arası verilen puan
+    // Rating given between 1-10
     value: {
         type: Number,
         required: true,

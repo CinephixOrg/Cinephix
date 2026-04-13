@@ -1,15 +1,15 @@
 /**
  * Social Score Service
- * Hesaplar: Ortak takip edilen insanlar, ortak followers, vb.
+ * Calculates: Mutual following, shared followers, etc.
  */
 
 import User from "../models/User.js";
 
 /**
- * İki kullanıcının ortak takip ettikleri kişi sayısı
- * Örnek: A takip ediyor [B, C, D], Takip ediliyor [E, F]
- *        C takip ediyor [B, A, G], Takip ediliyor [D, H]
- *        Ortak: [B] → 1 kişi
+ * Number of people two users both follow
+ * Example: A follows [B, C, D], Followers [E, F]
+ *          C follows [B, A, G], Followers [D, H]
+ *          Common: [B] → 1 person
  */
 const calculateMutualFollowing = (following1, following2) => {
   if (!following1 || !following2 || following1.length === 0 || following2.length === 0) {
@@ -26,8 +26,8 @@ const calculateMutualFollowing = (following1, following2) => {
 };
 
 /**
- * İki kullanıcının ortak follower'ları
- * Yani: Ikisini de takip eden kişiler
+ * Users with common followers
+ * In other words: People who follow both of them
  */
 const calculateMutualFollowers = (followers1, followers2) => {
   if (!followers1 || !followers2 || followers1.length === 0 || followers2.length === 0) {
@@ -44,11 +44,11 @@ const calculateMutualFollowers = (followers1, followers2) => {
 };
 
 /**
- * İki kullanıcının social ağında ne kadar yakın olduğu
+ * How close two users are in the social network
  * 
  * @param {String} userId1
  * @param {String} userId2
- * @returns {Number} 0-1 arası score
+ * @returns {Number} Score between 0-1
  */
 export const calculateSocialScore = async (userId1, userId2) => {
   try {
@@ -64,21 +64,21 @@ export const calculateSocialScore = async (userId1, userId2) => {
 
     let socialScore = 0;
 
-    // 1. Ortak takip edilen (40%)
+    // 1. Mutual following (40%)
     const mutualFollowingScore = calculateMutualFollowing(
       user1.following,
       user2.following
     );
     socialScore += mutualFollowingScore * 0.4;
 
-    // 2. Ortak follower (40%)
+    // 2. Mutual followers (40%)
     const mutualFollowersScore = calculateMutualFollowers(
       user1.followers,
       user2.followers
     );
     socialScore += mutualFollowersScore * 0.4;
 
-    // 3. BONUS: Biri diğerini takip ediyorsa (20%)
+    // 3. BONUS: If one follows the other (20%)
     const user1FollowsUser2 = (user1.following || [])
       .map((id) => id.toString())
       .includes(userId2);
@@ -88,12 +88,12 @@ export const calculateSocialScore = async (userId1, userId2) => {
       .includes(userId1);
 
     if (user1FollowsUser2 || user2FollowsUser1) {
-      socialScore += 0.2; // Direkt bağlantı var
+      socialScore += 0.2; // Direct connection exists
     } else if (
       (user1.followers && user1.followers.length > 0) ||
       (user2.followers && user2.followers.length > 0)
     ) {
-      // Mutual connections'a göre scale et
+      // Scale based on mutual connections
       const avgFollowers =
         ((user1.followers?.length || 0) + (user2.followers?.length || 0)) / 2;
       const connectionStrength = Math.min(1, avgFollowers / 100); // Max 100 followers
@@ -107,8 +107,8 @@ export const calculateSocialScore = async (userId1, userId2) => {
 };
 
 /**
- * Network distance: Kaç "hop" uzaklıkta olduğu (1st, 2nd degree)
- * Bu hesaplama pahalı olabilir, opsiyonel
+ * Network distance: How many "hops" apart they are (1st, 2nd degree)
+ * This calculation can be expensive, optional
  */
 export const calculateNetworkDistance = async (userId1, userId2) => {
   try {
@@ -116,7 +116,7 @@ export const calculateNetworkDistance = async (userId1, userId2) => {
       .select("following followers")
       .lean();
 
-    if (!user1) return 3; // "3+ hops" uzak
+    if (!user1) return 3; // "3+ hops" away
 
     const following1Set = new Set(
       (user1.following || []).map((id) => id.toString())
@@ -138,7 +138,7 @@ export const calculateNetworkDistance = async (userId1, userId2) => {
       (user1.following || []).length > 0 ||
       (user1.followers || []).length > 0
     ) {
-      // TODO: Burada 2nd degree check yapılabilir
+      // TODO: 2nd degree check can be done here
       return 2;
     }
 

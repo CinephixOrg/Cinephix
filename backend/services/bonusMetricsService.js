@@ -1,21 +1,21 @@
 /**
  * Bonus Metrics Service
- * Ek skorlar: trending alignment, recency, vb.
+ * Additional scores: trending alignment, recency, etc.
  */
 
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
 
 /**
- * Son 3 ay içinde izlenen film/dizi sayısı
- * "Aktif" kullanıcı bulmak için
+ * Number of movies/series watched in the last 3 months
+ * Finding an "active" user to calculate bonus
  */
 export const calculateActivityRecency = async (userId) => {
   try {
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-    // Son 3 ayda kaç rating verildi
+    // How many ratings were given in the last 3 months
     const recentRatings = await Rating.countDocuments({
       user: userId,
       createdAt: { $gte: threeMonthsAgo },
@@ -29,12 +29,12 @@ export const calculateActivityRecency = async (userId) => {
 };
 
 /**
- * İki kullanıcının son ratings'inin benzerliği
- * Yani: Son zamanda benzer filmler izliyorlar mı?
+ * Similarity between last ratings of two users
+ * In other words: Are they watching similar movies recently?
  */
 export const calculateTrendingAlignment = async (userId1, userId2, limit = 10) => {
   try {
-    // Her kullanıcının son 10 rating'ini al
+    // Get last 10 ratings of each user
     const ratings1 = await Rating.find({ user: userId1 })
       .select("content")
       .sort({ createdAt: -1 })
@@ -49,7 +49,7 @@ export const calculateTrendingAlignment = async (userId1, userId2, limit = 10) =
 
     if (ratings1.length === 0 || ratings2.length === 0) return 0.5;
 
-    // Ortak content (null values'ı filter et)
+    // Shared content (filter null values)
     const set1 = new Set(
       ratings1
         .filter((r) => r.content)
@@ -73,20 +73,20 @@ export const calculateTrendingAlignment = async (userId1, userId2, limit = 10) =
 };
 
 /**
- * Zaman-tabanlı ağırlıklandırma
- * Yeni verilen puanlar daha ağır sayılıyor
+ * Time-based weighting
+ * Recently given ratings are weighted more heavily
  * 
- * Örnek: Rating1 = 1 hafta önce (weight = 1.0)
- *        Rating2 = 3 ay önce (weight = 0.5)
+ * Example: Rating1 = 1 week ago (weight = 1.0)
+ *          Rating2 = 3 months ago (weight = 0.5)
  */
 export const calculateRecencyWeight = (createdAtDate) => {
   const now = new Date();
   const daysDiff = (now - new Date(createdAtDate)) / (1000 * 60 * 60 * 24);
 
-  // 7 gün içinde = 1.0 weight
-  // 30 gün = 0.7 weight
-  // 180 gün = 0.3 weight
-  // 365+ gün = 0.1 weight
+  // Within 7 days = 1.0 weight
+  // 30 days = 0.7 weight
+  // 180 days = 0.3 weight
+  // 365+ days = 0.1 weight
 
   if (daysDiff <= 7) return 1.0;
   if (daysDiff <= 30) return 0.7;
@@ -96,9 +96,9 @@ export const calculateRecencyWeight = (createdAtDate) => {
 };
 
 /**
- * "Ne kadar match'ler zaten bağlı?"
- * Çok match'i olan insanla eşleştiğinde score az sayılır
- * (Daha az tanınan birileriyle match etmek daha iyi)
+ * "How many mutual matches do they already have?"
+ * Matching with someone who has many matches is scored lower
+ * (It's better to match with less known people)
  */
 export const calculateMutualConnectionsCount = async (userId1, userId2) => {
   try {
@@ -143,12 +143,12 @@ export const calculateMutualConnectionsCount = async (userId1, userId2) => {
 };
 
 /**
- * "Novelty" skorunda bugüne kadar match edilmedikleri kişilerle başlıyor
+ * "Novelty" score starts with people they haven't matched with yet
  */
 export const calculateNoveltyBonus = async (userId1, userId2) => {
   try {
-    // TODO: Eğer match history table'ı varsa bunu kontrol edebiliriz
-    // Şimdilik 0.5 (neutral) döndürelim
+    // TODO: If we have a match history table, we can check this
+    // For now, return 0.5 (neutral)
 
     return 0.5;
   } catch (error) {

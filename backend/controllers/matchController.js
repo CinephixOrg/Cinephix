@@ -12,7 +12,7 @@ import { calculateSocialScore } from "../services/socialScoreService.js";
 import { calculateDiversityScore, calculateWatchActivityScore } from "../services/diversityScoreService.js";
 import { calculateTrendingAlignment, calculateActivityRecency } from "../services/bonusMetricsService.js";
 
-/* ---------- yardımcı matematik ---------- */
+/* ---------- helper math ---------- */
 
 const cosineSimilarity = (a, b) => {
   let dot = 0, normA = 0, normB = 0;
@@ -41,14 +41,14 @@ const avgRatingSimilarity = (a, b) => {
 /**
  * HYBRID MATCHING ALGORITHM
  * 
- * Bileşenler:
- * 1. COLLABORATIVE (35%): Genre/Rating benzerliği (MEVCUT)
- * 2. CONTENT-BASED (25%): Favori filmler benzerliği (YENİ)
- * 3. SOCIAL (20%): Ortak takip/takipçiler (YENİ)
- * 4. DIVERSITY (15%): Çeşitlilik uyumu (YENİ)
- * 5. BONUS (5%): Activity, trending, recency (YENİ)
+ * Components:
+ * 1. COLLABORATIVE (35%): Genre/Rating similarity (CURRENT)
+ * 2. CONTENT-BASED (25%): Favorite movies similarity (NEW)
+ * 3. SOCIAL (20%): Mutual following/followers (NEW)
+ * 4. DIVERSITY (15%): Diversity alignment (NEW)
+ * 5. BONUS (5%): Activity, trending, recency (NEW)
  * 
- * Beklenen doğruluk: 60-70%
+ * Expected accuracy: 60-70%
  */
 export const findMatches = asyncHandler(async (req, res) => {
   const {
@@ -58,7 +58,7 @@ export const findMatches = asyncHandler(async (req, res) => {
     useAvgRating = true,
     page = 1,
     limit = 10,
-    hybridMode = true    // Hybrid algorithm'i kullan?
+    hybridMode = true    // Use hybrid algorithm?
   } = req.body;
 
   const meId = req.user.id;
@@ -223,7 +223,7 @@ export const findMatches = asyncHandler(async (req, res) => {
 
 /**
  * In-memory diversity calculation
- * Nasıl değişken genre dağılımı o kadar çeşitli
+ * How variable the genre distribution determines diversity
  */
 const calculateDiversityInMemory = (cineGraph) => {
   if (!cineGraph || Object.keys(cineGraph).length === 0) return 0.5;
@@ -233,21 +233,21 @@ const calculateDiversityInMemory = (cineGraph) => {
 
   if (total === 0) return 0.5;
 
-  // Basit metric: watch dağılımı ne kadar spread
+  // Simple metric: how spread out the watch distribution is
   const avgCount = total / counts.length;
   const variance = counts.reduce((sum, c) => sum + Math.pow(c - avgCount, 2), 0) / counts.length;
   const stdDev = Math.sqrt(variance);
 
-  // Normalize: 0 = hepsi aynı, 1 = çok çeşitli
+  // Normalize: 0 = all same, 1 = very diverse
   const maxPossibleStdDev = total / Math.sqrt(counts.length);
   return Math.min(1, stdDev / (maxPossibleStdDev || 1));
 };
 
-/* ========== YENİ ENDPOINT: Tek kullanıcıyla match hesapla ========== */
+/* ========== NEW ENDPOINT: Calculate match with single user ========== */
 
 /**
  * POST /api/match/user/:targetUserId
- * Belirli bir kullanıcıyla olan uyumu hesapla
+ * Calculate compatibility with a specific user
  */
 export const getMatchWithUser = asyncHandler(async (req, res) => {
   const meId = req.user.id;

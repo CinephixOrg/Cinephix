@@ -3,38 +3,38 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const reviewSchema = new Schema({
-  // Yorumu yapan kullanıcı
+  // User who wrote the review
   user: {
     type: Schema.Types.ObjectId,
-    ref: 'User', // User modeline referans
+    ref: 'User', // Reference to User model
     required: true
   },
-  // Yorum yapılan içerik (movie veya series ID'si)
-  // Rating.js'deki contentId ile aynı türde olmalı (String veya ObjectId)
+  // Review content (movie or series ID)
+  // Should be same type as contentId in Rating.js (String or ObjectId)
   contentId: {
-    type: String, // Veya Schema.Types.ObjectId
+    type: String, // Or Schema.Types.ObjectId
     required: true
   },
-  // İçerik tipi
+  // Content type
   contentType: {
     type: String,
     enum: ['movie', 'series'],
     required: true
   },
-  // Yorum metni
+  // Review text
   text: {
     type: String,
-    required: [true, 'Yorum metni boş olamaz.'],
+    required: [true, 'Review text cannot be empty.'],
     trim: true,
-    maxlength: 2000 // İsteğe bağlı karakter limiti
+    maxlength: 2000 // Optional character limit
   },
-  // İsteğe bağlı: Eğer oylamayı da yorumla birlikte saklamak istersen
+  // Optional: If you want to store rating together with review
   // rating: {
   //   type: Number,
   //   min: 1,
   //   max: 10
   // }
-}, { timestamps: true }); // createdAt ve updatedAt alanlarını otomatik ekler
+}, { timestamps: true }); // Auto-adds createdAt and updatedAt fields
 
 // ===== DATABASE INDEXES (Issue #13) =====
 // Ensure one user can review one content only once

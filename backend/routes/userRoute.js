@@ -1,12 +1,12 @@
 // routes/user.js
 
 import express from "express";
-// 1. DEĞİŞİKLİK: Controller'dan yeni fonksiyonları import ediyoruz
+// Import new functions from controllers
 import {
   registerUser,
   loginUser,
   getUsers,
-  // --- YENİ EKLENEN FONKSİYONLAR ---
+  // --- NEW ADDED FUNCTIONS ---
   followUser,
   unfollowUser,
   getNotifications,
@@ -14,7 +14,7 @@ import {
   getMyFollowers,
   searchUsers,
   updateFavorites,
-  // --- YENİ EKLENENLER (ProfilePage için) ---
+  // --- NEW ADDITIONS (For ProfilePage) ---
   getUserProfile,
   getUserFavorites,
   updateUserBio,
@@ -27,7 +27,7 @@ import {
   removeFromWatchlist,
   uploadProfilePic,
   getMyProfile
-  // --- BİTİŞ ---
+  // End of imports
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
@@ -54,13 +54,11 @@ router.get("/me", authMiddleware, getMyProfile);
 router.post("/:id/follow", authMiddleware, followUser);
 router.post("/:id/unfollow", authMiddleware, unfollowUser);
 
-// Giriş yapmış kullanıcının kendi listelerini alması
-// (NetworkPage.jsx bu ikisini kullanacak)
+// Get current user's following and followers
 router.get("/me/following", authMiddleware, getMyFollowing);
 router.get("/me/followers", authMiddleware, getMyFollowers);
 
-// Bildirim rotası
-// (Bu, /api/users/notifications adresini oluşturur)
+// Get notifications
 router.get("/notifications", authMiddleware, getNotifications);
 
 // 3. Update favorites
