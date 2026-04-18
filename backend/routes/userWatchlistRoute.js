@@ -29,10 +29,12 @@ router.post("/me/watchlist", authMiddleware, async (req, res) => {
 });
 
 // Remove from watchlist
-router.delete("/me/watchlist", authMiddleware, async (req, res) => {
+router.delete("/me/watchlist/:itemId", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { itemId, itemType } = req.body;
+    const { itemId } = req.params;
+    const { itemType } = req.query;
+    
     if (!itemId || !itemType) return res.status(400).json({ message: "Missing data" });
 
     const user = await User.findById(userId);
@@ -56,7 +58,8 @@ router.delete("/me/watchlist", authMiddleware, async (req, res) => {
 router.get("/me/watchlist", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("watchlist");
-    return res.json({ watchlist: user.watchlist });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return res.status(200).json({ watchlist: user.watchlist });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }

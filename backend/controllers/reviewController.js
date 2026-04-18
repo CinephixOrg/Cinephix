@@ -59,13 +59,16 @@ export const addOrUpdateReview = asyncHandler(async (req, res) => {
     return sendError(res, 'Review text cannot exceed 5000 characters', 400);
   }
 
+  // Check if review exists before update
+  const existingReview = await Review.findOne({ user: userId, contentId: contentId });
+  
   const review = await Review.findOneAndUpdate(
     { user: userId, contentId: contentId },
     { contentType: contentType, text: text.trim(), user: userId },
     { new: true, upsert: true, runValidators: true }
-  ).populate('user', 'username profile_pic_url').lean();
+  ).populate('user', 'username profile_pic_url');
 
-  const statusCode = review.createdAt === review.updatedAt ? 201 : 200;
+  const statusCode = existingReview ? 200 : 201;
   sendSuccess(res, review, 'Review saved successfully', statusCode);
 });
 
