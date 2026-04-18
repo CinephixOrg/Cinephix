@@ -243,7 +243,8 @@ export const validationSchemas = {
 
   // Update favorites
   updateFavorites: {
-    favoriteGenres: { required: true, type: 'array' },
+    type: { required: true, enum: ['movie', 'series'] },
+    list: { required: true, isArray: true },
   },
 
   // Update user bio with ID
