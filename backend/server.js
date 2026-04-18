@@ -30,12 +30,14 @@ import userRoutes from './models/User.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import ratingRoutes from './routes/rating.js';
 import matchRoute from "./routes/matchRoute.js";
+import userWatchlistRoute from "./routes/userWatchlistRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
 
 // Define User routes at the beginning
 app.use("/api/users", userRoute);
+app.use("/api/users/me", userWatchlistRoute);
 app.use('/api/ratings', ratingRoutes); // <-- ADD NEW ROUTE
 app.use('/api/reviews', reviewRoutes);
 app.use("/api/match", matchRoute);

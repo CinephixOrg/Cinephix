@@ -6,20 +6,23 @@ import authMiddleware from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Add to watchlist
-router.post("/me/watchlist", authMiddleware, async (req, res) => {
+router.post("/watchlist", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { itemId, itemType } = req.body;
-    if (!itemId || !itemType) return res.status(400).json({ message: "Missing data" });
+    const { id, type, itemId, itemType } = req.body;
+    const contentId = id || itemId;
+    const contentType = type || itemType;
+    
+    if (!contentId || !contentType) return res.status(400).json({ message: "Missing data" });
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Check if item already exists
-    const exists = user.watchlist.some(w => w.itemId.toString() === itemId && w.itemType === itemType);
+    const exists = user.watchlist.some(w => w.itemId.toString() === contentId && w.itemType === contentType);
     if (exists) return res.status(409).json({ message: "Already added" });
 
-    user.watchlist.push({ itemId, itemType });
+    user.watchlist.push({ itemId: contentId, itemType: contentType });
     await user.save();
 
     return res.status(201).json({ message: "Added", watchlist: user.watchlist });
@@ -29,7 +32,7 @@ router.post("/me/watchlist", authMiddleware, async (req, res) => {
 });
 
 // Remove from watchlist
-router.delete("/me/watchlist/:itemId", authMiddleware, async (req, res) => {
+router.delete("/watchlist/:itemId", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { itemId } = req.params;
@@ -55,7 +58,7 @@ router.delete("/me/watchlist/:itemId", authMiddleware, async (req, res) => {
 });
 
 // Retrieve watchlist
-router.get("/me/watchlist", authMiddleware, async (req, res) => {
+router.get("/watchlist", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("watchlist");
     if (!user) return res.status(404).json({ message: "User not found" });
