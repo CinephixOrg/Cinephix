@@ -217,14 +217,13 @@ export const validationSchemas = {
   createReview: {
     contentId: { required: true, type: 'string' },
     contentType: { required: true, enum: ['movie', 'series'] },
-    text: { required: true, type: 'string', minLength: 10, maxLength: 5000 },
-    rating: { type: 'number', min: 1, max: 10 },
+    text: { required: true, type: 'string', minLength: 1, maxLength: 5000 },
   },
 
   // Watchlist
   addToWatchlist: {
-    contentId: { required: true, type: 'string' },
-    contentType: { required: true, enum: ['movie', 'series'] },
+    id: { required: true, type: 'string' },
+    type: { required: true, enum: ['movie', 'series'] },
   },
 
   // MongoDB ID validation (for route params)

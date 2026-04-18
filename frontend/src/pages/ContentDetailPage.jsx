@@ -93,10 +93,10 @@ export default function ContentDetailPage() {
                     const ratingRes = await ratingService.getMyRating(currentContentId);
                     setRating((ratingRes.data || ratingRes).value || 0);
                 } catch (ratingErr) {
-                    if (ratingErr.response && ratingErr.response.status === 404) {
+                    if (ratingErr.response?.status === 404 || ratingErr.message === 'Rating not found') {
                         setRating(0);
-                    } else { 
-                        console.error("Puan çekilirken hata:", ratingErr); 
+                    } else {
+                        console.error("Puan çekilirken hata:", ratingErr);
                     }
                 }
                 setLoading(false);
