@@ -62,4 +62,35 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000); // Every hour
 
+/**
+ * Strict rate limiter for auth endpoints (login/register)
+ * Limits each IP to 10 requests per 15 minutes — brute-force protection
+ */
+const authRequestCounts = new Map();
+const AUTH_MAX_REQUESTS = 10;
+
+export const authRateLimiter = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+
+  if (!authRequestCounts.has(ip)) {
+    authRequestCounts.set(ip, []);
+  }
+
+  const timestamps = authRequestCounts.get(ip);
+  const validTimestamps = timestamps.filter(time => now - time < WINDOW_MS);
+  authRequestCounts.set(ip, validTimestamps);
+
+  if (validTimestamps.length >= AUTH_MAX_REQUESTS) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many login attempts. Please try again later.',
+      retryAfter: Math.ceil((validTimestamps[0] + WINDOW_MS - now) / 1000)
+    });
+  }
+
+  validTimestamps.push(now);
+  next();
+};
+
 export default simpleRateLimiter;

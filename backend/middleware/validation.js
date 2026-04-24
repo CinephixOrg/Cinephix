@@ -261,7 +261,6 @@ export const validationSchemas = {
   updatePassword: {
     oldPassword: { required: true, type: 'string' },
     newPassword: { required: true, type: 'string', minLength: 6 },
-    confirmPassword: { required: true, type: 'string' },
   },
 
   // Send message

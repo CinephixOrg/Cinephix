@@ -3,6 +3,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
 
 // Import error handler & logger middleware
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -11,7 +12,15 @@ import { simpleRateLimiter } from "./middleware/rateLimiter.js";
 
 dotenv.config();
 const app = express();
-app.use(cors());
+app.use(helmet());
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 app.use(express.json());
 
 // Apply request logging middleware
@@ -85,11 +94,37 @@ async function start() {
     // Register global error handler middleware (must be last)
     app.use(errorHandler);
 
+    // Health check with DB status
+    app.get('/api/health', (req, res) => {
+      const dbState = mongoose.connection.readyState;
+      // 1 = connected, 2 = connecting
+      const dbOk = dbState === 1;
+      res.status(dbOk ? 200 : 503).json({
+        success: dbOk,
+        message: dbOk ? 'API is healthy' : 'Database unavailable',
+        db: dbOk ? 'connected' : 'disconnected',
+        timestamp: new Date().toISOString(),
+      });
+    });
+
     // Start server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Rate limiting: 100 requests per 15 minutes per IP`);
     });
+
+    // Graceful shutdown
+    const shutdown = async () => {
+      logger.info('Shutting down gracefully...');
+      server.close(async () => {
+        await mongoose.disconnect();
+        logger.info('All connections closed');
+        process.exit(0);
+      });
+    };
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
   } catch (e) {
     logger.error(`Startup error: ${e.message}`);
     process.exit(1);

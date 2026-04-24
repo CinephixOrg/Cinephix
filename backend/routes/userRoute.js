@@ -31,16 +31,20 @@ import {
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
+import { authRateLimiter } from "../middleware/rateLimiter.js";
 import multer from "multer";
 import cloudinary from "../config/cloudinaryConfig.js";
 import User from "../models/User.js";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+});
 
 // --- Authentication Routes ---
-router.post("/register", validateRequest(validationSchemas.registerUser), registerUser);
-router.post("/login", validateRequest(validationSchemas.loginUser), loginUser);
+router.post("/register", authRateLimiter, validateRequest(validationSchemas.registerUser), registerUser);
+router.post("/login", authRateLimiter, validateRequest(validationSchemas.loginUser), loginUser);
 router.get("/", getUsers);
 
 // Watchlist operations (moved to controller)
