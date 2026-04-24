@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Backend'imizin temel adresini burada tanımlıyoruz.
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api'
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 });
 
 // Bu kısım, bir kullanıcı giriş yaptığında token'ı otomatik olarak

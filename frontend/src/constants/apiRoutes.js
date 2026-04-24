@@ -27,7 +27,7 @@ export const API_ROUTES = {
     DELETE_ACCOUNT: `${API_BASE_URL}/users/profile`,
     ADD_TO_WATCHLIST: `${API_BASE_URL}/users/me/watchlist`,
     REMOVE_FROM_WATCHLIST: (contentId) => `${API_BASE_URL}/users/me/watchlist/${contentId}`,
-    GET_WATCHLIST: `${API_BASE_URL}/users/watchlist`,
+    GET_WATCHLIST: `${API_BASE_URL}/users/me/watchlist`,
     FOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/follow`,
     UNFOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/unfollow`,
   },

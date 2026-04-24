@@ -15,13 +15,13 @@ export default function ListPage() {
         const fetchWatchlist = async () => {
             try {
                 const user = await userService.getCurrentUser();
-                const watchlist = user.watchlist || user.data?.watchlist;
+                const watchlist = user.watchlist || user.data?.watchlist || [];
 
                 // Get cached items first for immediate display
                 const movieItemsIds = watchlist
                     .filter(item => item.itemType === "movie")
                     .map(item => item.itemId);
-                
+
                 const seriesItemsIds = watchlist
                     .filter(item => item.itemType === "series")
                     .map(item => item.itemId);
@@ -46,18 +46,16 @@ export default function ListPage() {
                 }
 
                 // Always fetch fresh content data in background
-                const movieData = await Promise.all(
-                    movieItemsIds
-                        .map(itemId => contentService.getMovieById(itemId).then(r => r.data || r))
+                const movieResults = await Promise.allSettled(
+                    movieItemsIds.map(itemId => contentService.getMovieById(itemId).then(r => r.data || r))
                 );
 
-                const seriesData = await Promise.all(
-                    seriesItemsIds
-                        .map(itemId => contentService.getSeriesById(itemId).then(r => r.data || r))
+                const seriesResults = await Promise.allSettled(
+                    seriesItemsIds.map(itemId => contentService.getSeriesById(itemId).then(r => r.data || r))
                 );
 
-                setMovies(movieData);
-                setSeries(seriesData);
+                setMovies(movieResults.filter(r => r.status === 'fulfilled').map(r => r.value));
+                setSeries(seriesResults.filter(r => r.status === 'fulfilled').map(r => r.value));
                 setLoading(false);
             } catch (err) {
                 console.error(err);

@@ -723,26 +723,15 @@ export const findMatches = asyncHandler(async (req, res) => {
 });
 
 export const updatePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const { oldPassword, newPassword } = req.body;
 
-  // Validation
-  if (!currentPassword || !newPassword) {
-    return sendError(res, 'Current password and new password are required', 400);
-  }
-
-  if (newPassword.length < 6) {
-    return sendError(res, 'New password must be at least 6 characters', 400);
-  }
-
-  // Kullanıcıyı şifresiyle birlikte bul (select ile şifreyi dahil et)
   const user = await User.findById(req.user.id).select('+password');
 
   if (!user) {
     return sendError(res, 'User not found', 404);
   }
 
-  // Mevcut şifreyi kontrol et
-  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
   if (!isMatch) {
     return sendError(res, 'Current password is incorrect', 400);
   }
