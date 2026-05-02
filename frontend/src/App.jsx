@@ -31,6 +31,7 @@ import PublicProfilePage from "./pages/PublicProfilePage.jsx";
 import CommunityPage from "./pages/CommunityPage.jsx";
 import GroupDetailPage from "./pages/GroupDetailPage.jsx";
 import DMPage from "./pages/DMPage.jsx";
+import NotificationsPage from "./pages/NotificationsPage.jsx";
 
 
 
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/community/:slug" element={<ProtectedRoute><GroupDetailPage /></ProtectedRoute>} />
             <Route path="/dm" element={<ProtectedRoute><DMPage /></ProtectedRoute>} />
             <Route path="/dm/:conversationId" element={<ProtectedRoute><DMPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
             <Route
               path="/content/:type/:contentId"
