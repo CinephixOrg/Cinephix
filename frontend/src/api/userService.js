@@ -236,6 +236,15 @@ export const userService = {
     }
   },
 
+  getSuggestions: async (limit = 5) => {
+    try {
+      const response = await API.get(API_ROUTES.USERS.GET_SUGGESTIONS, { params: { limit } });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch suggestions' };
+    }
+  },
+
   getConnections: async () => {
     try {
       const response = await API.get(API_ROUTES.NETWORK.GET_CONNECTIONS);

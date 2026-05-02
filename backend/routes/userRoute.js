@@ -26,7 +26,8 @@ import {
   addToWatchlist,
   removeFromWatchlist,
   uploadProfilePic,
-  getMyProfile
+  getMyProfile,
+  getSuggestedUsers
   // End of imports
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -53,6 +54,7 @@ router.delete("/me/watchlist/:itemId", authMiddleware, removeFromWatchlist);
 
 router.post('/profile/:id/upload-profile-pic', upload.single('profilePic'), uploadProfilePic);
 router.get("/me", authMiddleware, getMyProfile);
+router.get("/me/suggestions", authMiddleware, getSuggestedUsers);
 
 // Follow/unfollow operations
 router.post("/:id/follow", authMiddleware, followUser);

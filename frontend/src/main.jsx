@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { RatingsProvider } from "./context/RatingsContext.jsx";
+import { UnreadProvider } from "./context/UnreadContext.jsx";
 import "./index.css";
 
 // Initialize cache debugging utilities (available in browser console)
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <RatingsProvider>
-          <App />
+          <UnreadProvider>
+            <App />
+          </UnreadProvider>
         </RatingsProvider>
       </AuthProvider>
     </BrowserRouter>

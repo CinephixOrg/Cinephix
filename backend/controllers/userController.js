@@ -874,3 +874,53 @@ export const removeFromWatchlist = asyncHandler(async (req, res) => {
 
   sendSuccess(res, user.watchlist, 'Item removed from watchlist', 200);
 });
+
+// @desc    Get suggested users to follow (friends-of-friends)
+// @route   GET /api/users/me/suggestions
+// @access  Private
+export const getSuggestedUsers = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const limit = Math.min(parseInt(req.query.limit) || 5, 10);
+
+  const currentUser = await User.findById(userId).select('following').lean();
+  const followingIds = currentUser?.following || [];
+  const followingSet = new Set(followingIds.map((id) => id.toString()));
+
+  if (followingIds.length === 0) {
+    return sendSuccess(res, [], 'No suggestions yet — follow some people first!');
+  }
+
+  // Get who each of your followings follows
+  const followingsData = await User.find({ _id: { $in: followingIds } })
+    .select('following')
+    .lean();
+
+  // Count how many of your friends follow each candidate
+  const mutualCount = {};
+  for (const u of followingsData) {
+    for (const fof of (u.following || [])) {
+      const id = fof.toString();
+      if (id !== userId.toString() && !followingSet.has(id)) {
+        mutualCount[id] = (mutualCount[id] || 0) + 1;
+      }
+    }
+  }
+
+  const candidateIds = Object.keys(mutualCount)
+    .sort((a, b) => mutualCount[b] - mutualCount[a])
+    .slice(0, limit);
+
+  if (candidateIds.length === 0) {
+    return sendSuccess(res, [], 'No suggestions found');
+  }
+
+  const candidates = await User.find({ _id: { $in: candidateIds } })
+    .select('username profile_pic_url bio')
+    .lean();
+
+  const result = candidates
+    .map((u) => ({ ...u, mutualCount: mutualCount[u._id.toString()] }))
+    .sort((a, b) => b.mutualCount - a.mutualCount);
+
+  sendSuccess(res, result, 'Suggestions fetched');
+});
