@@ -1,4 +1,3 @@
-// middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
@@ -29,3 +28,22 @@ export default async function authMiddleware(req, res, next) {
     return res.status(401).json({ message: "Token verification failed" });
   }
 }
+
+// Like authMiddleware but never blocks — attaches req.user if token is valid.
+// Used on routes that return extra data for authenticated users (e.g. isMember).
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded?.id) {
+        const user = await User.findById(decoded.id);
+        if (user) req.user = user;
+      }
+    }
+  } catch {
+    // Invalid token — proceed without user attached
+  }
+  next();
+};

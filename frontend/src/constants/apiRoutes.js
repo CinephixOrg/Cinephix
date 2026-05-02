@@ -30,6 +30,9 @@ export const API_ROUTES = {
     GET_WATCHLIST: `${API_BASE_URL}/users/me/watchlist`,
     FOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/follow`,
     UNFOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/unfollow`,
+    GET_SUGGESTIONS: `${API_BASE_URL}/users/me/suggestions`,
+    SEARCH: (query) => `${API_BASE_URL}/users/search?query=${encodeURIComponent(query)}`,
+    GET_FOLLOWING: `${API_BASE_URL}/users/me/following`,
   },
 
   // Movie Routes
@@ -73,6 +76,32 @@ export const API_ROUTES = {
   // Network Routes
   NETWORK: {
     GET_CONNECTIONS: `${API_BASE_URL}/users/connections`,
+  },
+
+  // Feed Routes
+  FEED: {
+    GET_FEED: `${API_BASE_URL}/feed`,
+    GET_TOP_PICKS: `${API_BASE_URL}/feed/top-picks`,
+  },
+
+  // Direct Messages / Conversations
+  CONVERSATIONS: {
+    GET_ALL: `${API_BASE_URL}/conversations`,
+    GET_OR_CREATE: `${API_BASE_URL}/conversations`,
+    GET_MESSAGES: (id) => `${API_BASE_URL}/conversations/${id}/messages`,
+    MARK_READ: (id) => `${API_BASE_URL}/conversations/${id}/read`,
+    SEND_MESSAGE: (id) => `${API_BASE_URL}/conversations/${id}/messages`,
+  },
+
+  // Community / Groups Routes
+  GROUPS: {
+    GET_ALL: `${API_BASE_URL}/groups`,
+    GET_BY_SLUG: (slug) => `${API_BASE_URL}/groups/${slug}`,
+    JOIN: (slug) => `${API_BASE_URL}/groups/${slug}/join`,
+    LEAVE: (slug) => `${API_BASE_URL}/groups/${slug}/leave`,
+    GET_MEMBERS: (slug) => `${API_BASE_URL}/groups/${slug}/members`,
+    GET_MESSAGES: (slug) => `${API_BASE_URL}/groups/${slug}/messages`,
+    SEND_MESSAGE: (slug) => `${API_BASE_URL}/groups/${slug}/messages`,
   },
 };
 

@@ -28,6 +28,9 @@ import NetworkPage from "./pages/NetworkPage.jsx";
 
 import MatchPage from "./pages/MatchPage.jsx";
 import PublicProfilePage from "./pages/PublicProfilePage.jsx";
+import CommunityPage from "./pages/CommunityPage.jsx";
+import GroupDetailPage from "./pages/GroupDetailPage.jsx";
+import DMPage from "./pages/DMPage.jsx";
 
 
 
@@ -90,6 +93,10 @@ export default function App() {
             <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
             <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+            <Route path="/community/:slug" element={<ProtectedRoute><GroupDetailPage /></ProtectedRoute>} />
+            <Route path="/dm" element={<ProtectedRoute><DMPage /></ProtectedRoute>} />
+            <Route path="/dm/:conversationId" element={<ProtectedRoute><DMPage /></ProtectedRoute>} />
 
             <Route
               path="/content/:type/:contentId"
