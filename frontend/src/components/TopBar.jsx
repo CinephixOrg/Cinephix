@@ -1,8 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useUnread } from "../context/UnreadContext";
+import { NotificationContext } from "../context/NotificationContext";
 import ProfileMenu from "./ProfileMenu";
+import NotificationBell from "./NotificationBell";
 import logo from "../assets/cinephix_logo.svg";
 
 export default function TopBar() {
@@ -71,6 +73,7 @@ export default function TopBar() {
 
         {/* SAĞ */}
         <div className="flex items-center gap-4">
+          <NotificationBell />
           <span className="text-sm text-base-content/70">
             Welcome back, {user.username}
           </span>

@@ -16,11 +16,17 @@ const notificationSchema = new Schema({
         ref: 'User',
         required: true
     },
-    // Bildirim tipi (gelecekte 'like', 'comment' gibi tipler de ekleyebilirsiniz)
+    // Bildirim tipi: follow, message
     type: {
         type: String,
-        enum: ['follow'], // Currently only 'follow'
+        enum: ['follow', 'message'], // follow or message
         required: true
+    },
+    // Mesaj bildiriminde konuşma ID'si
+    conversationId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Conversation',
+        default: null
     },
     // Bildirim okundu mu?
     read: {

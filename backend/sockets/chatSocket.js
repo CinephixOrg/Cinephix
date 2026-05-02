@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Message from "../models/Message.js";
 import Group from "../models/Group.js";
 import Conversation from "../models/Conversation.js";
+import Notification from "../models/Notification.js";
 import { setIo } from "../services/socketService.js";
 
 /**
@@ -110,13 +111,31 @@ export const setupChat = (io) => {
               ...(otherId && { $inc: { [`unreadCounts.${otherId}`]: 1 } }),
             });
 
+            // Create notification for the other participant
+            if (otherId) {
+              await Notification.create({
+                user: otherId,
+                sender: userId,
+                type: 'message',
+                conversationId: roomId
+              });
+            }
+
             const payload = {
               conversationId: roomId,
               lastMessage: text.trim(),
               lastMessageAt: new Date(),
               senderId: userId,
             };
-            if (otherId) io.to(`user:${otherId}`).emit("conversation-updated", payload);
+            if (otherId) {
+              io.to(`user:${otherId}`).emit("conversation-updated", payload);
+              io.to(`user:${otherId}`).emit("new-notification", {
+                type: 'message',
+                sender: { _id: userId, username: socket.user.username },
+                conversationId: roomId,
+                createdAt: new Date()
+              });
+            }
             io.to(`user:${userId}`).emit("conversation-updated", payload);
           }
         }

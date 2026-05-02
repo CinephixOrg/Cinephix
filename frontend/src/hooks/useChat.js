@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useContext } from 'react';
 import { io } from 'socket.io-client';
+import { NotificationContext } from '../context/NotificationContext';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -22,6 +23,7 @@ export function useChat(roomType, roomId, token) {
   const socketRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
+  const notificationContext = useContext(NotificationContext);
 
   useEffect(() => {
     if (!roomType || !roomId || !token) return;
@@ -41,6 +43,13 @@ export function useChat(roomType, roomId, token) {
       setMessages((prev) => [...prev, message]);
     });
 
+    // Listen for new notifications (message notifications)
+    socket.on('new-notification', (notification) => {
+      if (notificationContext) {
+        notificationContext.incrementMessageUnread(notification.conversationId);
+      }
+    });
+
     socket.on('disconnect', () => setConnected(false));
 
     socket.on('connect_error', (err) => {
@@ -56,7 +65,7 @@ export function useChat(roomType, roomId, token) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [roomType, roomId, token]);
+  }, [roomType, roomId, token, notificationContext]);
 
   const sendMessage = useCallback(
     (text) => {
