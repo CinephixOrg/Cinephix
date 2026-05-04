@@ -23,6 +23,7 @@ import MoviePage from "./pages/MoviesPage.jsx";
 import SeriesPage from "./pages/SeriesPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import TopBar from "./components/TopBar";
+import Footer from "./components/Footer";
 
 import NetworkPage from "./pages/NetworkPage.jsx";
 
@@ -32,6 +33,9 @@ import CommunityPage from "./pages/CommunityPage.jsx";
 import GroupDetailPage from "./pages/GroupDetailPage.jsx";
 import DMPage from "./pages/DMPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
+import AboutPage from "./pages/AboutPage.jsx";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.jsx";
+import TermsOfServicePage from "./pages/TermsOfServicePage.jsx";
 
 
 
@@ -104,8 +108,14 @@ export default function App() {
               path="/content/:type/:contentId"
               element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
             />
+
+            <Route path="/about" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
+            <Route path="/privacy" element={<ProtectedRoute><PrivacyPolicyPage /></ProtectedRoute>} />
+            <Route path="/terms" element={<ProtectedRoute><TermsOfServicePage /></ProtectedRoute>} />
           </Routes>
         </main>
+
+        {user && <Footer />}
 
         <Toaster position="top-center" />
       </div>
