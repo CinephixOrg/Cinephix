@@ -7,7 +7,6 @@ const BACKEND_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "h
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    username: "",
     email: "",
     password: "",
   });
@@ -22,7 +21,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await API.post("/users/register", formData);
+      // API requires a username, so we auto-generate a temporary one from the email
+      const tempUsername = formData.email.split("@")[0] + Math.floor(Math.random() * 10000);
+      const payload = {
+        ...formData,
+        username: tempUsername
+      };
+
+      await API.post("/users/register", payload);
       toast.success("Account created! Email verification code sent 📧", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
@@ -73,15 +79,6 @@ export default function RegisterPage() {
           <div className="divider text-xs text-base-content/40">or with email</div>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-            <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              className="input input-bordered w-full"
-            />
             <input
               type="email"
               name="email"

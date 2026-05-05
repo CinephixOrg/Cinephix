@@ -15,6 +15,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import WelcomePage from "./pages/WelcomePage.jsx";
+import SetupProfilePage from "./pages/SetupProfilePage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ContentDetailPage from "./pages/ContentDetailPage.jsx";
 import ListPage from "./pages/ListPage.jsx";
@@ -94,6 +95,7 @@ export default function App() {
               element={user ? <Navigate to="/home" /> : <WelcomePage />}
             />
 
+            <Route path="/setup-profile" element={<ProtectedRoute><SetupProfilePage /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
             <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
             <Route path="/users/:id" element={<PublicProfilePage />} />
