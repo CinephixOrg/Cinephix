@@ -129,6 +129,10 @@ export default function ForgotPasswordPage() {
                 <span className="font-semibold text-secondary">{email}</span>
                 <br />
                 and your new password.
+                <br />
+                <span className="text-warning text-xs mt-1 inline-block">
+                  Can't find it? Check your spam/junk folder.
+                </span>
               </p>
               <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4">
                 <div className="flex justify-center gap-2" onPaste={handleDigitPaste}>

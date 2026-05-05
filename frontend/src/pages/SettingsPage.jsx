@@ -3,10 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 import { userService } from '../api/userService';
+import API from '../api/axios';
 
 export default function SettingsPage() {
-  const { logout } = useContext(AuthContext);
+  const { user, updateUser, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Username state
+  const [newUsername, setNewUsername] = useState('');
+  const [loadingUsername, setLoadingUsername] = useState(false);
 
   // Şifre Değiştirme State'leri
   const [passwords, setPasswords] = useState({
@@ -27,6 +32,29 @@ export default function SettingsPage() {
 
   const handleThemeChange = (e) => {
     setTheme(e.target.value);
+  };
+
+  const submitUsernameChange = async (e) => {
+    e.preventDefault();
+    const trimmed = newUsername.trim();
+    if (!trimmed) return toast.error('Username cannot be empty.');
+    if (trimmed.length < 3 || trimmed.length > 20)
+      return toast.error('Username must be 3–20 characters.');
+    if (trimmed === user?.username)
+      return toast.error('That is already your current username.');
+
+    setLoadingUsername(true);
+    try {
+      const res = await API.patch(`/users/profile/${user._id}/bio`, { username: trimmed });
+      updateUser({ username: res.data.username });
+      toast.success('Username updated successfully!', { style: { background: '#1a1a1a', color: '#fff' } });
+      setNewUsername('');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to update username.';
+      toast.error(msg, { style: { background: '#1a1a1a', color: '#fff' } });
+    } finally {
+      setLoadingUsername(false);
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -73,6 +101,40 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold mb-8">Settings</h1>
 
         
+
+        {/* USERNAME */}
+        <div className="card bg-base-100 shadow-xl mb-8">
+          <div className="card-body">
+            <h2 className="card-title mb-1">Username</h2>
+            <p className="text-base-content/60 text-sm mb-4">
+              Current username: <span className="font-semibold text-primary">@{user?.username}</span>
+            </p>
+            <form onSubmit={submitUsernameChange} className="flex flex-col gap-4">
+              <div className="form-control">
+                <label className="label"><span className="label-text">New Username</span></label>
+                <input
+                  type="text"
+                  placeholder="Enter new username (3–20 chars)"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="input input-bordered"
+                  minLength={3}
+                  maxLength={20}
+                  required
+                />
+              </div>
+              <div className="card-actions justify-end">
+                <button
+                  type="submit"
+                  className={`btn btn-primary ${loadingUsername ? 'loading' : ''}`}
+                  disabled={loadingUsername}
+                >
+                  Update Username
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
 
         {/* 2. GÜVENLİK AYARLARI */}
         <div className="card bg-base-100 shadow-xl mb-8">
