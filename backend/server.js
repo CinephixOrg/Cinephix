@@ -6,6 +6,8 @@ import cors from "cors";
 import helmet from "helmet";
 import { Server } from "socket.io";
 
+import passport from "passport";
+import { configurePassport } from "./config/passportConfig.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { requestLogger, logger } from "./middleware/logger.js";
 import { simpleRateLimiter } from "./middleware/rateLimiter.js";
@@ -23,6 +25,8 @@ const allowedOrigins = process.env.FRONTEND_URL
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(requestLogger);
+configurePassport();
+app.use(passport.initialize());
 app.use("/api/", simpleRateLimiter);
 
 // Model and Route imports

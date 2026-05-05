@@ -36,6 +36,9 @@ import NotificationsPage from "./pages/NotificationsPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.jsx";
 import TermsOfServicePage from "./pages/TermsOfServicePage.jsx";
+import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import OAuthSuccessPage from "./pages/OAuthSuccessPage.jsx";
 
 
 
@@ -82,6 +85,9 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/oauth-success" element={<OAuthSuccessPage />} />
 
             <Route
               path="/"
