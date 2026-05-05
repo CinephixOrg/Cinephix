@@ -15,21 +15,21 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      toast.success("Başarıyla giriş yapıldı! ✅", {
+      toast.success("Successfully logged in! ✅", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
       });
       navigate("/home");
     } catch (err) {
       if (err.response?.data?.message === "EMAIL_NOT_VERIFIED") {
-        toast.error("Email adresin doğrulanmamış. Lütfen emailini kontrol et.", {
+        toast.error("Your email is not verified. Please check your inbox.", {
           style: { background: "#1a1a1a", color: "#fff" },
           duration: 5000,
         });
         navigate("/verify-email", { state: { email } });
         return;
       }
-      const msg = err.response?.data?.message || err.message || "Geçersiz email veya şifre!";
+      const msg = err.response?.data?.message || err.message || "Invalid email or password!";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
     }
   };
@@ -37,13 +37,13 @@ export default function LoginPage() {
   const handleAdminLogin = async () => {
     try {
       await login("admin@email.com", "admin123");
-      toast.success("Admin olarak giriş yapıldı! ☠️", {
+      toast.success("Logged in as Admin! ☠️", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
       });
       navigate("/home");
     } catch (error) {
-      toast.error("Admin girişi başarısız!");
+      toast.error("Admin login failed!");
       console.error(error);
     }
   };
@@ -62,9 +62,9 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-primary flex items-center gap-2">
             <span>Cinephix</span>
           </h1>
-          <h2 className="text-lg text-base-content mt-2">Tekrar hoş geldin</h2>
+          <h2 className="text-lg text-base-content mt-2">Welcome back</h2>
           <p className="text-sm text-base-content/70 mb-4">
-            Film eşleşmeni bul!
+            Find your movie match!
           </p>
 
           {/* Google OAuth Button */}
@@ -79,10 +79,10 @@ export default function LoginPage() {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               <path fill="none" d="M0 0h48v48H0z"/>
             </svg>
-            Google ile Giriş Yap
+            Login with Google
           </button>
 
-          <div className="divider text-xs text-base-content/40">veya email ile</div>
+          <div className="divider text-xs text-base-content/40">or with email</div>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
             <input
@@ -95,7 +95,7 @@ export default function LoginPage() {
             />
             <input
               type="password"
-              placeholder="Şifre"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -103,10 +103,10 @@ export default function LoginPage() {
             />
             <div className="text-right -mt-2">
               <Link to="/forgot-password" className="text-xs text-secondary hover:underline">
-                Şifremi unuttum
+                Forgot password
               </Link>
             </div>
-            <button className="btn btn-primary w-full">Giriş Yap</button>
+            <button className="btn btn-primary w-full">Login</button>
           </form>
 
           <button
@@ -117,9 +117,9 @@ export default function LoginPage() {
           </button>
 
           <p className="mt-4 text-sm">
-            Hesabın yok mu?{" "}
+            Don't have an account?{" "}
             <Link to="/register" className="text-secondary font-semibold">
-              Kayıt ol
+              Register
             </Link>
           </p>
         </div>

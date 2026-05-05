@@ -63,15 +63,19 @@ router.post("/forgot-password", authRateLimiter, forgotPassword);
 router.post("/reset-password", authRateLimiter, resetPassword);
 
 // --- Google OAuth ---
-router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
-router.get(
-  "/auth/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:5173"}/login?error=oauth_failed`,
-  }),
-  googleAuthCallback
-);
+const googleAuthMiddleware = process.env.GOOGLE_CLIENT_ID
+  ? passport.authenticate("google", { scope: ["profile", "email"], session: false })
+  : (req, res) => res.status(503).json({ success: false, message: "Google OAuth not configured" });
+
+const googleCallbackMiddleware = process.env.GOOGLE_CLIENT_ID
+  ? passport.authenticate("google", {
+      session: false,
+      failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:5173"}/login?error=oauth_failed`,
+    })
+  : (req, res) => res.status(503).json({ success: false, message: "Google OAuth not configured" });
+
+router.get("/auth/google", googleAuthMiddleware);
+router.get("/auth/google/callback", googleCallbackMiddleware, googleAuthCallback);
 
 // Watchlist operations (moved to controller)
 router.post("/me/watchlist", authMiddleware, validateRequest(validationSchemas.addToWatchlist), addToWatchlist);
