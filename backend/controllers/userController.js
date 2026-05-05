@@ -1022,7 +1022,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
   await user.save();
 
-  await sendPasswordResetEmail(email, code);
+  try {
+    await sendPasswordResetEmail(email, code);
+  } catch (emailErr) {
+    console.error('Password reset email failed:', emailErr.message);
+    return sendError(res, 'Failed to send reset email. Please try again later.', 503);
+  }
   sendSuccess(res, null, 'Password reset code sent to your email');
 });
 
@@ -1070,7 +1075,7 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     email: user.email,
     profile_pic_url: user.profile_pic_url || '',
     token,
-    isNewOAuthUser: user.isNewOAuthUser || false
+    isNewOAuthUser: req.authInfo?.isNewOAuthUser || false
   }));
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';

@@ -34,20 +34,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleAdminLogin = async () => {
-    try {
-      await login("admin@email.com", "admin123");
-      toast.success("Logged in as Admin! ☠️", {
-        style: { background: "#1a1a1a", color: "#fff" },
-        iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
-      });
-      navigate("/home");
-    } catch (error) {
-      toast.error("Admin login failed!");
-      console.error(error);
-    }
-  };
-
   const handleGoogleLogin = () => {
     window.location.href = `${BACKEND_URL}/api/users/auth/google`;
   };
@@ -108,13 +94,6 @@ export default function LoginPage() {
             </div>
             <button className="btn btn-primary w-full">Login</button>
           </form>
-
-          <button
-            onClick={handleAdminLogin}
-            className="btn btn-outline btn-warning mt-2"
-          >
-            I'm an Admin
-          </button>
 
           <p className="mt-4 text-sm">
             Don't have an account?{" "}

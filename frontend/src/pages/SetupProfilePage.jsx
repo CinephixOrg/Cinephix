@@ -5,7 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
 export default function SetupProfilePage() {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, updateUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const [username, setUsername] = useState(user?.username || "");
   const [bio, setBio] = useState("");
@@ -36,18 +36,18 @@ export default function SetupProfilePage() {
         bio,
       });
 
-      // Update the context with new basic info
-      setUser(profileRes.data.data);
+      // interceptor already unwraps res.data, so profileRes.data is the updated user object
+      updateUser(profileRes.data);
 
       // 2. Upload Profile Picture if selected
       if (file) {
         const formData = new FormData();
-        formData.append("profilePic", file); // Must match the 'upload.single("profilePic")' in backend
+        formData.append("profilePic", file);
         const picRes = await API.post(`/users/profile/${user._id}/upload-profile-pic`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        if (picRes.data?.data) {
-           setUser(picRes.data.data);
+        if (picRes.data?.profilePicUrl) {
+          updateUser({ profile_pic_url: picRes.data.profilePicUrl });
         }
       }
 

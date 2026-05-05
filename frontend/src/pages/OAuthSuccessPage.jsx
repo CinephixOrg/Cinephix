@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from "react";
+import React, { useEffect, useContext, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -7,8 +7,12 @@ export default function OAuthSuccessPage() {
   const [searchParams] = useSearchParams();
   const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const processed = useRef(false);
 
   useEffect(() => {
+    if (processed.current) return;
+    processed.current = true;
+
     const raw = searchParams.get("data");
     const error = searchParams.get("error");
 
