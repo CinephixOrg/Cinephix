@@ -57,8 +57,8 @@ export default function VerifyEmailPage() {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
       });
-      // Redirect to welcome/setup page where user can upload profile pic
-      navigate("/welcome", { state: { isNewUser: true } });
+      // Redirect to welcome/setup page where user can pick username and profile pic
+      navigate("/setup-profile");
     } catch (err) {
       const msg = err.response?.data?.message || "Invalid or expired code";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });

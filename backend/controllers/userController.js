@@ -91,7 +91,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   // Google-only account
   if (user.googleId && !user.password) {
-    return sendError(res, 'Bu hesap Google ile oluşturuldu. Lütfen Google ile giriş yap.', 400);
+    return sendError(res, 'This account was created with Google. Please login with Google.', 400);
   }
 
   if (!(await bcrypt.compare(password, user.password))) {
@@ -448,11 +448,21 @@ export const updateUserBio = asyncHandler(async (req, res) => {
     return sendError(res, 'You can only update your own profile', 403);
   }
 
-  const { bio } = req.body;
+  const { bio, username } = req.body;
+  const updateData = {};
+  if (bio !== undefined) updateData.bio = bio;
+
+  if (username) {
+    const existingUser = await User.findOne({ username });
+    if (existingUser && existingUser._id.toString() !== req.user.id) {
+      return sendError(res, 'This username is already taken', 400);
+    }
+    updateData.username = username;
+  }
 
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
-    { bio },
+    updateData,
     { new: true, runValidators: true }
   ).select('-password');
 
@@ -460,7 +470,7 @@ export const updateUserBio = asyncHandler(async (req, res) => {
     return sendError(res, 'User not found', 404);
   }
 
-  sendSuccess(res, updatedUser, 'Bio updated successfully', 200);
+  sendSuccess(res, updatedUser, 'Profile updated successfully', 200);
 });
 
 // controllers/userController.js (içinde)
@@ -1002,9 +1012,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   if (!email) return sendError(res, 'Email is required', 400);
 
   const user = await User.findOne({ email });
-  if (!user) return sendError(res, 'Bu email ile kayıtlı bir hesap bulunamadı', 404);
+  if (!user) return sendError(res, 'No account found with this email', 404);
   if (user.googleId && !user.password) {
-    return sendError(res, 'Bu hesap Google ile oluşturuldu. Şifre sıfırlama gerekmiyor.', 400);
+    return sendError(res, 'This account was created with Google. Password reset is not required.', 400);
   }
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -1013,7 +1023,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   await sendPasswordResetEmail(email, code);
-  sendSuccess(res, null, 'Şifre sıfırlama kodu emailine gönderildi');
+  sendSuccess(res, null, 'Password reset code sent to your email');
 });
 
 // @desc    Reset password with code
@@ -1046,7 +1056,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  sendSuccess(res, null, 'Şifren başarıyla sıfırlandı');
+  sendSuccess(res, null, 'Password successfully reset');
 });
 
 // @desc    Google OAuth callback - generate JWT and redirect to frontend
