@@ -16,6 +16,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { validateEmail } from "../middleware/validation.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/emailService.js";
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -52,17 +53,19 @@ export const registerUser = asyncHandler(async (req, res) => {
     password: hashedPassword,
   });
 
-  // Generate token
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
+  // Send email verification code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  user.emailVerificationCode = code;
+  user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await user.save();
 
-  sendSuccess(res, {
-    _id: user._id,
-    username: user.username,
-    email: user.email,
-    token,
-  }, 'User registered successfully', 201);
+  try {
+    await sendVerificationEmail(email, code);
+  } catch (emailErr) {
+    console.error('Email send failed:', emailErr.message);
+  }
+
+  sendSuccess(res, { email: user.email }, 'Registration successful. Please verify your email.', 201);
 });
 
 // @desc    User login and return token
@@ -82,8 +85,22 @@ export const loginUser = asyncHandler(async (req, res) => {
   // Find user and verify password
   const user = await User.findOne({ email });
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  if (!user) {
     return sendError(res, 'Invalid email or password', 401);
+  }
+
+  // Google-only account
+  if (user.googleId && !user.password) {
+    return sendError(res, 'Bu hesap Google ile oluşturuldu. Lütfen Google ile giriş yap.', 400);
+  }
+
+  if (!(await bcrypt.compare(password, user.password))) {
+    return sendError(res, 'Invalid email or password', 401);
+  }
+
+  // Block unverified accounts (only if isEmailVerified is explicitly false, not undefined)
+  if (user.isEmailVerified === false) {
+    return sendError(res, 'EMAIL_NOT_VERIFIED', 403);
   }
 
   // Generate token
@@ -923,4 +940,128 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
     .sort((a, b) => b.mutualCount - a.mutualCount);
 
   sendSuccess(res, result, 'Suggestions fetched');
+});
+// @desc    Resend / send email verification code
+// @route   POST /api/users/send-verification
+export const sendEmailVerificationCode = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) return sendError(res, 'Email is required', 400);
+
+  const user = await User.findOne({ email });
+  if (!user) return sendError(res, 'User not found', 404);
+  if (user.isEmailVerified) return sendError(res, 'Email already verified', 400);
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  user.emailVerificationCode = code;
+  user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await user.save();
+
+  await sendVerificationEmail(email, code);
+  sendSuccess(res, null, 'Verification code sent');
+});
+
+// @desc    Verify email with code
+// @route   POST /api/users/verify-email
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return sendError(res, 'Email and code are required', 400);
+
+  const user = await User.findOne({ email });
+  if (!user) return sendError(res, 'User not found', 404);
+  if (user.isEmailVerified) return sendError(res, 'Email already verified', 400);
+
+  if (!user.emailVerificationCode || !user.emailVerificationExpires) {
+    return sendError(res, 'No verification code found. Please request a new one.', 400);
+  }
+  if (user.emailVerificationExpires < Date.now()) {
+    return sendError(res, 'Verification code expired. Please request a new one.', 400);
+  }
+  if (user.emailVerificationCode !== code.trim()) {
+    return sendError(res, 'Invalid verification code', 400);
+  }
+
+  user.isEmailVerified = true;
+  user.emailVerificationCode = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save();
+
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  sendSuccess(res, {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    profile_pic_url: user.profile_pic_url,
+    token,
+  }, 'Email verified successfully');
+});
+
+// @desc    Send password reset code
+// @route   POST /api/users/forgot-password
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) return sendError(res, 'Email is required', 400);
+
+  const user = await User.findOne({ email });
+  if (!user) return sendError(res, 'Bu email ile kayıtlı bir hesap bulunamadı', 404);
+  if (user.googleId && !user.password) {
+    return sendError(res, 'Bu hesap Google ile oluşturuldu. Şifre sıfırlama gerekmiyor.', 400);
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  user.passwordResetCode = code;
+  user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await user.save();
+
+  await sendPasswordResetEmail(email, code);
+  sendSuccess(res, null, 'Şifre sıfırlama kodu emailine gönderildi');
+});
+
+// @desc    Reset password with code
+// @route   POST /api/users/reset-password
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword) {
+    return sendError(res, 'Email, code, and newPassword are required', 400);
+  }
+  if (newPassword.length < 6) {
+    return sendError(res, 'Password must be at least 6 characters', 400);
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) return sendError(res, 'User not found', 404);
+
+  if (!user.passwordResetCode || !user.passwordResetExpires) {
+    return sendError(res, 'No reset code found. Please request a new one.', 400);
+  }
+  if (user.passwordResetExpires < Date.now()) {
+    return sendError(res, 'Reset code expired. Please request a new one.', 400);
+  }
+  if (user.passwordResetCode !== code.trim()) {
+    return sendError(res, 'Invalid reset code', 400);
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+  user.passwordResetCode = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  sendSuccess(res, null, 'Şifren başarıyla sıfırlandı');
+});
+
+// @desc    Google OAuth callback - generate JWT and redirect to frontend
+export const googleAuthCallback = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+  const userData = encodeURIComponent(JSON.stringify({
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    profile_pic_url: user.profile_pic_url || '',
+    token,
+  }));
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  res.redirect(`${frontendUrl}/oauth-success?data=${userData}`);
 });

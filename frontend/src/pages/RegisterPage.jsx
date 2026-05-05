@@ -1,7 +1,9 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import API from "../api/axios";
 import toast from "react-hot-toast";
+
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:5000";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -9,32 +11,35 @@ export default function RegisterPage() {
     email: "",
     password: "",
   });
-
-  const { register } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      await register(formData.username, formData.email, formData.password);
-      toast.success("Account created successfully! 🎉", {
+      await API.post("/users/register", formData);
+      toast.success("Hesap oluşturuldu! Email doğrulama kodu gönderildi 📧", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
+        duration: 4000,
       });
-      navigate("/home");
+      navigate("/verify-email", { state: { email: formData.email } });
     } catch (err) {
-      toast.error("Registration failed. Please try again.", {
-        style: { background: "#1a1a1a", color: "#fff" },
-      });
+      const msg = err.response?.data?.message || "Kayıt başarısız. Tekrar dene.";
+      toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
       console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleGoogleRegister = () => {
+    window.location.href = `${BACKEND_URL}/api/users/auth/google`;
   };
 
   return (
@@ -45,16 +50,33 @@ export default function RegisterPage() {
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <h1 className="text-3xl font-bold text-primary">Cinephix 🎬</h1>
-          <h2 className="text-lg text-base-content mt-2">Create Account</h2>
-          <p className="text-sm text-base-content/70 mb-6">
-            Join the cinephile community!
+          <h2 className="text-lg text-base-content mt-2">Hesap Oluştur</h2>
+          <p className="text-sm text-base-content/70 mb-4">
+            Sinefil topluluğuna katıl!
           </p>
+
+          {/* Google OAuth Button */}
+          <button
+            onClick={handleGoogleRegister}
+            className="btn btn-outline w-full gap-2 mb-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            Google ile Kayıt Ol
+          </button>
+
+          <div className="divider text-xs text-base-content/40">veya email ile</div>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
             <input
               type="text"
               name="username"
-              placeholder="Username"
+              placeholder="Kullanıcı adı"
               value={formData.username}
               onChange={handleChange}
               required
@@ -72,25 +94,29 @@ export default function RegisterPage() {
             <input
               type="password"
               name="password"
-              placeholder="Password"
+              placeholder="Şifre (en az 6 karakter)"
               value={formData.password}
               onChange={handleChange}
               required
               className="input input-bordered w-full"
             />
-            <button type="submit" className="btn btn-primary w-full">
-              Sign Up
+            <button
+              type="submit"
+              className={`btn btn-primary w-full ${loading ? "loading" : ""}`}
+              disabled={loading}
+            >
+              {loading ? "Kayıt olunuyor..." : "Kayıt Ol"}
             </button>
           </form>
 
-          <p className="mt-6 text-sm">
-            Already have an account?{" "}
+          <p className="mt-4 text-sm">
+            Zaten hesabın var mı?{" "}
             <Link to="/login" className="text-secondary font-semibold">
-              Login
+              Giriş yap
             </Link>
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>
+  );
 }

@@ -1,11 +1,17 @@
 // routes/user.js
 
 import express from "express";
+import passport from "passport";
 // Import new functions from controllers
 import {
   registerUser,
   loginUser,
   getUsers,
+  sendEmailVerificationCode,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  googleAuthCallback,
   // --- NEW ADDED FUNCTIONS ---
   followUser,
   unfollowUser,
@@ -47,6 +53,25 @@ const upload = multer({
 router.post("/register", authRateLimiter, validateRequest(validationSchemas.registerUser), registerUser);
 router.post("/login", authRateLimiter, validateRequest(validationSchemas.loginUser), loginUser);
 router.get("/", getUsers);
+
+// --- Email Verification ---
+router.post("/send-verification", authRateLimiter, sendEmailVerificationCode);
+router.post("/verify-email", authRateLimiter, verifyEmail);
+
+// --- Password Reset ---
+router.post("/forgot-password", authRateLimiter, forgotPassword);
+router.post("/reset-password", authRateLimiter, resetPassword);
+
+// --- Google OAuth ---
+router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:5173"}/login?error=oauth_failed`,
+  }),
+  googleAuthCallback
+);
 
 // Watchlist operations (moved to controller)
 router.post("/me/watchlist", authMiddleware, validateRequest(validationSchemas.addToWatchlist), addToWatchlist);

@@ -25,10 +25,22 @@ const userSchema = new Schema({
     match: [/.+\@.+\..+/, 'Lütfen geçerli bir e-posta adresi girin.'] // E-posta format kontrolü
   },
   password: {
-    type: String,
-    required: [true, 'Parola zorunludur.'],
-    minlength: 6 // Minimum parola uzunluğu
-  },
+    type: String,
+    minlength: 6,
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationCode: String,
+  emailVerificationExpires: Date,
+  passwordResetCode: String,
+  passwordResetExpires: Date,
 // --- YENİ ALANI BURAYA EKLE ---
   bio: {
     type: String,

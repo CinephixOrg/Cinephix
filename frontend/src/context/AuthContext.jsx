@@ -52,19 +52,11 @@ export function AuthProvider({ children }) {
 
   const register = async (username, email, password) => {
     try {
-      // API yolunu kendi backend'imize göre kullanıyoruz: /users/register
-      const res = await API.post("/users/register", { username, email, password });
-
-      // Response interceptor otomatik olarak { success, message, data } yapısını açıyor
-      // res.data artık doğrudan user objesini içeriyor
-      const userData = res.data;
-      
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-
+      await API.post("/users/register", { username, email, password });
+      // Backend no longer returns a token on register — user must verify email first
     } catch (error) {
       console.error("Registration Error:", error.response?.data);
-      throw error; // Hatayı component'in yakalayabilmesi için fırlat
+      throw error;
     }
   };
 
