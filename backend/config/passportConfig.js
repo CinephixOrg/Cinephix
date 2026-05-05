@@ -42,6 +42,7 @@ export const configurePassport = () => {
                 profile_pic_url: profile.photos?.[0]?.value || '',
                 isEmailVerified: true,
               });
+              user.isNewOAuthUser = true;
             }
           }
 

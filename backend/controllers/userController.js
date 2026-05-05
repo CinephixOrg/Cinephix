@@ -1070,6 +1070,7 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     email: user.email,
     profile_pic_url: user.profile_pic_url || '',
     token,
+    isNewOAuthUser: user.isNewOAuthUser || false
   }));
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
