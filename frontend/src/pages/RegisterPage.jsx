@@ -23,14 +23,14 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await API.post("/users/register", formData);
-      toast.success("Hesap oluşturuldu! Email doğrulama kodu gönderildi 📧", {
+      toast.success("Account created! Email verification code sent 📧", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
         duration: 4000,
       });
       navigate("/verify-email", { state: { email: formData.email } });
     } catch (err) {
-      const msg = err.response?.data?.message || "Kayıt başarısız. Tekrar dene.";
+      const msg = err.response?.data?.message || "Registration failed. Please try again.";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
       console.error(err);
     } finally {
@@ -50,9 +50,9 @@ export default function RegisterPage() {
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <h1 className="text-3xl font-bold text-primary">Cinephix 🎬</h1>
-          <h2 className="text-lg text-base-content mt-2">Hesap Oluştur</h2>
+          <h2 className="text-lg text-base-content mt-2">Create Account</h2>
           <p className="text-sm text-base-content/70 mb-4">
-            Sinefil topluluğuna katıl!
+            Join the cinephile community!
           </p>
 
           {/* Google OAuth Button */}
@@ -67,16 +67,16 @@ export default function RegisterPage() {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               <path fill="none" d="M0 0h48v48H0z"/>
             </svg>
-            Google ile Kayıt Ol
+            Register with Google
           </button>
 
-          <div className="divider text-xs text-base-content/40">veya email ile</div>
+          <div className="divider text-xs text-base-content/40">or with email</div>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
             <input
               type="text"
               name="username"
-              placeholder="Kullanıcı adı"
+              placeholder="Username"
               value={formData.username}
               onChange={handleChange}
               required
@@ -94,7 +94,7 @@ export default function RegisterPage() {
             <input
               type="password"
               name="password"
-              placeholder="Şifre (en az 6 karakter)"
+              placeholder="Password (at least 6 characters)"
               value={formData.password}
               onChange={handleChange}
               required
@@ -105,14 +105,14 @@ export default function RegisterPage() {
               className={`btn btn-primary w-full ${loading ? "loading" : ""}`}
               disabled={loading}
             >
-              {loading ? "Kayıt olunuyor..." : "Kayıt Ol"}
+              {loading ? "Registering..." : "Register"}
             </button>
           </form>
 
           <p className="mt-4 text-sm">
-            Zaten hesabın var mı?{" "}
+            Already have an account?{" "}
             <Link to="/login" className="text-secondary font-semibold">
-              Giriş yap
+              Login
             </Link>
           </p>
         </div>
