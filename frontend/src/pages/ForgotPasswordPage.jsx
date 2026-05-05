@@ -18,14 +18,18 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       await API.post("/users/forgot-password", { email });
-      toast.success("Kod emailine gönderildi!", {
+      toast.success("Code sent to your email!", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
       });
       setStep(2);
     } catch (err) {
-      const msg = err.response?.data?.message || "Bir hata oluştu";
-      toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
+      if (err.response?.status === 404) {
+        toast.error("No account found with this email", { style: { background: "#1a1a1a", color: "#fff" } });
+      } else {
+        const msg = err.response?.data?.message || "An error occurred";
+        toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
+      }
     } finally {
       setLoading(false);
     }
@@ -58,27 +62,27 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     const code = digits.join("");
     if (code.length < 6) {
-      toast.error("Lütfen 6 haneli kodu gir");
+      toast.error("Please enter the 6-digit code");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Şifreler eşleşmiyor", { style: { background: "#1a1a1a", color: "#fff" } });
+      toast.error("Passwords do not match", { style: { background: "#1a1a1a", color: "#fff" } });
       return;
     }
     if (newPassword.length < 6) {
-      toast.error("Şifre en az 6 karakter olmalı", { style: { background: "#1a1a1a", color: "#fff" } });
+      toast.error("Password must be at least 6 characters", { style: { background: "#1a1a1a", color: "#fff" } });
       return;
     }
     setLoading(true);
     try {
       await API.post("/users/reset-password", { email, code, newPassword });
-      toast.success("Şifren başarıyla sıfırlandı!", {
+      toast.success("Password has been successfully reset!", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
       });
       navigate("/login");
     } catch (err) {
-      const msg = err.response?.data?.message || "Bir hata oluştu";
+      const msg = err.response?.data?.message || "An error occurred";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
     } finally {
       setLoading(false);
@@ -91,18 +95,18 @@ export default function ForgotPasswordPage() {
         <div className="card-body items-center text-center">
           <div className="text-5xl mb-2">{step === 1 ? "🔐" : "🔑"}</div>
           <h1 className="text-2xl font-bold text-primary">
-            {step === 1 ? "Şifremi Unuttum" : "Yeni Şifre Belirle"}
+            {step === 1 ? "Forgot Password" : "Set New Password"}
           </h1>
 
           {step === 1 ? (
             <>
               <p className="text-sm text-base-content/70 mt-1 mb-4">
-                Kayıtlı email adresini gir, sana 6 haneli bir kod gönderelim.
+                Enter your registered email address, and we'll send you a 6-digit code.
               </p>
               <form onSubmit={handleSendCode} className="w-full flex flex-col gap-4">
                 <input
                   type="email"
-                  placeholder="Email adresi"
+                  placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -113,15 +117,18 @@ export default function ForgotPasswordPage() {
                   className={`btn btn-primary w-full ${loading ? "loading" : ""}`}
                   disabled={loading}
                 >
-                  {loading ? "Gönderiliyor..." : "Kod Gönder"}
+                  {loading ? "Sending..." : "Send Code"}
                 </button>
               </form>
             </>
           ) : (
             <>
               <p className="text-sm text-base-content/70 mt-1 mb-4">
-                <span className="font-semibold text-secondary">{email}</span> adresine
-                gönderilen kodu ve yeni şifreni gir.
+                Enter the code sent to
+                <br />
+                <span className="font-semibold text-secondary">{email}</span>
+                <br />
+                and your new password.
               </p>
               <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4">
                 <div className="flex justify-center gap-2" onPaste={handleDigitPaste}>
@@ -141,7 +148,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 <input
                   type="password"
-                  placeholder="Yeni şifre (en az 6 karakter)"
+                  placeholder="New password (at least 6 chars)"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
@@ -149,7 +156,7 @@ export default function ForgotPasswordPage() {
                 />
                 <input
                   type="password"
-                  placeholder="Yeni şifre (tekrar)"
+                  placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -160,14 +167,14 @@ export default function ForgotPasswordPage() {
                   className={`btn btn-primary w-full ${loading ? "loading" : ""}`}
                   disabled={loading}
                 >
-                  {loading ? "Kaydediliyor..." : "Şifremi Sıfırla"}
+                  {loading ? "Saving..." : "Reset Password"}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setStep(1); setDigits(["","","","","",""]); }}
                   className="btn btn-ghost btn-sm"
                 >
-                  Email adresini değiştir
+                  Change email address
                 </button>
               </form>
             </>
@@ -175,7 +182,7 @@ export default function ForgotPasswordPage() {
 
           <p className="mt-4 text-sm">
             <Link to="/login" className="text-secondary font-semibold">
-              ← Girişe dön
+              &larr; Back to login
             </Link>
           </p>
         </div>

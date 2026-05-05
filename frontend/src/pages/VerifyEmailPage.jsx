@@ -44,7 +44,7 @@ export default function VerifyEmailPage() {
     e.preventDefault();
     const code = digits.join("");
     if (code.length < 6) {
-      toast.error("Lütfen 6 haneli kodu gir");
+      toast.error("Please enter the 6-digit code");
       return;
     }
     setLoading(true);
@@ -53,13 +53,14 @@ export default function VerifyEmailPage() {
       const userData = res.data;
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
-      toast.success("Email doğrulandı! Hoş geldin 🎬", {
+      toast.success("Email verified! Welcome 🎬", {
         style: { background: "#1a1a1a", color: "#fff" },
         iconTheme: { primary: "#22c55e", secondary: "#1a1a1a" },
       });
-      navigate("/home");
+      // Redirect to welcome/setup page where user can upload profile pic
+      navigate("/welcome", { state: { isNewUser: true } });
     } catch (err) {
-      const msg = err.response?.data?.message || "Geçersiz veya süresi dolmuş kod";
+      const msg = err.response?.data?.message || "Invalid or expired code";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
     } finally {
       setLoading(false);
@@ -71,13 +72,13 @@ export default function VerifyEmailPage() {
     setResending(true);
     try {
       await API.post("/users/send-verification", { email });
-      toast.success("Yeni kod gönderildi!", {
+      toast.success("New code sent!", {
         style: { background: "#1a1a1a", color: "#fff" },
       });
       setDigits(["", "", "", "", "", ""]);
       inputsRef.current[0]?.focus();
     } catch (err) {
-      const msg = err.response?.data?.message || "Kod gönderilemedi";
+      const msg = err.response?.data?.message || "Failed to send code";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
     } finally {
       setResending(false);
@@ -88,8 +89,8 @@ export default function VerifyEmailPage() {
     return (
       <div data-theme="forest" className="flex items-center justify-center min-h-screen bg-base-200">
         <div className="text-center">
-          <p className="text-base-content/70 mb-4">Email adresi bulunamadı.</p>
-          <Link to="/register" className="btn btn-primary">Kayıt ol</Link>
+          <p className="text-base-content/70 mb-4">Email address not found.</p>
+          <Link to="/register" className="btn btn-primary">Register</Link>
         </div>
       </div>
     );
@@ -100,10 +101,11 @@ export default function VerifyEmailPage() {
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <div className="text-5xl mb-2">📧</div>
-          <h1 className="text-2xl font-bold text-primary">Email Doğrulama</h1>
+          <h1 className="text-2xl font-bold text-primary">Email Verification</h1>
           <p className="text-sm text-base-content/70 mt-1">
-            <span className="font-semibold text-secondary">{email}</span> adresine
-            gönderilen 6 haneli kodu gir.
+            Enter the 6-digit code sent to
+            <br />
+            <span className="font-semibold text-secondary">{email}</span>
           </p>
 
           <form onSubmit={handleSubmit} className="w-full mt-6">
@@ -127,7 +129,7 @@ export default function VerifyEmailPage() {
               className={`btn btn-primary w-full ${loading ? "loading" : ""}`}
               disabled={loading}
             >
-              {loading ? "Doğrulanıyor..." : "Doğrula"}
+              {loading ? "Verifying..." : "Verify"}
             </button>
           </form>
 
@@ -137,10 +139,10 @@ export default function VerifyEmailPage() {
               disabled={resending}
               className="btn btn-ghost btn-sm text-secondary"
             >
-              {resending ? "Gönderiliyor..." : "Kodu tekrar gönder"}
+              {resending ? "Sending..." : "Resend code"}
             </button>
             <Link to="/login" className="text-xs text-base-content/50 hover:text-base-content">
-              Zaten hesabın var mı? Giriş yap
+              Already have an account? Login
             </Link>
           </div>
         </div>
