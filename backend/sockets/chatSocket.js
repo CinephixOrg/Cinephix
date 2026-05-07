@@ -139,6 +139,43 @@ export const setupChat = (io) => {
             io.to(`user:${userId}`).emit("conversation-updated", payload);
           }
         }
+
+        // For Groups: update group preview + increment unread for all members except sender
+        if (roomType === "group") {
+          const senderId = socket.user._id.toString();
+          const group = await Group.findById(roomId).select("members");
+          if (group) {
+            // Get all member IDs except the sender
+            const memberIds = group.members.map((m) => m.user.toString()).filter((id) => id !== senderId);
+
+            // Increment unread count for all members except sender
+            const incrObj = {};
+            memberIds.forEach((memberId) => {
+              incrObj[`unreadCounts.${memberId}`] = 1;
+            });
+
+            await Group.findByIdAndUpdate(roomId, {
+              lastMessage: text.trim(),
+              lastMessageAt: new Date(),
+              lastMessageSenderId: senderId,
+              ...(Object.keys(incrObj).length > 0 && { $inc: incrObj }),
+            });
+
+            // Emit group-updated event to all members' inboxes
+            const payload = {
+              roomType: "group",
+              groupId: roomId,
+              lastMessage: text.trim(),
+              lastMessageAt: new Date(),
+              senderId: senderId,
+            };
+
+            memberIds.forEach((memberId) => {
+              io.to(`user:${memberId}`).emit("conversation-updated", payload);
+            });
+            io.to(`user:${senderId}`).emit("conversation-updated", payload);
+          }
+        }
       } catch {
         socket.emit("error", { message: "Failed to send message" });
       }

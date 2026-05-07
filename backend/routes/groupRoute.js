@@ -8,6 +8,7 @@ import {
   getGroupMembers,
   getGroupMessages,
   sendGroupMessage,
+  markGroupAsRead,
 } from "../controllers/groupController.js";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.get("/:slug/members", getGroupMembers);
 
 router.post("/:slug/join", authMiddleware, joinGroup);
 router.post("/:slug/leave", authMiddleware, leaveGroup);
+router.post("/:groupId/markAsRead", authMiddleware, markGroupAsRead);
 router.get("/:slug/messages", authMiddleware, getGroupMessages);
 router.post("/:slug/messages", authMiddleware, sendGroupMessage);
 

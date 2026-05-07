@@ -5,27 +5,50 @@ import { roomKey } from "../sockets/chatSocket.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
+import Group from "../models/Group.js";
 
 // GET /api/conversations
-// Returns all conversations for the current user, sorted by most recent message.
+// Returns all conversations (DMs) and groups for the current user, sorted by most recent message.
 export const getConversations = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
+  // Get all 1-on-1 DM conversations
   const conversations = await Conversation.find({ participants: userId })
     .populate("participants", "username profile_pic_url")
     .sort({ lastMessageAt: -1 })
     .lean();
 
   // Attach unread count and the "other" participant for each conversation
-  const result = conversations.map((conv) => ({
+  const dmResults = conversations.map((conv) => ({
     ...conv,
+    type: "dm",
     otherUser: conv.participants.find(
       (p) => p._id.toString() !== userId.toString()
     ),
     unreadCount: conv.unreadCounts?.[userId.toString()] ?? 0,
   }));
 
-  sendSuccess(res, result, "Conversations fetched");
+  // Get all groups the user is a member of
+  const groups = await Group.find({
+    "members.user": userId,
+  })
+    .populate("lastMessageSenderId", "username")
+    .sort({ lastMessageAt: -1 })
+    .lean();
+
+  const groupResults = groups.map((group) => ({
+    ...group,
+    type: "group",
+    unreadCount: group.unreadCounts?.[userId.toString()] ?? 0,
+  }));
+
+  // Merge and sort by most recent message (both DMs and groups)
+  const allChats = [...dmResults, ...groupResults].sort(
+    (a, b) =>
+      new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)
+  );
+
+  sendSuccess(res, allChats, "Conversations and groups fetched");
 });
 
 // POST /api/conversations
@@ -74,27 +97,58 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
 // GET /api/conversations/:id/messages
 // Returns last 50 messages for the conversation (must be a participant).
 export const getMessages = asyncHandler(async (req, res) => {
-  const conversation = await Conversation.findById(req.params.id)
+  const { id } = req.params;
+  
+  // Try to find as a DM conversation first
+  let conversation = await Conversation.findById(id)
     .select("participants")
     .lean();
 
-  if (!conversation) return sendError(res, "Conversation not found", 404);
+  if (conversation) {
+    // It's a DM
+    const isParticipant = conversation.participants.some(
+      (p) => p.toString() === req.user._id.toString()
+    );
+    if (!isParticipant) return sendError(res, "Not a participant", 403);
 
-  const isParticipant = conversation.participants.some(
-    (p) => p.toString() === req.user._id.toString()
-  );
-  if (!isParticipant) return sendError(res, "Not a participant", 403);
+    const messages = await Message.find({
+      roomType: "dm",
+      roomId: conversation._id,
+    })
+      .populate("sender", "username profile_pic_url")
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
 
-  const messages = await Message.find({
-    roomType: "dm",
-    roomId: conversation._id,
-  })
-    .populate("sender", "username profile_pic_url")
-    .sort({ createdAt: -1 })
-    .limit(50)
+    return sendSuccess(res, messages.reverse(), "Messages fetched");
+  }
+
+  // Try to find as a group
+  let group = await Group.findById(id)
+    .select("_id members")
     .lean();
 
-  sendSuccess(res, messages.reverse(), "Messages fetched");
+  if (group) {
+    // It's a group
+    const isMember = group.members.some(
+      (m) => m.user.toString() === req.user._id.toString()
+    );
+    if (!isMember) return sendError(res, "Not a member of this group", 403);
+
+    const messages = await Message.find({
+      roomType: "group",
+      roomId: group._id,
+    })
+      .populate("sender", "username profile_pic_url")
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    return sendSuccess(res, messages.reverse(), "Messages fetched");
+  }
+
+  // Neither found
+  sendError(res, "Conversation or group not found", 404);
 });
 
 // POST /api/conversations/:id/read
