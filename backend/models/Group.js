@@ -30,6 +30,14 @@ const groupSchema = new Schema(
     members: [memberSchema],
     memberCount: { type: Number, default: 0 },
     isPreset: { type: Boolean, default: true },
+    
+    // Chat-related fields
+    lastMessage: { type: String, default: "" },
+    lastMessageAt: { type: Date, default: null },
+    lastMessageSenderId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    
+    // Per-member unread counts: { "<userId>": <count> }
+    unreadCounts: { type: Map, of: Number, default: {} },
   },
   { timestamps: true }
 );
@@ -37,6 +45,8 @@ const groupSchema = new Schema(
 groupSchema.index({ slug: 1 });
 groupSchema.index({ category: 1 });
 groupSchema.index({ "members.user": 1 });
+// Fast lookups for user's groups sorted by recent activity
+groupSchema.index({ "members.user": 1, lastMessageAt: -1 });
 
 const Group = mongoose.model("Group", groupSchema);
 export default Group;

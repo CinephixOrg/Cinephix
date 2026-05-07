@@ -115,6 +115,24 @@ export const getGroupMessages = asyncHandler(async (req, res) => {
   sendSuccess(res, messages.reverse(), "Messages fetched");
 });
 
+// POST /api/groups/:groupId/markAsRead
+export const markGroupAsRead = asyncHandler(async (req, res) => {
+  const group = await Group.findById(req.params.groupId);
+  if (!group) return sendError(res, "Group not found", 404);
+
+  const isMember = group.members.some(
+    (m) => m.user.toString() === req.user._id.toString()
+  );
+  if (!isMember) return sendError(res, "Not a member of this group", 403);
+
+  // Reset unread count for this user
+  const userId = req.user._id.toString();
+  group.unreadCounts.set(userId, 0);
+  await group.save();
+
+  sendSuccess(res, null, "Group marked as read");
+});
+
 // POST /api/groups/:slug/messages
 export const sendGroupMessage = asyncHandler(async (req, res) => {
   const { text } = req.body;

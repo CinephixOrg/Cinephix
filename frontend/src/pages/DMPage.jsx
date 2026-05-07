@@ -24,42 +24,82 @@ function Avatar({ user: u, size = 'md' }) {
   );
 }
 
-// ── Conversation list item ────────────────────────────────────────────────────
+// ── Conversation list item (DM or Group) ─────────────────────────────────────
 function ConversationItem({ conv, isActive, onClick }) {
-  const other = conv.otherUser;
   const unread = conv.unreadCount ?? 0;
   const preview = conv.lastMessage || 'No messages yet';
   const time = conv.lastMessageAt
     ? formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })
     : '';
 
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
-        ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
-    >
-      <div className="relative">
-        <Avatar user={other} />
-        {unread > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-primary-content text-[10px] flex items-center justify-center font-bold leading-none">
-            {unread > 9 ? '9+' : unread}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline gap-1">
-          <span className={`text-sm font-semibold truncate ${unread > 0 ? 'text-base-content' : 'text-base-content/80'}`}>
-            {other?.username}
-          </span>
-          <span className="text-xs text-base-content/40 flex-shrink-0">{time}</span>
+  // For DMs
+  if (conv.type === 'dm') {
+    const other = conv.otherUser;
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
+          ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
+      >
+        <div className="relative">
+          <Avatar user={other} />
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-primary-content text-[10px] flex items-center justify-center font-bold leading-none">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
         </div>
-        <p className={`text-xs truncate mt-0.5 ${unread > 0 ? 'text-base-content/80 font-medium' : 'text-base-content/50'}`}>
-          {preview}
-        </p>
-      </div>
-    </button>
-  );
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-baseline gap-1">
+            <span className={`text-sm font-semibold truncate ${unread > 0 ? 'text-base-content' : 'text-base-content/80'}`}>
+              {other?.username}
+            </span>
+            <span className="text-xs text-base-content/40 flex-shrink-0">{time}</span>
+          </div>
+          <p className={`text-xs truncate mt-0.5 ${unread > 0 ? 'text-base-content/80 font-medium' : 'text-base-content/50'}`}>
+            {preview}
+          </p>
+        </div>
+      </button>
+    );
+  }
+
+  // For Groups
+  if (conv.type === 'group') {
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
+          ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
+      >
+        <div className="relative">
+          {conv.coverImage ? (
+            <img src={conv.coverImage} alt={conv.name} className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-secondary-content font-bold flex-shrink-0">
+              {conv.name?.[0]?.toUpperCase()}
+            </div>
+          )}
+          {unread > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-primary-content text-[10px] flex items-center justify-center font-bold leading-none">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-baseline gap-1">
+            <span className={`text-sm font-semibold truncate ${unread > 0 ? 'text-base-content' : 'text-base-content/80'}`}>
+              {conv.name}
+            </span>
+            <span className="text-xs text-base-content/40 flex-shrink-0">{time}</span>
+          </div>
+          <p className={`text-xs truncate mt-0.5 ${unread > 0 ? 'text-base-content/80 font-medium' : 'text-base-content/50'}`}>
+            {preview}
+          </p>
+        </div>
+      </button>
+    );
+  }
 }
 
 // ── Following user row (no conversation yet) ──────────────────────────────────
@@ -73,6 +113,49 @@ function FollowingItem({ user: u, onClick }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate text-base-content/80">{u.username}</p>
         <p className="text-xs text-base-content/40 truncate">{u.bio || 'Start a conversation'}</p>
+      </div>
+    </button>
+  );
+}
+
+// ── Group item ────────────────────────────────────────────────────────────────
+function GroupItem({ group, isActive, onClick }) {
+  const unread = group.unreadCount ?? 0;
+  const preview = group.lastMessage || 'No messages yet';
+  const time = group.lastMessageAt
+    ? formatDistanceToNow(new Date(group.lastMessageAt), { addSuffix: true })
+    : '';
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
+        ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
+    >
+      <div className="relative">
+        {group.coverImage ? (
+          <img src={group.coverImage} alt={group.name} className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center text-secondary-content font-bold flex-shrink-0">
+            {group.name?.[0]?.toUpperCase()}
+          </div>
+        )}
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full text-primary-content text-[10px] flex items-center justify-center font-bold leading-none">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-baseline gap-1">
+          <span className={`text-sm font-semibold truncate ${unread > 0 ? 'text-base-content' : 'text-base-content/80'}`}>
+            {group.name}
+          </span>
+          <span className="text-xs text-base-content/40 flex-shrink-0">{time}</span>
+        </div>
+        <p className={`text-xs truncate mt-0.5 ${unread > 0 ? 'text-base-content/80 font-medium' : 'text-base-content/50'}`}>
+          {preview}
+        </p>
       </div>
     </button>
   );
@@ -153,14 +236,32 @@ function NewDMModal({ onSelect, onClose }) {
 
 // ── Chat panel header ─────────────────────────────────────────────────────────
 function ChatHeader({ conversation, onBack }) {
+  const isGroup = conversation?.type === 'group';
   const other = conversation?.otherUser;
+  const group = conversation;
+  
   return (
     <div className="flex items-center gap-3 px-5 py-4 border-b border-base-200 bg-base-100">
       <button className="btn btn-ghost btn-sm btn-circle md:hidden" onClick={onBack}>
         ←
       </button>
-      <Avatar user={other} size="sm" />
-      <p className="font-semibold text-sm">{other?.username}</p>
+      {isGroup ? (
+        <>
+          {group?.coverImage ? (
+            <img src={group.coverImage} alt={group.name} className="w-10 h-10 rounded-lg object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">
+              {group?.name?.[0]?.toUpperCase()}
+            </div>
+          )}
+          <p className="font-semibold text-sm">{group?.name}</p>
+        </>
+      ) : (
+        <>
+          <Avatar user={other} size="sm" />
+          <p className="font-semibold text-sm">{other?.username}</p>
+        </>
+      )}
     </div>
   );
 }
@@ -181,25 +282,43 @@ export default function DMPage() {
   const [showNewDM, setShowNewDM] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
-  // Real-time inbox updates
+  // Real-time inbox updates (DMs and Groups)
   useInbox(user?.token, (payload) => {
-    setConversations((prev) =>
-      prev.map((c) =>
-        c._id === payload.conversationId
-          ? {
-              ...c,
-              lastMessage: payload.lastMessage,
-              lastMessageAt: payload.lastMessageAt,
-              unreadCount:
-                activeConvRef.current?._id === payload.conversationId
-                  ? c.unreadCount
-                  : payload.senderId !== user?._id
-                  ? (c.unreadCount ?? 0) + 1
-                  : c.unreadCount,
-            }
-          : c
-      ).sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0))
-    );
+    setConversations((prev) => {
+      const updated = prev.map((c) => {
+        // Handle DM conversation updates
+        if (payload.conversationId && c._id === payload.conversationId) {
+          return {
+            ...c,
+            lastMessage: payload.lastMessage,
+            lastMessageAt: payload.lastMessageAt,
+            unreadCount:
+              activeConvRef.current?._id === payload.conversationId
+                ? c.unreadCount
+                : payload.senderId !== user?._id
+                ? (c.unreadCount ?? 0) + 1
+                : c.unreadCount,
+          };
+        }
+        // Handle Group updates
+        if (payload.groupId && c._id === payload.groupId) {
+          return {
+            ...c,
+            lastMessage: payload.lastMessage,
+            lastMessageAt: payload.lastMessageAt,
+            unreadCount:
+              activeConvRef.current?._id === payload.groupId
+                ? c.unreadCount
+                : payload.senderId !== user?._id
+                ? (c.unreadCount ?? 0) + 1
+                : c.unreadCount,
+          };
+        }
+        return c;
+      });
+      // Re-sort by most recent message
+      return updated.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+    });
   });
 
   // Keep TopBar unread badge in sync
@@ -238,13 +357,28 @@ export default function DMPage() {
     setActiveConv(conv);
     activeConvRef.current = conv;
     setMobileShowChat(true);
-    navigate(`/dm/${conv._id}`, { replace: true });
+    
+    // Update URL but stay in DMPage for both DMs and groups
+    const isGroup = conv.type === 'group';
+    const identifier = isGroup ? (conv.slug || conv._id) : conv._id;
+    navigate(`/dm/${identifier}`, { replace: true });
 
     if (conv.unreadCount > 0) {
-      await dmService.markAsRead(conv._id).catch(() => {});
-      setConversations((prev) =>
-        prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c))
-      );
+      try {
+        if (isGroup) {
+          // Call group markAsRead endpoint - use slug or id
+          const endpoint = conv.slug ? `/api/groups/${conv.slug}/markAsRead` : `/api/groups/${conv._id}/markAsRead`;
+          await API.post(endpoint);
+        } else {
+          // Call DM markAsRead endpoint
+          await dmService.markAsRead(conv._id);
+        }
+        setConversations((prev) =>
+          prev.map((c) => (c._id === conv._id ? { ...c, unreadCount: 0 } : c))
+        );
+      } catch (err) {
+        console.error('Error marking as read:', err);
+      }
     }
 
     const msgs = await dmService.getMessages(conv._id).catch(() => []);
@@ -381,7 +515,7 @@ export default function DMPage() {
               <div className="flex-1 overflow-hidden">
                 <ChatWindow
                   key={activeConv._id}
-                  roomType="dm"
+                  roomType={activeConv?.type === 'group' ? 'group' : 'dm'}
                   roomId={activeConv._id}
                   initialMessages={initialMessages}
                   canChat={true}
