@@ -7,9 +7,10 @@ import Notification from "../models/Notification.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
 
-// Use models registered on the default connection (explicitly set to cleaned_db in server.js)
+// ── helpers ──────────────────────────────────────────────────────
 const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
+
 
 const ITEMS_PER_SOURCE = 60;
 const MAX_LIMIT = 50;
@@ -209,4 +210,82 @@ export const getTopPicks = asyncHandler(async (req, res) => {
   }, []);
 
   sendSuccess(res, result, "Top picks fetched");
+});
+
+// ── GET /api/feed/recommendations ──────────────────────────────────
+// Genre-based recommendations derived from the user's CineGraph.
+// Algorithm:
+//   1. Score each genre: count × avgRating → take top 5
+//   2. Find unwatched content in those genres sorted by vote_average
+//   3. Fall back to globally popular content if CineGraph is empty
+export const getRecommendations = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
+  const contentType = req.query.type || "all"; // "movie" | "series" | "all"
+
+  const user = await User.findById(req.user._id)
+    .select("watchlist toWatchList movieCineGraph seriesCineGraph")
+    .lean();
+
+  // IDs the user has already watched or queued — exclude from results
+  const watchedIds = [
+    ...(user.watchlist || []).map((w) => w.itemId.toString()),
+    ...(user.toWatchList || []).map((w) => w.itemId.toString()),
+  ];
+
+  // Build genre scores: { genreId → score }
+  const genreScore = {};
+  const addGenres = (cineGraph) => {
+    if (!cineGraph) return;
+    const entries = cineGraph instanceof Map ? cineGraph.entries() : Object.entries(cineGraph);
+    for (const [gid, stats] of entries) {
+      const score = (stats.count || 0) * (stats.avgRating || 5);
+      genreScore[gid] = (genreScore[gid] || 0) + score;
+    }
+  };
+  if (contentType !== "series") addGenres(user.movieCineGraph);
+  if (contentType !== "movie") addGenres(user.seriesCineGraph);
+
+  const topGenreIds = Object.entries(genreScore)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([id]) => Number(id));
+
+  const hasGenres = topGenreIds.length > 0;
+
+  const baseQuery = {
+    _id: { $nin: watchedIds },
+    poster_path: { $exists: true, $ne: null, $ne: "" },
+    vote_count: { $gte: 50 },
+    vote_average: { $gte: 5.5 },
+  };
+
+  const genreQuery = hasGenres ? { ...baseQuery, genre_ids: { $in: topGenreIds } } : baseQuery;
+
+  const fetchContent = async (model, query) =>
+    model
+      .find(query)
+      .select("_id title name poster_path genre_ids vote_average release_date first_air_date")
+      .sort({ vote_average: -1, vote_count: -1 })
+      .limit(limit)
+      .lean();
+
+  let movies = [];
+  let series = [];
+
+  if (contentType !== "series") {
+    movies = await fetchContent(getMovie(), genreQuery);
+  }
+  if (contentType !== "movie") {
+    series = await fetchContent(getSeries(), genreQuery);
+  }
+
+  // Interleave movies and series
+  const results = [];
+  const maxLen = Math.max(movies.length, series.length);
+  for (let i = 0; i < maxLen && results.length < limit; i++) {
+    if (movies[i]) results.push({ ...movies[i], contentType: "movie" });
+    if (series[i] && results.length < limit) results.push({ ...series[i], contentType: "series" });
+  }
+
+  sendSuccess(res, { recommendations: results, topGenreIds, hasPersonalization: hasGenres }, "Recommendations fetched");
 });

@@ -28,6 +28,9 @@ export const API_ROUTES = {
     ADD_TO_WATCHLIST: `${API_BASE_URL}/users/me/watchlist`,
     REMOVE_FROM_WATCHLIST: (contentId) => `${API_BASE_URL}/users/me/watchlist/${contentId}`,
     GET_WATCHLIST: `${API_BASE_URL}/users/me/watchlist`,
+    ADD_TO_TO_WATCH_LIST: `${API_BASE_URL}/users/me/to-watch`,
+    REMOVE_FROM_TO_WATCH_LIST: (contentId) => `${API_BASE_URL}/users/me/to-watch/${contentId}`,
+    GET_TO_WATCH_LIST: `${API_BASE_URL}/users/me/to-watch`,
     FOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/follow`,
     UNFOLLOW: (userId) => `${API_BASE_URL}/users/${userId}/unfollow`,
     GET_SUGGESTIONS: `${API_BASE_URL}/users/me/suggestions`,
@@ -67,6 +70,18 @@ export const API_ROUTES = {
     DELETE: (reviewId) => `${API_BASE_URL}/reviews/${reviewId}`,
   },
 
+  // Custom Lists Routes
+  LISTS: {
+    DISCOVER: `${API_BASE_URL}/lists/discover`,
+    GET_MY_LISTS: `${API_BASE_URL}/lists/me`,
+    CREATE: `${API_BASE_URL}/lists`,
+    GET_BY_ID: (id) => `${API_BASE_URL}/lists/${id}`,
+    UPDATE: (id) => `${API_BASE_URL}/lists/${id}`,
+    DELETE: (id) => `${API_BASE_URL}/lists/${id}`,
+    ADD_ITEM: (id) => `${API_BASE_URL}/lists/${id}/items`,
+    REMOVE_ITEM: (id, itemId) => `${API_BASE_URL}/lists/${id}/items/${itemId}`,
+  },
+
   // Match Routes
   MATCH: {
     GET_MATCHES: `${API_BASE_URL}/match`,
@@ -82,6 +97,7 @@ export const API_ROUTES = {
   FEED: {
     GET_FEED: `${API_BASE_URL}/feed`,
     GET_TOP_PICKS: `${API_BASE_URL}/feed/top-picks`,
+    GET_RECOMMENDATIONS: `${API_BASE_URL}/feed/recommendations`,
   },
 
   // Direct Messages / Conversations

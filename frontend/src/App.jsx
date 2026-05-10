@@ -19,6 +19,9 @@ import SetupProfilePage from "./pages/SetupProfilePage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ContentDetailPage from "./pages/ContentDetailPage.jsx";
 import ListPage from "./pages/ListPage.jsx";
+import WatchlistPage from "./pages/WatchlistPage.jsx";
+import MyListsPage from "./pages/MyListsPage.jsx";
+import ListDetailPage from "./pages/ListDetailPage.jsx";
 import SplashScreen from "./pages/SplashScreen.jsx";
 import MoviePage from "./pages/MoviesPage.jsx";
 import SeriesPage from "./pages/SeriesPage.jsx";
@@ -98,6 +101,9 @@ export default function App() {
             <Route path="/setup-profile" element={<ProtectedRoute><SetupProfilePage /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
             <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
+            <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
+            <Route path="/my-lists" element={<ProtectedRoute><MyListsPage /></ProtectedRoute>} />
+            <Route path="/lists/:id" element={<ListDetailPage />} />
             <Route path="/users/:id" element={<PublicProfilePage />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 

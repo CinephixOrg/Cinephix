@@ -23,7 +23,9 @@ export default function ProfileMenu({ onLogout }) {
 
       <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 mt-2">
         <li><a href="/network">Network</a></li>
-        <li><a href="/list">Watchedlist</a></li>
+        <li><a href="/watchlist">Watchlist</a></li>
+        <li><a href="/my-lists">My Lists</a></li>
+        <li><a href="/list">Watched List</a></li>
         <li><a href="/profile">Profile</a></li>
         <li><a href="/settings">Settings</a></li>
         <li><button className="text-error" onClick={onLogout}>Log out</button></li>

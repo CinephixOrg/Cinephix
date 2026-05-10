@@ -195,6 +195,46 @@ export const userService = {
     }
   },
 
+  addToToWatchList: async (contentId, contentType) => {
+    try {
+      const response = await API.post(API_ROUTES.USERS.ADD_TO_TO_WATCH_LIST, {
+        id: contentId,
+        type: contentType,
+      });
+      clearCacheItem(CACHE_KEYS.TO_WATCH_LIST);
+      clearCacheItem(CACHE_KEYS.CURRENT_USER);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to add to watchlist' };
+    }
+  },
+
+  removeFromToWatchList: async (contentId, contentType) => {
+    try {
+      const response = await API.delete(
+        `${API_ROUTES.USERS.REMOVE_FROM_TO_WATCH_LIST(contentId)}?itemType=${contentType}`
+      );
+      clearCacheItem(CACHE_KEYS.TO_WATCH_LIST);
+      clearCacheItem(CACHE_KEYS.CURRENT_USER);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to remove from watchlist' };
+    }
+  },
+
+  getToWatchList: async () => {
+    try {
+      const cached = getCacheItem(CACHE_KEYS.TO_WATCH_LIST);
+      if (cached) return cached;
+      const response = await API.get(API_ROUTES.USERS.GET_TO_WATCH_LIST);
+      const data = response.data;
+      setCacheItem(CACHE_KEYS.TO_WATCH_LIST, data, 10 * 60 * 1000);
+      return data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch watchlist' };
+    }
+  },
+
   updateWatchlist: async (watchlistData) => {
     try {
       const response = await API.put(API_ROUTES.USERS.UPDATE_WATCHLIST, watchlistData);

@@ -39,6 +39,8 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import ratingRoutes from "./routes/rating.js";
 import matchRoute from "./routes/matchRoute.js";
 import userWatchlistRoute from "./routes/userWatchlistRoute.js";
+import userToWatchListRoute from "./routes/userToWatchListRoute.js";
+import customListRoute from "./routes/customListRoute.js";
 import feedRoute from "./routes/feedRoute.js";
 import groupRoute from "./routes/groupRoute.js";
 import conversationRoute from "./routes/conversationRoute.js";
@@ -49,6 +51,8 @@ const PORT = process.env.PORT || 5000;
 
 app.use("/api/users", userRoute);
 app.use("/api/users/me", userWatchlistRoute);
+app.use("/api/users/me", userToWatchListRoute);
+app.use("/api/lists", customListRoute);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/match", matchRoute);

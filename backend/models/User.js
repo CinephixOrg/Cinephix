@@ -53,6 +53,7 @@ const userSchema = new Schema({
   },
   // --- BİTİŞ ---
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
+  toWatchList: { type: [WatchItemSchema], default: [] },
 
   // --- YENİ EKLENEN TAKİP ALANLARI ---
   followers: [{
