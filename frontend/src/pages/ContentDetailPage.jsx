@@ -14,6 +14,7 @@ import { AuthContext } from '../context/AuthContext'; // Giriş yapan kullanıc�
 
 import StarRating from '../components/StarRating';
 import FavoritesModal from '../components/FavoritesModal';
+import AddToListModal from '../components/AddToListModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function ContentDetailPage() {
@@ -25,9 +26,11 @@ export default function ContentDetailPage() {
     const [loading, setLoading] = useState(true); // BU GENEL YÜKLEME DURUMU OLARAK KALACAK
     const [error, setError] = useState(null);
     const [added, setAdded] = useState(false);
+    const [inToWatchList, setInToWatchList] = useState(false);
     const [rating, setRating] = useState(0);
     const [isRatingLoading, setIsRatingLoading] = useState(false);
     const [isFavModalOpen, setIsFavModalOpen] = useState(false);
+    const [isAddToListOpen, setIsAddToListOpen] = useState(false);
     const [favoriteMovies, setFavoriteMovies] = useState([]);
     const [favoriteSeries, setFavoriteSeries] = useState([]);
     // --- BİTİŞ ---
@@ -64,6 +67,8 @@ export default function ContentDetailPage() {
                     const userData = currentUserCached;
                     const existsInWatchlist = userData.watchlist.find(item => item.itemId === currentContentId);
                     setAdded(!!existsInWatchlist);
+                    const existsInToWatchListCached = userData.toWatchList?.find(item => item.itemId === currentContentId);
+                    setInToWatchList(!!existsInToWatchListCached);
                     setFavoriteMovies(userData.favoriteMovies || []);
                     setFavoriteSeries(userData.favoriteSeries || []);
                 }
@@ -86,6 +91,8 @@ export default function ContentDetailPage() {
                 const userData = userRes.data || userRes;
                 const existsInWatchlist = userData.watchlist.find(item => item.itemId === currentContentId);
                 setAdded(!!existsInWatchlist);
+                const existsInToWatchList = userData.toWatchList?.find(item => item.itemId === currentContentId);
+                setInToWatchList(!!existsInToWatchList);
                 setFavoriteMovies(userData.favoriteMovies || []);
                 setFavoriteSeries(userData.favoriteSeries || []);
 
@@ -187,7 +194,29 @@ export default function ContentDetailPage() {
         }
     };
 
-    const handleOpenFavModal = async () => { 
+    const handleAddToToWatchList = async () => {
+        const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
+        try {
+            await userService.addToToWatchList(content._id, contentType);
+            setInToWatchList(true);
+            toast.success("Added to watchlist");
+        } catch (error) {
+            toast.error(error.message || "An error occurred");
+        }
+    };
+
+    const handleRemoveFromToWatchList = async () => {
+        const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
+        try {
+            await userService.removeFromToWatchList(content._id, contentType);
+            setInToWatchList(false);
+            toast.success("Removed from watchlist");
+        } catch (err) {
+            toast.error(err.message || "An error occurred");
+        }
+    };
+
+    const handleOpenFavModal = async () => {
         if (!added) { await handleAddToList(); } 
         setIsFavModalOpen(true); 
     };
@@ -290,6 +319,22 @@ export default function ContentDetailPage() {
                                  <button className={`btn ${isFavorite ? 'btn-warning' : 'btn-outline'}`} onClick={handleOpenFavModal} disabled={!isRated} > {isFavorite ? '★ Manage Favorites' : 'Add to Favorites'} </button>
                                  {!isRated && <p className="text-sm italic opacity-70 mt-2">(Rate first to favorite)</p>}
                              </div>
+                             {/* Add to List Butonu */}
+                             <button
+                                 className="btn btn-secondary btn-outline"
+                                 onClick={() => setIsAddToListOpen(true)}
+                             >
+                                 + Add to List
+                             </button>
+                             {/* Watchlist Butonu */}
+                             {inToWatchList ? (
+                                 <div className="flex flex-col gap-2">
+                                     <button className="btn btn-accent" disabled>🕓 In Watchlist</button>
+                                     <button className="btn btn-error btn-sm" onClick={handleRemoveFromToWatchList}>Remove</button>
+                                 </div>
+                             ) : (
+                                 <button className="btn btn-accent btn-outline" onClick={handleAddToToWatchList}>+ Watchlist</button>
+                             )}
                         </div>
                     </div>
                 </div>
@@ -349,6 +394,14 @@ export default function ContentDetailPage() {
             </div>
             {/* --- BİTİŞ: Yorumlar Bölümü --- */}
 
+
+            {isAddToListOpen && content && (
+                <AddToListModal
+                    itemId={content._id}
+                    itemType={content.type || type}
+                    onClose={() => setIsAddToListOpen(false)}
+                />
+            )}
 
             {/* Favori Modal (Değişiklik yok) */}
             {isFavModalOpen && (

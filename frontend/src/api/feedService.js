@@ -22,6 +22,17 @@ export const feedService = {
       throw error.response?.data || { message: "Failed to fetch feed" };
     }
   },
+
+  getRecommendations: async (limit = 20, type = "all") => {
+    try {
+      const response = await API.get(API_ROUTES.FEED.GET_RECOMMENDATIONS, {
+        params: { limit, type },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: "Failed to fetch recommendations" };
+    }
+  },
 };
 
 export default feedService;
