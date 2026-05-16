@@ -27,11 +27,20 @@ const markAsRead = async (conversationId) => {
   await API.post(API_ROUTES.CONVERSATIONS.MARK_READ(conversationId));
 };
 
+const sendMessage = async (conversationId, messageData) => {
+  const { data } = await API.post(
+    API_ROUTES.CONVERSATIONS.SEND_MESSAGE(conversationId),
+    messageData
+  );
+  return data;
+};
+
 const dmService = {
   getConversations,
   getOrCreateConversation,
   getMessages,
   markAsRead,
+  sendMessage,
 };
 
 export default dmService;
