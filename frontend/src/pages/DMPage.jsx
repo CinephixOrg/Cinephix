@@ -5,10 +5,11 @@ import { useUnread } from '../context/UnreadContext';
 import { useInbox } from '../hooks/useInbox';
 import dmService from '../api/dmService';
 import ChatWindow from '../components/community/ChatWindow';
+import RecommendationModal from '../components/community/RecommendationModal';
 import API from '../api/axios';
 import { formatDistanceToNow } from 'date-fns';
 import { API_ROUTES } from '../constants/apiRoutes';
-import { FiSearch, FiEdit, FiX, FiMessageSquare } from 'react-icons/fi';
+import { FiSearch, FiEdit, FiX, FiMessageSquare, FiGift, FiSend } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 // ── Avatar helper ─────────────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ function Avatar({ user: u, size = 'md' }) {
 }
 
 // ── Conversation list item (DM or Group) ─────────────────────────────────────
-function ConversationItem({ conv, isActive, onClick }) {
+function ConversationItem({ conv, isActive, onClick, inRecommendationMode, isSelected, onToggleSelection }) {
   const unread = conv.unreadCount ?? 0;
   const preview = conv.lastMessage || 'No messages yet';
   const time = conv.lastMessageAt
@@ -37,10 +38,21 @@ function ConversationItem({ conv, isActive, onClick }) {
     const other = conv.otherUser;
     return (
       <button
-        onClick={onClick}
+        onClick={inRecommendationMode ? (e) => {
+          e.preventDefault();
+          onToggleSelection();
+        } : onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
-          ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
+          ${isSelected ? 'bg-primary/15 border border-primary/30' : isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
       >
+        {inRecommendationMode && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {}}
+            className="checkbox checkbox-sm"
+          />
+        )}
         <div className="relative">
           <Avatar user={other} />
           {unread > 0 && (
@@ -68,10 +80,21 @@ function ConversationItem({ conv, isActive, onClick }) {
   if (conv.type === 'group') {
     return (
       <button
-        onClick={onClick}
+        onClick={inRecommendationMode ? (e) => {
+          e.preventDefault();
+          onToggleSelection();
+        } : onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
-          ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
+          ${isSelected ? 'bg-primary/15 border border-primary/30' : isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
       >
+        {inRecommendationMode && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {}}
+            className="checkbox checkbox-sm"
+          />
+        )}
         <div className="relative">
           {conv.coverImage ? (
             <img src={conv.coverImage} alt={conv.name} className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
@@ -103,12 +126,24 @@ function ConversationItem({ conv, isActive, onClick }) {
 }
 
 // ── Following user row (no conversation yet) ──────────────────────────────────
-function FollowingItem({ user: u, onClick }) {
+function FollowingItem({ user: u, onClick, inRecommendationMode, isSelected, onToggleSelection }) {
   return (
     <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors rounded-xl hover:bg-base-200"
+      onClick={inRecommendationMode ? (e) => {
+        e.preventDefault();
+        onToggleSelection();
+      } : onClick}
+      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors rounded-xl
+        ${isSelected ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
     >
+      {inRecommendationMode && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => {}}
+          className="checkbox checkbox-sm"
+        />
+      )}
       <Avatar user={u} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate text-base-content/80">{u.username}</p>
@@ -281,6 +316,12 @@ export default function DMPage() {
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [showNewDM, setShowNewDM] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  
+  // Recommendation feature states
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState(null);
+  const [recommendationSelectionMode, setRecommendationSelectionMode] = useState(false);
+  const [selectedConversationsForRecommendation, setSelectedConversationsForRecommendation] = useState(new Set());
 
   // Real-time inbox updates (DMs and Groups)
   useInbox(user?.token, (payload) => {
@@ -326,6 +367,19 @@ export default function DMPage() {
     const total = conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
     setTotalUnread(total);
   }, [conversations, setTotalUnread]);
+
+  // Reset recommendation state when modal opens (only if not in selection mode)
+  useEffect(() => {
+    if (showRecommendationModal && recommendationSelectionMode) {
+      // Modal açılmış ve seçim modu active ise → seçim devam ediyor, değişme
+      return;
+    }
+    if (showRecommendationModal && !recommendationSelectionMode) {
+      // Modal açılmış ve seçim modu inactive ise → clean slate
+      setSelectedRecommendation(null);
+      setSelectedConversationsForRecommendation(new Set());
+    }
+  }, [showRecommendationModal]);
 
   // Load conversations + following list on mount
   useEffect(() => {
@@ -410,6 +464,55 @@ export default function DMPage() {
     await startDM(selectedUser);
   };
 
+  const handleSendRecommendations = async () => {
+    if (!selectedRecommendation || selectedConversationsForRecommendation.size === 0) {
+      toast.error('Lütfen en az bir sohbeti seçin');
+      return;
+    }
+
+    try {
+      const contentType = selectedRecommendation.type;
+      const contentId = selectedRecommendation._id;
+      
+      // Prepare content data to send with message
+      const contentData = {
+        title: selectedRecommendation.title,
+        posterUrl: selectedRecommendation.posterUrl,
+        genres: selectedRecommendation.genres || [],
+        releaseYear: selectedRecommendation.releaseYear || '',
+        overview: selectedRecommendation.overview || '',
+        rating: selectedRecommendation.rating || null,
+      };
+
+      // Get selected conversation IDs (all should be conversation IDs now)
+      const conversationIds = Array.from(selectedConversationsForRecommendation);
+
+      // Send to each conversation
+      for (const convId of conversationIds) {
+        const message = {
+          text: `${user?.username} size ${selectedRecommendation.title} ${contentType === 'movie' ? 'filmini' : 'dizisini'} öneriyor`,
+          contentType,
+          contentId,
+          contentData,
+          type: 'recommendation'
+        };
+        
+        await dmService.sendMessage(convId, message);
+      }
+
+      toast.success(`${selectedRecommendation.title} ${conversationIds.length} sohbete gönderildi`);
+      
+      // Reset recommendation selection
+      setRecommendationSelectionMode(false);
+      setSelectedConversationsForRecommendation(new Set());
+      setSelectedRecommendation(null);
+      setShowRecommendationModal(false);
+    } catch (err) {
+      toast.error('Öneri gönderilirken hata oluştu');
+      console.error('Error sending recommendation:', err);
+    }
+  };
+
   // Following users who don't have a conversation yet
   const conversationUserIds = new Set(
     conversations.map((c) => c.otherUser?._id).filter(Boolean)
@@ -440,13 +543,22 @@ export default function DMPage() {
                 <span className="badge badge-primary badge-sm">{totalUnread}</span>
               )}
             </div>
-            <button
-              className="btn btn-ghost btn-sm btn-circle tooltip tooltip-left"
-              data-tip="New message"
-              onClick={() => setShowNewDM(true)}
-            >
-              <FiEdit size={17} />
-            </button>
+            <div className="flex gap-1">
+              <button
+                className="btn btn-ghost btn-sm btn-circle tooltip tooltip-left"
+                data-tip="Film/Dizi Öner"
+                onClick={() => setShowRecommendationModal(true)}
+              >
+                <FiGift size={17} />
+              </button>
+              <button
+                className="btn btn-ghost btn-sm btn-circle tooltip tooltip-left"
+                data-tip="New message"
+                onClick={() => setShowNewDM(true)}
+              >
+                <FiEdit size={17} />
+              </button>
+            </div>
           </div>
 
           {/* List */}
@@ -466,6 +578,17 @@ export default function DMPage() {
                     conv={conv}
                     isActive={activeConv?._id === conv._id}
                     onClick={() => openConversation(conv)}
+                    inRecommendationMode={recommendationSelectionMode}
+                    isSelected={selectedConversationsForRecommendation.has(conv._id)}
+                    onToggleSelection={() => {
+                      const newSet = new Set(selectedConversationsForRecommendation);
+                      if (newSet.has(conv._id)) {
+                        newSet.delete(conv._id);
+                      } else {
+                        newSet.add(conv._id);
+                      }
+                      setSelectedConversationsForRecommendation(newSet);
+                    }}
                   />
                 ))}
               </div>
@@ -479,7 +602,28 @@ export default function DMPage() {
                 </p>
                 <div className="flex flex-col gap-0.5">
                   {followingWithoutConv.map((u) => (
-                    <FollowingItem key={u._id} user={u} onClick={() => startDM(u)} />
+                    <FollowingItem
+                      key={u._id}
+                      user={u}
+                      onClick={() => startDM(u)}
+                      inRecommendationMode={recommendationSelectionMode}
+                      isSelected={selectedConversationsForRecommendation.has(u._id)}
+                      onToggleSelection={async () => {
+                        try {
+                          // Create or get conversation with this user
+                          const conv = await dmService.getOrCreateConversation(u._id.toString());
+                          const newSet = new Set(selectedConversationsForRecommendation);
+                          if (newSet.has(conv._id)) {
+                            newSet.delete(conv._id);
+                          } else {
+                            newSet.add(conv._id);
+                          }
+                          setSelectedConversationsForRecommendation(newSet);
+                        } catch (err) {
+                          toast.error('Sohbet oluşturulamadı');
+                        }
+                      }}
+                    />
                   ))}
                 </div>
               </div>
@@ -495,6 +639,29 @@ export default function DMPage() {
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setShowNewDM(true)}>
                   New Message
+                </button>
+              </div>
+            )}
+
+            {/* Recommendation Send Button */}
+            {recommendationSelectionMode && selectedConversationsForRecommendation.size > 0 && (
+              <div className="flex gap-2 mt-3 px-2">
+                <button
+                  className="flex-1 btn btn-primary btn-sm gap-2"
+                  onClick={handleSendRecommendations}
+                >
+                  <FiSend size={16} />
+                  Gönder ({selectedConversationsForRecommendation.size})
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setRecommendationSelectionMode(false);
+                    setSelectedConversationsForRecommendation(new Set());
+                    setSelectedRecommendation(null);
+                  }}
+                >
+                  İptal
                 </button>
               </div>
             )}
@@ -542,6 +709,18 @@ export default function DMPage() {
       {showNewDM && (
         <NewDMModal onSelect={handleNewDMSelect} onClose={() => setShowNewDM(false)} />
       )}
+
+      <RecommendationModal
+        isOpen={showRecommendationModal}
+        onClose={() => {
+          setShowRecommendationModal(false);
+        }}
+        onSelectContent={(content) => {
+          setSelectedRecommendation(content);
+          setRecommendationSelectionMode(true);
+          setShowRecommendationModal(false);
+        }}
+      />
     </div>
   );
 }

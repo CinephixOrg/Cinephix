@@ -30,6 +30,29 @@ const messageSchema = new Schema(
       trim: true,
       maxlength: 1000,
     },
+    type: {
+      type: String,
+      enum: ["text", "recommendation"],
+      default: "text",
+    },
+    // For recommendation messages
+    contentId: {
+      type: Schema.Types.ObjectId,
+      // No ref field - can reference Movie or Series
+    },
+    contentType: {
+      type: String,
+      enum: ["movie", "series"],
+    },
+    // Recommendation content details for display
+    contentData: {
+      title: String,
+      posterUrl: String,
+      genres: [String],
+      releaseYear: Number,
+      overview: String,
+      rating: Number,
+    },
   },
   { timestamps: true }
 );

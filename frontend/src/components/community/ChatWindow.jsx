@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useChat } from '../../hooks/useChat';
+import RecommendationCard from './RecommendationCard';
 import { FiSend } from 'react-icons/fi';
 import { format } from 'date-fns';
 
@@ -93,6 +94,39 @@ export default function ChatWindow({
           const avatar = msg.sender?.profile_pic_url;
           const time = msg.createdAt ? format(new Date(msg.createdAt), 'HH:mm') : '';
 
+          // Render recommendation messages differently
+          if (msg.type === 'recommendation') {
+            return (
+              <div
+                key={msg._id ?? idx}
+                className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                {/* Avatar */}
+                <div className="avatar flex-shrink-0 mt-0.5">
+                  {avatar ? (
+                    <div className="w-8 rounded-full">
+                      <img src={avatar} alt={senderName} />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-neutral flex items-center justify-center text-xs font-bold text-neutral-content">
+                      {senderName[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Recommendation Card */}
+                <div className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                  {!isOwn && (
+                    <span className="text-xs text-base-content/50 px-1">{senderName}</span>
+                  )}
+                  <RecommendationCard message={msg} />
+                  <span className="text-xs text-base-content/30 px-1">{time}</span>
+                </div>
+              </div>
+            );
+          }
+
+          // Regular text messages
           return (
             <div
               key={msg._id ?? idx}

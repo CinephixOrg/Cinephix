@@ -1,6 +1,77 @@
 export default async function (seriesModel) {
   const router = (await import("express")).Router();
 
+  // GET /api/series/search?q=query
+  router.get("/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || q.trim().length === 0) {
+        return res.json({
+          success: true,
+          data: []
+        });
+      }
+
+      const pipeline = [
+        {
+          $search: {
+            index: "default",
+            compound: {
+              should: [
+                {
+                  autocomplete: {
+                    query: q,
+                    path: "name",
+                    fuzzy: {
+                      maxEdits: 2,
+                      prefixLength: 1
+                    }
+                  }
+                },
+                {
+                  text: {
+                    query: q,
+                    path: "name",
+                    fuzzy: {
+                      maxEdits: 2
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            title: "$name",
+            posterUrl: "$poster_path",
+            releaseYear: { $substr: ["$first_air_date", 0, 4] },
+            genres: "$genre_ids",
+            overview: 1,
+            vote_average: 1
+          }
+        },
+        {
+          $limit: 20
+        }
+      ];
+
+      const results = await seriesModel.aggregate(pipeline);
+      res.json({
+        success: true,
+        data: results
+      });
+    } catch (e) {
+      res.status(500).json({
+        success: false,
+        message: "Search failed",
+        error: e.message
+      });
+    }
+  });
+
   // GET /api/series?year=2025&genre=Drama&query=breaking&page=1&limit=18
   router.get("/", async (req, res) => {
     try {

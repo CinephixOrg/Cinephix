@@ -2,6 +2,77 @@
 export default async function(movieModel) {
   const router = (await import("express")).Router();
 
+  // GET /api/movies/search?q=query
+  router.get("/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || q.trim().length === 0) {
+        return res.json({
+          success: true,
+          data: []
+        });
+      }
+
+      const pipeline = [
+        {
+          $search: {
+            index: "default",
+            compound: {
+              should: [
+                {
+                  autocomplete: {
+                    query: q,
+                    path: "title",
+                    fuzzy: {
+                      maxEdits: 2,
+                      prefixLength: 1
+                    }
+                  }
+                },
+                {
+                  text: {
+                    query: q,
+                    path: "title",
+                    fuzzy: {
+                      maxEdits: 2
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            posterUrl: "$poster_path",
+            releaseYear: { $substr: ["$release_date", 0, 4] },
+            genres: "$genre_ids",
+            overview: 1,
+            vote_average: 1
+          }
+        },
+        {
+          $limit: 20
+        }
+      ];
+
+      const results = await movieModel.aggregate(pipeline);
+      res.json({
+        success: true,
+        data: results
+      });
+    } catch (e) {
+      res.status(500).json({
+        success: false,
+        message: "Search failed",
+        error: e.message
+      });
+    }
+  });
+
   // GET /api/movies?years=2020,2021&genres=Drama,Action&title=star&page=1&limit=20
   router.get("/", async (req, res) => {
     try {

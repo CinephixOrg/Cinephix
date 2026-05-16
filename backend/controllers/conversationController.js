@@ -165,9 +165,19 @@ export const markAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/conversations/:id/messages  (REST fallback)
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { text } = req.body;
-  if (!text?.trim() || text.length > 1000)
-    return sendError(res, "Invalid message text", 400);
+  const { text, type = "text", contentId, contentType, contentData } = req.body;
+
+  // Validate message based on type
+  if (type === "recommendation") {
+    if (!text?.trim() || text.length > 1000)
+      return sendError(res, "Invalid message text", 400);
+    if (!contentId || !contentType || !["movie", "series"].includes(contentType))
+      return sendError(res, "Invalid recommendation data", 400);
+  } else {
+    // text message
+    if (!text?.trim() || text.length > 1000)
+      return sendError(res, "Invalid message text", 400);
+  }
 
   const conversation = await Conversation.findById(req.params.id).select(
     "participants"
@@ -180,12 +190,31 @@ export const sendMessage = asyncHandler(async (req, res) => {
   );
   if (!isParticipant) return sendError(res, "Not a participant", 403);
 
-  const message = await Message.create({
+  // Create message with optional recommendation fields
+  const messageData = {
     roomType: "dm",
     roomId: conversation._id,
     sender: req.user._id,
     text: text.trim(),
-  });
+    type,
+  };
+
+  if (type === "recommendation") {
+    messageData.contentId = contentId;
+    messageData.contentType = contentType;
+    if (contentData) {
+      messageData.contentData = {
+        title: contentData.title,
+        posterUrl: contentData.posterUrl,
+        genres: contentData.genres || [],
+        releaseYear: contentData.releaseYear || null,
+        overview: contentData.overview || '',
+        rating: contentData.rating || null,
+      };
+    }
+  }
+
+  const message = await Message.create(messageData);
 
   const populated = await Message.findById(message._id)
     .populate("sender", "username profile_pic_url")
