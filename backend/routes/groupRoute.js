@@ -21,6 +21,6 @@ router.post("/:slug/join", authMiddleware, joinGroup);
 router.post("/:slug/leave", authMiddleware, leaveGroup);
 router.post("/:groupId/markAsRead", authMiddleware, markGroupAsRead);
 router.get("/:slug/messages", authMiddleware, getGroupMessages);
-router.post("/:slug/messages", authMiddleware, sendGroupMessage);
+router.post("/:groupId/messages", authMiddleware, sendGroupMessage);
 
 export default router;

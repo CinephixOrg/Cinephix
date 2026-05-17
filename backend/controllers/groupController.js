@@ -135,14 +135,33 @@ export const markGroupAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/groups/:slug/messages
 export const sendGroupMessage = asyncHandler(async (req, res) => {
-  const { text } = req.body;
-  if (!text?.trim() || text.length > 1000) {
-    return sendError(res, "Invalid message text", 400);
+  const { text, type = "text", contentId, contentType, contentData } = req.body;
+
+  // Validate message based on type
+  if (type === "recommendation") {
+    if (!text?.trim() || text.length > 1000)
+      return sendError(res, "Invalid message text", 400);
+    if (!contentId || !contentType || !["movie", "series"].includes(contentType))
+      return sendError(res, "Invalid recommendation data", 400);
+  } else {
+    // text message
+    if (!text?.trim() || text.length > 1000) {
+      return sendError(res, "Invalid message text", 400);
+    }
   }
 
-  const group = await Group.findOne({ slug: req.params.slug })
-    .select("_id members")
-    .lean();
+  // Accept both groupId (ID) and slug
+  const groupId = req.params.groupId;
+  let group;
+  
+  // Try as ID first
+  group = await Group.findById(groupId).select("_id members").lean();
+  
+  // If not found by ID, try as slug
+  if (!group) {
+    group = await Group.findOne({ slug: groupId }).select("_id members").lean();
+  }
+
   if (!group) return sendError(res, "Group not found", 404);
 
   const isMember = group.members.some(
@@ -150,12 +169,31 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
   );
   if (!isMember) return sendError(res, "Not a member of this group", 403);
 
-  const message = await Message.create({
+  // Create message with optional recommendation fields
+  const messageData = {
     roomType: "group",
     roomId: group._id,
     sender: req.user._id,
     text: text.trim(),
-  });
+    type,
+  };
+
+  if (type === "recommendation") {
+    messageData.contentId = contentId;
+    messageData.contentType = contentType;
+    if (contentData) {
+      messageData.contentData = {
+        title: contentData.title,
+        posterUrl: contentData.posterUrl,
+        genres: contentData.genres || [],
+        releaseYear: contentData.releaseYear || null,
+        overview: contentData.overview || '',
+        rating: contentData.rating || null,
+      };
+    }
+  }
+
+  const message = await Message.create(messageData);
 
   const populated = await Message.findById(message._id)
     .populate("sender", "username profile_pic_url")
