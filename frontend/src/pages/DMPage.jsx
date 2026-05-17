@@ -154,7 +154,7 @@ function FollowingItem({ user: u, onClick, inRecommendationMode, isSelected, onT
 }
 
 // ── Group item ────────────────────────────────────────────────────────────────
-function GroupItem({ group, isActive, onClick }) {
+function GroupItem({ group, isActive, onClick, inRecommendationMode, isSelected, onToggleSelection }) {
   const unread = group.unreadCount ?? 0;
   const preview = group.lastMessage || 'No messages yet';
   const time = group.lastMessageAt
@@ -163,10 +163,21 @@ function GroupItem({ group, isActive, onClick }) {
 
   return (
     <button
-      onClick={onClick}
+      onClick={inRecommendationMode ? (e) => {
+        e.preventDefault();
+        onToggleSelection();
+      } : onClick}
       className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors rounded-xl
-        ${isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
+        ${isSelected ? 'bg-primary/15 border border-primary/30' : isActive ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
     >
+      {inRecommendationMode && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => {}}
+          className="checkbox checkbox-sm"
+        />
+      )}
       <div className="relative">
         {group.coverImage ? (
           <img src={group.coverImage} alt={group.name} className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
@@ -487,17 +498,35 @@ export default function DMPage() {
       // Get selected conversation IDs (all should be conversation IDs now)
       const conversationIds = Array.from(selectedConversationsForRecommendation);
 
-      // Send to each conversation
+      // Send to each conversation or group
       for (const convId of conversationIds) {
-        const message = {
-          text: `${user?.username} size ${selectedRecommendation.title} ${contentType === 'movie' ? 'filmini' : 'dizisini'} öneriyor`,
-          contentType,
-          contentId,
-          contentData,
-          type: 'recommendation'
-        };
+        // Check if this is a group or DM
+        const conv = conversations.find(c => c._id === convId);
         
-        await dmService.sendMessage(convId, message);
+        if (conv?.type === 'group') {
+          // Send to group via REST API using group ID
+          const message = {
+            text: `${user?.username} size ${selectedRecommendation.title} ${contentType === 'movie' ? 'filmini' : 'dizisini'} öneriyor`,
+            contentType,
+            contentId,
+            contentData,
+            type: 'recommendation'
+          };
+          
+          // Use group ID directly (baseURL already has /api)
+          await API.post(`/groups/${convId}/messages`, message);
+        } else {
+          // Send to DM
+          const message = {
+            text: `${user?.username} size ${selectedRecommendation.title} ${contentType === 'movie' ? 'filmini' : 'dizisini'} öneriyor`,
+            contentType,
+            contentId,
+            contentData,
+            type: 'recommendation'
+          };
+          
+          await dmService.sendMessage(convId, message);
+        }
       }
 
       toast.success(`${selectedRecommendation.title} ${conversationIds.length} sohbete gönderildi`);
