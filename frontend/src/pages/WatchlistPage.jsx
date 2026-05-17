@@ -84,14 +84,14 @@ export default function WatchlistPage() {
     if (loading) return <div className="p-8 text-center">Loading...</div>;
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-6 py-8">
             <h1 className="text-3xl font-bold mb-6">My Watchlist</h1>
             <p className="text-base-content/60 mb-8">Movies and series you plan to watch.</p>
 
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Movies</h2>
                 {movies.length ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-6 md:grid-cols-5 lg:grid-cols-8 gap-2 justify-items-center">
                         {movies.map((m) => (
                             <MovieCard
                                 key={m._id || m.id}
@@ -109,7 +109,7 @@ export default function WatchlistPage() {
             <section>
                 <h2 className="text-xl font-semibold mb-4">Series</h2>
                 {series.length ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-6 md:grid-cols-5 lg:grid-cols-8 gap-2 justify-items-center">
                         {series.map((s) => (
                             <SeriesCard
                                 key={s._id}
