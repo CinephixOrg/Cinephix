@@ -451,7 +451,7 @@ export default function ProfilePage() {
 
 
       {/* --- DÜZELTME: FAVORİ FİLMLER ALANI (GERİ GETİRİLDİ) --- */}
-      <section className="mt-12">
+      <section className="mt-12 max-w-5xl mx-auto">
         <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
         {/* favorites.movies objesinin varlığını ve uzunluğunu kontrol et */}
         {favorites && favorites.movies && favorites.movies.length > 0 ? (

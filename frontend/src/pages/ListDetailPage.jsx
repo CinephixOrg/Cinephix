@@ -111,7 +111,7 @@ export default function ListDetailPage() {
   const totalItems = movies.length + series.length;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8">
         {editing ? (
@@ -209,7 +209,7 @@ export default function ListDetailPage() {
           {movies.length > 0 && (
             <section className="mb-10">
               <h2 className="text-xl font-semibold mb-4">Movies</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-6 md:grid-cols-5 lg:grid-cols-8 gap-3 justify-items-center">
                 {movies.map((m) => (
                   <MovieCard
                     key={m._id}
@@ -224,7 +224,7 @@ export default function ListDetailPage() {
           {series.length > 0 && (
             <section>
               <h2 className="text-xl font-semibold mb-4">Series</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-6 md:grid-cols-5 lg:grid-cols-8 gap-3 justify-items-center">
                 {series.map((s) => (
                   <SeriesCard
                     key={s._id}
