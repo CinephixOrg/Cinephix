@@ -72,7 +72,7 @@ export default function ListPage() {
     return (
         <div className="p-4">
             <h2 className="text-2xl font-bold mb-2">Movies</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-6 md:grid-cols-5 lg:grid-cols-10 gap-2 justify-items-center">
                 {movies.length
                     ? movies.map(m => (
                         <MovieCard
@@ -94,7 +94,7 @@ export default function ListPage() {
             </div>
 
             <h2 className="text-2xl font-bold mb-2">Series</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-6 md:grid-cols-5 lg:grid-cols-10 gap-2 justify-items-center">
                 {series.length
                     ? series.map(s => <SeriesCard
                         key={s._id}
