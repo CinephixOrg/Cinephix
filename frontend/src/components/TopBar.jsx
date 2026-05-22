@@ -45,10 +45,11 @@ export default function TopBar() {
           <NavLink
             to="/match"
             className={({ isActive }) =>
-              isActive ? 'text-primary font-bold underline' : 'text-primary font-semibold hover:underline'
+              isActive ? 'text-primary font-bold' : 'text-primary font-semibold'
             }
           >
-            🔮 CineMatch
+            <span className="text-white">Cine</span>
+            <span className="text-primary text-glow-primary">Match</span>
           </NavLink>
           <NavLink
             to="/community"
