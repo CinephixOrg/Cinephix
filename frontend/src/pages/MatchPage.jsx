@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import API from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import { MOVIE_GENRES, SERIES_GENRES } from "../constants/genreConstants.js";
+import MatchLeaderboard from "../components/MatchLeaderboard";
+import MatchCard from "../components/MatchCard";
+import MatchLoadingAnimation from "../components/MatchLoadingAnimation";
 
 export default function MatchPage() {
   const { user } = useContext(AuthContext);
@@ -44,7 +47,7 @@ export default function MatchPage() {
         useAvgRating,
         hybridMode: true,
         page: 1,
-        limit: 50,
+        limit: 15,
       };
 
       const res = await API.post("/match", payload);
@@ -64,7 +67,10 @@ export default function MatchPage() {
 
         {/* HEADER */}
         <header className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-2">CineMatch 🔮</h1>
+          <h1 className="text-4xl font-bold mb-2">
+            <span className="text-white">Cine</span>
+            <span className="text-primary text-glow-primary">Match</span>
+          </h1>
           <p className="text-base-content/70">
             Find your cinematic soulmate! Select your preferences and let CineMatch connect you with users who share your movie and series tastes.
           </p>
@@ -200,60 +206,62 @@ export default function MatchPage() {
         </div>
 
         {/* RESULTS */}
-        {matches && (
+        {loading && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">
-              Top Matches ({matches.length})
-            </h2>
+            <MatchLoadingAnimation cardCount={6} />
+          </div>
+        )}
 
+        {!loading && matches && (
+          <div>
             {matches.length === 0 ? (
-              <p className="text-center opacity-60">
-                No matches found. Try adjusting your criteria.
-              </p>
+              <div className="text-center py-12">
+                <p className="text-xl opacity-60 mb-6">
+                  No matches found. Try adjusting your criteria.
+                </p>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setMatches(null)}
+                >
+                  Back to Search
+                </button>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {matches.map((match) => (
-                  <div
-                    key={match.user._id}
-                    className="card bg-base-100 shadow-xl border"
-                  >
-                    <div className="card-body flex-row items-center gap-4">
-                      <div className="avatar">
-                        <div className="w-14 rounded-full">
-                          <img
-                            src={
-                              match.user.profile_pic_url ||
-                              `https://ui-avatars.com/api/?name=${match.user.username}`
-                            }
-                            alt="avatar"
-                          />
-                        </div>
-                      </div>
+              <div className="space-y-12">
+                {/* Leaderboard Section */}
+                <MatchLeaderboard matches={matches} />
 
-                      <div className="flex-1">
-                        <h3 className="font-semibold">
-                          {match.user.username}
-                        </h3>
-                        <Link
-                          to={`/users/${match.user._id}`}
-                          className="btn btn-xs btn-outline mt-2"
-                        >
-                          View Profile
-                        </Link>
-                      </div>
-
-                      <div
-                        className="radial-progress text-primary font-bold"
-                        style={{
-                          "--value": match.matchPercentage,
-                          "--size": "3rem",
-                        }}
-                      >
-                        {match.matchPercentage}%
-                      </div>
-                    </div>
+                {/* Results Grid - Top 15 matches */}
+                <div>
+                  <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold mb-2">
+                      🎬 All Matches
+                    </h2>
+                    <p className="text-base-content/60">
+                      Discover {Math.min(matches.length, 15)} premium profile matches
+                    </p>
                   </div>
-                ))}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                    {matches.slice(0, 15).map((match, index) => (
+                      <MatchCard
+                        key={match.user._id}
+                        match={match}
+                        rank={index < 3 ? index + 1 : undefined}
+                        animationDelay={index * 60}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Info Footer */}
+                {matches.length > 15 && (
+                  <div className="text-center py-8 opacity-60">
+                    <p className="text-sm">
+                      Showing top 15 matches out of {matches.length} total
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
