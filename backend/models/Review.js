@@ -26,14 +26,12 @@ const reviewSchema = new Schema({
     type: String,
     required: [true, 'Review text cannot be empty.'],
     trim: true,
-    maxlength: 2000 // Optional character limit
+    maxlength: 2000
   },
-  // Optional: If you want to store rating together with review
-  // rating: {
-  //   type: Number,
-  //   min: 1,
-  //   max: 10
-  // }
+  likes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  }],
 }, { timestamps: true }); // Auto-adds createdAt and updatedAt fields
 
 // ===== DATABASE INDEXES (Issue #13) =====
