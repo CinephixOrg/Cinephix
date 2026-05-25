@@ -5,6 +5,8 @@ import { AuthContext } from "../context/AuthContext";
 import FeedItem from "../components/FeedItem.jsx";
 import SuggestedUsers from "../components/SuggestedUsers.jsx";
 import TopPicks from "../components/TopPicks.jsx";
+import PopularThisWeek from "../components/PopularThisWeek.jsx";
+import PopularReviews from "../components/PopularReviews.jsx";
 import RecommendationsRow from "../components/RecommendationsRow.jsx";
 import PublicListCard from "../components/PublicListCard.jsx";
 import feedService from "../api/feedService.js";
@@ -205,6 +207,8 @@ export default function HomePage() {
         {/* Main column */}
         <div className="flex-1 min-w-0">
           <TopPicks />
+          <PopularThisWeek />
+          <PopularReviews />
 
           {/* Tab bar */}
           <div className="flex gap-1 mb-6 border-b border-base-300">

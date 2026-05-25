@@ -33,6 +33,15 @@ export const feedService = {
       throw error.response?.data || { message: "Failed to fetch recommendations" };
     }
   },
+
+  getPopularThisWeek: async (limit = 20) => {
+    try {
+      const response = await API.get(API_ROUTES.FEED.GET_POPULAR_THIS_WEEK, { params: { limit } });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: "Failed to fetch popular this week" };
+    }
+  },
 };
 
 export default feedService;

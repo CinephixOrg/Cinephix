@@ -1,21 +1,33 @@
 import express from 'express';
 import {
   getContentReviews,
+  getFriendsReviews,
   addOrUpdateReview,
-  deleteMyReview
+  deleteMyReview,
+  toggleReviewLike,
+  getPopularReviews,
 } from '../controllers/reviewController.js';
-import authMiddleware from '../middleware/authMiddleware.js';
+import authMiddleware, { optionalAuth } from '../middleware/authMiddleware.js';
 import { validateRequest, validationSchemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
-// Public: Get reviews for specific content
-router.get('/content/:contentId', getContentReviews);
+// GET popular reviews globally (homepage)
+router.get('/popular', authMiddleware, getPopularReviews);
 
-// Auth required: Add/update review
+// GET all reviews for content (optionalAuth: includes hasLiked when logged in)
+router.get('/content/:contentId', optionalAuth, getContentReviews);
+
+// GET reviews from followed users for content
+router.get('/content/:contentId/friends', authMiddleware, getFriendsReviews);
+
+// POST add/update review
 router.post('/', authMiddleware, validateRequest(validationSchemas.createReview), addOrUpdateReview);
 
-// Auth required: Delete my own review
+// DELETE own review
 router.delete('/:reviewId', authMiddleware, deleteMyReview);
+
+// POST toggle like on a review
+router.post('/:reviewId/like', authMiddleware, toggleReviewLike);
 
 export default router;
