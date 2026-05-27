@@ -132,3 +132,20 @@ export const getMyRating = asyncHandler(async (req, res) => {
 
   sendSuccess(res, rating, 'Rating fetched', 200);
 });
+
+/* ---------- GET ALL RATINGS FOR CONTENT ---------- */
+
+export const getAllRatingsForContent = asyncHandler(async (req, res) => {
+  const { contentId } = req.params;
+
+  if (!contentId) {
+    return sendError(res, 'contentId is required', 400);
+  }
+
+  const ratings = await Rating.find({ contentId }).select('value').lean();
+
+  // Return just the values for the rating distribution
+  const ratingValues = ratings.map(r => r.value);
+
+  sendSuccess(res, ratingValues, 'Content ratings fetched', 200);
+});

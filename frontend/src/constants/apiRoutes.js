@@ -56,6 +56,7 @@ export const API_ROUTES = {
   RATINGS: {
     GET_ALL: `${API_BASE_URL}/ratings`,
     GET_MY_RATING: (contentId) => `${API_BASE_URL}/ratings/me/${contentId}`,
+    GET_ALL_FOR_CONTENT: (contentId) => `${API_BASE_URL}/ratings/content/${contentId}`,
     CREATE: `${API_BASE_URL}/ratings`,
     UPDATE: (ratingId) => `${API_BASE_URL}/ratings/${ratingId}`,
     DELETE: (ratingId) => `${API_BASE_URL}/ratings/${ratingId}`,

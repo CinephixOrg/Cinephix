@@ -16,6 +16,7 @@ import StarRating from '../components/StarRating';
 import FavoritesModal from '../components/FavoritesModal';
 import AddToListModal from '../components/AddToListModal';
 import LoadingSpinner from '../components/LoadingSpinner';
+import RatingDistribution from '../components/RatingDistribution';
 
 export default function ContentDetailPage() {
     const { type, contentId } = useParams();
@@ -33,6 +34,7 @@ export default function ContentDetailPage() {
     const [isAddToListOpen, setIsAddToListOpen] = useState(false);
     const [favoriteMovies, setFavoriteMovies] = useState([]);
     const [favoriteSeries, setFavoriteSeries] = useState([]);
+    const [allRatings, setAllRatings] = useState([]);
     // --- BİTİŞ ---
 
     // --- YENİ STATE'LER (Sadece Yorumlar için) ---
@@ -106,6 +108,22 @@ export default function ContentDetailPage() {
                         console.error("Puan çekilirken hata:", ratingErr);
                     }
                 }
+
+                // Tüm ratingleri çek (rating dağılımı için)
+                try {
+                    const allRatingsRes = await ratingService.getAllRatingsForContent(currentContentId);
+                    const ratingsData = allRatingsRes.data || allRatingsRes || [];
+                    // Backend'den 1-10 aralığında geliyor, 0.5-5 aralığına çeviriyoruz
+                    const ratingValues = ratingsData.map(r => {
+                        const val = r.value || r;
+                        return val / 2; // 1-10 -> 0.5-5
+                    });
+                    setAllRatings(ratingValues);
+                } catch (allRatingsErr) {
+                    console.error("Tüm ratingler çekilirken hata:", allRatingsErr);
+                    setAllRatings([]);
+                }
+
                 setLoading(false);
 
             } catch (err) {
@@ -275,144 +293,254 @@ export default function ContentDetailPage() {
 
 
     return (
-        <div className="min-h-screen bg-base-200"> {/* Ana div */}
+        <div className="min-h-screen bg-base-200">
 
-            {/* Hero Bölümü (Değişiklik yok) */}
-            <div className="hero min-h-[70vh]" style={{ backgroundImage: `url(${backdropUrl})` }}>
-                {/* ... (Senin mevcut Hero içeriğin) ... */}
-                <div className="hero-overlay bg-opacity-80 bg-base-300"></div>
-                <div className="hero-content flex-col lg:flex-row text-neutral-content animate-fade-in">
-                    <img src={posterUrl} className="max-w-xs md:max-w-sm rounded-lg shadow-2xl" alt={title} />
-                    <div className="lg:ml-8 mt-4 lg:mt-0">
-                        <h1 className="text-4xl md:text-5xl font-bold">{title}</h1>
-                        <p className="py-2 text-lg">{releaseDate}</p>
-                         {type === 'series' && content.number_of_seasons && (
-                             <div className="badge badge-secondary mr-2">
-                                 {content.number_of_seasons} Sezon
-                             </div>
-                         )}
-                        <p className="py-6">{content.overview}</p>
+            {/* ===== MERKEZI İÇERİK CONTAINER ===== */}
+            <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
 
-                        {/* Yıldız Puanlama */}
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold mb-2">Your Rating</h3>
-                            <StarRating rating={rating} onRatingChange={handleRatingChange} />
-                            {isRatingLoading && <span className="text-xs italic ml-1 opacity-70"> Saving rating...</span>}
-                        </div>
+                {/* Başlık ve Aksiyon Paneli */}
+                <div className="mb-8 flex flex-col lg:flex-row gap-8">
 
-                        {/* Buton Grubu */}
-                        <div className="flex flex-wrap gap-4 items-start">
-                             {/* Watchlist Butonu */}
-                             {added ? (
-                                 <div className="flex flex-col gap-2">
-                                     <button className="btn btn-success" disabled>✓ Added to List</button>
-                                     <button className="btn btn-error btn-sm" onClick={handleRemoveFromList}>Remove</button>
-                                 </div>
-                             ) : (
-                                 <div className="flex flex-col">
-                                     <button className="btn btn-primary" onClick={handleAddToList} disabled={!isRated} > Add to List </button>
-                                     {!isRated && <p className="text-sm italic opacity-70 mt-2">(Rate first to add)</p>}
-                                 </div>
-                             )}
-                             {/* Favorites Butonu */}
-                             <div className="flex flex-col">
-                                 <button className={`btn ${isFavorite ? 'btn-warning' : 'btn-outline'}`} onClick={handleOpenFavModal} disabled={!isRated} > {isFavorite ? '★ Manage Favorites' : 'Add to Favorites'} </button>
-                                 {!isRated && <p className="text-sm italic opacity-70 mt-2">(Rate first to favorite)</p>}
-                             </div>
-                             {/* Add to List Butonu */}
-                             <button
-                                 className="btn btn-secondary btn-outline"
-                                 onClick={() => setIsAddToListOpen(true)}
-                             >
-                                 + Add to List
-                             </button>
-                             {/* Watchlist Butonu */}
-                             {inToWatchList ? (
-                                 <div className="flex flex-col gap-2">
-                                     <button className="btn btn-accent" disabled>🕓 In Watchlist</button>
-                                     <button className="btn btn-error btn-sm" onClick={handleRemoveFromToWatchList}>Remove</button>
-                                 </div>
-                             ) : (
-                                 <button className="btn btn-accent btn-outline" onClick={handleAddToToWatchList}>+ Watchlist</button>
-                             )}
+                    {/* ===== SOL TARAF - POSTER ===== */}
+                    <div className="lg:w-64 flex-shrink-0">
+                        <div className="rounded-lg overflow-hidden shadow-xl border border-base-300/30">
+                            <img 
+                                src={posterUrl}
+                                alt={title}
+                                className="w-full h-auto"
+                            />
                         </div>
                     </div>
+
+                    {/* ===== SAĞ TARAF - İÇ LAYOUT ===== */}
+                    <div className="flex-1 min-w-0 flex flex-col lg:flex-row gap-6">
+                        
+                        {/* SAĞ-İÇ-SOL: BAŞLIK VE AÇIKLAMA */}
+                        <div className="flex-1 min-w-0 flex flex-col">
+                            {/* Başlık + Yıl */}
+                            <div className="mb-4">
+                                <div className="flex flex-wrap items-baseline gap-3">
+                                    <h1 className="text-4xl md:text-5xl font-bold text-base-content">{title}</h1>
+                                    {releaseDate && (
+                                        <p className="text-xl opacity-60 font-light">{new Date(releaseDate).getFullYear()}</p>
+                                    )}
+                                </div>
+                                {type === 'series' && content.number_of_seasons && (
+                                    <div className="mt-2">
+                                        <div className="badge badge-secondary badge-lg">
+                                            {content.number_of_seasons} Sezon
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Açıklama - Overview */}
+                            {content.overview && (
+                                <p className="text-base-content/80 leading-relaxed text-base flex-grow">
+                                    {content.overview}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* SAĞ-İÇ-SAĞ: AKSIYON PANELI - KOMPAKT VE FIXED GENIŞLIK */}
+                        <div className="bg-base-100 rounded-xl shadow-lg p-6 border border-base-300/50 lg:w-80 h-fit">
+                            {/* 1. Add to Watchedlist / Watched List */}
+                            <div className="pb-4 border-b border-base-300/30">
+                                {added ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-success text-base font-semibold">
+                                            <span>✓</span>
+                                            <span>Added to List</span>
+                                        </div>
+                                        <button 
+                                            className="btn btn-error btn-sm btn-outline w-full"
+                                            onClick={handleRemoveFromList}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <button 
+                                            className="btn btn-primary w-full btn-sm"
+                                            onClick={handleAddToList}
+                                            disabled={!isRated}
+                                        >
+                                            Add to Watchedlist
+                                        </button>
+                                        {!isRated && (
+                                            <p className="text-xs italic opacity-60">(Rate first to add)</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 2. Add to Favorites */}
+                            <div className="py-4 border-b border-base-300/30">
+                                <button 
+                                    className={`btn btn-sm w-full ${isFavorite ? 'btn-warning' : 'btn-outline'}`}
+                                    onClick={handleOpenFavModal}
+                                    disabled={!isRated}
+                                >
+                                    {isFavorite ? '★ Manage Favorites' : '☆ Add to Favorites'}
+                                </button>
+                                {!isRated && (
+                                    <p className="text-xs italic opacity-60 mt-1">(Rate first to favorite)</p>
+                                )}
+                            </div>
+
+                            {/* 3. Rating Stars */}
+                            <div className="py-4 border-b border-base-300/30">
+                                <label className="text-sm font-semibold block mb-2 text-center">Your Rating</label>
+                                <div className="flex gap-1 justify-center">
+                                    <StarRating rating={rating} onRatingChange={handleRatingChange} />
+                                </div>
+                                {isRatingLoading && (
+                                    <span className="text-xs italic opacity-60 block mt-1">Saving...</span>
+                                )}
+                            </div>
+
+                            {/* 4. Add to Custom List */}
+                            <div className="py-4 border-b border-base-300/30">
+                                <button
+                                    className="btn btn-outline btn-sm w-full justify-center"
+                                    onClick={() => setIsAddToListOpen(true)}
+                                >
+                                    Add to List
+                                </button>
+                            </div>
+
+                            {/* 5. Watchlist / To Watch */}
+                            <div className="pt-4">
+                                {inToWatchList ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-accent text-base font-semibold">
+                                            <span>🕓</span>
+                                            <span>In Watchlist</span>
+                                        </div>
+                                        <button 
+                                            className="btn btn-error btn-sm btn-outline w-full"
+                                            onClick={handleRemoveFromToWatchList}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        className="btn btn-outline btn-sm w-full justify-center"
+                                        onClick={handleAddToToWatchList}
+                                    >
+                                        Add to Watchlist
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Rating Distribution */}
+                            <RatingDistribution ratings={allRatings} />
+                        </div>
+
+                    </div>
                 </div>
-            </div> {/* Hero bitti */}
 
-
-            {/* --- YENİ: Yorumlar Bölümü (Hero'nun altına eklendi) --- */}
-            <div className="max-w-4xl mx-auto p-4 md:p-8"> {/* Sayfaya padding */}
-                <section>
-                    <h2 className="text-2xl font-bold mb-4">Reviews</h2>
+            {/* ===== YORUMLAR SEKSİYONU ===== */}
+            <div className="py-8 md:py-12 border-t border-base-300">
+                <section className="max-w-5xl mx-auto px-4 md:px-6">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-6">Reviews</h2>
 
                     {/* Yorum Ekleme Kutusu */}
                     {user ? (
-                        <div className="mb-6 p-4 bg-base-100 rounded-lg shadow">
+                        <div className="mb-8 p-6 bg-base-100 rounded-lg shadow border border-base-300/30">
                             {!showReviewInput ? (
-                                <button className="btn btn-primary btn-sm" onClick={() => setShowReviewInput(true)} >
+                                <button 
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => setShowReviewInput(true)}
+                                >
                                     {userHasReviewed ? "Edit Your Review" : "Add Your Review"}
                                 </button>
                             ) : (
-                                <div className="flex flex-col gap-2">
-                                    <textarea className="textarea textarea-bordered w-full" rows="4" value={reviewText} onChange={(e) => setReviewText(e.target.value)} placeholder="Write your review here..." ></textarea>
+                                <div className="flex flex-col gap-3">
+                                    <textarea 
+                                        className="textarea textarea-bordered w-full focus:outline-none focus:border-primary"
+                                        rows="4"
+                                        value={reviewText}
+                                        onChange={(e) => setReviewText(e.target.value)}
+                                        placeholder="Write your review here..."
+                                    ></textarea>
                                     <div className="flex justify-end gap-2">
-                                        <button className="btn btn-sm btn-ghost" onClick={() => { setShowReviewInput(false); const existingReview = reviews.find(r => r.user?._id === user?._id); setReviewText(existingReview ? existingReview.text : ""); }} disabled={isSavingReview} > Cancel </button>
-                                        <button className={`btn btn-sm btn-primary ${isSavingReview ? 'loading' : ''}`} onClick={handleSaveReview} disabled={isSavingReview} > {userHasReviewed ? "Update Review" : "Save Review"} </button>
+                                        <button 
+                                            className="btn btn-sm btn-ghost"
+                                            onClick={() => {
+                                                setShowReviewInput(false);
+                                                const existingReview = reviews.find(r => r.user?._id === user?._id);
+                                                setReviewText(existingReview ? existingReview.text : "");
+                                            }}
+                                            disabled={isSavingReview}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            className={`btn btn-sm btn-primary ${isSavingReview ? 'loading' : ''}`}
+                                            onClick={handleSaveReview}
+                                            disabled={isSavingReview}
+                                        >
+                                            {userHasReviewed ? "Update Review" : "Save Review"}
+                                        </button>
                                     </div>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <p className="mb-6 text-center text-base-content/70">You need to be logged in to add a review.</p>
+                        <p className="mb-8 text-center text-base-content/70">You need to be logged in to add a review.</p>
                     )}
 
                     {/* Mevcut Yorumları Listeleme */}
-                    {loadingReviews ? ( // Yorumlar yüklenirken göster
-                         <div className="flex justify-center"><span className="loading loading-dots loading-md"></span></div>
+                    {loadingReviews ? (
+                        <div className="flex justify-center py-8">
+                            <span className="loading loading-dots loading-lg"></span>
+                        </div>
                     ) : reviews.length > 0 ? (
                         <div className="space-y-4">
                             {reviews.map((review) => (
-                                <div key={review._id} className="p-4 bg-base-100 rounded-lg shadow">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="font-bold">{review.user?.username || "Unknown User"}</span>
+                                <div key={review._id} className="p-5 bg-base-100 rounded-lg shadow border border-base-300/30 hover:border-base-300 transition-colors">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="font-semibold text-base">{review.user?.username || "Unknown User"}</span>
                                         <span className="text-xs text-base-content/60">
                                             {review.createdAt ? formatDistanceToNow(new Date(review.createdAt), { addSuffix: true }) : ""}
                                         </span>
                                     </div>
-                                    <p className="whitespace-pre-wrap break-words text-base-content/90">{review.text}</p>
-                                    {/* Silme butonu eklenebilir */}
+                                    <p className="whitespace-pre-wrap break-words text-base-content/80">{review.text}</p>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                       <p className="text-center text-base-content/70">No reviews yet. Be the first!</p>
+                        <p className="text-center text-base-content/70 py-8">No reviews yet. Be the first!</p>
                     )}
-                     {/* Genel bir hata varsa ve içerik yüklendiyse ama yorumlar yüklenemediyse? */}
-                     {error && !loading && !loadingReviews && reviews.length === 0 && <p className="text-center text-error">{error}</p>}
+                    {error && !loading && !loadingReviews && reviews.length === 0 && (
+                        <p className="text-center text-error py-4">{error}</p>
+                    )}
                 </section>
             </div>
-            {/* --- BİTİŞ: Yorumlar Bölümü --- */}
+            {/* ===== BİTİŞ: YORUMLAR SEKSİYONU ===== */}
+        </div> {/* Ana container bitti */}
 
+        {/* Modals */}
+        {isAddToListOpen && content && (
+            <AddToListModal
+                itemId={content._id}
+                itemType={content.type || type}
+                onClose={() => setIsAddToListOpen(false)}
+            />
+        )}
 
-            {isAddToListOpen && content && (
-                <AddToListModal
-                    itemId={content._id}
-                    itemType={content.type || type}
-                    onClose={() => setIsAddToListOpen(false)}
-                />
-            )}
-
-            {/* Favori Modal (Değişiklik yok) */}
-            {isFavModalOpen && (
-                <FavoritesModal
-                    type={type}
-                    initialList={type === 'movie' ? favoriteMovies : favoriteSeries}
-                    newItem={content}
-                    onClose={() => setIsFavModalOpen(false)}
-                    onSaveSuccess={handleSaveFavorites}
-                />
-            )}
+        {isFavModalOpen && (
+            <FavoritesModal
+                type={type}
+                initialList={type === 'movie' ? favoriteMovies : favoriteSeries}
+                newItem={content}
+                onClose={() => setIsFavModalOpen(false)}
+                onSaveSuccess={handleSaveFavorites}
+            />
+        )}
 
         </div> // Ana div bitti
     );
