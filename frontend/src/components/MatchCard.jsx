@@ -61,9 +61,9 @@ export default function MatchCard({ match, rank, animationDelay }) {
                 />
               </div>
 
-              {/* Crown for Rank 1 - Diagonal on Avatar */}
-              {rank === 1 && (
-                <div className="absolute -top-2 -right-1 text-3xl transform -rotate-12">
+              {/* Crown for Top 3 - Top Right of Avatar */}
+              {isTopThree && rank === 1 && (
+                <div className="absolute -top-1 -right-1 text-2xl animate-bounce">
                   👑
                 </div>
               )}

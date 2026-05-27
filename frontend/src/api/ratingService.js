@@ -64,6 +64,15 @@ export const ratingService = {
       throw error.response?.data || { message: 'Failed to delete rating' };
     }
   },
+
+  getAllRatingsForContent: async (contentId) => {
+    try {
+      const response = await API.get(API_ROUTES.RATINGS.GET_ALL_FOR_CONTENT(contentId));
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch ratings for content' };
+    }
+  },
 };
 
 export default ratingService;

@@ -14,6 +14,7 @@ import ReviewCard from '../components/ReviewCard';
 import FavoritesModal from '../components/FavoritesModal';
 import AddToListModal from '../components/AddToListModal';
 import LoadingSpinner from '../components/LoadingSpinner';
+import RatingDistribution from '../components/RatingDistribution';
 
 const REVIEW_TABS = ["Friends", "Popular"];
 
@@ -121,17 +122,20 @@ export default function ContentDetailPage() {
   const { type, contentId } = useParams();
   const { user } = useContext(AuthContext);
 
-  const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [added, setAdded] = useState(false);
-  const [inToWatchList, setInToWatchList] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [isRatingLoading, setIsRatingLoading] = useState(false);
-  const [isFavModalOpen, setIsFavModalOpen] = useState(false);
-  const [isAddToListOpen, setIsAddToListOpen] = useState(false);
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
-  const [favoriteSeries, setFavoriteSeries] = useState([]);
+    // --- MEVCUT STATE'LER (Dokunulmadı) ---
+    const [content, setContent] = useState(null);
+    const [loading, setLoading] = useState(true); // BU GENEL YÜKLEME DURUMU OLARAK KALACAK
+    const [error, setError] = useState(null);
+    const [added, setAdded] = useState(false);
+    const [inToWatchList, setInToWatchList] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [isRatingLoading, setIsRatingLoading] = useState(false);
+    const [isFavModalOpen, setIsFavModalOpen] = useState(false);
+    const [isAddToListOpen, setIsAddToListOpen] = useState(false);
+    const [favoriteMovies, setFavoriteMovies] = useState([]);
+    const [favoriteSeries, setFavoriteSeries] = useState([]);
+    const [allRatings, setAllRatings] = useState([]);
+    // --- BİTİŞ ---
 
   // Review input state
   const [reviewText, setReviewText] = useState("");
@@ -139,6 +143,7 @@ export default function ContentDetailPage() {
   const [userHasReviewed, setUserHasReviewed] = useState(false);
   // Track user's own review _id for deletion
   const [userReviewId, setUserReviewId] = useState(null);
+  const [showReviewInput, setShowReviewInput] = useState(false);
 
   useEffect(() => {
     const fetchEssentialData = async () => {
@@ -180,21 +185,40 @@ export default function ContentDetailPage() {
         setFavoriteMovies(userData.favoriteMovies || []);
         setFavoriteSeries(userData.favoriteSeries || []);
 
-        try {
-          const ratingRes = await ratingService.getMyRating(currentContentId);
-          setRating((ratingRes.data || ratingRes).value || 0);
-        } catch (ratingErr) {
-          if (ratingErr.response?.status === 404 || ratingErr.message === 'Rating not found') {
-            setRating(0);
-          }
-        }
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setError("Content could not be loaded.");
-        setLoading(false);
-      }
-    };
+                try {
+                    const ratingRes = await ratingService.getMyRating(currentContentId);
+                    setRating((ratingRes.data || ratingRes).value || 0);
+                } catch (ratingErr) {
+                    if (ratingErr.response?.status === 404 || ratingErr.message === 'Rating not found') {
+                        setRating(0);
+                    } else {
+                        console.error("Puan çekilirken hata:", ratingErr);
+                    }
+                }
+
+                // Tüm ratingleri çek (rating dağılımı için)
+                try {
+                    const allRatingsRes = await ratingService.getAllRatingsForContent(currentContentId);
+                    const ratingsData = allRatingsRes.data || allRatingsRes || [];
+                    // Backend'den 1-10 aralığında geliyor, 0.5-5 aralığına çeviriyoruz
+                    const ratingValues = ratingsData.map(r => {
+                        const val = r.value || r;
+                        return val / 2; // 1-10 -> 0.5-5
+                    });
+                    setAllRatings(ratingValues);
+                } catch (allRatingsErr) {
+                    console.error("Tüm ratingler çekilirken hata:", allRatingsErr);
+                    setAllRatings([]);
+                }
+
+                setLoading(false);
+
+            } catch (err) {
+                console.error("İçerik/Kullanıcı verisi çekilirken hata:", err);
+                setError("Content could not be loaded."); // Ana hata durumu
+                setLoading(false);
+            }
+        };
 
     // Check if user already has a review for this content
     const fetchUserReview = async () => {
@@ -320,126 +344,184 @@ export default function ContentDetailPage() {
   const currentFavList = type === 'movie' ? favoriteMovies : favoriteSeries;
   const isFavorite = currentFavList.includes(content._id);
 
-  return (
-    <div className="min-h-screen bg-base-200">
-      {/* Hero */}
-      <div className="hero min-h-[70vh]" style={{ backgroundImage: `url(${backdropUrl})` }}>
-        <div className="hero-overlay bg-opacity-80 bg-base-300"></div>
-        <div className="hero-content flex-col lg:flex-row text-neutral-content animate-fade-in">
-          <img src={posterUrl} className="max-w-xs md:max-w-sm rounded-lg shadow-2xl" alt={title} />
-          <div className="lg:ml-8 mt-4 lg:mt-0">
-            <h1 className="text-4xl md:text-5xl font-bold">{title}</h1>
-            <p className="py-2 text-lg">{releaseDate}</p>
-            {type === 'series' && content.number_of_seasons && (
-              <div className="badge badge-secondary mr-2">{content.number_of_seasons} Sezon</div>
-            )}
-            <p className="py-6">{content.overview}</p>
+    return (
+        <div className="min-h-screen bg-base-200">
 
-            {/* Rating */}
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">Your Rating</h3>
-              <StarRating rating={rating} onRatingChange={handleRatingChange} />
-              {isRatingLoading && <span className="text-xs italic ml-1 opacity-70"> Saving rating...</span>}
-            </div>
+            {/* ===== MERKEZI İÇERİK CONTAINER ===== */}
+            <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-4 items-start mb-6">
-              {added ? (
-                <div className="flex flex-col gap-2">
-                  <button className="btn btn-success" disabled>✓ Added to List</button>
-                  <button className="btn btn-error btn-sm" onClick={handleRemoveFromList}>Remove</button>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <button className="btn btn-primary" onClick={handleAddToList} disabled={!isRated}>Add to List</button>
-                  {!isRated && <p className="text-sm italic opacity-70 mt-2">(Rate first to add)</p>}
-                </div>
-              )}
-              <div className="flex flex-col">
-                <button className={`btn ${isFavorite ? 'btn-warning' : 'btn-outline'}`} onClick={handleOpenFavModal} disabled={!isRated}>
-                  {isFavorite ? '★ Manage Favorites' : 'Add to Favorites'}
-                </button>
-                {!isRated && <p className="text-sm italic opacity-70 mt-2">(Rate first to favorite)</p>}
-              </div>
-              <button className="btn btn-secondary btn-outline" onClick={() => setIsAddToListOpen(true)}>
-                + Add to List
-              </button>
-              {inToWatchList ? (
-                <div className="flex flex-col gap-2">
-                  <button className="btn btn-accent" disabled>🕓 In Watchlist</button>
-                  <button className="btn btn-error btn-sm" onClick={handleRemoveFromToWatchList}>Remove</button>
-                </div>
-              ) : (
-                <button className="btn btn-accent btn-outline" onClick={handleAddToToWatchList}>+ Watchlist</button>
-              )}
-            </div>
+                {/* Başlık ve Aksiyon Paneli */}
+                <div className="mb-8 flex flex-col lg:flex-row gap-8">
 
-            {/* Review input */}
-            {user ? (
-              <div className="max-w-lg">
-                <p className="text-sm font-semibold text-white/70 mb-2">
-                  {userHasReviewed ? "Your review" : "Write a review"}
-                </p>
-                <textarea
-                  className="textarea w-full bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 rounded-xl resize-none transition-all"
-                  rows="3"
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="What did you think?"
-                  maxLength={2000}
-                />
-                {reviewText.trim().length > 0 && (
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-white/30">{reviewText.length}/2000</span>
-                    <div className="flex gap-2">
-                      {userHasReviewed && (
-                        <button
-                          onClick={handleDeleteOwnReview}
-                          className="btn btn-sm btn-ghost text-error/70 hover:text-error"
-                        >
-                          Delete
-                        </button>
-                      )}
-                      <button
-                        className={`btn btn-sm btn-primary ${isSavingReview ? 'loading' : ''}`}
-                        onClick={handleSaveReview}
-                        disabled={isSavingReview}
-                      >
-                        {userHasReviewed ? "Update" : "Post review"}
-                      </button>
+                    {/* ===== SOL TARAF - POSTER ===== */}
+                    <div className="lg:w-64 flex-shrink-0">
+                        <div className="rounded-lg overflow-hidden shadow-xl border border-base-300/30">
+                            <img 
+                                src={posterUrl}
+                                alt={title}
+                                className="w-full h-auto"
+                            />
+                        </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-white/50">Log in to write a review.</p>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Reviews section — two tabs */}
-      <div className="mt-8">
-        <ReviewSection contentId={content._id} user={user} contentType={type} />
-      </div>
+                    {/* ===== SAĞ TARAF - İÇ LAYOUT ===== */}
+                    <div className="flex-1 min-w-0 flex flex-col lg:flex-row gap-6">
+                        
+                        {/* SAĞ-İÇ-SOL: BAŞLIK VE AÇIKLAMA */}
+                        <div className="flex-1 min-w-0 flex flex-col">
+                            {/* Başlık + Yıl */}
+                            <div className="mb-4">
+                                <div className="flex flex-wrap items-baseline gap-3">
+                                    <h1 className="text-4xl md:text-5xl font-bold text-base-content">{title}</h1>
+                                    {releaseDate && (
+                                        <p className="text-xl opacity-60 font-light">{new Date(releaseDate).getFullYear()}</p>
+                                    )}
+                                </div>
+                                {type === 'series' && content.number_of_seasons && (
+                                    <div className="mt-2">
+                                        <div className="badge badge-secondary badge-lg">
+                                            {content.number_of_seasons} Sezon
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
-      {isAddToListOpen && content && (
-        <AddToListModal
-          itemId={content._id}
-          itemType={content.type || type}
-          onClose={() => setIsAddToListOpen(false)}
-        />
-      )}
+                            {/* Açıklama - Overview */}
+                            {content.overview && (
+                                <p className="text-base-content/80 leading-relaxed text-base flex-grow">
+                                    {content.overview}
+                                </p>
+                            )}
+                        </div>
 
-      {isFavModalOpen && (
-        <FavoritesModal
-          type={type}
-          initialList={type === 'movie' ? favoriteMovies : favoriteSeries}
-          newItem={content}
-          onClose={() => setIsFavModalOpen(false)}
-          onSaveSuccess={handleSaveFavorites}
-        />
-      )}
-    </div>
-  );
+                        {/* SAĞ-İÇ-SAĞ: AKSIYON PANELI - KOMPAKT VE FIXED GENIŞLIK */}
+                        <div className="bg-base-100 rounded-xl shadow-lg p-6 border border-base-300/50 lg:w-80 h-fit">
+                            {/* 1. Add to Watchedlist / Watched List */}
+                            <div className="pb-4 border-b border-base-300/30">
+                                {added ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-success text-base font-semibold">
+                                            <span>✓</span>
+                                            <span>Added to List</span>
+                                        </div>
+                                        <button 
+                                            className="btn btn-error btn-sm btn-outline w-full"
+                                            onClick={handleRemoveFromList}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <button 
+                                            className="btn btn-primary w-full btn-sm"
+                                            onClick={handleAddToList}
+                                            disabled={!isRated}
+                                        >
+                                            Add to Watchedlist
+                                        </button>
+                                        {!isRated && (
+                                            <p className="text-xs italic opacity-60">(Rate first to add)</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 2. Add to Favorites */}
+                            <div className="py-4 border-b border-base-300/30">
+                                <button 
+                                    className={`btn btn-sm w-full ${isFavorite ? 'btn-warning' : 'btn-outline'}`}
+                                    onClick={handleOpenFavModal}
+                                    disabled={!isRated}
+                                >
+                                    {isFavorite ? '★ Manage Favorites' : '☆ Add to Favorites'}
+                                </button>
+                                {!isRated && (
+                                    <p className="text-xs italic opacity-60 mt-1">(Rate first to favorite)</p>
+                                )}
+                            </div>
+
+                            {/* 3. Rating Stars */}
+                            <div className="py-4 border-b border-base-300/30">
+                                <label className="text-sm font-semibold block mb-2 text-center">Your Rating</label>
+                                <div className="flex gap-1 justify-center">
+                                    <StarRating rating={rating} onRatingChange={handleRatingChange} />
+                                </div>
+                                {isRatingLoading && (
+                                    <span className="text-xs italic opacity-60 block mt-1">Saving...</span>
+                                )}
+                            </div>
+
+                            {/* 4. Add to Custom List */}
+                            <div className="py-4 border-b border-base-300/30">
+                                <button
+                                    className="btn btn-outline btn-sm w-full justify-center"
+                                    onClick={() => setIsAddToListOpen(true)}
+                                >
+                                    Add to List
+                                </button>
+                            </div>
+
+                            {/* 5. Watchlist / To Watch */}
+                            <div className="pt-4">
+                                {inToWatchList ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-accent text-base font-semibold">
+                                            <span>🕓</span>
+                                            <span>In Watchlist</span>
+                                        </div>
+                                        <button 
+                                            className="btn btn-error btn-sm btn-outline w-full"
+                                            onClick={handleRemoveFromToWatchList}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        className="btn btn-outline btn-sm w-full justify-center"
+                                        onClick={handleAddToToWatchList}
+                                    >
+                                        Add to Watchlist
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Rating Distribution */}
+                            <RatingDistribution ratings={allRatings} />
+                        </div>
+
+                    </div>
+                </div>
+
+                <ReviewSection
+                  contentId={content._id}
+                  user={user}
+                  contentType={type}
+                />
+
+            
+        </div> {/* Ana container bitti */}
+
+        {/* Modals */}
+        {isAddToListOpen && content && (
+            <AddToListModal
+                itemId={content._id}
+                itemType={content.type || type}
+                onClose={() => setIsAddToListOpen(false)}
+            />
+        )}
+
+        {isFavModalOpen && (
+            <FavoritesModal
+                type={type}
+                initialList={type === 'movie' ? favoriteMovies : favoriteSeries}
+                newItem={content}
+                onClose={() => setIsFavModalOpen(false)}
+                onSaveSuccess={handleSaveFavorites}
+            />
+        )}
+
+        </div> // Ana div bitti
+    );
 }
