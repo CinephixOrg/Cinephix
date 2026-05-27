@@ -14,6 +14,7 @@ import ReviewCard from '../components/ReviewCard';
 import FavoritesModal from '../components/FavoritesModal';
 import AddToListModal from '../components/AddToListModal';
 import LoadingSpinner from '../components/LoadingSpinner';
+import RatingDistribution from '../components/RatingDistribution';
 
 const REVIEW_TABS = ["Friends", "Popular"];
 
@@ -142,6 +143,7 @@ export default function ContentDetailPage() {
   const [userHasReviewed, setUserHasReviewed] = useState(false);
   // Track user's own review _id for deletion
   const [userReviewId, setUserReviewId] = useState(null);
+  const [showReviewInput, setShowReviewInput] = useState(false);
 
   useEffect(() => {
     const fetchEssentialData = async () => {
@@ -492,85 +494,13 @@ export default function ContentDetailPage() {
                     </div>
                 </div>
 
-            {/* ===== YORUMLAR SEKSİYONU ===== */}
-            <div className="py-8 md:py-12 border-t border-base-300">
-                <section className="max-w-5xl mx-auto px-4 md:px-6">
-                    <h2 className="text-2xl md:text-3xl font-bold mb-6">Reviews</h2>
+                <ReviewSection
+                  contentId={content._id}
+                  user={user}
+                  contentType={type}
+                />
 
-                    {/* Yorum Ekleme Kutusu */}
-                    {user ? (
-                        <div className="mb-8 p-6 bg-base-100 rounded-lg shadow border border-base-300/30">
-                            {!showReviewInput ? (
-                                <button 
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => setShowReviewInput(true)}
-                                >
-                                    {userHasReviewed ? "Edit Your Review" : "Add Your Review"}
-                                </button>
-                            ) : (
-                                <div className="flex flex-col gap-3">
-                                    <textarea 
-                                        className="textarea textarea-bordered w-full focus:outline-none focus:border-primary"
-                                        rows="4"
-                                        value={reviewText}
-                                        onChange={(e) => setReviewText(e.target.value)}
-                                        placeholder="Write your review here..."
-                                    ></textarea>
-                                    <div className="flex justify-end gap-2">
-                                        <button 
-                                            className="btn btn-sm btn-ghost"
-                                            onClick={() => {
-                                                setShowReviewInput(false);
-                                                const existingReview = reviews.find(r => r.user?._id === user?._id);
-                                                setReviewText(existingReview ? existingReview.text : "");
-                                            }}
-                                            disabled={isSavingReview}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button 
-                                            className={`btn btn-sm btn-primary ${isSavingReview ? 'loading' : ''}`}
-                                            onClick={handleSaveReview}
-                                            disabled={isSavingReview}
-                                        >
-                                            {userHasReviewed ? "Update Review" : "Save Review"}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <p className="mb-8 text-center text-base-content/70">You need to be logged in to add a review.</p>
-                    )}
-
-                    {/* Mevcut Yorumları Listeleme */}
-                    {loadingReviews ? (
-                        <div className="flex justify-center py-8">
-                            <span className="loading loading-dots loading-lg"></span>
-                        </div>
-                    ) : reviews.length > 0 ? (
-                        <div className="space-y-4">
-                            {reviews.map((review) => (
-                                <div key={review._id} className="p-5 bg-base-100 rounded-lg shadow border border-base-300/30 hover:border-base-300 transition-colors">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="font-semibold text-base">{review.user?.username || "Unknown User"}</span>
-                                        <span className="text-xs text-base-content/60">
-                                            {review.createdAt ? formatDistanceToNow(new Date(review.createdAt), { addSuffix: true }) : ""}
-                                        </span>
-                                    </div>
-                                    <p className="whitespace-pre-wrap break-words text-base-content/80">{review.text}</p>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-center text-base-content/70 py-8">No reviews yet. Be the first!</p>
-                    )}
-                    {error && !loading && !loadingReviews && reviews.length === 0 && (
-                        <p className="text-center text-error py-4">{error}</p>
-                    )}
-                </section>
-            </div>
-            {/* ===== BİTİŞ: YORUMLAR SEKSİYONU ===== */}
+            
         </div> {/* Ana container bitti */}
 
         {/* Modals */}
