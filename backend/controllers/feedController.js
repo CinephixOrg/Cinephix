@@ -218,6 +218,80 @@ export const getTopPicks = asyncHandler(async (req, res) => {
 //   1. Score each genre: count × avgRating → take top 5
 //   2. Find unwatched content in those genres sorted by vote_average
 //   3. Fall back to globally popular content if CineGraph is empty
+export const getPopularThisWeek = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [watchlistStats, toWatchStats] = await Promise.all([
+    User.aggregate([
+      { $unwind: "$watchlist" },
+      { $match: { "watchlist.addedAt": { $gte: oneWeekAgo } } },
+      {
+        $group: {
+          _id: { itemId: "$watchlist.itemId", itemType: "$watchlist.itemType" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+    User.aggregate([
+      { $unwind: "$toWatchList" },
+      { $match: { "toWatchList.addedAt": { $gte: oneWeekAgo } } },
+      {
+        $group: {
+          _id: { itemId: "$toWatchList.itemId", itemType: "$toWatchList.itemType" },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  // Merge counts from both lists
+  const countMap = {};
+  for (const stat of [...watchlistStats, ...toWatchStats]) {
+    const key = `${stat._id.itemType}:${stat._id.itemId}`;
+    if (!countMap[key]) {
+      countMap[key] = { itemId: stat._id.itemId.toString(), itemType: stat._id.itemType, count: 0 };
+    }
+    countMap[key].count += stat.count;
+  }
+
+  const sorted = Object.values(countMap)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+
+  if (sorted.length === 0) {
+    return sendSuccess(res, [], "No popular content this week");
+  }
+
+  const movieIds = sorted.filter((c) => c.itemType === "movie").map((c) => c.itemId);
+  const seriesIds = sorted.filter((c) => c.itemType === "series").map((c) => c.itemId);
+
+  const [movies, seriesList] = await Promise.all([
+    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
+    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
+  ]);
+
+  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
+  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+
+  const result = sorted.reduce((acc, c) => {
+    const item = c.itemType === "movie" ? movieMap[c.itemId] : seriesMap[c.itemId];
+    if (!item) return acc;
+    acc.push({
+      content: {
+        id: c.itemId,
+        title: item.title || item.name,
+        poster_path: item.poster_path,
+        type: c.itemType,
+      },
+      addCount: c.count,
+    });
+    return acc;
+  }, []);
+
+  sendSuccess(res, result, "Popular this week fetched");
+});
+
 export const getRecommendations = asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, 40);
   const contentType = req.query.type || "all"; // "movie" | "series" | "all"

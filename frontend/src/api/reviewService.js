@@ -8,32 +8,55 @@ import { API_ROUTES } from '../constants/apiRoutes';
 import { setCacheItem, getCacheItem, clearCacheItem, CACHE_KEYS } from './cacheService';
 
 export const reviewService = {
-  getReviewsByContent: async (contentId, pagination = {}) => {
+  getReviewsByContent: async (contentId, sort = "recent") => {
     try {
-      // Check cache first
-      const cached = getCacheItem(CACHE_KEYS.REVIEWS(contentId));
+      const cacheKey = `${CACHE_KEYS.REVIEWS(contentId)}:${sort}`;
+      const cached = getCacheItem(cacheKey);
       if (cached) return cached;
 
       const response = await API.get(API_ROUTES.REVIEWS.GET_BY_CONTENT(contentId), {
-        params: pagination,
+        params: { sort, limit: 50 },
       });
       const data = response.data;
-      
-      // Cache for 10 minutes
-      setCacheItem(CACHE_KEYS.REVIEWS(contentId), data, 10 * 60 * 1000);
+
+      setCacheItem(cacheKey, data, 5 * 60 * 1000);
       return data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch reviews' };
     }
   },
 
+  getFriendsReviews: async (contentId) => {
+    try {
+      const response = await API.get(API_ROUTES.REVIEWS.GET_FRIENDS(contentId));
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch friends reviews' };
+    }
+  },
+
+  getPopularReviews: async (limit = 10) => {
+    try {
+      const response = await API.get(API_ROUTES.REVIEWS.GET_POPULAR, { params: { limit } });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch popular reviews' };
+    }
+  },
+
+  toggleLike: async (reviewId) => {
+    try {
+      const response = await API.post(API_ROUTES.REVIEWS.TOGGLE_LIKE(reviewId));
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to toggle like' };
+    }
+  },
+
   createReview: async (reviewData) => {
     try {
       const response = await API.post(API_ROUTES.REVIEWS.CREATE, reviewData);
-      
-      // Invalidate review cache for this content
       clearCacheItem(CACHE_KEYS.REVIEWS(reviewData.contentId));
-      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to create review' };
@@ -43,25 +66,19 @@ export const reviewService = {
   updateReview: async (reviewId, reviewData) => {
     try {
       const response = await API.put(API_ROUTES.REVIEWS.UPDATE(reviewId), reviewData);
-      
-      // Invalidate relevant caches
       if (reviewData.contentId) {
         clearCacheItem(CACHE_KEYS.REVIEWS(reviewData.contentId));
       }
-      
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to update review' };
     }
   },
 
-  deleteReview: async (reviewId) => {
+  deleteReview: async (reviewId, contentId) => {
     try {
       const response = await API.delete(API_ROUTES.REVIEWS.DELETE(reviewId));
-      
-      // Invalidate review caches (we don't know the content ID, so clear all reviews)
-      clearCacheItem('reviews:');
-      
+      if (contentId) clearCacheItem(CACHE_KEYS.REVIEWS(contentId));
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to delete review' };

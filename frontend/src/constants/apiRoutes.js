@@ -66,6 +66,9 @@ export const API_ROUTES = {
   REVIEWS: {
     GET_ALL: `${API_BASE_URL}/reviews`,
     GET_BY_CONTENT: (contentId) => `${API_BASE_URL}/reviews/content/${contentId}`,
+    GET_FRIENDS: (contentId) => `${API_BASE_URL}/reviews/content/${contentId}/friends`,
+    GET_POPULAR: `${API_BASE_URL}/reviews/popular`,
+    TOGGLE_LIKE: (reviewId) => `${API_BASE_URL}/reviews/${reviewId}/like`,
     CREATE: `${API_BASE_URL}/reviews`,
     UPDATE: (reviewId) => `${API_BASE_URL}/reviews/${reviewId}`,
     DELETE: (reviewId) => `${API_BASE_URL}/reviews/${reviewId}`,
@@ -99,6 +102,7 @@ export const API_ROUTES = {
     GET_FEED: `${API_BASE_URL}/feed`,
     GET_TOP_PICKS: `${API_BASE_URL}/feed/top-picks`,
     GET_RECOMMENDATIONS: `${API_BASE_URL}/feed/recommendations`,
+    GET_POPULAR_THIS_WEEK: `${API_BASE_URL}/feed/popular-this-week`,
   },
 
   // Direct Messages / Conversations
