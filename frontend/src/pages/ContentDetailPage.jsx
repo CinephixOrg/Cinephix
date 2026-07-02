@@ -135,6 +135,7 @@ export default function ContentDetailPage() {
     const [favoriteMovies, setFavoriteMovies] = useState([]);
     const [favoriteSeries, setFavoriteSeries] = useState([]);
     const [allRatings, setAllRatings] = useState([]);
+    const [showReviewLink, setShowReviewLink] = useState(false);
     // --- BİTİŞ ---
 
   // Review input state
@@ -395,7 +396,7 @@ export default function ContentDetailPage() {
                         </div>
 
                         {/* SAĞ-İÇ-SAĞ: AKSIYON PANELI - KOMPAKT VE FIXED GENIŞLIK */}
-                        <div className="bg-base-100 rounded-xl shadow-lg p-6 border border-base-300/50 lg:w-80 h-fit">
+                        <div className="relative bg-base-100 rounded-xl shadow-lg p-6 border border-base-300/50 lg:w-80 h-fit">
                             {/* 1. Add to Watchedlist / Watched List */}
                             <div className="pb-4 border-b border-base-300/30">
                                 {added ? (
@@ -462,7 +463,41 @@ export default function ContentDetailPage() {
                                 </button>
                             </div>
 
-                            {/* 5. Watchlist / To Watch */}
+                            {/* 5. Add a Review */}
+                            <div className="py-4 border-b border-base-300/30">
+                                {!showReviewLink ? (
+                                    <button
+                                        className="btn btn-sm btn-secondary w-full"
+                                        onClick={() => setShowReviewLink(true)}
+                                    >
+                                        Add a Review
+                                    </button>
+                                ) : (
+                                    <div className="mt-3 space-y-2">
+                                        <textarea
+                                            className="textarea textarea-bordered w-full h-24 resize-none"
+                                            placeholder="Write your review..."
+                                            value={reviewText}
+                                            onChange={(e) => setReviewText(e.target.value)}
+                                        />
+                                        <button
+                                            className="btn btn-primary btn-sm w-full"
+                                            onClick={handleSaveReview}
+                                            disabled={isSavingReview || !reviewText.trim()}
+                                        >
+                                            {isSavingReview ? 'Saving...' : 'Save Review'}
+                                        </button>
+                                        <button
+                                            className="btn btn-link btn-xs px-0 normal-case"
+                                            onClick={() => setShowReviewLink(false)}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 6. Watchlist / To Watch */}
                             <div className="pt-4">
                                 {inToWatchList ? (
                                     <div className="space-y-2">
@@ -489,6 +524,11 @@ export default function ContentDetailPage() {
 
                             {/* Rating Distribution */}
                             <RatingDistribution ratings={allRatings} />
+                            {showReviewLink && (
+                                <div className="absolute bottom-4 right-4 text-xs uppercase tracking-[0.08em] text-base-content/60">
+                                    share
+                                </div>
+                            )}
                         </div>
 
                     </div>
