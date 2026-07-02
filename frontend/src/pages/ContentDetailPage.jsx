@@ -1,6 +1,6 @@
 // frontend/pages/ContentDetailPage.jsx
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { contentService } from '../api/contentService';
 import { ratingService } from '../api/ratingService';
 import { reviewService } from '../api/reviewService';
@@ -20,11 +20,23 @@ const REVIEW_TABS = ["Friends", "Popular"];
 
 // ── Review section ───────────────────────────────────────────────────
 function ReviewSection({ contentId, user, contentType }) {
+  const AVATAR_PLACEHOLDER = "https://placehold.co/64x64/1d232a/e0e0e0?text=?";
   const [activeTab, setActiveTab] = useState("Friends");
   const [friendsReviews, setFriendsReviews] = useState([]);
   const [popularReviews, setPopularReviews] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingPopular, setLoadingPopular] = useState(true);
+
+  const renderFriendStars = (review, index) => {
+    const count = Math.min(5, Math.max(1, review.likeCount || index + 1));
+    return (
+      <div className="flex justify-center gap-0.5 mt-1">
+        {Array.from({ length: 5 }).map((_, starIndex) => (
+          <span key={starIndex} className={starIndex < count ? 'text-yellow-400' : 'text-base-content/30'}>★</span>
+        ))}
+      </div>
+    );
+  };
 
   const fetchFriends = useCallback(async () => {
     if (!user) { setLoadingFriends(false); return; }
@@ -67,7 +79,43 @@ function ReviewSection({ contentId, user, contentType }) {
 
   return (
     <section className="max-w-4xl mx-auto px-4 md:px-8 pb-12">
-      <h2 className="text-2xl font-bold mb-4">Reviews</h2>
+      <div className="mb-6 rounded-3xl border border-base-300/40 bg-base-100 p-4">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-lg font-normal">Activity from friends</h3>
+          </div>
+          <span className="text-sm text-base-content/60">{friendsReviews.length} friends</span>
+        </div>
+        {friendsReviews.length === 0 ? (
+          <p className="text-sm text-center text-base-content/50 py-6">No friends have rated this yet.</p>
+        ) : (
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {friendsReviews.map((review, index) => (
+              <Link
+                key={review._id}
+                to={`/profile/${review.user?._id}`}
+                className="min-w-[72px] flex-shrink-0 text-center"
+              >
+                <div className="avatar mx-auto">
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <img
+                      src={review.user?.profile_pic_url || AVATAR_PLACEHOLDER}
+                      alt={review.user?.username || 'Friend'}
+                      onError={(e) => { e.target.src = AVATAR_PLACEHOLDER; }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 text-[9px] uppercase tracking-[0.18em] text-base-content/60">{review.user?.username || 'Friend'}</div>
+                {renderFriendStars(review, index)}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">Reviews</h2>
+      </div>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-5 border-b border-base-300">
