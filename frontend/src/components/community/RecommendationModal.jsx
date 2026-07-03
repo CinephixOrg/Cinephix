@@ -3,6 +3,13 @@ import { FiSearch, FiX, FiArrowRight } from 'react-icons/fi';
 import contentService from '../../api/contentService';
 import toast from 'react-hot-toast';
 
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w154';
+
+const resolvePosterUrl = (url) => {
+  if (!url) return null;
+  return url.startsWith('/') ? `${TMDB_IMAGE_BASE}${url}` : url;
+};
+
 export default function RecommendationModal({ isOpen, onClose, onSelectContent }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -150,9 +157,9 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
                   }`}
                 >
                   <div className="flex gap-3">
-                    {content.posterUrl && (
+                    {resolvePosterUrl(content.posterUrl) && (
                       <img
-                        src={content.posterUrl}
+                        src={resolvePosterUrl(content.posterUrl)}
                         alt={content.title}
                         className="w-12 h-16 object-cover rounded"
                       />

@@ -95,10 +95,17 @@ export const getGroupMembers = asyncHandler(async (req, res) => {
 });
 
 // GET /api/groups/:slug/messages
+// Supports cursor pagination with `before` and `limit`.
 export const getGroupMessages = asyncHandler(async (req, res) => {
-  const group = await Group.findOne({ slug: req.params.slug })
-    .select("_id members")
-    .lean();
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  const before = req.query.before ? new Date(req.query.before) : null;
+
+  const group =
+    (await Group.findOne({ slug: req.params.slug })
+      .select("_id members")
+      .lean()) ||
+    (await Group.findById(req.params.slug).select("_id members").lean());
+
   if (!group) return sendError(res, "Group not found", 404);
 
   const isMember = group.members.some(
@@ -106,13 +113,28 @@ export const getGroupMessages = asyncHandler(async (req, res) => {
   );
   if (!isMember) return sendError(res, "Not a member of this group", 403);
 
-  const messages = await Message.find({ roomType: "group", roomId: group._id })
+  const query = { roomType: "group", roomId: group._id };
+  if (before) query.createdAt = { $lt: before };
+
+  const messages = await Message.find(query)
     .populate("sender", "username profile_pic_url")
     .sort({ createdAt: -1 })
-    .limit(50)
+    .limit(limit + 1)
     .lean();
 
-  sendSuccess(res, messages.reverse(), "Messages fetched");
+  const hasMore = messages.length > limit;
+  const result = messages.slice(0, limit).reverse();
+
+  return res.status(200).json({
+    success: true,
+    message: "Messages fetched",
+    data: result,
+    pagination: {
+      hasMore,
+      limit,
+      before: before ? before.toISOString() : null,
+    },
+  });
 });
 
 // POST /api/groups/:groupId/markAsRead

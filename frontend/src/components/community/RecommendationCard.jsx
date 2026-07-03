@@ -1,6 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { FiArrowRight } from 'react-icons/fi';
 
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+
+const resolvePosterUrl = (url) => {
+  if (!url) return '/placeholder.jpg';
+  return url.startsWith('/') ? `${TMDB_IMAGE_BASE}${url}` : url;
+};
+
 export default function RecommendationCard({ message }) {
   const navigate = useNavigate();
   
@@ -15,7 +22,7 @@ export default function RecommendationCard({ message }) {
   // Extract content data from message
   const contentData = message.contentData || {};
   const title = contentData.title || 'Unknown Title';
-  const posterUrl = contentData.posterUrl || '/placeholder.jpg';
+  const posterUrl = resolvePosterUrl(contentData.posterUrl);
   const genres = contentData.genres || [];
   const releaseYear = contentData.releaseYear || '';
 

@@ -47,7 +47,13 @@ export default async function(movieModel) {
           $project: {
             _id: 1,
             title: 1,
-            posterUrl: "$poster_path",
+            posterUrl: {
+              $cond: [
+                { $ifNull: ["$poster_path", false] },
+                { $concat: ["https://image.tmdb.org/t/p/w154", "$poster_path"] },
+                null
+              ]
+            },
             releaseYear: { $substr: ["$release_date", 0, 4] },
             genres: "$genre_ids",
             overview: 1,

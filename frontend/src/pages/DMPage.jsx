@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
 import { useInbox } from '../hooks/useInbox';
@@ -123,34 +123,6 @@ function ConversationItem({ conv, isActive, onClick, inRecommendationMode, isSel
       </button>
     );
   }
-}
-
-// ── Following user row (no conversation yet) ──────────────────────────────────
-function FollowingItem({ user: u, onClick, inRecommendationMode, isSelected, onToggleSelection }) {
-  return (
-    <button
-      onClick={inRecommendationMode ? (e) => {
-        e.preventDefault();
-        onToggleSelection();
-      } : onClick}
-      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors rounded-xl
-        ${isSelected ? 'bg-primary/15 border border-primary/30' : 'hover:bg-base-200'}`}
-    >
-      {inRecommendationMode && (
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => {}}
-          className="checkbox checkbox-sm"
-        />
-      )}
-      <Avatar user={u} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate text-base-content/80">{u.username}</p>
-        <p className="text-xs text-base-content/40 truncate">{u.bio || 'Start a conversation'}</p>
-      </div>
-    </button>
-  );
 }
 
 // ── Group item ────────────────────────────────────────────────────────────────
@@ -292,7 +264,10 @@ function ChatHeader({ conversation, onBack }) {
         ←
       </button>
       {isGroup ? (
-        <>
+        <Link
+          to={`/community/${group?.slug || group?._id}`}
+          className="flex items-center gap-3 no-underline text-base-content hover:text-primary"
+        >
           {group?.coverImage ? (
             <img src={group.coverImage} alt={group.name} className="w-10 h-10 rounded-lg object-cover" />
           ) : (
@@ -301,12 +276,15 @@ function ChatHeader({ conversation, onBack }) {
             </div>
           )}
           <p className="font-semibold text-sm">{group?.name}</p>
-        </>
+        </Link>
       ) : (
-        <>
+        <Link
+          to={`/users/${other?._id}`}
+          className="flex items-center gap-3 no-underline text-base-content hover:text-primary"
+        >
           <Avatar user={other} size="sm" />
           <p className="font-semibold text-sm">{other?.username}</p>
-        </>
+        </Link>
       )}
     </div>
   );
@@ -320,7 +298,6 @@ export default function DMPage() {
   const navigate = useNavigate();
 
   const [conversations, setConversations] = useState([]);
-  const [following, setFollowing] = useState([]);        // all followed users
   const [activeConv, setActiveConv] = useState(null);
   const activeConvRef = useRef(null);
   const [initialMessages, setInitialMessages] = useState([]);
@@ -392,17 +369,11 @@ export default function DMPage() {
     }
   }, [showRecommendationModal]);
 
-  // Load conversations + following list on mount
+  // Load conversations on mount
   useEffect(() => {
-    Promise.all([
-      dmService.getConversations(),
-      API.get(`${API_ROUTES.USERS.GET_FOLLOWING}?limit=100`).then((r) =>
-        Array.isArray(r.data) ? r.data : []
-      ),
-    ])
-      .then(([convs, followingUsers]) => {
+    dmService.getConversations()
+      .then((convs) => {
         setConversations(convs);
-        setFollowing(followingUsers);
       })
       .catch(() => toast.error('Failed to load messages'))
       .finally(() => setLoadingConvs(false));
@@ -465,7 +436,7 @@ export default function DMPage() {
         return [conv, ...prev];
       });
       openConversation(conv);
-    } catch (err) {
+    } catch {
       toast.error('Could not open conversation');
     }
   }, [openConversation]);
@@ -515,6 +486,20 @@ export default function DMPage() {
           
           // Use group ID directly (baseURL already has /api)
           await API.post(`/groups/${convId}/messages`, message);
+
+          // Update local group conversation preview so it moves to top immediately
+          setConversations((prev) => {
+            const updated = prev.map((c) =>
+              c._id === convId
+                ? {
+                    ...c,
+                    lastMessage: message.text,
+                    lastMessageAt: new Date().toISOString(),
+                  }
+                : c
+            );
+            return updated.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+          });
         } else {
           // Send to DM
           const message = {
@@ -541,14 +526,6 @@ export default function DMPage() {
       console.error('Error sending recommendation:', err);
     }
   };
-
-  // Following users who don't have a conversation yet
-  const conversationUserIds = new Set(
-    conversations.map((c) => c.otherUser?._id).filter(Boolean)
-  );
-  const followingWithoutConv = following.filter(
-    (u) => !conversationUserIds.has(u._id)
-  );
 
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
 
@@ -623,43 +600,8 @@ export default function DMPage() {
               </div>
             )}
 
-            {/* Following section */}
-            {!loadingConvs && followingWithoutConv.length > 0 && (
-              <div className="mt-3">
-                <p className="px-4 py-1.5 text-xs font-semibold text-base-content/40 uppercase tracking-wider">
-                  Following
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  {followingWithoutConv.map((u) => (
-                    <FollowingItem
-                      key={u._id}
-                      user={u}
-                      onClick={() => startDM(u)}
-                      inRecommendationMode={recommendationSelectionMode}
-                      isSelected={selectedConversationsForRecommendation.has(u._id)}
-                      onToggleSelection={async () => {
-                        try {
-                          // Create or get conversation with this user
-                          const conv = await dmService.getOrCreateConversation(u._id.toString());
-                          const newSet = new Set(selectedConversationsForRecommendation);
-                          if (newSet.has(conv._id)) {
-                            newSet.delete(conv._id);
-                          } else {
-                            newSet.add(conv._id);
-                          }
-                          setSelectedConversationsForRecommendation(newSet);
-                        } catch (err) {
-                          toast.error('Sohbet oluşturulamadı');
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Empty state */}
-            {!loadingConvs && conversations.length === 0 && followingWithoutConv.length === 0 && (
+            {!loadingConvs && conversations.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-base-content/40 px-6 text-center py-16">
                 <FiMessageSquare size={40} />
                 <div>
