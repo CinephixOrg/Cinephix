@@ -95,10 +95,12 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
 });
 
 // GET /api/conversations/:id/messages
-// Returns last 50 messages for the conversation (must be a participant).
+// Returns messages for the conversation. Supports cursor pagination with `before` and `limit`.
 export const getMessages = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  const before = req.query.before ? new Date(req.query.before) : null;
+
   // Try to find as a DM conversation first
   let conversation = await Conversation.findById(id)
     .select("participants")
@@ -111,16 +113,32 @@ export const getMessages = asyncHandler(async (req, res) => {
     );
     if (!isParticipant) return sendError(res, "Not a participant", 403);
 
-    const messages = await Message.find({
+    const query = {
       roomType: "dm",
       roomId: conversation._id,
-    })
+    };
+
+    if (before) query.createdAt = { $lt: before };
+
+    const messages = await Message.find(query)
       .populate("sender", "username profile_pic_url")
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(limit + 1)
       .lean();
 
-    return sendSuccess(res, messages.reverse(), "Messages fetched");
+    const hasMore = messages.length > limit;
+    const result = messages.slice(0, limit).reverse();
+
+    return res.status(200).json({
+      success: true,
+      message: "Messages fetched",
+      data: result,
+      pagination: {
+        hasMore,
+        limit,
+        before: before ? before.toISOString() : null,
+      },
+    });
   }
 
   // Try to find as a group
@@ -135,16 +153,32 @@ export const getMessages = asyncHandler(async (req, res) => {
     );
     if (!isMember) return sendError(res, "Not a member of this group", 403);
 
-    const messages = await Message.find({
+    const query = {
       roomType: "group",
       roomId: group._id,
-    })
+    };
+
+    if (before) query.createdAt = { $lt: before };
+
+    const messages = await Message.find(query)
       .populate("sender", "username profile_pic_url")
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(limit + 1)
       .lean();
 
-    return sendSuccess(res, messages.reverse(), "Messages fetched");
+    const hasMore = messages.length > limit;
+    const result = messages.slice(0, limit).reverse();
+
+    return res.status(200).json({
+      success: true,
+      message: "Messages fetched",
+      data: result,
+      pagination: {
+        hasMore,
+        limit,
+        before: before ? before.toISOString() : null,
+      },
+    });
   }
 
   // Neither found

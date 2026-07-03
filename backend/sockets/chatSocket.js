@@ -64,7 +64,7 @@ export const setupChat = (io) => {
     });
 
     // ── Send a message ────────────────────────────────────────────────────
-    socket.on("send-message", async ({ roomType, roomId, text }) => {
+    socket.on("send-message", async ({ roomType, roomId, text, clientTempId }) => {
       try {
         if (!text?.trim() || text.length > 1000) {
           socket.emit("error", { message: "Invalid message" });
@@ -92,7 +92,11 @@ export const setupChat = (io) => {
           .populate("sender", "username profile_pic_url")
           .lean();
 
-        io.to(roomKey(roomType, roomId)).emit("new-message", populated);
+        const payload = clientTempId
+          ? { ...populated, clientTempId }
+          : populated;
+
+        io.to(roomKey(roomType, roomId)).emit("new-message", payload);
 
         // For DMs: update conversation preview + push inbox notification
         if (roomType === "dm") {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useContext } from 'react';
+import EmojiPicker from 'emoji-picker-react';
 import { AuthContext } from '../../context/AuthContext';
 import { useChat } from '../../hooks/useChat';
 import RecommendationCard from './RecommendationCard';
@@ -28,32 +29,103 @@ export default function ChatWindow({
   const token = user?.token;
   const currentUserId = user?._id;
 
-  const { messages, setMessages, connected, sendMessage } = useChat(
-    canChat ? roomType : null,
-    canChat ? roomId : null,
-    token
-  );
+  const {
+    messages,
+    setMessages,
+    connected,
+    sendMessage,
+    loadOlderMessages,
+    hasMoreMessages,
+    loadingOlderMessages,
+  } = useChat(canChat ? roomType : null, canChat ? roomId : null, token);
 
   const [inputText, setInputText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const initialized = useRef(false);
+  const currentRoomId = useRef(null);
+  const suppressScrollRef = useRef(false);
 
-  // Seed initial messages from REST only once
+  const mergeMessages = (base, incoming) => {
+    const ids = new Set(base.map((msg) => msg._id));
+    const merged = [...base];
+    incoming.forEach((msg) => {
+      if (msg._id && !ids.has(msg._id)) {
+        merged.push(msg);
+        ids.add(msg._id);
+      }
+    });
+    return merged.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  };
+
+  // Seed initial messages from REST when the room changes
   useEffect(() => {
-    if (!initialized.current && initialMessages.length > 0) {
+    if (currentRoomId.current !== roomId) {
+      currentRoomId.current = roomId;
       setMessages(initialMessages);
       initialized.current = true;
+      return;
     }
-  }, [initialMessages, setMessages]);
 
-  // Scroll to bottom when messages change
+    if (messages.length === 0) {
+      setMessages(initialMessages);
+      initialized.current = true;
+      return;
+    }
+
+    // We already have local / optimistic messages for this room,
+    // merge server-loaded messages without overwriting the current list.
+    setMessages((prev) => mergeMessages(prev, initialMessages));
+  }, [initialMessages, roomId, messages.length, setMessages]);
+
+  // Scroll to bottom when NEW messages arrive (not on initial load)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!initialized.current) return;
+    if (suppressScrollRef.current) {
+      suppressScrollRef.current = false;
+      return;
+    }
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages]);
+
+  const handleLoadOlderMessages = async () => {
+    if (!loadOlderMessages || loadingOlderMessages || !messagesContainerRef.current) return;
+
+    const previousScrollHeight = messagesContainerRef.current.scrollHeight;
+    suppressScrollRef.current = true;
+
+    const olderMessages = await loadOlderMessages();
+    if (olderMessages.length > 0 && messagesContainerRef.current) {
+      requestAnimationFrame(() => {
+        messagesContainerRef.current.scrollTop =
+          messagesContainerRef.current.scrollHeight - previousScrollHeight;
+      });
+    }
+  };
 
   const handleSend = () => {
     if (!inputText.trim()) return;
-    sendMessage(inputText);
+
+    const clientTempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const optimisticMessage = {
+      _id: clientTempId,
+      text: inputText.trim(),
+      sender: {
+        _id: currentUserId,
+        username: user?.username,
+        profile_pic_url: user?.profile_pic_url,
+      },
+      createdAt: new Date().toISOString(),
+      type: 'text',
+      status: 'pending',
+      clientTempId,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    sendMessage(inputText, clientTempId);
     setInputText('');
   };
 
@@ -81,7 +153,20 @@ export default function ChatWindow({
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+        {hasMoreMessages && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={handleLoadOlderMessages}
+              disabled={loadingOlderMessages}
+            >
+              {loadingOlderMessages ? 'Loading earlier messages…' : 'Load earlier messages'}
+            </button>
+          </div>
+        )}
+
         {messages.length === 0 && (
           <div className="flex-1 flex items-center justify-center text-base-content/40 text-sm">
             {emptyText}
@@ -170,14 +255,34 @@ export default function ChatWindow({
       {/* Input area */}
       {canChat ? (
         <div className="border-t border-base-200 p-3 flex gap-2 items-end">
-          <textarea
-            className="textarea textarea-bordered flex-1 resize-none text-sm min-h-[2.5rem] max-h-32"
-            placeholder="Type a message… (Enter to send)"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-          />
+          <div className="relative flex-1">
+            <textarea
+              className="textarea textarea-bordered w-full resize-none text-sm min-h-[2.5rem] max-h-32"
+              placeholder="Type a message… (Enter to send)"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+            />
+            <button
+              type="button"
+              className="absolute bottom-2 right-2 btn btn-ghost btn-xs"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              😀
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 right-0 z-50">
+                <EmojiPicker
+                  onEmojiClick={(emojiObject) => {
+                    setInputText(inputText + emojiObject.emoji);
+                    setShowEmojiPicker(false);
+                  }}
+                  theme="dark"
+                />
+              </div>
+            )}
+          </div>
           <button
             className="btn btn-primary btn-sm h-10 w-10 p-0 flex-shrink-0"
             onClick={handleSend}

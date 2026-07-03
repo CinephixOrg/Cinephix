@@ -1,6 +1,7 @@
 // frontend/pages/ContentDetailPage.jsx
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import EmojiPicker from 'emoji-picker-react';
 import { contentService } from '../api/contentService';
 import { ratingService } from '../api/ratingService';
 import { reviewService } from '../api/reviewService';
@@ -192,8 +193,7 @@ export default function ContentDetailPage() {
   const [userHasReviewed, setUserHasReviewed] = useState(false);
   // Track user's own review _id for deletion
   const [userReviewId, setUserReviewId] = useState(null);
-  const [showReviewInput, setShowReviewInput] = useState(false);
-
+  const [showReviewInput, setShowReviewInput] = useState(false);  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   useEffect(() => {
     const fetchEssentialData = async () => {
       const cachedContent = type === 'movie'
@@ -522,12 +522,32 @@ export default function ContentDetailPage() {
                                     </button>
                                 ) : (
                                     <div className="mt-3 space-y-2">
-                                        <textarea
-                                            className="textarea textarea-bordered w-full h-24 resize-none"
-                                            placeholder="Write your review..."
-                                            value={reviewText}
-                                            onChange={(e) => setReviewText(e.target.value)}
-                                        />
+                                        <div className="relative">
+                                            <textarea
+                                                className="textarea textarea-bordered w-full h-24 resize-none"
+                                                placeholder="Write your review..."
+                                                value={reviewText}
+                                                onChange={(e) => setReviewText(e.target.value)}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="absolute bottom-2 right-2 btn btn-ghost btn-xs"
+                                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            >
+                                                😀
+                                            </button>
+                                        </div>
+                                        {showEmojiPicker && (
+                                            <div className="absolute z-50 mt-2">
+                                                <EmojiPicker
+                                                    onEmojiClick={(emojiObject) => {
+                                                        setReviewText(reviewText + emojiObject.emoji);
+                                                        setShowEmojiPicker(false);
+                                                    }}
+                                                    theme="dark"
+                                                />
+                                            </div>
+                                        )}
                                         <button
                                             className="btn btn-primary btn-sm w-full"
                                             onClick={handleSaveReview}

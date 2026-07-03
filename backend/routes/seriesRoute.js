@@ -46,7 +46,13 @@ export default async function (seriesModel) {
           $project: {
             _id: 1,
             title: "$name",
-            posterUrl: "$poster_path",
+            posterUrl: {
+              $cond: [
+                { $ifNull: ["$poster_path", false] },
+                { $concat: ["https://image.tmdb.org/t/p/w154", "$poster_path"] },
+                null
+              ]
+            },
             releaseYear: { $substr: ["$first_air_date", 0, 4] },
             genres: "$genre_ids",
             overview: 1,
