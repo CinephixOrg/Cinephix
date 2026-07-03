@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { matchService } from "../api/matchService.js";
+import AnalyzeModal from "./AnalyzeModal";
 
 /**
  * MatchCard Component
@@ -8,6 +10,9 @@ import { Link } from "react-router-dom";
  */
 export default function MatchCard({ match, rank, animationDelay }) {
   const isTopThree = rank !== undefined && rank <= 3;
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div
@@ -119,12 +124,26 @@ export default function MatchCard({ match, rank, animationDelay }) {
             </Link>
 
             <button
-              className="btn btn-outline btn-sm text-primary hover:bg-primary/10 cursor-not-allowed opacity-60"
-              disabled
-              title="Coming soon"
+              className="btn btn-outline btn-sm text-primary hover:bg-primary/10"
+              onClick={async () => {
+                try {
+                  setIsAnalyzing(true);
+                  const res = await matchService.analyzeMatchWithUser(match.user._id, 'movie', false);
+                  setAnalysisData(res);
+                  setIsModalOpen(true);
+                } catch (e) {
+                  console.error(e);
+                  // TODO: show toast
+                } finally {
+                  setIsAnalyzing(false);
+                }
+              }}
+              title="Analyze with LLM (mock)"
+              disabled={isAnalyzing}
             >
-              Analyze
+              {isAnalyzing ? 'Analyzing...' : 'Analyze'}
             </button>
+            <AnalyzeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} data={analysisData} />
           </div>
         </div>
       </div>

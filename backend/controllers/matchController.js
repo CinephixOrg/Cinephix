@@ -11,6 +11,9 @@ import { calculateFavoriteOverlap } from "../services/contentBasedService.js";
 import { calculateSocialScore } from "../services/socialScoreService.js";
 import { calculateDiversityScore, calculateWatchActivityScore } from "../services/diversityScoreService.js";
 import { calculateTrendingAlignment, calculateActivityRecency } from "../services/bonusMetricsService.js";
+import { formatForLLM } from "../services/llmFormatterService.js";
+import { sanitizeForLLM } from "../services/llmSanitizerService.js";
+import { callLLM } from "../services/llmAdapter.js";
 
 /* ---------- helper math ---------- */
 
@@ -34,6 +37,70 @@ const avgRatingSimilarity = (a, b) => {
   }
   if (!count) return 0;
   return 1 - diff / (count * 10); // normalize
+};
+
+const extractJsonFromLLMText = (text) => {
+  if (!text || typeof text !== "string") return null;
+
+  const fenced = text.match(/```json\s*([\s\S]*?)\s*```/i);
+  if (fenced?.[1]) {
+    try {
+      return JSON.parse(fenced[1]);
+    } catch {
+      // continue
+    }
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    // continue
+  }
+
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+};
+
+const normalizeLLMAnalysis = (obj, fallbackText = "") => {
+  const source = obj?.compatibility_analysis
+    ? {
+        ...obj.compatibility_analysis,
+        graph_ascii: obj.graph_ascii || obj.compatibility_analysis.graph_ascii,
+      }
+    : (obj || {});
+
+  let analysis = source.analysis || fallbackText || "Uyumluluk analizi üretilemedi.";
+  const strengths = Array.isArray(source.strengths) ? source.strengths : [];
+  const weaknesses = Array.isArray(source.weaknesses) ? source.weaknesses : [];
+  const conversation_starters = Array.isArray(source.conversation_starters)
+    ? source.conversation_starters
+    : [];
+
+  let graph_ascii = source.graph_ascii || "";
+  if (Array.isArray(graph_ascii)) {
+    graph_ascii = graph_ascii.join("\n");
+  }
+
+  if (/json|payload|concise explanation|provided json|technical/i.test(analysis)) {
+    analysis = "Aranızda güçlü ortak ilgi alanları olduğu için iletişim kurmanız kolay görünüyor. Ortak zevkleriniz sohbeti doğal şekilde başlatmanıza yardımcı olurken, farklı noktalar ilişkinize keşif ve heyecan katabilir.";
+  }
+
+  return {
+    analysis,
+    strengths,
+    weaknesses,
+    conversation_starters,
+    graph_ascii,
+  };
 };
 
 /* ---------- MAIN: HYBRID APPROACH ---------- */
@@ -368,6 +435,34 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
 
     const matchPercentage = Math.round(finalScore * 100);
 
+    // Build LLM-ready payload (fixed JSON schema)
+    const breakdown = {
+      collaborative: Math.round(collaborativeScore * 100),
+      contentBased: Math.round(contentScore * 100),
+      social: Math.round(socialScore * 100),
+      diversity: Math.round(diversityScore * 100),
+      bonus: 50,
+    };
+
+    const llmInput = formatForLLM({
+      schema_version: "1.0",
+      requester: { _id: me._id, username: me.username },
+      target: { _id: target._id, username: target.username, profile_pic_url: target.profile_pic_url },
+      type,
+      cineKey,
+      matchPercentage,
+      breakdown,
+      myGraph: me[cineKey],
+      targetGraph: target[cineKey],
+      favorites: {
+        me: favorites1.map((x) => x.toString && x.toString()).slice(0, 50),
+        target: favorites2.map((x) => x.toString && x.toString()).slice(0, 50),
+      },
+    });
+
+    // Sanitize LLM payload before returning/sending to external services
+    const sanitizedLLMInput = sanitizeForLLM(llmInput, { redactUsernames: false, redactProfilePic: true });
+
     sendSuccess(res, {
       matchPercentage,
       targetUser: {
@@ -375,16 +470,137 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
         username: target.username,
         profile_pic_url: target.profile_pic_url,
       },
-      breakdown: {
-        collaborative: Math.round(collaborativeScore * 100),
-        contentBased: Math.round(contentScore * 100),
-        social: Math.round(socialScore * 100),
-        diversity: Math.round(diversityScore * 100),
-        bonus: 50,
-      },
+      breakdown,
+      llmInput: sanitizedLLMInput,
     }, 'Match calculated successfully');
 
   } catch (error) {
     return sendError(res, 'Error calculating match', 500);
   }
+});
+
+/**
+ * POST /api/match/:targetUserId/analyze
+ * Build llmInput, sanitize it, then call llmAdapter (mock by default) and return analysis.
+ */
+export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+  const { type = 'movie' } = req.body;
+
+  const requestedMock = req.query.mock === 'true';
+  const requestedProvider = req.query.provider;
+  const useMock = requestedMock || process.env.LLM_MODE === 'mock';
+
+  if (!targetUserId) return sendError(res, 'Target user ID is required', 400);
+  if (meId === targetUserId) return sendError(res, 'Cannot analyze yourself', 400);
+
+  const cineKey = type === 'movie' ? 'movieCineGraph' : 'seriesCineGraph';
+
+  const me = await User.findById(meId).lean();
+  const target = await User.findById(targetUserId).select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`).lean();
+
+  if (!me || !me[cineKey] || !target || !target[cineKey]) return sendError(res, 'Required data not found', 404);
+
+  // reuse same scoring pieces as getMatchWithUser (lightweight)
+  const myGraph = me[cineKey];
+
+  // compute breakdown quickly (same logic but simplified here)
+  const g1 = {}, g2 = {}, r1 = {}, r2 = {};
+  for (const [genre,v] of Object.entries(myGraph)) g1[genre] = v.count;
+  for (const [genre,v] of Object.entries(target[cineKey])) g2[genre] = v.count;
+  const genreScore = cosineSimilarity(g1,g2);
+  const collaborativeScore = genreScore; // simplified
+
+  const favorites1 = me.favoriteMovies || [];
+  const favorites2 = target.favoriteMovies || [];
+  const set1 = new Set(favorites1.map(String));
+  const set2 = new Set(favorites2.map(String));
+  const intersection = [...set1].filter(x=>set2.has(x)).length;
+  const unionSize = new Set([...set1,...set2]).size || 1;
+  const contentScore = intersection / unionSize * 100;
+
+  const breakdown = {
+    collaborative: Math.round(collaborativeScore * 100),
+    contentBased: Math.round(contentScore),
+    social: 50,
+    diversity: 50,
+    bonus: 50,
+  };
+
+  const myFollowing = new Set((me.following || []).map((id) => id.toString()));
+  const myFollowers = new Set((me.followers || []).map((id) => id.toString()));
+  const targetFollowing = new Set((target.following || []).map((id) => id.toString()));
+  const targetFollowers = new Set((target.followers || []).map((id) => id.toString()));
+
+  const mutualFollowing = [...myFollowing].filter((x) => targetFollowing.has(x)).length;
+  const unionFollowing = new Set([...myFollowing, ...targetFollowing]).size;
+  const followingOverlapRate = unionFollowing === 0 ? 0 : mutualFollowing / unionFollowing;
+
+  const mutualFollowers = [...myFollowers].filter((x) => targetFollowers.has(x)).length;
+  const unionFollowers = new Set([...myFollowers, ...targetFollowers]).size;
+  const followersOverlapRate = unionFollowers === 0 ? 0 : mutualFollowers / unionFollowers;
+
+  const llmInput = formatForLLM({
+    schema_version: '1.0',
+    requester: { _id: me._id, username: me.username },
+    target: { _id: target._id, username: target.username, profile_pic_url: target.profile_pic_url },
+    type,
+    cineKey,
+    matchPercentage: Math.round((breakdown.collaborative + breakdown.contentBased)/2),
+    breakdown,
+    myGraph: me[cineKey],
+    targetGraph: target[cineKey],
+    favorites: { me: favorites1.slice(0,50).map(String), target: favorites2.slice(0,50).map(String) },
+    socialOverlap: {
+      mutualFollowing,
+      mutualFollowers,
+      followingOverlapRate: Math.round(followingOverlapRate * 100),
+      followersOverlapRate: Math.round(followersOverlapRate * 100),
+    },
+  });
+
+  const sanitized = sanitizeForLLM(llmInput, { redactUsernames: false, redactProfilePic: true });
+
+  let provider;
+  if (useMock) {
+    provider = 'mock';
+  } else if (requestedProvider) {
+    provider = requestedProvider;
+  } else if (process.env.LLM_MODE === 'groq') {
+    provider = 'groq';
+  } else if (process.env.LLM_MODE === 'openrouter') {
+    provider = 'openrouter';
+  } else if (process.env.LLM_MODE === 'openai') {
+    provider = 'openai';
+  } else if (process.env.GROQ_API_KEY) {
+    provider = 'groq';
+  } else if (process.env.OPENROUTER_API_KEY) {
+    provider = 'openrouter';
+  } else if (process.env.OPENAI_API_KEY) {
+    provider = 'openai';
+  } else {
+    provider = 'mock';
+  }
+
+  const promptTemplate = {
+    system: "Sen Cinephix eşleşme asistanısın. Kullanıcıya doğrudan hitap eden, sıcak ve müşteri odaklı bir Türkçe dil kullan. Teknik açıklama yapma.",
+    instruction: [
+      "Aşağıdaki veriye göre SADECE geçerli JSON döndür.",
+      "Alanlar: analysis, strengths, weaknesses, conversation_starters, graph_ascii.",
+      "analysis: 2-3 cümle, kullanıcıya hitap eden doğal Türkçe metin.",
+      "analysis içinde mümkünse ortak en güçlü tür, ortak favori sayısı ve sosyal ortaklık yorumunu geçir.",
+      "Markdown code block kullanma. JSON dışında ek metin ekleme.",
+    ].join(" "),
+  };
+
+  const llmResp = await callLLM(sanitized, { provider, promptTemplate });
+
+  const parsedCandidate = llmResp.parsed
+    || extractJsonFromLLMText(llmResp.text)
+    || { analysis: llmResp.text || "Analiz üretilemedi." };
+
+  const parsed = normalizeLLMAnalysis(parsedCandidate, llmResp.text || "");
+
+  return sendSuccess(res, { provider, parsed, raw: llmResp.raw || llmResp }, 'Analysis generated');
 });
