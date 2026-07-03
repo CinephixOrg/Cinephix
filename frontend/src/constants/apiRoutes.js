@@ -90,6 +90,7 @@ export const API_ROUTES = {
   MATCH: {
     GET_MATCHES: `${API_BASE_URL}/match`,
     GET_COMPATIBILITY: (userId) => `${API_BASE_URL}/match/compatibility/${userId}`,
+    ANALYZE_MATCH: (userId) => `${API_BASE_URL}/match/${userId}/analyze`,
   },
 
   // Network Routes

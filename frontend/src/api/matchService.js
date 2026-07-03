@@ -92,6 +92,16 @@ export const matchService = {
       throw error.response?.data || { message: 'Failed to fetch content-based matches' };
     }
   },
+
+  analyzeMatchWithUser: async (targetUserId, type = 'movie', mock = false) => {
+    try {
+      const url = `${API_ROUTES.MATCH.ANALYZE_MATCH(targetUserId)}${mock ? '?mock=true' : ''}`;
+      const response = await API.post(url, { type });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to analyze match' };
+    }
+  },
 };
 
 export default matchService;
