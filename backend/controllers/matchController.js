@@ -39,6 +39,62 @@ const avgRatingSimilarity = (a, b) => {
   return 1 - diff / (count * 10); // normalize
 };
 
+const getTopSharedGenre = (payload = {}) => {
+  const commonGenres = payload?.shared_genres?.common_genres || [];
+  const sharedGenre = commonGenres.find((item) => item && (item.me_count > 0 || item.target_count > 0));
+  return sharedGenre?.genre || payload?.shared_genres?.top_shared_genre?.genre || null;
+};
+
+const buildCanonicalAnalysis = (payload = {}) => {
+  const topGenre = getTopSharedGenre(payload);
+  const favoriteOverlap = Number(payload?.favorites_overlap?.intersection_count || 0);
+  const mutualFollowing = Number(payload?.social_overlap?.mutualFollowing ?? payload?.social_overlap?.mutual_following ?? 0);
+  const mutualFollowers = Number(payload?.social_overlap?.mutualFollowers ?? payload?.social_overlap?.mutual_followers ?? 0);
+  const socialOverlapCount = Math.max(mutualFollowing, mutualFollowers);
+  const finalScore = Number(payload?.match?.final_score || 0);
+
+  const analysis = [
+    topGenre
+      ? `Senin için en güçlü ortak nokta ${topGenre} türü gibi görünüyor.`
+      : 'Senin için dikkat çekici ortak ilgi alanları var.',
+    favoriteOverlap > 0
+      ? `${favoriteOverlap} ortak favori içeriğiniz var; bu sohbeti başlatmak için güzel bir fırsat.`
+      : 'Ortak favori içerik sayınız sınırlı ama konuşmayı başlatacak noktalar yine de var.',
+    socialOverlapCount > 0
+      ? 'Sosyal ağdaki kesişim de iletişimi daha doğal hale getirebilir.'
+      : 'Sosyal ağ kesişimi sınırlı olsa da, ilgi alanlarınız üzerinden sıcak bir bağ kurulabilir.',
+    `Genel olarak umut veren bir uyum görünüyor (%${finalScore}).`,
+  ].join(' ');
+
+  const strengths = [
+    topGenre ? `${topGenre} türünde güçlü ortak zevk` : 'Güçlü ortak ilgi alanları',
+    favoriteOverlap > 0 ? 'Ortak favori içerik benzerliği' : 'İçerik zevklerinde uyum',
+    socialOverlapCount > 0 ? 'Sosyal çevrede kesişim' : 'Sohbeti geliştirecek ortak noktalar',
+  ];
+
+  const weaknesses = [];
+  if (!topGenre) weaknesses.push('Bazı tür tercihlerinde farklılıklar var');
+  if (favoriteOverlap === 0) weaknesses.push('Ortak favori içerik sayısı düşük');
+  if (socialOverlapCount === 0) weaknesses.push('Sosyal çevre kesişimi sınırlı');
+  if (weaknesses.length === 0) weaknesses.push('Bazı tür tercihlerinde farklılıklar var');
+
+  const conversation_starters = [];
+  if (favoriteOverlap > 0) conversation_starters.push('Ortak favori içeriğiniz hakkında ne düşündüğünü sor');
+  if (topGenre) conversation_starters.push(`${topGenre} türünde en sevdiği yapımı sor`);
+  if (socialOverlapCount > 0) conversation_starters.push('Ortak bağlantılardan sohbeti aç');
+  if (conversation_starters.length === 0) {
+    conversation_starters.push('Bu aralar hangi tür yapımları izlediğini sor');
+  }
+
+  const graphValues = payload?.match?.graphData?.values;
+  const graphLabels = payload?.match?.graphData?.labels;
+  const graph_ascii = Array.isArray(graphValues) && Array.isArray(graphLabels)
+    ? graphLabels.map((label, index) => `${label}: ${'█'.repeat(Math.max(1, Math.round((graphValues[index] || 0) / 10)))} (${graphValues[index] || 0})`).join(' | ')
+    : '';
+
+  return { analysis, strengths, weaknesses, conversation_starters, graph_ascii };
+};
+
 const extractJsonFromLLMText = (text) => {
   if (!text || typeof text !== "string") return null;
 
@@ -70,7 +126,8 @@ const extractJsonFromLLMText = (text) => {
   return null;
 };
 
-const normalizeLLMAnalysis = (obj, fallbackText = "") => {
+const normalizeLLMAnalysis = (obj, payload = {}, fallbackText = "") => {
+  const canonical = buildCanonicalAnalysis(payload);
   const source = obj?.compatibility_analysis
     ? {
         ...obj.compatibility_analysis,
@@ -78,20 +135,35 @@ const normalizeLLMAnalysis = (obj, fallbackText = "") => {
       }
     : (obj || {});
 
-  let analysis = source.analysis || fallbackText || "Uyumluluk analizi üretilemedi.";
-  const strengths = Array.isArray(source.strengths) ? source.strengths : [];
-  const weaknesses = Array.isArray(source.weaknesses) ? source.weaknesses : [];
-  const conversation_starters = Array.isArray(source.conversation_starters)
+  let analysis = source.analysis || fallbackText || canonical.analysis || "Uyumluluk analizi üretilemedi.";
+  const strengths = Array.isArray(source.strengths) && source.strengths.length ? source.strengths : canonical.strengths;
+  const weaknesses = Array.isArray(source.weaknesses) && source.weaknesses.length ? source.weaknesses : canonical.weaknesses;
+  const conversation_starters = Array.isArray(source.conversation_starters) && source.conversation_starters.length
     ? source.conversation_starters
-    : [];
+    : canonical.conversation_starters;
 
   let graph_ascii = source.graph_ascii || "";
   if (Array.isArray(graph_ascii)) {
     graph_ascii = graph_ascii.join("\n");
   }
 
+  if (!graph_ascii) {
+    graph_ascii = canonical.graph_ascii;
+  }
+
+  analysis = String(analysis)
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/^[-*]\s*/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+
   if (/json|payload|concise explanation|provided json|technical/i.test(analysis)) {
-    analysis = "Aranızda güçlü ortak ilgi alanları olduğu için iletişim kurmanız kolay görünüyor. Ortak zevkleriniz sohbeti doğal şekilde başlatmanıza yardımcı olurken, farklı noktalar ilişkinize keşif ve heyecan katabilir.";
+    analysis = canonical.analysis;
+  }
+
+  if (/bu iki kullanıcı|kullanıcılar|bu analize göre|belirgin ortaklık|genel ortaklık|zayıflıklar|güçler|konuşma başlatıcıları/i.test(analysis) || analysis.length > 240) {
+    analysis = canonical.analysis;
   }
 
   return {
@@ -584,12 +656,12 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   }
 
   const promptTemplate = {
-    system: "Sen Cinephix eşleşme asistanısın. Kullanıcıya doğrudan hitap eden, sıcak ve müşteri odaklı bir Türkçe dil kullan. Teknik açıklama yapma.",
+    system: "Sen Cinephix eşleşme asistanısın. Kullanıcıya doğrudan hitap eden, sıcak, müşteri odaklı ve kısa Türkçe dil kullan. Üçüncü kişi ağzı kullanma. Teknik açıklama yapma.",
     instruction: [
       "Aşağıdaki veriye göre SADECE geçerli JSON döndür.",
       "Alanlar: analysis, strengths, weaknesses, conversation_starters, graph_ascii.",
-      "analysis: 2-3 cümle, kullanıcıya hitap eden doğal Türkçe metin.",
-      "analysis içinde mümkünse ortak en güçlü tür, ortak favori sayısı ve sosyal ortaklık yorumunu geçir.",
+      "analysis: 2-3 kısa cümle, ikinci tekil şahısla (sen) yazılmış doğal Türkçe metin.",
+      "analysis içinde mümkünse ortak en güçlü tür, ortak favori sayısı ve sosyal ortaklık yorumunu geçir ama kısa tut.",
       "Markdown code block kullanma. JSON dışında ek metin ekleme.",
     ].join(" "),
   };
@@ -600,7 +672,7 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     || extractJsonFromLLMText(llmResp.text)
     || { analysis: llmResp.text || "Analiz üretilemedi." };
 
-  const parsed = normalizeLLMAnalysis(parsedCandidate, llmResp.text || "");
+  const parsed = normalizeLLMAnalysis(parsedCandidate, sanitized, llmResp.text || "");
 
   return sendSuccess(res, { provider, parsed, raw: llmResp.raw || llmResp }, 'Analysis generated');
 });
