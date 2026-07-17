@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import ImageCropper from "../components/ImageCropper.jsx";
 
 export default function SetupProfilePage() {
   const { user, updateUser } = useContext(AuthContext);
@@ -12,13 +13,29 @@ export default function SetupProfilePage() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(user?.profile_pic_url || null);
   const [loading, setLoading] = useState(false);
+  const [selectedFileForCrop, setSelectedFileForCrop] = useState(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      setPreview(URL.createObjectURL(selectedFile));
+      setSelectedFileForCrop(selectedFile);
+      setIsCropOpen(true);
+      e.target.value = ""; // Reset file input
     }
+  };
+
+  const handleCropCancel = () => {
+    setSelectedFileForCrop(null);
+    setIsCropOpen(false);
+  };
+
+  const handleCropConfirm = (blob) => {
+    const croppedFile = new File([blob], "profile.png", { type: blob.type });
+    setFile(croppedFile);
+    setPreview(URL.createObjectURL(croppedFile));
+    setSelectedFileForCrop(null);
+    setIsCropOpen(false);
   };
 
   const handleSubmit = async (e) => {
@@ -141,6 +158,14 @@ export default function SetupProfilePage() {
           </form>
         </div>
       </div>
+
+      {isCropOpen && selectedFileForCrop && (
+        <ImageCropper
+          file={selectedFileForCrop}
+          onCancel={handleCropCancel}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 }

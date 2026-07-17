@@ -11,7 +11,6 @@ import MovieCard from '../components/MovieCard.jsx';
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import SeriesCard from '../components/SeriesCard.jsx';
 import CineGraph from "../components/CineGraph.jsx"; // CineGraph component'ini import et
-import ImageCropper from '../components/ImageCropper.jsx';
 import { useParams } from "react-router-dom";
 
 export default function ProfilePage() {
@@ -24,10 +23,6 @@ export default function ProfilePage() {
   const [cineGraphData, setCineGraphData] = useState(null); // <-- CINEGRAPH VERİSİ
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isCropOpen, setIsCropOpen] = useState(false);
-  const [selectedFileForCrop, setSelectedFileForCrop] = useState(null);
-  const [lastSelectedFile, setLastSelectedFile] = useState(null); // keep last chosen file so user can re-edit before upload
   const [viewerOpen, setViewerOpen] = useState(false); // <-- YENİ: Görüntüleyici durumu
 
   // Bio state'leri (Değişiklik yok)
@@ -112,28 +107,7 @@ export default function ProfilePage() {
   }, [targetUserId]);
 
 
-  // Profil resmi yükleme fonksiyonu (Değişiklik yok)
-  const handleUploadProfilePic = async (file) => {
-    if (!file || !isOwnProfile) return;
-    const formData = new FormData();
-    formData.append("profilePic", file);
-    setIsUploading(true);
-    try {
-      const response = await userService.uploadProfilePic(user._id, formData);
-      const newUrl = response.profilePicUrl || response.profile_pic_url || "";
-      setProfilePic(newUrl);
-      // Sync context so ProfileMenu avatar updates immediately
-      updateUser({ profile_pic_url: newUrl });
-      // Also update local profile if you keep it
-      setProfile((p) => ({ ...(p || {}), profile_pic_url: newUrl }));
-      toast.success("Profil resmi başarıyla güncellendi!");
-    } catch (error) {
-      console.error("Profil resmi yüklenirken hata:", error);
-      toast.error("Profil resmi yüklenemedi.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
+
 
   // Bio kaydetme (Değişiklik yok)
   const handleSaveBio = async () => {
@@ -191,37 +165,7 @@ export default function ProfilePage() {
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="alert alert-error max-w-lg mx-auto mt-10">{error}</div>;
 
-  // File selected handler for crop modal
-  const handleFileSelected = (file, inputEl) => {
-    if (!file || !isOwnProfile) return;
-    // store so user can re-edit same file later
-    setLastSelectedFile(file);
-    setSelectedFileForCrop(file);
-    setIsCropOpen(true);
 
-    // clear input value so the same file can be selected again later
-    if (inputEl) inputEl.value = "";
-  };
-
-  // Crop modal cancel handler
-  const handleCropCancel = () => {
-    setSelectedFileForCrop(null);
-    setIsCropOpen(false);
-  };
-
-  // Crop modal confirm handler
-  const handleCropConfirm = async (blob) => {
-    // create File from blob and upload
-    const croppedFile = new File([blob], "profile.png", { type: blob.type });
-    setIsCropOpen(false);
-    setSelectedFileForCrop(null);
-
-    // keep this file as lastSelectedFile so user can re-edit if needed
-    setLastSelectedFile(croppedFile);
-
-    // call existing upload handler (assumes handleUploadProfilePic accepts File)
-    await handleUploadProfilePic(croppedFile);
-  };
 
   // Render
   return (
@@ -230,11 +174,6 @@ export default function ProfilePage() {
       {/* --- Profil Bilgileri Alanı (Değişiklik yok) --- */}
       <section className="bg-base-100 p-8 rounded-lg shadow-lg flex flex-col items-center">
         <div className="avatar mb-4 relative">
-          {isUploading && (
-            <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 rounded-full z-10">
-              <span className="loading loading-spinner loading-md"></span>
-            </div>
-          )}
           <div
             onClick={() => { if (profilePic) setViewerOpen(true); }}
             role="button"
@@ -249,16 +188,6 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-
-        {isOwnProfile && (
-            <input
-              type="file"
-              accept="image/*"
-              className="file-input file-input-bordered file-input-xs w-full max-w-xs mt-4"
-              onChange={(e) => handleFileSelected(e.target.files[0], e.target)}
-              disabled={isUploading}
-            />
-        )}
         
         {/* {lastSelectedFile && (
           <button className="btn btn-sm btn-outline ml-2" onClick={() => { setSelectedFileForCrop(lastSelectedFile); setIsCropOpen(true); }}>
@@ -490,14 +419,7 @@ export default function ProfilePage() {
       </section>
       {/* --- BİTİŞ: FAVORİ DİZİLER --- */}
 
-      {/* Crop modal */}
-      {isCropOpen && selectedFileForCrop && (
-        <ImageCropper
-          file={selectedFileForCrop}
-          onCancel={handleCropCancel}
-          onConfirm={handleCropConfirm}
-        />
-      )}
+
 
       {/* YENİ: Cinematch Modal */}
       {matchModalOpen && matchResult && (

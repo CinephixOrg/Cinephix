@@ -8,6 +8,7 @@ export default function MyListsPage() {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [listToDelete, setListToDelete] = useState(null);
 
   useEffect(() => {
     listService
@@ -21,14 +22,20 @@ export default function MyListsPage() {
     setLists((prev) => [newList, ...prev]);
   };
 
-  const handleDelete = async (list) => {
-    if (!window.confirm(`Delete "${list.name}"?`)) return;
+  const handleDelete = (list) => {
+    setListToDelete(list);
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!listToDelete) return;
     try {
-      await listService.deleteList(list._id);
-      setLists((prev) => prev.filter((l) => l._id !== list._id));
+      await listService.deleteList(listToDelete._id);
+      setLists((prev) => prev.filter((l) => l._id !== listToDelete._id));
       toast.success("List deleted");
     } catch {
       toast.error("Failed to delete list");
+    } finally {
+      setListToDelete(null);
     }
   };
 
@@ -95,6 +102,25 @@ export default function MyListsPage() {
           onClose={() => setShowCreate(false)}
           onCreated={handleListCreated}
         />
+      )}
+
+      {listToDelete && (
+        <dialog open className="modal modal-open bg-black/60 animate-fade-in">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error">Delete List</h3>
+            <p className="py-4">
+              Are you sure you want to delete the list <strong>"{listToDelete.name}"</strong>? This action cannot be undone.
+            </p>
+            <div className="modal-action">
+              <button className="btn btn-ghost" onClick={() => setListToDelete(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-error" onClick={handleExecuteDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </dialog>
       )}
     </div>
   );
