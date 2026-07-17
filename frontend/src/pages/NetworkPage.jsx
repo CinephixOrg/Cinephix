@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useContext } from "react";
 import { useLocation } from "react-router-dom"; 
+import toast from "react-hot-toast";
 // 1. DEĞİŞİKLİK: 'axios' yerine kendi 'API' dosyanızı import edin
 import API from "../api/axios.js"; // (ProfilePage.jsx'ten yol varsayımı)
 import UserRow from "../components/UserRow"; 
@@ -78,7 +79,7 @@ export default function NetworkPage() {
       await fetchLists();
     } catch (err) {
       console.error("Takip işlemi hatası:", err);
-      alert("İşlem başarısız oldu.");
+      toast.error("Operation failed.");
     }
   };
 

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 import { userService } from '../api/userService';
 import API from '../api/axios';
+import ImageCropper from '../components/ImageCropper.jsx';
 
 export default function SettingsPage() {
   const { user, updateUser, logout } = useContext(AuthContext);
@@ -18,6 +19,9 @@ export default function SettingsPage() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [loadingAvatar, setLoadingAvatar] = useState(false);
+  const [selectedFileForCrop, setSelectedFileForCrop] = useState(null);
+  const [isCropOpen, setIsCropOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Şifre Değiştirme State'leri
   const [passwords, setPasswords] = useState({
@@ -44,8 +48,28 @@ export default function SettingsPage() {
   const handleAvatarFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    setSelectedFileForCrop(file);
+    setIsCropOpen(true);
+    e.target.value = ''; // Reset input to allow selecting same file again
+  };
+
+  const handleEditCurrentAvatar = () => {
+    if (!user?.profile_pic_url) return;
+    setSelectedFileForCrop(user.profile_pic_url);
+    setIsCropOpen(true);
+  };
+
+  const handleCropCancel = () => {
+    setSelectedFileForCrop(null);
+    setIsCropOpen(false);
+  };
+
+  const handleCropConfirm = (blob) => {
+    const croppedFile = new File([blob], 'profile.png', { type: blob.type });
+    setAvatarFile(croppedFile);
+    setAvatarPreview(URL.createObjectURL(croppedFile));
+    setSelectedFileForCrop(null);
+    setIsCropOpen(false);
   };
 
   const submitAvatarChange = async (e) => {
@@ -109,34 +133,33 @@ export default function SettingsPage() {
   const submitPasswordChange = async (e) => {
     e.preventDefault();
     if (passwords.newPassword !== passwords.confirmPassword) {
-      return toast.error("Yeni şifreler eşleşmiyor!");
+      return toast.error("New passwords do not match!");
     }
     if (passwords.newPassword.length < 6) {
-      return toast.error("Şifre en az 6 karakter olmalı.");
+      return toast.error("Password must be at least 6 characters.");
     }
 
     setLoadingPass(true);
     try {
       await userService.updatePassword(passwords.currentPassword, passwords.newPassword);
-      toast.success("Şifreniz başarıyla güncellendi!");
+      toast.success("Password updated successfully!");
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
-      toast.error(err.message || "Şifre değiştirilemedi.");
+      toast.error(err.message || "Failed to update password.");
     } finally {
       setLoadingPass(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm("Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
-      try {
-        await userService.deleteAccount();
-        toast.success("Hesabınız silindi. Hoşçakalın!");
-        logout();
-        navigate('/');
-      } catch (err) {
-        toast.error("Hesap silinirken bir hata oluştu.");
-      }
+    setShowDeleteModal(false);
+    try {
+      await userService.deleteAccount();
+      toast.success("Your account has been deleted. Goodbye!");
+      logout();
+      navigate('/');
+    } catch (err) {
+      toast.error("An error occurred while deleting your account.");
     }
   };
 
@@ -195,12 +218,29 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <form onSubmit={submitAvatarChange} className="flex-1 flex flex-col gap-3">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarFileChange}
-                        className="file-input file-input-bordered w-full"
-                      />
+                      <div className="flex items-center gap-3 w-full">
+                        <label className="btn btn-outline btn-sm cursor-pointer">
+                          Choose File
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarFileChange}
+                            className="hidden"
+                          />
+                        </label>
+                        {user?.profile_pic_url && (
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={handleEditCurrentAvatar}
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <span className="text-sm text-base-content/60 truncate max-w-xs">
+                          {avatarFile ? avatarFile.name : "No file chosen"}
+                        </span>
+                      </div>
                       <div className="flex justify-end">
                         <button
                           type="submit"
@@ -312,7 +352,7 @@ export default function SettingsPage() {
                       Once you delete your account, there is no going back. Please be certain.
                     </p>
                     <div className="card-actions justify-start">
-                      <button onClick={handleDeleteAccount} className="btn btn-outline btn-error">
+                      <button onClick={() => setShowDeleteModal(true)} className="btn btn-outline btn-error">
                         Delete Account
                       </button>
                     </div>
@@ -364,6 +404,33 @@ export default function SettingsPage() {
         </div>
 
       </div>
+
+      {isCropOpen && selectedFileForCrop && (
+        <ImageCropper
+          file={selectedFileForCrop}
+          onCancel={handleCropCancel}
+          onConfirm={handleCropConfirm}
+        />
+      )}
+
+      {showDeleteModal && (
+        <dialog open className="modal modal-open bg-black/60 animate-fade-in">
+          <div className="modal-box border border-error/20">
+            <h3 className="font-bold text-lg text-error">Delete Account</h3>
+            <p className="py-4">
+              Are you sure you want to delete your account? This action cannot be undone!
+            </p>
+            <div className="modal-action">
+              <button className="btn btn-ghost" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-error" onClick={handleDeleteAccount}>
+                Delete Forever
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }

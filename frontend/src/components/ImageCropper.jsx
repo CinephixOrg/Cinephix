@@ -96,10 +96,14 @@ export default function ImageCropper({ file, onCancel, onConfirm }) {
     setCrop({ x: 0, y: 0 }); // reset crop position
   }, [file]);
 
-  // Read file as data URL (avoids blob URL revocation problems)
+  // Read file as data URL or set remote URL string directly (avoids blob URL revocation problems)
   useEffect(() => {
     if (!file) {
       setImageSrc(null);
+      return;
+    }
+    if (typeof file === "string") {
+      setImageSrc(file);
       return;
     }
     let mounted = true;

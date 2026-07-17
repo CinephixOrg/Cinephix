@@ -1,5 +1,6 @@
 // frontend/src/components/FavoritesModal.jsx (GÜNCELLENMİŞ TAM DOSYA)
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import API from '../api/axios';
 import MovieCard from './MovieCard';
 import SeriesCard from './SeriesCard';
@@ -85,7 +86,7 @@ export default function FavoritesModal({
       
     } catch (error) {
       console.error("Favoriler kaydedilemedi:", error);
-      alert(error.response?.data?.message || "Bir hata oluştu.");
+      toast.error(error.response?.data?.message || "An error occurred.");
     } finally {
       setSaveLoading(false);
     }
