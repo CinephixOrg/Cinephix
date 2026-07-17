@@ -48,8 +48,8 @@ export default function TopBar() {
               isActive ? 'text-primary font-bold' : 'text-primary font-semibold'
             }
           >
-            <span className="text-white">Cine</span>
-            <span className="text-primary text-glow-primary">Match</span>
+            <span className="text-base-content">Cine</span>
+            <span className="text-primary">Match</span>
           </NavLink>
           <NavLink
             to="/community"

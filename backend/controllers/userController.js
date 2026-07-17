@@ -22,14 +22,20 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/emailSer
 // @route   POST /api/users/register
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
+  const normalizedUsername = (username || '').trim();
+  const normalizedEmail = (email || '').trim().toLowerCase();
 
   // Input validation
-  if (!username || !email || !password) {
+  if (!normalizedUsername || !normalizedEmail || !password) {
     return sendError(res, 'Username, email, and password are required', 400);
   }
 
-  if (!validateEmail(email)) {
+  if (!validateEmail(normalizedEmail)) {
     return sendError(res, 'Invalid email format', 400);
+  }
+
+  if (normalizedUsername.length < 3 || normalizedUsername.length > 20) {
+    return sendError(res, 'Username must be between 3 and 20 characters', 400);
   }
 
   if (password.length < 6) {
@@ -37,9 +43,14 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   // Check if user already exists
-  const userExists = await User.findOne({ email });
+  const userExists = await User.findOne({ email: normalizedEmail });
   if (userExists) {
     return sendError(res, 'Email already registered', 400);
+  }
+
+  const usernameExists = await User.findOne({ username: normalizedUsername });
+  if (usernameExists) {
+    return sendError(res, 'Username already in use', 400);
   }
 
   // Hash password
@@ -47,11 +58,21 @@ export const registerUser = asyncHandler(async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, salt);
 
   // Create user
-  const user = await User.create({
-    username,
-    email,
-    password: hashedPassword,
-  });
+  let user;
+  try {
+    user = await User.create({
+      username: normalizedUsername,
+      email: normalizedEmail,
+      password: hashedPassword,
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      if (err.keyPattern?.email) return sendError(res, 'Email already registered', 400);
+      if (err.keyPattern?.username) return sendError(res, 'Username already in use', 400);
+      return sendError(res, 'Duplicate account data', 400);
+    }
+    throw err;
+  }
 
   // Send email verification code
   const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -60,7 +81,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   await user.save();
 
   try {
-    await sendVerificationEmail(email, code);
+    await sendVerificationEmail(normalizedEmail, code);
   } catch (emailErr) {
     console.error('Email send failed:', emailErr.message);
   }
@@ -112,6 +133,9 @@ export const loginUser = asyncHandler(async (req, res) => {
     _id: user._id,
     username: user.username,
     email: user.email,
+    profile_pic_url: user.profile_pic_url || '',
+    googleId: user.googleId || null,
+    isOAuthUser: Boolean(user.googleId && !user.password),
     token,
   }, 'Login successful', 200);
 });
@@ -510,6 +534,10 @@ export const uploadProfilePic = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const file = req.file;
 
+  if (req.user?.id?.toString() !== id) {
+    return sendError(res, 'You can only update your own profile picture', 403);
+  }
+
   // Validation
   if (!id.match(/^[0-9a-fA-F]{24}$/)) {
     return sendError(res, 'Invalid user ID', 400);
@@ -758,6 +786,10 @@ export const updatePassword = asyncHandler(async (req, res) => {
     return sendError(res, 'User not found', 404);
   }
 
+  if (user.googleId && !user.password) {
+    return sendError(res, 'Logged in via Google. Password management is handled by Google.', 400);
+  }
+
   const isMatch = await bcrypt.compare(oldPassword, user.password);
   if (!isMatch) {
     return sendError(res, 'Current password is incorrect', 400);
@@ -813,12 +845,14 @@ export const deleteAccount = asyncHandler(async (req, res) => {
 // @route   GET /api/users/me
 // @access  Private
 export const getMyProfile = asyncHandler(async (req, res) => {
-  // authMiddleware attaches req.user with user data from token
-  const user = req.user;
+  // Re-fetch without password hash and add a stable OAuth flag for frontend settings logic
+  const user = await User.findById(req.user.id).select('-password').lean();
 
   if (!user) {
     return sendError(res, 'User not found', 404);
   }
+
+  user.isOAuthUser = Boolean(user.googleId && !user.password);
 
   sendSuccess(res, user, 'Profile fetched', 200);
 });
@@ -1001,6 +1035,8 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     username: user.username,
     email: user.email,
     profile_pic_url: user.profile_pic_url,
+    googleId: user.googleId || null,
+    isOAuthUser: Boolean(user.googleId && !user.password),
     token,
   }, 'Email verified successfully');
 });
@@ -1074,6 +1110,8 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     username: user.username,
     email: user.email,
     profile_pic_url: user.profile_pic_url || '',
+    googleId: user.googleId || null,
+    isOAuthUser: Boolean(user.googleId && !user.password),
     token,
     isNewOAuthUser: req.authInfo?.isNewOAuthUser || false
   }));

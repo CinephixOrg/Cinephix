@@ -42,7 +42,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm text-base-content/70 hover:text-primary transition-colors"
             >
-              <BiLogoInstagram className="w-4 h-4 text-pink-500" />
+              <BiLogoInstagram className="w-4 h-4 text-secondary" />
               @cinephixofficial
             </a>
           </div>
@@ -77,7 +77,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm text-base-content/70 hover:text-primary transition-colors"
               >
-                <BiLogoLinkedin className="w-4 h-4 text-blue-500" />
+                <BiLogoLinkedin className="w-4 h-4 text-info" />
                 {dev.name}
               </a>
             ))}

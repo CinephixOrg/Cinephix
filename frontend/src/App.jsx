@@ -62,6 +62,12 @@ export default function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const storedTheme = localStorage.getItem('theme') || 'forest';
+    document.documentElement.setAttribute('data-theme', storedTheme);
+    localStorage.setItem('theme', storedTheme);
+  }, []);
+
+  useEffect(() => {
     // Sadece ana route'a ilk girişte splash screen'i göster
     if (window.location.pathname === "/") {
       setShowSplash(true);
@@ -80,7 +86,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-base-200" data-theme="forest">
+      <div className="min-h-screen bg-base-200">
 
         {/* 🔥 GLOBAL BAR – HER SAYFADA */}
         <TopBar />

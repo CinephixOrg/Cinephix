@@ -67,13 +67,24 @@ export default function MatchPage() {
 
         {/* HEADER */}
         <header className="text-center mb-10">
-          <h1 className="text-4xl font-bold mb-2">
-            <span className="text-white">Cine</span>
-            <span className="text-primary text-glow-primary">Match</span>
-          </h1>
-          <p className="text-base-content/70">
-            Find your cinematic soulmate! Select your preferences and let CineMatch connect you with users who share your movie and series tastes.
-          </p>
+          <div className="relative inline-block mb-4">
+            <h1
+              aria-hidden="true"
+              className="absolute inset-0 text-5xl md:text-6xl font-extrabold tracking-tight blur-md opacity-40 pointer-events-none"
+            >
+              <span className="text-primary">CineMatch</span>
+            </h1>
+            <h1 className="relative text-5xl md:text-6xl font-extrabold tracking-tight">
+              <span className="text-base-content">Cine</span>
+              <span className="text-primary">Match</span>
+            </h1>
+          </div>
+
+          <div className="max-w-3xl mx-auto rounded-xl border border-base-300 bg-base-100/80 p-4 md:p-5">
+            <p className="text-base-content/80 leading-relaxed">
+              Find your cinematic soulmate! Select your preferences and let CineMatch connect you with users who share your movie and series tastes.
+            </p>
+          </div>
         </header>
 
         {/* CONTROL PANEL */}

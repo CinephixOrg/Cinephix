@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div data-theme="forest" className="flex items-center justify-center min-h-screen bg-base-200">
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <div className="text-5xl mb-2">{step === 1 ? "🔐" : "🔑"}</div>

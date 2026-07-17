@@ -21,8 +21,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      // API requires a username, so we auto-generate a temporary one from the email
-      const tempUsername = formData.email.split("@")[0] + Math.floor(Math.random() * 10000);
+      // API requires username between 3-20 chars; generate a safe temporary username from email
+      const localPart = (formData.email.split("@")[0] || "cine")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "");
+      const base = localPart.slice(0, 14) || "cine";
+      const suffix = Math.floor(1000 + Math.random() * 9000).toString();
+      const tempUsername = `${base}${suffix}`.slice(0, 20);
+
       const payload = {
         ...formData,
         username: tempUsername
@@ -36,7 +42,10 @@ export default function RegisterPage() {
       });
       navigate("/verify-email", { state: { email: formData.email } });
     } catch (err) {
-      const msg = err.response?.data?.message || "Registration failed. Please try again.";
+      const msg =
+        err.response?.data?.errors?.[0]?.message ||
+        err.response?.data?.message ||
+        "Registration failed. Please try again.";
       toast.error(msg, { style: { background: "#1a1a1a", color: "#fff" } });
       console.error(err);
     } finally {
@@ -49,10 +58,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      data-theme="forest"
-      className="flex items-center justify-center min-h-screen bg-base-200"
-    >
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <h1 className="text-3xl font-bold text-primary">Cinephix 🎬</h1>

@@ -3,7 +3,6 @@ import React from "react";
 export default function ProfileSidebar({ open, onClose, user, onSelect }) {
   return (
     <div
-      data-theme="forest"
       className={`${
         open ? "translate-x-0" : "translate-x-full"
       } fixed top-0 right-0 h-full w-80 bg-base-100 shadow-2xl border-l border-base-300 transition-transform duration-300 z-50`}

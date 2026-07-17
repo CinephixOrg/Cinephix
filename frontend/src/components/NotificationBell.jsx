@@ -25,7 +25,7 @@ export default function NotificationBell() {
       >
         <BiBell size={24} />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-error text-white text-[10px] font-bold">
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-error text-error-content text-[10px] font-bold">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

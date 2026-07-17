@@ -87,7 +87,7 @@ export default function VerifyEmailPage() {
 
   if (!email) {
     return (
-      <div data-theme="forest" className="flex items-center justify-center min-h-screen bg-base-200">
+      <div className="flex items-center justify-center min-h-screen bg-base-200">
         <div className="text-center">
           <p className="text-base-content/70 mb-4">Email address not found.</p>
           <Link to="/register" className="btn btn-primary">Register</Link>
@@ -97,7 +97,7 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div data-theme="forest" className="flex items-center justify-center min-h-screen bg-base-200">
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <div className="text-5xl mb-2">📧</div>
