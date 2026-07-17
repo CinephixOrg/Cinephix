@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
 import { AuthContext } from '../../context/AuthContext';
 import { useChat } from '../../hooks/useChat';
@@ -187,7 +188,10 @@ export default function ChatWindow({
                 className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 {/* Avatar */}
-                <div className="avatar flex-shrink-0 mt-0.5">
+                <Link
+                  to={isOwn ? "/profile" : `/users/${msg.sender?._id || msg.sender}`}
+                  className="avatar flex-shrink-0 mt-0.5 hover:opacity-80 transition-opacity"
+                >
                   {avatar ? (
                     <div className="w-8 rounded-full">
                       <img src={avatar} alt={senderName} />
@@ -197,12 +201,17 @@ export default function ChatWindow({
                       {senderName[0]?.toUpperCase()}
                     </div>
                   )}
-                </div>
+                </Link>
 
                 {/* Recommendation Card */}
                 <div className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
                   {!isOwn && (
-                    <span className="text-xs text-base-content/50 px-1">{senderName}</span>
+                    <Link
+                      to={`/users/${msg.sender?._id || msg.sender}`}
+                      className="text-xs text-base-content/50 px-1 hover:text-primary transition-colors font-medium"
+                    >
+                      {senderName}
+                    </Link>
                   )}
                   <RecommendationCard message={msg} />
                   <span className="text-xs text-base-content/30 px-1">{time}</span>
@@ -218,7 +227,10 @@ export default function ChatWindow({
               className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
             >
               {/* Avatar */}
-              <div className="avatar flex-shrink-0">
+              <Link
+                to={isOwn ? "/profile" : `/users/${msg.sender?._id || msg.sender}`}
+                className="avatar flex-shrink-0 hover:opacity-80 transition-opacity"
+              >
                 {avatar ? (
                   <div className="w-8 rounded-full">
                     <img src={avatar} alt={senderName} />
@@ -228,12 +240,17 @@ export default function ChatWindow({
                     {senderName[0]?.toUpperCase()}
                   </div>
                 )}
-              </div>
+              </Link>
 
               {/* Bubble */}
               <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
                 {!isOwn && (
-                  <span className="text-xs text-base-content/50 px-1">{senderName}</span>
+                  <Link
+                    to={`/users/${msg.sender?._id || msg.sender}`}
+                    className="text-xs text-base-content/50 px-1 hover:text-primary transition-colors font-medium"
+                  >
+                    {senderName}
+                  </Link>
                 )}
                 <div
                   className={`px-4 py-2 rounded-2xl text-sm break-words ${

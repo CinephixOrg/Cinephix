@@ -40,8 +40,9 @@ export default function MatchLeaderboard({ matches }) {
           )}
 
           {/* Avatar Circle with Border */}
-          <div
-            className={`relative rounded-full border-4 border-primary overflow-hidden 
+          <Link
+            to={`/users/${match.user._id}`}
+            className={`relative rounded-full border-4 border-primary overflow-hidden block
             transition-all duration-300 hover:scale-105 cursor-pointer
             ${
               isCenterRank1
@@ -58,7 +59,7 @@ export default function MatchLeaderboard({ matches }) {
               alt={match.user.username}
               className="w-full h-full object-cover"
             />
-          </div>
+          </Link>
 
           {/* Glow Effect */}
           <div
@@ -73,9 +74,11 @@ export default function MatchLeaderboard({ matches }) {
         </div>
 
         {/* Username */}
-        <h3 className="text-lg font-bold text-white mb-1 text-center max-w-xs truncate">
-          {match.user.username}
-        </h3>
+        <Link to={`/users/${match.user._id}`}>
+          <h3 className="text-lg font-bold text-white mb-1 text-center max-w-xs truncate hover:text-primary hover:underline transition-all">
+            {match.user.username}
+          </h3>
+        </Link>
 
         {/* Match Percentage */}
         <div className="flex items-center justify-center mb-4">

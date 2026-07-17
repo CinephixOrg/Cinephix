@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { BiTrash, BiCheck } from 'react-icons/bi';
@@ -119,18 +119,30 @@ export default function NotificationsPage() {
               >
                 <div className="flex gap-4 items-start">
                   {/* Avatar */}
-                  <img
-                    src={notification.sender.profile_pic_url || 'https://via.placeholder.com/48'}
-                    alt={notification.sender.username}
-                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                  />
+                  <Link
+                    to={`/users/${notification.sender._id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                  >
+                    <img
+                      src={notification.sender.profile_pic_url || 'https://via.placeholder.com/48'}
+                      alt={notification.sender.username}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  </Link>
 
                   {/* Content */}
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-base flex items-center gap-2">
                         <span className="text-lg">{getNotificationIcon(notification)}</span>
-                        {notification.sender.username}
+                        <Link
+                          to={`/users/${notification.sender._id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:underline hover:text-primary transition-all"
+                        >
+                          {notification.sender.username}
+                        </Link>
                       </h3>
                       {!notification.read && (
                         <span className="w-3 h-3 rounded-full bg-primary flex-shrink-0"></span>
