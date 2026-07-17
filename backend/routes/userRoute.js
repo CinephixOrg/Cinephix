@@ -81,7 +81,7 @@ router.get("/auth/google/callback", googleCallbackMiddleware, googleAuthCallback
 router.post("/me/watchlist", authMiddleware, validateRequest(validationSchemas.addToWatchlist), addToWatchlist);
 router.delete("/me/watchlist/:itemId", authMiddleware, removeFromWatchlist);
 
-router.post('/profile/:id/upload-profile-pic', upload.single('profilePic'), uploadProfilePic);
+router.post('/profile/:id/upload-profile-pic', authMiddleware, upload.single('profilePic'), uploadProfilePic);
 router.get("/me", authMiddleware, getMyProfile);
 router.get("/me/suggestions", authMiddleware, getSuggestedUsers);
 

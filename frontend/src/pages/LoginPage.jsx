@@ -39,10 +39,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      data-theme="forest"
-      className="flex items-center justify-center min-h-screen bg-base-200"
-    >
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <h1 className="text-3xl font-bold text-primary flex items-center gap-2">

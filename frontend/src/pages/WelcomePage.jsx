@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 // Bu component, giriş yapmamış kullanıcıların göreceği ana sayfadır.
 export default function WelcomePage() {
   return (
-    <div data-theme="forest" className="w-full">
+    <div className="w-full">
       {/* Hero Alanı (Ekranı kaplayan ana karşılama) */}
       <div
         className="hero min-h-[calc(100vh-80px)]" // Navbar yüksekliğini hesaptan düşüyoruz
@@ -19,10 +19,10 @@ export default function WelcomePage() {
         }}
       >
         {/* Resmin üzerine metnin okunabilirliğini artırmak için yarı saydam bir katman */}
-        <div className="hero-overlay bg-black bg-opacity-60"></div>
+        <div className="hero-overlay bg-base-300/60"></div>
 
         {/* Ortalanmış içerik alanı */}
-        <div className="hero-content text-center text-neutral-content">
+        <div className="hero-content text-center text-base-content">
           <div className="max-w-md animate-fade-in-up">
             {/* Geçici emoji logo */}
             <span className="text-7xl mb-4 inline-block">🎬</span>

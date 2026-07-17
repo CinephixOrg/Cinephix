@@ -65,7 +65,7 @@ export default function SetupProfilePage() {
   };
 
   return (
-    <div data-theme="forest" className="flex items-center justify-center min-h-screen bg-base-200 py-10">
+    <div className="flex items-center justify-center min-h-screen bg-base-200 py-10">
       <div className="card w-full max-w-md shadow-xl bg-base-100">
         <div className="card-body items-center text-center">
           <h2 className="card-title text-3xl text-primary mb-2">Welcome! 🎬</h2>

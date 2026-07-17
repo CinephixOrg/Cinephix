@@ -58,7 +58,7 @@ export default function OAuthSuccessPage() {
   }, []);
 
   return (
-    <div data-theme="forest" className="flex items-center justify-center min-h-screen bg-base-200">
+    <div className="flex items-center justify-center min-h-screen bg-base-200">
       <div className="flex flex-col items-center gap-4">
         <span className="loading loading-spinner loading-lg text-primary"></span>
         <p className="text-base-content/70">Connecting with Google...</p>
