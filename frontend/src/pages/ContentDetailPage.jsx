@@ -94,7 +94,7 @@ function ReviewSection({ contentId, user, contentType }) {
             {friendsReviews.map((review, index) => (
               <Link
                 key={review._id}
-                to={`/profile/${review.user?._id}`}
+                to={`/users/${review.user?._id}`}
                 className="min-w-[72px] flex-shrink-0 text-center"
               >
                 <div className="avatar mx-auto">

@@ -25,6 +25,26 @@ export default function ProfilePage() {
   const [error, setError] = useState(null);
   const [viewerOpen, setViewerOpen] = useState(false); // <-- YENİ: Görüntüleyici durumu
 
+  // Profile Analysis feature states
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
+  const handleAnalyzeProfile = async () => {
+    setAnalysisLoading(true);
+    try {
+      const data = await userService.getProfileAnalysis();
+      setAnalysisData(data.data || data);
+      setIsAnalysisModalOpen(true);
+      toast.success("Profile analyzed!");
+    } catch (err) {
+      console.error("Profile analysis error:", err);
+      toast.error(err.message || "Failed to analyze profile.");
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
   // Bio state'leri (Değişiklik yok)
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioText, setBioText] = useState("");
@@ -196,6 +216,16 @@ export default function ProfilePage() {
         )} */}
         <div className="flex flex-col items-center gap-2 mt-4">
           <h1 className="text-3xl font-bold">{profile?.username || user.username}</h1>
+          {isOwnProfile && (
+            <button
+              onClick={handleAnalyzeProfile}
+              disabled={analysisLoading}
+              className="btn btn-sm btn-primary gap-2 mt-1"
+            >
+              {analysisLoading ? <span className="loading loading-spinner loading-sm" /> : "✨"}
+              Analyze Profile
+            </button>
+          )}
           {!isOwnProfile && (
             <div className="flex flex-col items-center gap-2">
               <div className="flex gap-2">
@@ -504,6 +534,81 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Profile Analysis Modal */}
+      {isAnalysisModalOpen && (
+        <dialog className="modal modal-open bg-black/60">
+          <div className="modal-box w-11/12 max-w-2xl bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden p-0">
+            {/* Modal Header Banner */}
+            <div className="bg-gradient-to-r from-primary to-secondary p-6 text-primary-content relative">
+              <button 
+                onClick={() => setIsAnalysisModalOpen(false)}
+                className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-primary-content hover:bg-black/10"
+              >
+                ✕
+              </button>
+              <span className="text-xs font-bold tracking-widest uppercase opacity-75">AI Cinematic Persona</span>
+              <h2 className="text-3xl font-extrabold tracking-tight mt-1">
+                {analysisData?.nickname || "Silent Observer"}
+              </h2>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {analysisData ? (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Personality Breakdown Card */}
+                    <div className="card bg-base-200 border border-base-300 shadow-sm rounded-xl">
+                      <div className="card-body p-5">
+                        <h4 className="card-title text-xs font-extrabold uppercase tracking-wider text-base-content/50 flex items-center gap-2">
+                          🧠 Profile Insights
+                        </h4>
+                        <p className="text-sm text-base-content/95 leading-relaxed mt-1">
+                          {analysisData.personalitySummary}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Recommended Concept Card */}
+                    <div className="card bg-base-200 border border-base-300 shadow-sm rounded-xl">
+                      <div className="card-body p-5">
+                        <h4 className="card-title text-xs font-extrabold uppercase tracking-wider text-base-content/50 flex items-center gap-2">
+                          💡 Recommended Vibe
+                        </h4>
+                        <p className="text-sm text-base-content/95 leading-relaxed mt-1">
+                          {analysisData.recommendedConcept}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fun Fact Card - full width */}
+                  <div className="p-5 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-4 shadow-inner">
+                    <span className="text-3xl select-none leading-none mt-1">🍿</span>
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-warning-content/85">Did You Know?</h4>
+                      <p className="text-sm text-base-content/85 mt-1 italic leading-relaxed">
+                        "{analysisData.funFact}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <span className="loading loading-ring loading-lg text-primary"></span>
+                  <p className="text-sm text-base-content/60 mt-2">Aggregating statistics...</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 pb-6 pt-2 flex justify-end">
+              <button className="btn btn-outline border-base-300 hover:bg-base-200 hover:text-base-content font-bold px-6" onClick={() => setIsAnalysisModalOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </dialog>
       )}
 
     </div>

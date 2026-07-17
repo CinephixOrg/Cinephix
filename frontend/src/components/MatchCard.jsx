@@ -49,9 +49,10 @@ export default function MatchCard({ match, rank, animationDelay }) {
           <div className="flex-1 flex flex-col items-center mb-6">
             {/* Avatar Circle */}
             <div className="relative mb-6">
-              <div
+              <Link
+                to={`/users/${match.user._id}`}
                 className={`
-                rounded-full overflow-hidden border-4 border-primary
+                rounded-full overflow-hidden border-4 border-primary block
                 transition-transform duration-300 group-hover:scale-105
                 ${isTopThree ? "w-28 h-28" : "w-24 h-24"}
                 `}
@@ -64,7 +65,7 @@ export default function MatchCard({ match, rank, animationDelay }) {
                   alt={match.user.username}
                   className="w-full h-full object-cover"
                 />
-              </div>
+              </Link>
 
               {/* Crown for Top 3 - Top Right of Avatar */}
               {isTopThree && rank === 1 && (
@@ -84,9 +85,11 @@ export default function MatchCard({ match, rank, animationDelay }) {
             </div>
 
             {/* Username */}
-            <h3 className="text-xl font-bold text-white text-center mb-2 line-clamp-2">
-              {match.user.username}
-            </h3>
+            <Link to={`/users/${match.user._id}`}>
+              <h3 className="text-xl font-bold text-white text-center mb-2 line-clamp-2 hover:text-primary hover:underline transition-all">
+                {match.user.username}
+              </h3>
+            </Link>
 
             {/* Bio */}
             {match.user.bio && (

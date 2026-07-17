@@ -25,6 +25,15 @@ export const userService = {
     }
   },
 
+  getProfileAnalysis: async () => {
+    try {
+      const response = await API.get(API_ROUTES.USERS.GET_PROFILE_ANALYSIS);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch profile analysis' };
+    }
+  },
+
   getProfile: async (userId) => {
     try {
       // Check cache first

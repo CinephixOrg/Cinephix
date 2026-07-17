@@ -65,7 +65,7 @@ function ReviewPosterCard({ review, currentUserId, onLikeToggle }) {
         </Link>
 
         {/* Reviewer */}
-        <Link to={`/profile/${user?._id}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+        <Link to={`/users/${user?._id}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
           <div className="w-4 h-4 rounded-full overflow-hidden ring-1 ring-base-300 flex-shrink-0">
             <img
               src={user?.profile_pic_url || AVATAR_PLACEHOLDER}

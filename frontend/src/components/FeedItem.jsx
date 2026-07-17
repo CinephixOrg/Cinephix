@@ -32,7 +32,7 @@ function StarBar({ value }) {
 
 function Avatar({ user }) {
   return (
-    <Link to={`/profile/${user._id}`} className="flex-shrink-0">
+    <Link to={`/users/${user._id}`} className="flex-shrink-0">
       <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-base-300">
         <img
           src={user.profile_pic_url || AVATAR_PLACEHOLDER}
@@ -75,7 +75,7 @@ function ContentLink({ content }) {
 
 function UserLink({ user }) {
   return (
-    <Link to={`/profile/${user._id}`} className="font-semibold hover:underline">
+    <Link to={`/users/${user._id}`} className="font-semibold hover:underline">
       {user.username}
     </Link>
   );

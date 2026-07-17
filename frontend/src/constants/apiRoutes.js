@@ -18,6 +18,7 @@ export const API_ROUTES = {
   USERS: {
     GET_CURRENT: `${API_BASE_URL}/users/me`,
     GET_PROFILE: (userId) => `${API_BASE_URL}/users/profile/${userId}`,
+    GET_PROFILE_ANALYSIS: `${API_BASE_URL}/users/profile-analysis`,
     UPDATE_PROFILE: `${API_BASE_URL}/users/profile`,
     GET_FAVORITES: (userId) => `${API_BASE_URL}/users/favorites/${userId}`,
     GET_CINE_GRAPH: (userId) => `${API_BASE_URL}/users/cinegraph-data/${userId}`,

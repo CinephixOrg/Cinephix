@@ -83,7 +83,7 @@ export default function ReviewCard({
       {/* Reviewer header */}
       <div className="flex items-center justify-between gap-2">
         <Link
-          to={`/profile/${review.user?._id}`}
+          to={`/users/${review.user?._id}`}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-base-300">

@@ -25,7 +25,7 @@ function SuggestionRow({ user, onFollow }) {
 
   return (
     <div className="flex items-center gap-3 py-2">
-      <Link to={`/profile/${user._id}`} className="flex-shrink-0">
+      <Link to={`/users/${user._id}`} className="flex-shrink-0">
         <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-base-300">
           <img
             src={user.profile_pic_url || AVATAR_PLACEHOLDER}
@@ -38,7 +38,7 @@ function SuggestionRow({ user, onFollow }) {
 
       <div className="flex-1 min-w-0">
         <Link
-          to={`/profile/${user._id}`}
+          to={`/users/${user._id}`}
           className="text-sm font-semibold hover:underline block truncate"
         >
           {user.username}
