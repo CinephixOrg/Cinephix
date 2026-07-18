@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewerOpen, setViewerOpen] = useState(false); // <-- YENİ: Görüntüleyici durumu
+  const [isAccessDenied, setIsAccessDenied] = useState(false);
 
   // Profile Analysis feature states
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
@@ -101,20 +102,28 @@ export default function ProfilePage() {
     // Always fetch fresh data in background
     const fetchData = async () => {
       try {
-        const [profileData, favoritesData, cineGraphData] = await Promise.all([
-          userService.getProfile(targetUserId),
+        const profileData = await userService.getProfile(targetUserId);
+
+        setProfile(profileData);
+        setBioText(profileData.bio || "");
+        setProfilePic(profileData.profile_pic_url);
+        updateUser({ ...profileData });
+
+        if (profileData.isPrivate) {
+          setIsAccessDenied(true);
+        } else {
+          setIsAccessDenied(false);
+        }
+        
+        // ALWAYS fetch these, since backend now returns masked data if unauthorized
+        const [favoritesData, cineGraphData] = await Promise.all([
           userService.getFavorites(targetUserId),
           userService.getCineGraphData(targetUserId),
         ]);
-
-        setProfile(profileData);
+        
         setFavorites(favoritesData);
         setCineGraphData(cineGraphData);
 
-        setBioText(profileData.bio || "");
-        setProfilePic(profileData.profile_pic_url);
-
-        updateUser({ ...profileData });
         setLoading(false);
       } catch (err) {
         setError("Profil yüklenemedi.");
@@ -226,7 +235,7 @@ export default function ProfilePage() {
               Analyze Profile
             </button>
           )}
-          {!isOwnProfile && (
+          {!isOwnProfile && !profile?.isPrivate && (
             <div className="flex flex-col items-center gap-2">
               <div className="flex gap-2">
                 <button
@@ -382,29 +391,40 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* --- YENİ: CineGraph Bölümü --- */}
       <section className="mt-12">
         <h2 className="text-3xl font-bold mb-6 text-center">
             {isOwnProfile ? "My CineGraph" : `${profile?.username || 'User'}'s CineGraph`}
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {cineGraphData ? (
-            <>
-              <CineGraph
-                data={cineGraphData.movieStats}
-                title="Watchlist Movie Genres"
-              />
-              <CineGraph
-                data={cineGraphData.seriesStats}
-                title="Watchlist Series Genres"
-              />
-            </>
-          ) : (
-            <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner col-span-2">
-              <p className="text-base-content/70">No CineGraph data available.</p>
-            </div>
-          )}
-        </div>
+        {cineGraphData?.isPrivateMasked ? (
+           <div className="text-center p-8 bg-base-200 rounded-lg shadow-inner mt-4 border border-base-300">
+             <div className="text-4xl mb-2">🔒</div>
+             <p className="text-xl font-semibold mb-2">This account is private.</p>
+             <p className="text-base-content/70">Follow to see detailed lists and genres.</p>
+             <div className="flex justify-center gap-4 mt-4">
+               <div className="badge badge-primary badge-lg">Movies Logged: {cineGraphData.totalMovies}</div>
+               <div className="badge badge-secondary badge-lg">Series Logged: {cineGraphData.totalSeries}</div>
+             </div>
+           </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {cineGraphData ? (
+              <>
+                <CineGraph
+                  data={cineGraphData.movieStats}
+                  title="Watchlist Movie Genres"
+                />
+                <CineGraph
+                  data={cineGraphData.seriesStats}
+                  title="Watchlist Series Genres"
+                />
+              </>
+            ) : (
+              <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner col-span-2">
+                <p className="text-base-content/70">No CineGraph data available.</p>
+              </div>
+            )}
+          </div>
+        )}
       </section>
       {/* --- BİTİŞ: CineGraph Bölümü --- */}
 
@@ -412,8 +432,12 @@ export default function ProfilePage() {
       {/* --- DÜZELTME: FAVORİ FİLMLER ALANI (GERİ GETİRİLDİ) --- */}
       <section className="mt-12 max-w-5xl mx-auto">
         <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
-        {/* favorites.movies objesinin varlığını ve uzunluğunu kontrol et */}
-        {favorites && favorites.movies && favorites.movies.length > 0 ? (
+        {favorites?.isPrivateMasked ? (
+           <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
+             <div className="text-2xl mb-2">🔒</div>
+             <p className="text-base-content/70">Follow to see favorite movies.</p>
+           </div>
+        ) : favorites && favorites.movies && favorites.movies.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {favorites.movies.map((movie) => (
               <div key={movie._id} className="flex-none w-36">
@@ -432,8 +456,12 @@ export default function ProfilePage() {
       {/* --- DÜZELTME: FAVORİ DİZİLER ALANI (GERİ GETİRİLDİ) --- */}
       <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
-        {/* favorites.series objesinin varlığını ve uzunluğunu kontrol et */}
-        {favorites.series && favorites.series.length > 0 ? (
+        {favorites?.isPrivateMasked ? (
+           <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
+             <div className="text-2xl mb-2">🔒</div>
+             <p className="text-base-content/70">Follow to see favorite series.</p>
+           </div>
+        ) : favorites && favorites.series && favorites.series.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {favorites.series.map((series) => (
               <div key={series._id} className="flex-none w-36">
@@ -447,7 +475,6 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
-      {/* --- BİTİŞ: FAVORİ DİZİLER --- */}
 
 
 

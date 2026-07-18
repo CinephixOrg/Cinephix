@@ -51,6 +51,11 @@ const userSchema = new Schema({
     type: String,
     default: "", // Varsayılan olarak boş bir string
   },
+  visibility: {
+    type: String,
+    enum: ['public', 'private'],
+    default: 'public'
+  },
   // --- BİTİŞ ---
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
   toWatchList: { type: [WatchItemSchema], default: [] },

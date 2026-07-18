@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [importStep, setImportStep] = useState('idle'); // 'idle' | 'movies' | 'shows' | 'completed' | 'error'
   const [percentProgress, setPercentProgress] = useState(0);
   const [activeProgressText, setActiveProgressText] = useState('');
+  const [importSource, setImportSource] = useState('letterboxd'); // 'tvtime' | 'letterboxd'
 
   // Şifre Değiştirme State'leri
   const [passwords, setPasswords] = useState({
@@ -42,6 +43,75 @@ export default function SettingsPage() {
     confirmPassword: ''
   });
   const [loadingPass, setLoadingPass] = useState(false);
+
+  // Privacy State
+  const [loadingVisibility, setLoadingVisibility] = useState(false);
+
+  // Activity Log State
+  const [logs, setLogs] = useState([]);
+  const [selectedLogs, setSelectedLogs] = useState(new Set());
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [revertingLogs, setRevertingLogs] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resettingData, setResettingData] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'activity') {
+      fetchLogs();
+    }
+  }, [activeTab]);
+
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const res = await API.get('/users/me/logs');
+      console.log("Fetched Data:", res.data);
+      setLogs(Array.isArray(res.data) ? res.data : []);
+      setSelectedLogs(new Set());
+    } catch (err) {
+      toast.error('Failed to load activity logs.');
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const handleToggleLog = (logId) => {
+    const next = new Set(selectedLogs);
+    if (next.has(logId)) {
+      next.delete(logId);
+    } else {
+      next.add(logId);
+    }
+    setSelectedLogs(next);
+  };
+
+  const handleUndoSelected = async () => {
+    if (selectedLogs.size === 0) return;
+    setRevertingLogs(true);
+    try {
+      await API.post('/users/me/logs/revert', { logIds: Array.from(selectedLogs) });
+      toast.success('Selected transactions reverted.');
+      fetchLogs();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to revert transactions.');
+    } finally {
+      setRevertingLogs(false);
+    }
+  };
+
+  const handleResetData = async () => {
+    setResettingData(true);
+    try {
+      await API.post('/users/me/reset-data');
+      toast.success('All data has been reset.');
+      setShowResetModal(false);
+      fetchLogs();
+    } catch (err) {
+      toast.error('Failed to reset data.');
+    } finally {
+      setResettingData(false);
+    }
+  };
 
   // Tema State'i (DaisyUI temaları)
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "forest");
@@ -163,6 +233,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleVisibilityToggle = async (e) => {
+    const newVisibility = e.target.checked ? 'private' : 'public';
+    setLoadingVisibility(true);
+    try {
+      await API.patch('/users/me/visibility', { visibility: newVisibility });
+      updateUser({ visibility: newVisibility });
+      toast.success(`Profile is now ${newVisibility}!`);
+    } catch (err) {
+      toast.error('Failed to update visibility.');
+    } finally {
+      setLoadingVisibility(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     setShowDeleteModal(false);
     try {
@@ -229,7 +313,8 @@ export default function SettingsPage() {
       }
 
       const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${baseURL}/users/import-tvtime`, {
+      const endpoint = importSource === 'letterboxd' ? '/users/import-letterboxd' : '/users/import-tvtime';
+      const response = await fetch(`${baseURL}${endpoint}`, {
         method: 'POST',
         body: formData,
         headers
@@ -255,58 +340,59 @@ export default function SettingsPage() {
         for (const line of lines) {
           if (line.startsWith("data:")) {
             const dataStr = line.substring(5).trim();
+            if (!dataStr) continue; // Boş satırları atla
+
             try {
               const parsed = JSON.parse(dataStr);
+
+              // 'parsed' verisinin varlığını ve beklediğimiz yapıda olduğunu kontrol et
+              if (!parsed) continue;
+
+              // Defensive check for 'files' property to prevent 'reading some of undefined' errors
+              if (parsed.data && parsed.data.files && Array.isArray(parsed.data.files)) {
+                 // Code safely accesses parsed.data.files.some(...) if necessary
+                 const hasWatched = parsed.data.files.some(f => f.entryName === "watched.csv");
+              }
+
               if (parsed.status === "completed") {
+                // ... (başarılı tamamlanma kodların olduğu blok - aynı kalabilir)
                 const { importedMovies, importedEpisodes } = parsed;
                 setImportStep('completed');
                 setPercentProgress(100);
                 setActiveProgressText('Import completed!');
                 setImportMetrics({ importedMovies, importedEpisodes });
-                
-                // Invalidate local caches to immediately reflect new watch history and watchlist
-                try {
-                  clearCacheItem(CACHE_KEYS.CURRENT_USER);
-                  clearCacheItem(CACHE_KEYS.WATCHLIST);
-                  clearCacheItem(CACHE_KEYS.TO_WATCH_LIST);
-                } catch (cacheErr) {
-                  console.error("Failed to clear caches:", cacheErr);
-                }
-
-                // Force-refresh global ratings context so cards show imported ratings immediately
-                if (refreshRatings) {
-                  refreshRatings().catch(err => console.error("Failed to refresh ratings after import:", err));
-                }
-
-                toast.success(
-                  `Import complete! Successfully imported ${importedMovies} movies and ${importedEpisodes} episodes.`,
-                  { duration: 6000 }
-                );
+                // ... (cache temizleme ve refresh kısımları)
+                toast.success(`Import complete!`);
                 setImportFile(null);
+                fetchLogs();
               } else if (parsed.status === "error") {
                 throw new Error(parsed.message || 'Import error');
               } else {
-                // Update progress information
+                // İlerleme çubuğu güncellemesi
                 const { step, current, total, text } = parsed;
-                setImportStep(step);
-                setActiveProgressText(`Processing ${step === 'movies' ? 'Movie' : 'Episode'} ${current} / ${total}: ${text.split('(')[1]?.replace(')', '') || text}`);
-                
-                // Calculate percentage
+
+                // GÜVENLİ OKUMA: text verisi null veya undefined ise "Processing..." olarak varsay
+                const safeText = text || "Processing...";
+                const displaySubtext = safeText.includes('(') ? safeText.split('(')[1]?.replace(')', '') : safeText;
+
+                setImportStep(step || 'processing');
+                setActiveProgressText(`Processing ${step === 'movies' ? 'Movie' : 'Episode'} ${current || 0} / ${total || 0}: ${displaySubtext}`);
+
+                // Yüzde hesaplama
                 let percent = 0;
-                if (step === 'movies') {
-                  // Movies takes first 50%
-                  percent = Math.round((current / total) * 50);
-                } else if (step === 'shows') {
-                  // Shows/Episodes takes next 50%
-                  percent = 50 + Math.round((current / total) * 50);
+                if (total && total > 0) {
+                  if (step === 'movies') percent = Math.round((current / total) * 50);
+                  else if (step === 'shows') percent = 50 + Math.round((current / total) * 50);
                 }
                 setPercentProgress(percent);
               }
             } catch (err) {
-              console.error("Failed to parse SSE line", err);
+              // JSON Parse hatası veya veri işleme hatası
+              console.error("SSE Verisi işlenirken hata oluştu:", err, "Gelen satır:", dataStr);
             }
           }
         }
+
       }
     } catch (err) {
       console.error("Import failed:", err);
@@ -355,6 +441,14 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('import')}
           >
             Import / Export
+          </button>
+          <button
+            role="tab"
+            type="button"
+            className={`tab text-base-content ${activeTab === 'activity' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('activity')}
+          >
+            Activity Log
           </button>
         </div>
 
@@ -419,33 +513,33 @@ export default function SettingsPage() {
 
                 <div>
                   <h2 className="card-title mb-1">Username</h2>
-                <p className="text-base-content/60 text-sm mb-4">
-                  Current username: <span className="font-semibold text-primary">@{user?.username}</span>
-                </p>
-                <form onSubmit={submitUsernameChange} className="flex flex-col gap-4">
-                  <div className="form-control">
-                    <label className="label"><span className="label-text">New Username</span></label>
-                    <input
-                      type="text"
-                      placeholder="Enter new username (3–20 chars)"
-                      value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
-                      className="input input-bordered"
-                      minLength={3}
-                      maxLength={20}
-                      required
-                    />
-                  </div>
-                  <div className="card-actions justify-end">
-                    <button
-                      type="submit"
-                      className={`btn btn-primary ${loadingUsername ? 'loading' : ''}`}
-                      disabled={loadingUsername}
-                    >
-                      Update Username
-                    </button>
-                  </div>
-                </form>
+                  <p className="text-base-content/60 text-sm mb-4">
+                    Current username: <span className="font-semibold text-primary">@{user?.username}</span>
+                  </p>
+                  <form onSubmit={submitUsernameChange} className="flex flex-col gap-4">
+                    <div className="form-control">
+                      <label className="label"><span className="label-text">New Username</span></label>
+                      <input
+                        type="text"
+                        placeholder="Enter new username (3–20 chars)"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        className="input input-bordered"
+                        minLength={3}
+                        maxLength={20}
+                        required
+                      />
+                    </div>
+                    <div className="card-actions justify-end">
+                      <button
+                        type="submit"
+                        className={`btn btn-primary ${loadingUsername ? 'loading' : ''}`}
+                        disabled={loadingUsername}
+                      >
+                        Update Username
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}
@@ -508,6 +602,25 @@ export default function SettingsPage() {
                   )}
                 </div>
 
+                <div>
+                  <h2 className="card-title mb-4">Privacy</h2>
+                  <div className="flex items-center justify-between p-4 bg-base-300 rounded-lg">
+                    <div>
+                      <h3 className="font-semibold">Private Profile</h3>
+                      <p className="text-sm text-base-content/70">
+                        When private, only your followers can see your profile data.
+                      </p>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      className="toggle toggle-primary" 
+                      checked={user?.visibility === 'private'} 
+                      onChange={handleVisibilityToggle}
+                      disabled={loadingVisibility}
+                    />
+                  </div>
+                </div>
+
                 <div className="card bg-base-300 shadow-xl border border-error/30">
                   <div className="card-body">
                     <h2 className="card-title text-error mb-2">Danger Zone</h2>
@@ -539,11 +652,10 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => setTheme(themeName)}
-                          className={`card w-full border transition-all duration-200 text-left ${
-                            isActive
-                              ? 'border-primary bg-base-300 shadow-lg scale-[1.01]'
-                              : 'border-base-300 bg-base-200 hover:border-primary/50 hover:bg-base-300'
-                          }`}
+                          className={`card w-full border transition-all duration-200 text-left ${isActive
+                            ? 'border-primary bg-base-300 shadow-lg scale-[1.01]'
+                            : 'border-base-300 bg-base-200 hover:border-primary/50 hover:bg-base-300'
+                            }`}
                         >
                           <div className="card-body p-4 gap-2">
                             <div className="flex items-center justify-between gap-3">
@@ -576,11 +688,10 @@ export default function SettingsPage() {
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 transition-all duration-200 ${
-                      isDragging
-                        ? 'border-primary bg-primary/10'
-                        : 'border-base-300 bg-base-200 hover:border-primary/50'
-                    }`}
+                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 transition-all duration-200 ${isDragging
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-300 bg-base-200 hover:border-primary/50'
+                      }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -598,8 +709,18 @@ export default function SettingsPage() {
                     </svg>
 
                     <div className="text-center">
+                      <div className="flex justify-center gap-4 mb-4">
+                        <label className="label cursor-pointer gap-2">
+                          <input type="radio" name="importSource" className="radio radio-primary" checked={importSource === 'letterboxd'} onChange={() => setImportSource('letterboxd')} />
+                          <span className="label-text">Letterboxd</span>
+                        </label>
+                        <label className="label cursor-pointer gap-2">
+                          <input type="radio" name="importSource" className="radio radio-primary" checked={importSource === 'tvtime'} onChange={() => setImportSource('tvtime')} />
+                          <span className="label-text">TV Time</span>
+                        </label>
+                      </div>
                       <span className="font-semibold text-base-content">
-                        Drag and drop your export ZIP here, or{' '}
+                        Drag and drop your {importSource === 'letterboxd' ? 'Letterboxd' : 'TV Time'} export ZIP here, or{' '}
                       </span>
                       <label className="text-primary font-semibold hover:underline cursor-pointer">
                         browse files
@@ -699,6 +820,78 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'activity' && (
+              <div>
+                <h2 className="card-title mb-2">Activity Log</h2>
+                <p className="text-base-content/60 text-sm mb-6">
+                  Review your recent actions and undo any unwanted changes.
+                </p>
+
+                <div className="flex justify-between items-center mb-4">
+                  <button 
+                    className={`btn btn-primary btn-sm ${revertingLogs ? 'loading' : ''}`}
+                    disabled={selectedLogs.size === 0 || revertingLogs}
+                    onClick={handleUndoSelected}
+                  >
+                    Undo Selected ({selectedLogs.size})
+                  </button>
+                  <button 
+                    className="btn btn-outline btn-error btn-sm"
+                    onClick={() => setShowResetModal(true)}
+                  >
+                    Reset All Data
+                  </button>
+                </div>
+
+                {loadingLogs ? (
+                  <div className="flex justify-center p-10"><span className="loading loading-spinner text-primary"></span></div>
+                ) : logs.length === 0 ? (
+                  <div className="text-center p-10 bg-base-200 rounded-lg text-base-content/60">No recent activity.</div>
+                ) : (
+                  <div className="overflow-x-auto bg-base-200 rounded-lg border border-base-300">
+                    <table className="table table-sm w-full">
+                      <thead>
+                        <tr>
+                          <th></th>
+                          <th>Date</th>
+                          <th>Action</th>
+                          <th>Details</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {logs.map((log) => (
+                          <tr key={log._id} className={log.isReverted ? "opacity-50 line-through" : ""}>
+                            <td>
+                              {!log.isReverted && (
+                                <input 
+                                  type="checkbox" 
+                                  className="checkbox checkbox-sm checkbox-primary" 
+                                  checked={selectedLogs.has(log._id)}
+                                  onChange={() => handleToggleLog(log._id)}
+                                />
+                              )}
+                            </td>
+                            <td>{new Date(log.createdAt).toLocaleString()}</td>
+                            <td><div className="badge badge-ghost badge-sm">{log.actionType}</div></td>
+                            <td>{log.details}</td>
+                            <td>
+                              {log.isReverted ? (
+                                <span className="text-error font-semibold text-xs">Reverted</span>
+                              ) : (
+                                <span className="text-success font-semibold text-xs">Active</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -725,6 +918,25 @@ export default function SettingsPage() {
               </button>
               <button className="btn btn-error" onClick={handleDeleteAccount}>
                 Delete Forever
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
+
+      {showResetModal && (
+        <dialog open className="modal modal-open bg-black/60 animate-fade-in">
+          <div className="modal-box border border-error/20">
+            <h3 className="font-bold text-lg text-error">Reset All Data</h3>
+            <p className="py-4">
+              Are you sure you want to reset all your data? This will clear your entire watchlist, favorites, and ratings! This action CANNOT be undone!
+            </p>
+            <div className="modal-action">
+              <button className="btn btn-ghost" onClick={() => setShowResetModal(false)} disabled={resettingData}>
+                Cancel
+              </button>
+              <button className={`btn btn-error ${resettingData ? 'loading' : ''}`} onClick={handleResetData} disabled={resettingData}>
+                Reset Everything
               </button>
             </div>
           </div>

@@ -35,9 +35,11 @@ import {
   getMyProfile,
   getSuggestedUsers,
   getProfileAnalysis,
-  importTVTimeData
-  // End of imports
+  importTVTimeData,
+  importLetterboxdData,
+  updateVisibility
 } from "../controllers/userController.js";
+import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
 import { authRateLimiter } from "../middleware/rateLimiter.js";
@@ -110,6 +112,7 @@ router.get("/profile/:id", authMiddleware, getUserProfile);
 router.get("/favorites/:id", authMiddleware, getUserFavorites);
 
 router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchemas.updateProfile), updateUserBio);
+router.patch("/me/visibility", authMiddleware, updateVisibility);
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);
 router.get("/cinegraph-data/:id", authMiddleware, getUserCineGraph);
@@ -119,4 +122,13 @@ router.post("/matches", authMiddleware, validateRequest(validationSchemas.findMa
 router.put("/profile/password", authMiddleware, validateRequest(validationSchemas.updatePassword), updatePassword);
 router.delete("/profile", authMiddleware, deleteAccount);
 router.post("/import-tvtime", authMiddleware, upload.single("zipFile"), importTVTimeData);
+router.post("/import-letterboxd", authMiddleware, upload.single("zipFile"), importLetterboxdData);
+
+// Logs & Reset
+router.get("/me/logs", authMiddleware, getLogs);
+router.post("/me/logs/revert", authMiddleware, revertLogs);
+router.post("/me/reset-data", authMiddleware, resetData);
+
+router.get("/health", (req, res) => res.json({ status: "ok" }));
+
 export default router;

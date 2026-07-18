@@ -1,6 +1,8 @@
 // controllers/userController.js
 import User from "../models/User.js";
 import AdmZip from "adm-zip";
+import csv from "csv-parser";
+import { Readable } from "stream";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
@@ -8,6 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 // --- NEW ADDED IMPORT ---
 // Import Notification model here
 import Notification from "../models/Notification.js";
+import ActivityLog from "../models/ActivityLog.js";
 import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
 // --- END ---
@@ -402,6 +405,15 @@ export const updateFavorites = async (req, res) => {
 
 // ... (existing updateFavorites function ends here)
 
+export const isAuthorizedToView = (viewerId, targetUser) => {
+  if (!targetUser) return false;
+  if (!viewerId) return targetUser.visibility === 'public';
+  if (viewerId === targetUser._id.toString()) return true;
+  if (targetUser.visibility === 'public') return true;
+  if (targetUser.followers && targetUser.followers.some(id => id.toString() === viewerId)) return true;
+  return false;
+};
+
 /**
  * @desc   Get user's public profile information (For ProfilePage)
  * @route  GET /api/users/profile/:id
@@ -411,20 +423,43 @@ export const getUserProfile = async (req, res) => {
   try {
     // Use .findById() to get all information of the user in :id parameter
     // EXCEPT for password
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await User.findById(req.params.id).select('-password').lean();
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    const currentUserId = req.user ? req.user.id.toString() : null;
+
+    if (!isAuthorizedToView(currentUserId, user)) {
+      return res.status(200).json({
+        _id: user._id,
+        username: user.username,
+        profile_pic_url: user.profile_pic_url,
+        isPrivate: true,
+        isPrivateMasked: true,
+        isAuthorized: false,
+        message: "Profile is private"
+      });
+    }
     
     // Send user's bio, username, createdAt etc. to frontend
-    res.status(200).json(user);
+    res.status(200).json({ ...user, isAuthorized: true });
 
   } catch (error) {
-
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const updateVisibility = asyncHandler(async (req, res) => {
+  const { visibility } = req.body;
+  if (!['public', 'private'].includes(visibility)) {
+    return sendError(res, 'Invalid visibility value', 400);
+  }
+
+  const user = await User.findByIdAndUpdate(req.user.id, { visibility }, { new: true }).select('-password');
+  sendSuccess(res, { visibility: user.visibility }, 'Visibility updated successfully');
+});
 
 // controllers/userController.js
 
@@ -445,7 +480,7 @@ export const getUserProfile = async (req, res) => {
  */
 export const getUserFavorites = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
-    .select('favoriteMovies favoriteSeries')
+    .select('favoriteMovies favoriteSeries visibility followers')
     .populate('favoriteMovies', '_id title poster_path')
     .populate('favoriteSeries', '_id name poster_path')
     .lean();
@@ -453,10 +488,31 @@ export const getUserFavorites = asyncHandler(async (req, res) => {
   if (!user) {
     return sendError(res, 'User not found', 404);
   }
+
+  const currentUserId = req.user ? req.user.id.toString() : null;
+  
+  if (!isAuthorizedToView(currentUserId, user)) {
+    return sendSuccess(res, {
+      movies: [],
+      series: [],
+      isPrivateMasked: true,
+      isAuthorized: false
+    }, 'User favorites fetched (masked)');
+  }
+
+  if (user.visibility === 'private' && !isAuthorizedToView(currentUserId, user)) {
+    return sendSuccess(res, {
+      movies: [],
+      series: [],
+      isPrivateMasked: true,
+      isAuthorized: false
+    }, 'User favorites fetched (masked)');
+  }
   
   sendSuccess(res, {
     movies: user.favoriteMovies || [],
-    series: user.favoriteSeries || []
+    series: user.favoriteSeries || [],
+    isAuthorized: true
   }, 'User favorites fetched', 200);
 });
 
@@ -595,14 +651,30 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
       targetUserId = req.user.id;
   }
 
-  const user = await User.findById(targetUserId).select('watchlist').lean();
+  const user = await User.findById(targetUserId).select('watchlist visibility followers').lean();
   
   if (!user) {
       return sendSuccess(res, { movieStats: {}, seriesStats: {} }, 'CineGraph fetched', 200);
   }
+
+  const currentUserId = req.user ? req.user.id.toString() : null;
+  
+  if (!isAuthorizedToView(currentUserId, user)) {
+    const movieCount = user.watchlist?.filter(item => item.itemType === 'movie').length || 0;
+    const seriesCount = user.watchlist?.filter(item => item.itemType === 'series').length || 0;
+    
+    return sendSuccess(res, { 
+      movieStats: {}, 
+      seriesStats: {}, 
+      isPrivateMasked: true,
+      isAuthorized: false,
+      totalMovies: movieCount,
+      totalSeries: seriesCount
+    }, 'CineGraph fetched (masked)', 200);
+  }
   
   if (!user.watchlist || user.watchlist.length === 0) {
-    return sendSuccess(res, { movieStats: {}, seriesStats: {} }, 'CineGraph fetched', 200);
+    return sendSuccess(res, { movieStats: {}, seriesStats: {}, isAuthorized: true }, 'CineGraph fetched', 200);
   }
 
   const watchlist = user.watchlist;
@@ -636,7 +708,7 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
     }
   }
 
-  sendSuccess(res, { movieStats: movieGenreCounts, seriesStats: seriesGenreCounts }, 'CineGraph fetched', 200);
+  sendSuccess(res, { movieStats: movieGenreCounts, seriesStats: seriesGenreCounts, isAuthorized: true }, 'CineGraph fetched', 200);
 });
 
 // controllers/userController.js
@@ -896,6 +968,15 @@ export const addToWatchlist = asyncHandler(async (req, res) => {
   // Add to watchlist
   user.watchlist.push({ itemId: id, itemType: type });
   await user.save();
+
+  await ActivityLog.create({
+    userId,
+    actionType: 'ADD_WATCHLIST',
+    details: `Added ${type} to watchlist`,
+    payload: {
+      addedWatchlistIds: [id]
+    }
+  });
 
   sendSuccess(res, user.watchlist, 'Item added to watchlist', 200);
 });
@@ -1327,6 +1408,7 @@ const generateMockAnalysis = (payload) => {
 // @route   POST /api/users/import-tvtime
 export const importTVTimeData = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  const importStartTime = new Date();
   console.log("importTVTimeData called for user:", userId);
 
   // Establish text/event-stream connection
@@ -1450,6 +1532,7 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
           const contentIdStr = dbMovie._id.toString();
 
           if (isWatched) {
+            user.watchlist = user.watchlist || [];
             const alreadyInWatchlist = user.watchlist.some(
               w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
             );
@@ -1482,6 +1565,7 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
             }
             watchedCount++;
           } else {
+            user.toWatchList = user.toWatchList || [];
             const alreadyInToWatchList = user.toWatchList.some(
               w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
             );
@@ -1604,6 +1688,7 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
           }
 
           // Skip if already tracked to avoid duplicates
+          user.watchlist = user.watchlist || [];
           const alreadyInWatchlist = user.watchlist.some(
             w => w.itemId.toString() === contentIdStr && w.itemType === "series"
           );
@@ -1681,6 +1766,23 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
       }
     }
 
+    const addedRatings = await Rating.find({ user: userId, createdAt: { $gte: importStartTime } }).select('_id').lean();
+    const addedRatingIds = addedRatings.map(r => r._id);
+    const updatedUser = await User.findById(userId).lean();
+    const addedWatchlistItems = updatedUser.watchlist.filter(item => new Date(item.addedAt) >= importStartTime);
+    const addedWatchlistIds = addedWatchlistItems.map(item => item.itemId.toString());
+
+    await ActivityLog.create({
+      userId,
+      actionType: 'IMPORT_TVTIME',
+      details: 'Imported TV Time ZIP archive',
+      payload: {
+         addedWatchlistIds,
+         addedRatingIds,
+         updatedCineGraph: hasRatingsChanges
+      }
+    });
+
     // Send final completed payload
     sendEvent({
       status: "completed",
@@ -1743,3 +1845,372 @@ async function rebuildUserCineGraph(userId) {
 
   await user.save();
 }
+
+// @desc    Import Letterboxd ZIP archive
+// @route   POST /api/users/import-letterboxd
+export const importLetterboxdData = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const importStartTime = new Date();
+
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive"
+  });
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
+  }
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    if (!req.file) {
+      sendEvent({ status: "error", message: "Please upload a ZIP file" });
+      return res.end();
+    }
+
+    sendEvent({ step: "extract", text: "Extracting ZIP archive..." });
+
+    let zip;
+    try {
+      zip = new AdmZip(req.file.buffer);
+    } catch (err) {
+      sendEvent({ status: "error", message: "Invalid ZIP archive" });
+      return res.end();
+    }
+
+    const zipEntries = zip.getEntries();
+    
+    // Helper to parse CSV buffer
+    const parseCsvBuffer = (buffer) => {
+      return new Promise((resolve, reject) => {
+        const results = [];
+        const stream = Readable.from(buffer.toString('utf-8'));
+        stream
+          .pipe(csv())
+          .on('data', (data) => results.push(data))
+          .on('end', () => resolve(results))
+          .on('error', (error) => reject(error));
+      });
+    };
+
+    // Step A: Extract files
+    let watchedData = [];
+    let ratingsData = [];
+    let watchlistData = [];
+    let likesData = [];
+
+    const watchedEntry = zipEntries.find(e => e.entryName === "watched.csv");
+    const ratingsEntry = zipEntries.find(e => e.entryName === "ratings.csv");
+    const watchlistEntry = zipEntries.find(e => e.entryName === "watchlist.csv");
+    const likesEntry = zipEntries.find(e => e.entryName === "likes/films.csv" || e.entryName === "likes\\\\films.csv");
+
+    sendEvent({ step: "parse", text: "Parsing CSV files..." });
+
+    if (watchedEntry) watchedData = await parseCsvBuffer(watchedEntry.getData());
+    if (ratingsEntry) ratingsData = await parseCsvBuffer(ratingsEntry.getData());
+    if (watchlistEntry) watchlistData = await parseCsvBuffer(watchlistEntry.getData());
+    if (likesEntry) likesData = await parseCsvBuffer(likesEntry.getData());
+
+    // Step B: Unified Map
+    const unifiedMap = new Map();
+
+    const addToMap = (row, dataToMerge) => {
+      const title = row.Name || row.Title;
+      const year = row.Year;
+      if (!title) return;
+      const key = `${title} (${year})`;
+      
+      const existing = unifiedMap.get(key) || { title, year, isWatched: false, rating: null, inWatchlist: false, isLiked: false };
+      unifiedMap.set(key, { ...existing, ...dataToMerge });
+    };
+
+    watchedData.forEach(row => addToMap(row, { isWatched: true }));
+    ratingsData.forEach(row => addToMap(row, { rating: Number(row.Rating) }));
+    watchlistData.forEach(row => addToMap(row, { inWatchlist: true }));
+    likesData.forEach(row => addToMap(row, { isLiked: true }));
+
+    const unifiedList = Array.from(unifiedMap.values());
+    const totalMovies = unifiedList.length;
+
+    if (totalMovies === 0) {
+      sendEvent({ status: "error", message: "No movie data found in the ZIP" });
+      return res.end();
+    }
+
+    const Movie = mongoose.model("Movie");
+    const user = await User.findById(userId);
+    if (!user) {
+      sendEvent({ status: "error", message: "User not found" });
+      return res.end();
+    }
+
+    let importedMovies = 0;
+    let hasChanges = false;
+    let hasRatingsChanges = false;
+
+    // Step C: TMDB Matching
+    let movieIndex = 0;
+    for (const movieItem of unifiedList) {
+      movieIndex++;
+      const { title, year, isWatched, rating, inWatchlist, isLiked } = movieItem;
+
+      sendEvent({
+        step: "movies",
+        current: movieIndex,
+        total: totalMovies,
+        text: `Matching titles... (${title})`
+      });
+
+      // Search local database first
+      let searchRegex;
+      try {
+        searchRegex = new RegExp(`^${title.trim()}$`, "i");
+      } catch (err) {
+        searchRegex = title.trim();
+      }
+      
+      let dbMovies = await Movie.find({ title: searchRegex });
+      let dbMovie = null;
+
+      if (dbMovies.length > 0) {
+         if (year) {
+            const targetYear = parseInt(year, 10);
+            const validMovies = dbMovies.filter(m => {
+               if (!m.release_date) return false;
+               const mYear = parseInt(m.release_date.substring(0, 4), 10);
+               return Math.abs(mYear - targetYear) <= 1;
+            });
+            if (validMovies.length > 0) {
+               // Sort by closest year
+               validMovies.sort((a, b) => {
+                 const diffA = Math.abs(parseInt(a.release_date.substring(0, 4), 10) - targetYear);
+                 const diffB = Math.abs(parseInt(b.release_date.substring(0, 4), 10) - targetYear);
+                 return diffA - diffB;
+               });
+               dbMovie = validMovies[0];
+            }
+         } else {
+            dbMovie = dbMovies[0];
+         }
+      }
+
+      // If not found, use TMDB API Search if API key exists
+      if (!dbMovie && process.env.TMDB_API_KEY) {
+        try {
+           let tmdbResult = null;
+           const targetYear = year ? parseInt(year, 10) : null;
+           
+           if (year) {
+             // 1. Strict Year Search
+             const strictUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&primary_release_year=${year}&api_key=${process.env.TMDB_API_KEY}`;
+             console.log(`\n[TMDB Strict Search] URL: ${strictUrl.replace(process.env.TMDB_API_KEY, "HIDDEN_KEY")}`);
+             const strictRes = await fetch(strictUrl);
+             console.log(`[TMDB Strict Search] Status: ${strictRes.status}`);
+             const strictData = await strictRes.json();
+             console.log(`[TMDB Strict Search] Results found: ${strictData.results ? strictData.results.length : 0}`);
+             
+             if (strictData.results && strictData.results.length > 0) {
+               for (const r of strictData.results) {
+                 const matchTitle = r.title?.toLowerCase() === title.toLowerCase() || r.original_title?.toLowerCase() === title.toLowerCase();
+                 let matchYear = false;
+                 if (r.release_date) {
+                   const rYear = parseInt(r.release_date.substring(0, 4), 10);
+                   matchYear = Math.abs(rYear - targetYear) <= 1; // +/- 1 year tolerance
+                 }
+                 console.log(`  -> Verifying "${r.title}" (${r.release_date}): TitleMatch=${matchTitle}, YearMatch=${matchYear}`);
+                 if (matchTitle && matchYear) {
+                   tmdbResult = r;
+                   break;
+                 }
+               }
+             }
+           }
+
+           // 2. Fallback to Title-Only Search
+           if (!tmdbResult) {
+             const fallbackUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&api_key=${process.env.TMDB_API_KEY}`;
+             console.log(`\n[TMDB Fallback Search] URL: ${fallbackUrl.replace(process.env.TMDB_API_KEY, "HIDDEN_KEY")}`);
+             const fallbackRes = await fetch(fallbackUrl);
+             console.log(`[TMDB Fallback Search] Status: ${fallbackRes.status}`);
+             const fallbackData = await fallbackRes.json();
+             console.log(`[TMDB Fallback Search] Results found: ${fallbackData.results ? fallbackData.results.length : 0}`);
+             
+             if (fallbackData.results && fallbackData.results.length > 0) {
+               for (const r of fallbackData.results) {
+                 const matchTitle = r.title?.toLowerCase() === title.toLowerCase() || r.original_title?.toLowerCase() === title.toLowerCase();
+                 let matchYear = true;
+                 if (targetYear && r.release_date) {
+                   const rYear = parseInt(r.release_date.substring(0, 4), 10);
+                   matchYear = Math.abs(rYear - targetYear) <= 1; // +/- 1 year tolerance
+                 } else if (targetYear && !r.release_date) {
+                   matchYear = false; // Cannot verify year
+                 }
+                 console.log(`  -> Verifying "${r.title}" (${r.release_date}): TitleMatch=${matchTitle}, YearMatch=${matchYear}`);
+                 if (matchTitle && matchYear) {
+                   tmdbResult = r;
+                   break;
+                 }
+               }
+             }
+           }
+
+           // 3. Database Lookup & Creation
+           if (tmdbResult) {
+              const tmdbId = tmdbResult.id;
+              dbMovie = await Movie.findOne({
+                $or: [ { "id.tmdb": tmdbId }, { "tmdb_id": tmdbId }, { "tmdb": tmdbId } ]
+              });
+
+              if (!dbMovie) {
+                console.log(`[TMDB Match] Creating NEW local movie entry for TMDB ID: ${tmdbId}`);
+                dbMovie = new Movie({
+                  title: tmdbResult.title || title,
+                  "id": { tmdb: tmdbId },
+                  tmdb_id: tmdbId,
+                  release_date: tmdbResult.release_date,
+                  poster_path: tmdbResult.poster_path,
+                  overview: tmdbResult.overview,
+                  type: "movie"
+                });
+                await dbMovie.save();
+              } else {
+                let updated = false;
+                if (!dbMovie.poster_path && tmdbResult.poster_path) {
+                  dbMovie.poster_path = tmdbResult.poster_path;
+                  updated = true;
+                }
+                if (!dbMovie.release_date && tmdbResult.release_date) {
+                  dbMovie.release_date = tmdbResult.release_date;
+                  updated = true;
+                }
+                if (updated) {
+                  console.log(`[TMDB Match] Updating existing local movie to include poster/release_date for TMDB ID: ${tmdbId}`);
+                  await dbMovie.save();
+                }
+              }
+           } else {
+              console.log(`[TMDB Mismatch] No precise match found for "${title} (${year})". Skipping import.`);
+           }
+        } catch(e) {
+           console.error("TMDB search failed:", e);
+        }
+      }
+
+      if (dbMovie) {
+        const contentIdStr = dbMovie._id.toString();
+        let movieImported = false;
+
+        if (isWatched) {
+          user.watchlist = user.watchlist || [];
+          const alreadyInWatchlist = user.watchlist.some(
+            w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
+          );
+          if (!alreadyInWatchlist) {
+            user.watchlist.push({ itemId: dbMovie._id, itemType: "movie", addedAt: new Date() });
+            hasChanges = true;
+            movieImported = true;
+          }
+        }
+
+        if (inWatchlist && !isWatched) {
+          user.toWatchList = user.toWatchList || [];
+          const alreadyInToWatch = user.toWatchList.some(
+            w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
+          );
+          if (!alreadyInToWatch) {
+            user.toWatchList.push({ itemId: dbMovie._id, itemType: "movie", addedAt: new Date() });
+            hasChanges = true;
+            movieImported = true;
+          }
+        }
+
+        if (isLiked) {
+          user.favorites = user.favorites || [];
+          const alreadyFavorite = user.favorites.some(
+            f => f.itemId.toString() === contentIdStr && f.itemType === "movie"
+          );
+          if (!alreadyFavorite && user.favorites.length < 4) {
+            user.favorites.push({ itemId: dbMovie._id, itemType: "movie" });
+            hasChanges = true;
+            movieImported = true;
+          }
+        }
+
+        if (rating) {
+           const existingRating = await Rating.findOne({
+              user: userId,
+              contentId: contentIdStr,
+              contentType: "movie"
+           });
+           if (!existingRating) {
+              let val = rating;
+              if (val <= 5) val = val * 2;
+              val = Math.max(1, Math.min(10, val));
+              await Rating.create({
+                 user: userId,
+                 contentId: contentIdStr,
+                 contentType: "movie",
+                 value: val
+              });
+              hasRatingsChanges = true;
+              movieImported = true;
+           }
+        }
+
+        if (movieImported) {
+          importedMovies++;
+        }
+      }
+    }
+
+    sendEvent({ step: "save", text: "Saving to Database..." });
+
+    if (hasChanges) {
+      await user.save();
+    }
+
+    if (hasRatingsChanges) {
+      try {
+        await rebuildUserCineGraph(userId);
+      } catch (err) {
+        console.error("Failed to rebuild CineGraph:", err);
+      }
+    }
+
+    const addedRatings = await Rating.find({ user: userId, createdAt: { $gte: importStartTime } }).select('_id').lean();
+    const addedRatingIds = addedRatings.map(r => r._id);
+    const updatedUser = await User.findById(userId).lean();
+    const addedWatchlistItems = updatedUser.watchlist.filter(item => new Date(item.addedAt) >= importStartTime);
+    const addedWatchlistIds = addedWatchlistItems.map(item => item.itemId.toString());
+
+    await ActivityLog.create({
+      userId,
+      actionType: 'IMPORT_LETTERBOXD',
+      details: `Imported ${importedMovies} movies`,
+      payload: {
+         addedWatchlistIds,
+         addedRatingIds,
+         updatedCineGraph: hasRatingsChanges
+      }
+    });
+
+    sendEvent({
+      status: "completed",
+      importedMovies
+    });
+    return res.end();
+
+  } catch (error) {
+    console.error("Unhandled error in importLetterboxdData:", error);
+    sendEvent({ 
+      status: "error", 
+      message: error.message || "An unexpected error occurred during the Letterboxd import" 
+    });
+    return res.end();
+  }
+});
+// @desc    Import Letterboxd ZIP archive
+// @route   POST /api/users/import-letterboxd

@@ -1,6 +1,7 @@
 // backend/controllers/ratingController.js
 import Rating from "../models/Rating.js";
 import User from "../models/User.js";
+import ActivityLog from "../models/ActivityLog.js";
 
 import { conn } from "../db/connections.js";
 import { createMovieModel } from "../models/Movie.js";
@@ -110,6 +111,18 @@ export const addOrUpdateRating = asyncHandler(async (req, res) => {
     newValue: value,
     oldValue: existingRating ? existingRating.value : null,
   });
+
+  if (!existingRating) {
+    await ActivityLog.create({
+      userId,
+      actionType: 'RATE',
+      details: `Rated ${contentType} ${value}/10`,
+      payload: {
+         addedRatingIds: [newRating._id],
+         updatedCineGraph: true
+      }
+    });
+  }
 
   sendSuccess(res, newRating, 'Rating saved successfully', 200);
 });

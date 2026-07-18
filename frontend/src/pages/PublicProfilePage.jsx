@@ -22,7 +22,6 @@ export default function PublicProfilePage() {
     }
   }, [id, navigate]);
 
-
   const [profile, setProfile] = useState(null);
   const [cineGraphData, setCineGraphData] = useState(null);
   const [favorites, setFavorites] = useState({ movies: [], series: [] });
@@ -81,14 +80,23 @@ export default function PublicProfilePage() {
   };
 
   useEffect(() => {
+    if (!id) return;
+    
+    if (!authUser?.token) {
+      navigate("/login");
+      return;
+    }
+
+    const abortController = new AbortController();
+    const signal = abortController.signal;
     let mounted = true;
 
     const loadProfile = async () => {
       setLoading(true);
       setError(null);
       try {
-        const headers = authUser?.token ? { Authorization: `Bearer ${authUser.token}` } : {};
-        const res = await API.get(`/users/profile/${id}`, { headers });
+        const headers = { Authorization: `Bearer ${authUser.token}` };
+        const res = await API.get(`/users/profile/${id}`, { headers, signal });
         if (!mounted) return;
         const p = res.data;
         if (p?.profile_pic_url) p.profile_pic_url = makeAbsolute(p.profile_pic_url);
@@ -99,7 +107,6 @@ export default function PublicProfilePage() {
 
         setProfile(p);
 
-        // Determine if the authenticated user is following this profile
         let followed = false;
         if (authUser && p) {
           if (Array.isArray(p.followers)) {
@@ -115,6 +122,7 @@ export default function PublicProfilePage() {
         }
         setIsFollowed(Boolean(followed));
       } catch (err) {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to fetch public profile", err);
         setError("Profile load failed.");
         setProfile(null);
@@ -126,56 +134,70 @@ export default function PublicProfilePage() {
     const loadLists = async () => {
       setLoadingLists(true);
       try {
-        const headers = authUser?.token
-          ? { Authorization: `Bearer ${authUser.token}` }
-          : {};
+        const headers = { Authorization: `Bearer ${authUser.token}` };
+        const favRes = await API.get(`/users/favorites/${id}`, { headers, signal });
+        if (!mounted) return;
 
-        const favRes = await API.get(`/users/favorites/${id}`, { headers });
-
-        const movies = Array.isArray(favRes.data?.movies)
-          ? favRes.data.movies
-          : [];
-
-        const series = Array.isArray(favRes.data?.series)
-          ? favRes.data.series
-          : [];
-
-        // ⬇️ KRİTİK SATIR (ProfilePage ile birebir)
+        const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
+        const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];
         setFavorites({ movies, series });
-
       } catch (err) {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to load favorites", err);
         setFavorites({ movies: [], series: [] });
       } finally {
-        setLoadingLists(false);
+        if (mounted) setLoadingLists(false);
       }
     };
-
 
     const loadCineGraph = async () => {
       try {
-        const headers = authUser?.token
-          ? { Authorization: `Bearer ${authUser.token}` }
-          : {};
-
-        const res = await API.get(`/users/cinegraph-data/${id}`, { headers });
-
-        console.log("🎬 PUBLIC CINEGRAPH RAW:", res.data);
+        const headers = { Authorization: `Bearer ${authUser.token}` };
+        const res = await API.get(`/users/cinegraph-data/${id}`, { headers, signal });
+        if (!mounted) return;
 
         setCineGraphData(res.data);
-      } catch (e) {
-        console.error("Failed to load cinegraph", e);
+      } catch (err) {
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+        console.error("Failed to load cinegraph", err);
         setCineGraphData(null);
       }
     };
-
 
     loadProfile();
     loadLists();
     loadCineGraph();
 
-    return () => { mounted = false; };
-  }, [id, authUser?.token]);
+    return () => {
+      mounted = false;
+      abortController.abort();
+    };
+  }, [id, authUser?.token, navigate]);
+
+  const refreshProfileData = async () => {
+    if (!authUser?.token || !id) return;
+    try {
+      const headers = { Authorization: `Bearer ${authUser.token}` };
+      const [profileRes, favRes, cgRes] = await Promise.all([
+        API.get(`/users/profile/${id}`, { headers }),
+        API.get(`/users/favorites/${id}`, { headers }),
+        API.get(`/users/cinegraph-data/${id}`, { headers })
+      ]);
+      
+      const p = profileRes.data;
+      if (p?.profile_pic_url) p.profile_pic_url = makeAbsolute(p.profile_pic_url);
+      if (p && p.followers && !Array.isArray(p.followers)) p.followers = [p.followers];
+      setProfile(p);
+      
+      const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
+      const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];
+      setFavorites({ movies, series });
+      
+      setCineGraphData(cgRes.data);
+    } catch (err) {
+      console.error("Failed to refresh profile data", err);
+    }
+  };
 
   const isOwn = Boolean(authUser && (authUser._id === (profile?._id || profile?.id) || authUser.id === (profile?._id || profile?.id)));
 
@@ -200,18 +222,7 @@ export default function PublicProfilePage() {
           () => API.post(`/follow/${id}`, {}, { headers }),
         ]);
         setIsFollowed(true);
-        setProfile((p) => {
-          if (!p) return p;
-          const np = { ...p };
-          if (Array.isArray(np.followers)) {
-            if (!np.followers.some((f) => (typeof f === 'string' ? f === authUser._id || f === authUser.id : f._id === authUser._id || f._id === authUser.id))) {
-              np.followers = [...np.followers, authUser._id || authUser.id];
-            }
-          } else {
-            np.followersCount = (np.followersCount || np.followers || 0) + 1;
-          }
-          return np;
-        });
+        await refreshProfileData();
       } else {
         await tryEndpoints([
           () => API.post(`/users/${id}/unfollow`, {}, { headers }),
@@ -219,20 +230,7 @@ export default function PublicProfilePage() {
           () => API.post(`/users/unfollow`, { userId: id }, { headers }),
         ]);
         setIsFollowed(false);
-        setProfile((p) => {
-          if (!p) return p;
-          const np = { ...p };
-          if (Array.isArray(np.followers)) {
-            np.followers = np.followers.filter((f) => {
-              if (!f) return false;
-              if (typeof f === 'string') return f !== authUser._id && f !== authUser.id;
-              return f._id !== authUser._id && f._id !== authUser.id && f.id !== authUser._id && f.id !== authUser.id;
-            });
-          } else {
-            np.followersCount = Math.max(0, (np.followersCount || np.followers || 1) - 1);
-          }
-          return np;
-        });
+        await refreshProfileData();
       }
     } catch (err) {
       console.error('Follow toggle failed', err);
@@ -300,10 +298,8 @@ export default function PublicProfilePage() {
             </div>
           )}
 
-          <div className="mt-3 flex items-center gap-3">
+          <div className="mt-3 flex items-center justify-center gap-3">
             <div className="text-sm text-muted">Joined {new Date(profile.createdAt || profile.created_at || Date.now()).toLocaleDateString()}</div>
-            <div className="text-sm text-muted">•</div>
-            <div className="text-sm text-muted">{derivedFollowersCount} followers</div>
           </div>
 
           {!isOwn && (
@@ -419,58 +415,68 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* CineGraph charts (computed from favorites) */}
-      <section className="mt-6">
-        <h3 className="text-lg font-semibold mb-3">CineGraph</h3>
-        {loadingLists ? (
-          <div>Loading cinegraph...</div>
-        ) : cineGraphData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CineGraph data={cineGraphData.movieStats || {}} title="Movie Genres" />
-            <CineGraph data={cineGraphData.seriesStats || {}} title="Series Genres" />
-          </div>
-        ) : (
-          <div className="text-sm text-muted">No cinegraph data to show.</div>
-        )}
-      </section>
-
-      {/* Favorites section */}
-      <section className="mt-12">
-        <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
-
-        {favorites.movies && favorites.movies.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {favorites.movies.map((movie) => (
-              <div key={movie._id} className="flex-none w-36">
-                <MovieCard movie={movie} />
+      {profile?.isAuthorized === false ? (
+        <div className="text-center p-12 bg-base-200 rounded-lg shadow-inner mt-8 border border-base-300">
+          <div className="text-6xl mb-4">🔒</div>
+          <h3 className="text-2xl font-bold mb-2">This account is private</h3>
+          <p className="text-base-content/70">Follow to see detailed lists.</p>
+        </div>
+      ) : (
+        <>
+          {/* CineGraph charts (computed from favorites) */}
+          <section className="mt-6">
+            <h3 className="text-lg font-semibold mb-3">CineGraph</h3>
+            {loadingLists ? (
+              <div>Loading cinegraph...</div>
+            ) : cineGraphData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CineGraph data={cineGraphData.movieStats || {}} title="Movie Genres" />
+                <CineGraph data={cineGraphData.seriesStats || {}} title="Series Genres" />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
-            <p className="text-base-content/70">No favorite movies.</p>
-          </div>
-        )}
-      </section>
+            ) : (
+              <div className="text-sm text-muted">No cinegraph data to show.</div>
+            )}
+          </section>
 
-      {/* --- FAVORİ DİZİLER --- */}
-      <section className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
+          {/* Favorites section */}
+          <section className="mt-12">
+            <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
 
-        {favorites.series && favorites.series.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {favorites.series.map((series) => (
-              <div key={series._id} className="flex-none w-36">
-                <SeriesCard series={series} />
+            {favorites.movies && favorites.movies.length > 0 ? (
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {favorites.movies.map((movie) => (
+                  <div key={movie._id} className="flex-none w-36">
+                    <MovieCard movie={movie} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
-            <p className="text-base-content/70">No favorite series.</p>
-          </div>
-        )}
-      </section>
+            ) : (
+              <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
+                <p className="text-base-content/70">No favorite movies.</p>
+              </div>
+            )}
+          </section>
+
+          {/* --- FAVORİ DİZİLER --- */}
+          <section className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
+
+            {favorites.series && favorites.series.length > 0 ? (
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {favorites.series.map((series) => (
+                  <div key={series._id} className="flex-none w-36">
+                    <SeriesCard series={series} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center p-6 bg-base-100 rounded-lg shadow-inner">
+                <p className="text-base-content/70">No favorite series.</p>
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }
