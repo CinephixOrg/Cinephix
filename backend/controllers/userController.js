@@ -1,5 +1,6 @@
 // controllers/userController.js
 import User from "../models/User.js";
+import AdmZip from "adm-zip";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
@@ -8,6 +9,7 @@ import { v2 as cloudinary } from "cloudinary";
 // Import Notification model here
 import Notification from "../models/Notification.js";
 import Rating from "../models/Rating.js";
+import Review from "../models/Review.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -505,7 +507,7 @@ export const updateUserBio = asyncHandler(async (req, res) => {
  * @access Private
  */
 export const getUserRatings = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
+  const { page = 1, limit = 100000 } = req.query;
   const skip = (page - 1) * limit;
 
   const ratings = await Rating.find({ user: req.params.id })
@@ -1119,3 +1121,625 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   res.redirect(`${frontendUrl}/oauth-success?data=${userData}`);
 });
+
+// @desc    Get profile statistics and analysis for current user
+// @route   GET /api/users/profile-analysis
+// @access  Private
+export const getProfileAnalysis = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const Movie = mongoose.model('Movie');
+  const Series = mongoose.model('Series');
+
+  // Fetch user info for watchlist and social counts
+  const user = await User.findById(userId)
+    .select("watchlist followers following")
+    .lean();
+
+  if (!user) {
+    return sendError(res, "User not found", 404);
+  }
+
+  // 1. Movies Watched & Ratings
+  const movieRatings = await Rating.find({ user: userId, contentType: "movie" }).lean();
+  const moviesWatchedCount = movieRatings.length;
+  
+  let moviesAvgRating = 0;
+  let topMovieGenres = [];
+
+  if (moviesWatchedCount > 0) {
+    const totalMovieVal = movieRatings.reduce((sum, r) => sum + r.value, 0);
+    moviesAvgRating = Math.round((totalMovieVal / moviesWatchedCount) * 10) / 10;
+
+    // Fetch movies to get genres
+    const movieIds = movieRatings.map(r => r.contentId);
+    const moviesData = await Movie.find({ _id: { $in: movieIds } }).select("genre_ids").lean();
+    
+    const genreCounts = {};
+    for (const m of moviesData) {
+      if (m.genre_ids && Array.isArray(m.genre_ids)) {
+        for (const gId of m.genre_ids) {
+          const gName = MOVIE_GENRE_MAP[gId];
+          if (gName) {
+            genreCounts[gName] = (genreCounts[gName] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    topMovieGenres = Object.entries(genreCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(entry => entry[0]);
+  }
+
+  // 2. Series Watched & Ratings
+  const seriesRatings = await Rating.find({ user: userId, contentType: "series" }).lean();
+  const seriesWatchedCount = seriesRatings.length;
+
+  let seriesAvgRating = 0;
+  let topSeriesGenres = [];
+
+  if (seriesWatchedCount > 0) {
+    const totalSeriesVal = seriesRatings.reduce((sum, r) => sum + r.value, 0);
+    seriesAvgRating = Math.round((totalSeriesVal / seriesWatchedCount) * 10) / 10;
+
+    // Fetch series to get genres
+    const seriesIds = seriesRatings.map(r => r.contentId);
+    const seriesData = await Series.find({ _id: { $in: seriesIds } }).select("genre_ids").lean();
+
+    const genreCounts = {};
+    for (const s of seriesData) {
+      if (s.genre_ids && Array.isArray(s.genre_ids)) {
+        for (const gId of s.genre_ids) {
+          const gName = SERIES_GENRE_MAP[gId];
+          if (gName) {
+            genreCounts[gName] = (genreCounts[gName] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    topSeriesGenres = Object.entries(genreCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(entry => entry[0]);
+  }
+
+  // 3. Watchlist
+  const watchlistCount = user.watchlist ? user.watchlist.length : 0;
+
+  // 4. Social
+  const reviewsCount = await Review.countDocuments({ user: userId });
+  const followingCount = user.following ? user.following.length : 0;
+  const followersCount = user.followers ? user.followers.length : 0;
+
+  const payload = {
+    movies: {
+      watchedCount: moviesWatchedCount,
+      topGenres: topMovieGenres,
+      avgRating: moviesAvgRating
+    },
+    series: {
+      watchedCount: seriesWatchedCount,
+      topGenres: topSeriesGenres,
+      avgRating: seriesAvgRating
+    },
+    watchlist: watchlistCount,
+    social: {
+      reviewsCount,
+      followingCount,
+      followersCount
+    }
+  };
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `Analyze the user profile metrics:\n${JSON.stringify(payload, null, 2)}`
+                  }
+                ]
+              }
+            ],
+            systemInstruction: {
+              parts: [
+                {
+                  text: `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n  "nickname": "e.g., Sci-Fi Voyager, Elitist Couch Potato, Fast & Furious Enthusiast",\n  "personalitySummary": "A 2-3 sentence cinematic breakdown of their watch habits, rating styles, and social footprints.",\n  "funFact": "A humorous, data-driven joke based on their specific stats.",\n  "recommendedConcept": "A short sentence advising what vibe or category they should dive into next."\n}`
+                }
+              ]
+            },
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
+          })
+        }
+      );
+
+      if (response.ok) {
+        const resJson = await response.json();
+        const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          const parsedAnalysis = JSON.parse(text);
+          return sendSuccess(res, parsedAnalysis, "Profile analysis generated successfully by Gemini");
+        }
+      } else {
+        console.error(`Gemini API returned status ${response.status}`);
+      }
+    } catch (apiError) {
+      console.error("Gemini API call failed, falling back to mock:", apiError.message);
+    }
+  }
+
+  // Graceful Mock Fallback
+  const mockAnalysis = generateMockAnalysis(payload);
+  return sendSuccess(res, mockAnalysis, "Profile analysis generated successfully (Mock)");
+});
+
+// Helper for witty local mock analysis
+const generateMockAnalysis = (payload) => {
+  const movieCount = payload.movies.watchedCount || 0;
+  const seriesCount = payload.series.watchedCount || 0;
+  const totalCount = movieCount + seriesCount;
+
+  let nickname = "Cinematic Ghost";
+  let personalitySummary = "You are a mysterious presence in the Cinephix database. With few ratings or reviews, your taste remains an enigma to both friends and algorithms.";
+  let funFact = "You've rated 0 items—you have the self-control of a monk in a popcorn factory.";
+  let recommendedConcept = "Dive into a highly-rated cinema classic to start building your profile!";
+
+  if (totalCount > 0) {
+    const movieGenre = payload.movies.topGenres?.[0];
+    const seriesGenre = payload.series.topGenres?.[0];
+    const favGenre = movieGenre || seriesGenre || "Drama";
+    
+    if (movieCount > seriesCount) {
+      nickname = `${favGenre} Cinephile`;
+      personalitySummary = `You are a dedicated movie fan with a clear preference for the silver screen. With ${movieCount} movies rated and a preference for ${favGenre}, your taste profile shows deep appreciation for cinematic storytelling.`;
+    } else {
+      nickname = `${favGenre} Binge Watcher`;
+      personalitySummary = `You prefer long-form storytelling, having rated ${seriesCount} series. You spend hours immersed in character arcs and season-long dramas, especially in the ${favGenre} realm.`;
+    }
+    
+    funFact = `Your average movie rating is ${payload.movies.avgRating || 'N/A'}/10, suggesting you are ${payload.movies.avgRating > 7 ? 'an easy pleaser' : 'a tough critic who demands absolute perfection'}.`;
+    recommendedConcept = `Try stepping out of your comfort zone of ${favGenre} and explore a highly rated documentary or classic noir.`;
+  } else if (payload.watchlist > 0) {
+    nickname = "Couch Potato Planner";
+    personalitySummary = "You possess a massive list of films and series you plan to watch, but your rating count remains zero.";
+    funFact = `You have ${payload.watchlist} items in your watchlist but 0 ratings, meaning you spend 99% of your time browsing lists.`;
+    recommendedConcept = "Stop reading reviews and hit play on the first item in your watchlist!";
+  }
+
+  return { nickname, personalitySummary, funFact, recommendedConcept };
+};
+
+// @desc    Import TV Time ZIP archive (movies.json & shows.json)
+// @route   POST /api/users/import-tvtime
+export const importTVTimeData = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  console.log("importTVTimeData called for user:", userId);
+
+  // Establish text/event-stream connection
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive"
+  });
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
+  }
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    if (!req.file) {
+      console.log("No file uploaded");
+      sendEvent({ status: "error", message: "Please upload a ZIP file" });
+      return res.end();
+    }
+
+    let zip;
+    try {
+      zip = new AdmZip(req.file.buffer);
+      console.log("ZIP buffer loaded successfully");
+    } catch (err) {
+      console.error("Failed to load ZIP buffer:", err);
+      sendEvent({ status: "error", message: "Invalid ZIP archive" });
+      return res.end();
+    }
+
+    const zipEntries = zip.getEntries();
+    console.log("ZIP entries count:", zipEntries.length);
+    const moviesEntry = zipEntries.find(e => e.entryName.toLowerCase().endsWith("movies.json"));
+    const showsEntry = zipEntries.find(e => e.entryName.toLowerCase().endsWith("shows.json"));
+    console.log("moviesEntry found:", !!moviesEntry, "showsEntry found:", !!showsEntry);
+
+    if (!moviesEntry && !showsEntry) {
+      sendEvent({ status: "error", message: "Archive must contain movies.json or shows.json" });
+      return res.end();
+    }
+
+    const Movie = mongoose.model("Movie");
+    const Series = mongoose.model("Series");
+    console.log("Mongoose models resolved successfully");
+
+    const user = await User.findById(userId);
+    if (!user) {
+      sendEvent({ status: "error", message: "User not found" });
+      return res.end();
+    }
+    console.log("User retrieved, current watchlist count:", user.watchlist ? user.watchlist.length : 0);
+
+    let importedMovies = 0;
+    let importedEpisodes = 0;
+    let hasChanges = false;
+    let hasRatingsChanges = false;
+
+    // Process Movies
+    let moviesData = [];
+    if (moviesEntry) {
+      try {
+        moviesData = JSON.parse(moviesEntry.getData().toString("utf8"));
+      } catch (err) {
+        console.error("Failed to parse movies.json inside zip", err);
+      }
+    }
+
+    const totalMovies = Array.isArray(moviesData) ? moviesData.length : 0;
+    console.log("Parsed movies count from zip:", totalMovies);
+
+    if (totalMovies > 0 && Array.isArray(moviesData)) {
+      let movieIndex = 0;
+      let watchedCount = 0;
+      let watchlistCount = 0;
+      for (const movieItem of moviesData) {
+        movieIndex++;
+        const tvdbId = movieItem.id?.tvdb || movieItem["id.tvdb"];
+        const imdbId = movieItem.id?.imdb || movieItem["id.imdb"];
+        const title = movieItem.title || "Untitled Movie";
+        const isWatched = movieItem.is_watched;
+        const watchedAt = movieItem.watched_at ? new Date(movieItem.watched_at) : new Date();
+        const ratingValue = movieItem.rating;
+
+        // Stream progress for movie matching
+        sendEvent({
+          step: "movies",
+          current: movieIndex,
+          total: totalMovies,
+          text: `Matching movie database entries... (${title})`
+        });
+
+        // Try matching prioritizing TVDB, IMDb, then title fallback
+        let dbMovie = null;
+        if (tvdbId) {
+          dbMovie = await Movie.findOne({
+            $or: [
+              { "id.tvdb": tvdbId },
+              { "tvdb": tvdbId },
+              { "tvdb_id": tvdbId }
+            ]
+          });
+        }
+        if (!dbMovie && imdbId && imdbId !== "-1" && imdbId !== -1) {
+          dbMovie = await Movie.findOne({
+            $or: [
+              { "id.imdb": imdbId },
+              { "imdb": imdbId },
+              { "imdb_id": imdbId }
+            ]
+          });
+        }
+        if (!dbMovie && title) {
+          dbMovie = await Movie.findOne({ title: new RegExp(`^${title.trim()}$`, "i") });
+        }
+
+        if (dbMovie) {
+          console.log(`Matched movie: ${dbMovie.title} (_id: ${dbMovie._id})`);
+          const contentIdStr = dbMovie._id.toString();
+
+          if (isWatched) {
+            const alreadyInWatchlist = user.watchlist.some(
+              w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
+            );
+
+            if (!alreadyInWatchlist) {
+              user.watchlist.push({
+                itemId: dbMovie._id,
+                itemType: "movie",
+                addedAt: watchedAt
+              });
+              hasChanges = true;
+              importedMovies++;
+            }
+
+            const existingRating = await Rating.findOne({
+              user: userId,
+              contentId: contentIdStr,
+              contentType: "movie"
+            });
+
+            if (ratingValue && ratingValue > 0 && !existingRating) {
+              const val = Math.max(1, Math.min(10, ratingValue));
+              await Rating.create({
+                user: userId,
+                contentId: contentIdStr,
+                contentType: "movie",
+                value: val
+              });
+              hasRatingsChanges = true;
+            }
+            watchedCount++;
+          } else {
+            const alreadyInToWatchList = user.toWatchList.some(
+              w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
+            );
+
+            if (!alreadyInToWatchList) {
+              user.toWatchList.push({
+                itemId: dbMovie._id,
+                itemType: "movie",
+                addedAt: watchedAt
+              });
+              hasChanges = true;
+            }
+            watchlistCount++;
+          }
+        } else {
+          console.log(`No match in DB for movie: ${title} (tvdb: ${tvdbId}, imdb: ${imdbId})`);
+        }
+      }
+      console.log(`Total Processed = Watched (${watchedCount}) + Watchlist/Not Watched (${watchlistCount})`);
+    }
+
+    // Process Shows
+    let showsData = [];
+    if (showsEntry) {
+      try {
+        showsData = JSON.parse(showsEntry.getData().toString("utf8"));
+      } catch (err) {
+        console.error("Failed to parse shows.json inside zip", err);
+      }
+    }
+
+    // Calculate total episodes count first
+    let totalEpisodes = 0;
+    if (Array.isArray(showsData)) {
+      for (const showItem of showsData) {
+        if (showItem.seasons && Array.isArray(showItem.seasons)) {
+          for (const season of showItem.seasons) {
+            if (season.episodes && Array.isArray(season.episodes)) {
+              for (const ep of season.episodes) {
+                if (ep.is_watched) {
+                  totalEpisodes++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log("Parsed shows count from zip:", showsData.length, "Total watched episodes:", totalEpisodes);
+
+    if (totalEpisodes > 0 && Array.isArray(showsData)) {
+      let currentEpIndex = 0;
+      for (const showItem of showsData) {
+        const tvdbId = showItem.id?.tvdb || showItem["id.tvdb"];
+        const imdbId = showItem.id?.imdb || showItem["id.imdb"];
+        const showTitle = showItem.title || showItem.name || "Untitled Show";
+
+        // Try matching prioritizing TVDB, IMDb, then title fallback
+        let dbSeries = null;
+        if (tvdbId) {
+          dbSeries = await Series.findOne({
+            $or: [
+              { "id.tvdb": tvdbId },
+              { "tvdb": tvdbId },
+              { "tvdb_id": tvdbId }
+            ]
+          });
+        }
+        if (!dbSeries && imdbId && imdbId !== "-1" && imdbId !== -1) {
+          dbSeries = await Series.findOne({
+            $or: [
+              { "id.imdb": imdbId },
+              { "imdb": imdbId },
+              { "imdb_id": imdbId }
+            ]
+          });
+        }
+        if (!dbSeries && showTitle) {
+          dbSeries = await Series.findOne({ name: new RegExp(`^${showTitle.trim()}$`, "i") });
+        }
+
+        if (dbSeries) {
+          console.log(`Matched series: ${dbSeries.name} (_id: ${dbSeries._id})`);
+          const contentIdStr = dbSeries._id.toString();
+
+          let watchedEpisodesCount = 0;
+          let ratingSum = 0;
+          let ratingCount = 0;
+          let maxWatchedAt = null;
+
+          if (showItem.seasons && Array.isArray(showItem.seasons)) {
+            for (const season of showItem.seasons) {
+              if (season.episodes && Array.isArray(season.episodes)) {
+                for (const ep of season.episodes) {
+                  if (ep.is_watched) {
+                    watchedEpisodesCount++;
+                    currentEpIndex++;
+
+                    // Stream progress for show/episode processing
+                    sendEvent({
+                      step: "shows",
+                      current: currentEpIndex,
+                      total: totalEpisodes,
+                      text: `Synchronizing nested episode histories... (${showTitle})`
+                    });
+
+                    const epWatchedAt = ep.watched_at ? new Date(ep.watched_at) : new Date();
+                    if (!maxWatchedAt || epWatchedAt > maxWatchedAt) {
+                      maxWatchedAt = epWatchedAt;
+                    }
+                  }
+                  if (ep.rating && ep.rating > 0) {
+                    ratingSum += ep.rating;
+                    ratingCount++;
+                  }
+                }
+              }
+            }
+          }
+
+          // Skip if already tracked to avoid duplicates
+          const alreadyInWatchlist = user.watchlist.some(
+            w => w.itemId.toString() === contentIdStr && w.itemType === "series"
+          );
+          const existingRating = await Rating.findOne({
+            user: userId,
+            contentId: contentIdStr,
+            contentType: "series"
+          });
+
+          if (alreadyInWatchlist || existingRating) {
+            console.log(`Skipping already tracked series: ${dbSeries.name}`);
+            continue;
+          }
+
+          // Import show status if there are watched episodes
+          if (watchedEpisodesCount > 0) {
+            user.watchlist.push({
+              itemId: dbSeries._id,
+              itemType: "series",
+              addedAt: maxWatchedAt || new Date()
+            });
+            hasChanges = true;
+            importedEpisodes += watchedEpisodesCount;
+          }
+
+          // Import show rating based on average episode ratings
+          if (ratingCount > 0) {
+            const avgRating = Math.round(ratingSum / ratingCount);
+            const val = Math.max(1, Math.min(10, avgRating));
+            await Rating.create({
+              user: userId,
+              contentId: contentIdStr,
+              contentType: "series",
+              value: val
+            });
+            hasRatingsChanges = true;
+          }
+        } else {
+          console.log(`No match in DB for series: ${showTitle} (tvdb: ${tvdbId}, imdb: ${imdbId})`);
+          
+          // Increment ep index for unmatched shows too, so progress bar matches total count
+          if (showItem.seasons && Array.isArray(showItem.seasons)) {
+            for (const season of showItem.seasons) {
+              if (season.episodes && Array.isArray(season.episodes)) {
+                for (const ep of season.episodes) {
+                  if (ep.is_watched) {
+                    currentEpIndex++;
+                    sendEvent({
+                      step: "shows",
+                      current: currentEpIndex,
+                      total: totalEpisodes,
+                      text: `Synchronizing nested episode histories... (${showTitle})`
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (hasChanges) {
+      await user.save();
+      console.log("User watchlist saved successfully");
+    }
+
+    // Rebuild CineGraph if ratings changed
+    if (hasRatingsChanges) {
+      try {
+        await rebuildUserCineGraph(userId);
+        console.log("CineGraph rebuilt successfully");
+      } catch (err) {
+        console.error("Failed to rebuild CineGraph for user during import:", err);
+      }
+    }
+
+    // Send final completed payload
+    sendEvent({
+      status: "completed",
+      importedMovies,
+      importedEpisodes
+    });
+    return res.end();
+
+  } catch (error) {
+    console.error("Unhandled error in importTVTimeData:", error);
+    sendEvent({ status: "error", message: error.message });
+    return res.end();
+  }
+});
+
+// Helper function to rebuild user CineGraph statistics
+async function rebuildUserCineGraph(userId) {
+  const User = mongoose.model("User");
+  const Rating = mongoose.model("Rating");
+  const Movie = mongoose.model("Movie");
+  const Series = mongoose.model("Series");
+
+  const user = await User.findById(userId);
+  if (!user) return;
+
+  user.movieCineGraph = new Map();
+  user.seriesCineGraph = new Map();
+
+  const ratings = await Rating.find({ user: userId });
+
+  for (const r of ratings) {
+    if (r.contentType === "movie") {
+      const movie = await Movie.findById(r.contentId).lean();
+      if (movie && movie.genre_ids) {
+        movie.genre_ids
+          .map(id => MOVIE_GENRE_MAP[id])
+          .filter(Boolean)
+          .forEach(g => {
+            const node = user.movieCineGraph.get(g) || { count: 0, avgRating: 0 };
+            const newCount = node.count + 1;
+            const newAvg = (node.avgRating * node.count + r.value) / newCount;
+            user.movieCineGraph.set(g, { count: newCount, avgRating: Number(newAvg.toFixed(2)) });
+          });
+      }
+    } else {
+      const series = await Series.findById(r.contentId).lean();
+      if (series && series.genre_ids) {
+        series.genre_ids
+          .map(id => SERIES_GENRE_MAP[id])
+          .filter(Boolean)
+          .forEach(g => {
+            const node = user.seriesCineGraph.get(g) || { count: 0, avgRating: 0 };
+            const newCount = node.count + 1;
+            const newAvg = (node.avgRating * node.count + r.value) / newCount;
+            user.seriesCineGraph.set(g, { count: newCount, avgRating: Number(newAvg.toFixed(2)) });
+          });
+      }
+    }
+  }
+
+  await user.save();
+}

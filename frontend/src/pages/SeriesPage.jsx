@@ -23,7 +23,7 @@ export default function SeriesPage() {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({ page, limit: 18 });
+      const params = new URLSearchParams({ page, limit: 24 });
       if (filters.query) params.append('query', filters.query);
       if (filters.years.length > 0) params.append('years', filters.years.join(','));
       if (filters.genres.length > 0) params.append('genres', filters.genres.join(','));
@@ -75,13 +75,13 @@ export default function SeriesPage() {
           {activeFilters.query
             ? `Results for "${activeFilters.query}"`
             : activeFilters.years.length > 0
-            ? `Series from ${activeFilters.years.join(', ')}`
-            : activeFilters.genres.length > 0
-            ? `Genres: ${activeFilters.genres.map((id) => {
-                const genre = genresData.genres.find((g) => g.id === Number(id));
-                return genre ? genre.name : id;
-              }).join(', ')}`
-            : `All Series`}
+              ? `Series from ${activeFilters.years.join(', ')}`
+              : activeFilters.genres.length > 0
+                ? `Genres: ${activeFilters.genres.map((id) => {
+                  const genre = genresData.genres.find((g) => g.id === Number(id));
+                  return genre ? genre.name : id;
+                }).join(', ')}`
+                : `Series`}
         </h2>
 
         {error && <div className="alert alert-error mb-4">{error}</div>}

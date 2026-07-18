@@ -27,18 +27,21 @@ export const getFeed = asyncHandler(async (req, res) => {
     return sendSuccess(res, { items: [], page, hasMore: false }, "Feed fetched");
   }
 
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
   const [ratings, reviews, followNotifs, followedUsers] = await Promise.all([
-    Rating.find({ user: { $in: followingIds } })
+    Rating.find({ user: { $in: followingIds }, createdAt: { $gte: sevenDaysAgo } })
       .sort({ createdAt: -1 })
       .limit(ITEMS_PER_SOURCE)
       .populate("user", "username profile_pic_url")
       .lean(),
-    Review.find({ user: { $in: followingIds } })
+    Review.find({ user: { $in: followingIds }, createdAt: { $gte: sevenDaysAgo } })
       .sort({ createdAt: -1 })
       .limit(ITEMS_PER_SOURCE)
       .populate("user", "username profile_pic_url")
       .lean(),
-    Notification.find({ sender: { $in: followingIds }, type: "follow" })
+    Notification.find({ sender: { $in: followingIds }, type: "follow", createdAt: { $gte: sevenDaysAgo } })
       .sort({ createdAt: -1 })
       .limit(ITEMS_PER_SOURCE)
       .populate("sender", "username profile_pic_url")
@@ -51,13 +54,15 @@ export const getFeed = asyncHandler(async (req, res) => {
 
   // Flatten watchlist additions into activity events
   const watchlistEvents = followedUsers.flatMap((u) =>
-    (u.watchlist || []).map((item) => ({
-      type: "watchlisted",
-      user: { _id: u._id, username: u.username, profile_pic_url: u.profile_pic_url },
-      contentId: item.itemId.toString(),
-      contentType: item.itemType,
-      createdAt: item.addedAt,
-    }))
+    (u.watchlist || [])
+      .filter((item) => item.addedAt && new Date(item.addedAt) >= sevenDaysAgo)
+      .map((item) => ({
+        type: "watchlisted",
+        user: { _id: u._id, username: u.username, profile_pic_url: u.profile_pic_url },
+        contentId: item.itemId.toString(),
+        contentType: item.itemType,
+        createdAt: item.addedAt,
+      }))
   );
 
   // Collect unique content IDs for bulk lookup
@@ -150,8 +155,14 @@ export const getTopPicks = asyncHandler(async (req, res) => {
     return sendSuccess(res, [], "No top picks yet");
   }
 
-  // Fetch all ratings from people the user follows
-  const ratings = await Rating.find({ user: { $in: followingIds } })
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // Fetch all ratings from people the user follows within the last 30 days
+  const ratings = await Rating.find({
+    user: { $in: followingIds },
+    createdAt: { $gte: thirtyDaysAgo },
+  })
     .populate("user", "username profile_pic_url")
     .lean();
 

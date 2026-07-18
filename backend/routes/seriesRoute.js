@@ -1,3 +1,6 @@
+import mongoose from "mongoose";
+import authMiddleware from "../middleware/authMiddleware.js";
+
 export default async function (seriesModel) {
   const router = (await import("express")).Router();
 
@@ -174,6 +177,33 @@ export default async function (seriesModel) {
       res.status(500).json({
         success: false,
         message: 'Error fetching series',
+        error: e.message
+      });
+    }
+  });
+
+  // POST /api/series/bulk
+  router.post("/bulk", authMiddleware, async (req, res) => {
+    try {
+      const { ids } = req.body;
+      if (!ids || !Array.isArray(ids)) {
+        return res.status(400).json({
+          success: false,
+          message: "IDs must be provided as an array"
+        });
+      }
+
+      const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
+      const series = await seriesModel.find({ _id: { $in: objectIds } });
+
+      return res.json({
+        success: true,
+        data: series
+      });
+    } catch (e) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch bulk series",
         error: e.message
       });
     }

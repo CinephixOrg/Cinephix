@@ -6,7 +6,7 @@
 
 const requestCounts = new Map();
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 2000; // Temporarily raised — revert to 100 when done
+const MAX_REQUESTS = 100000; // Temporarily raised significantly for testing throughput
 
 /**
  * Simple rate limiter middleware
@@ -67,7 +67,7 @@ setInterval(() => {
  * Limits each IP to 10 requests per 15 minutes — brute-force protection
  */
 const authRequestCounts = new Map();
-const AUTH_MAX_REQUESTS = 200; // Temporarily raised — revert to 10 when done
+const AUTH_MAX_REQUESTS = 10000; // Temporarily raised significantly for testing throughput
 
 export const authRateLimiter = (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;

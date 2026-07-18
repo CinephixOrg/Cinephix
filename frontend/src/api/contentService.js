@@ -56,6 +56,24 @@ export const contentService = {
     }
   },
 
+  getMoviesBulk: async (movieIds) => {
+    try {
+      if (!movieIds || movieIds.length === 0) return [];
+      const response = await API.post(API_ROUTES.MOVIES.BULK, { ids: movieIds });
+      const movies = response.data || [];
+      
+      // Populate cache for each movie
+      movies.forEach((movie) => {
+        if (movie && movie._id) {
+          setCacheItem(CACHE_KEYS.MOVIE(movie._id), movie, 30 * 60 * 1000);
+        }
+      });
+      return movies;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch bulk movies' };
+    }
+  },
+
   // Series Methods
   getSeries: async (page = 1, limit = 12) => {
     try {
@@ -101,6 +119,24 @@ export const contentService = {
       return data;
     } catch (error) {
       throw error.response?.data || { message: 'Search failed' };
+    }
+  },
+
+  getSeriesBulk: async (seriesIds) => {
+    try {
+      if (!seriesIds || seriesIds.length === 0) return [];
+      const response = await API.post(API_ROUTES.SERIES.BULK, { ids: seriesIds });
+      const series = response.data || [];
+      
+      // Populate cache for each series
+      series.forEach((s) => {
+        if (s && s._id) {
+          setCacheItem(CACHE_KEYS.SERIES(s._id), s, 30 * 60 * 1000);
+        }
+      });
+      return series;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch bulk series' };
     }
   },
 };
