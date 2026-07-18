@@ -2,12 +2,15 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+import { RatingsContext } from '../context/RatingsContext';
 import { userService } from '../api/userService';
 import API from '../api/axios';
 import ImageCropper from '../components/ImageCropper.jsx';
+import { clearCacheItem, CACHE_KEYS } from '../api/cacheService';
 
 export default function SettingsPage() {
   const { user, updateUser, logout } = useContext(AuthContext);
+  const { refreshRatings } = useContext(RatingsContext) || {};
   const navigate = useNavigate();
   const isOAuthUser = Boolean(user?.isOAuthUser || (user?.googleId && !user?.password));
 
@@ -22,6 +25,15 @@ export default function SettingsPage() {
   const [selectedFileForCrop, setSelectedFileForCrop] = useState(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Import State
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importMetrics, setImportMetrics] = useState(null);
+  const [importStep, setImportStep] = useState('idle'); // 'idle' | 'movies' | 'shows' | 'completed' | 'error'
+  const [percentProgress, setPercentProgress] = useState(0);
+  const [activeProgressText, setActiveProgressText] = useState('');
 
   // Şifre Değiştirme State'leri
   const [passwords, setPasswords] = useState({
@@ -163,6 +175,149 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    validateAndSetFile(droppedFile);
+  };
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files?.[0];
+    validateAndSetFile(selectedFile);
+  };
+
+  const validateAndSetFile = (selectedFile) => {
+    if (!selectedFile) return;
+    if (!selectedFile.name.toLowerCase().endsWith('.zip')) {
+      toast.error('Please upload a valid .zip archive.');
+      return;
+    }
+    setImportFile(selectedFile);
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+      toast.error('Please select a file to import.');
+      return;
+    }
+
+    setUploading(true);
+    setImportMetrics(null);
+    setPercentProgress(0);
+    setImportStep('movies');
+    setActiveProgressText('Uploading archive...');
+
+    const formData = new FormData();
+    formData.append('zipFile', importFile);
+
+    try {
+      const userStr = localStorage.getItem('user');
+      const token = userStr ? JSON.parse(userStr)?.token : null;
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${baseURL}/users/import-tvtime`, {
+        method: 'POST',
+        body: formData,
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to upload ZIP archive: Status ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        // Keep the last partial line in the buffer
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (line.startsWith("data:")) {
+            const dataStr = line.substring(5).trim();
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.status === "completed") {
+                const { importedMovies, importedEpisodes } = parsed;
+                setImportStep('completed');
+                setPercentProgress(100);
+                setActiveProgressText('Import completed!');
+                setImportMetrics({ importedMovies, importedEpisodes });
+                
+                // Invalidate local caches to immediately reflect new watch history and watchlist
+                try {
+                  clearCacheItem(CACHE_KEYS.CURRENT_USER);
+                  clearCacheItem(CACHE_KEYS.WATCHLIST);
+                  clearCacheItem(CACHE_KEYS.TO_WATCH_LIST);
+                } catch (cacheErr) {
+                  console.error("Failed to clear caches:", cacheErr);
+                }
+
+                // Force-refresh global ratings context so cards show imported ratings immediately
+                if (refreshRatings) {
+                  refreshRatings().catch(err => console.error("Failed to refresh ratings after import:", err));
+                }
+
+                toast.success(
+                  `Import complete! Successfully imported ${importedMovies} movies and ${importedEpisodes} episodes.`,
+                  { duration: 6000 }
+                );
+                setImportFile(null);
+              } else if (parsed.status === "error") {
+                throw new Error(parsed.message || 'Import error');
+              } else {
+                // Update progress information
+                const { step, current, total, text } = parsed;
+                setImportStep(step);
+                setActiveProgressText(`Processing ${step === 'movies' ? 'Movie' : 'Episode'} ${current} / ${total}: ${text.split('(')[1]?.replace(')', '') || text}`);
+                
+                // Calculate percentage
+                let percent = 0;
+                if (step === 'movies') {
+                  // Movies takes first 50%
+                  percent = Math.round((current / total) * 50);
+                } else if (step === 'shows') {
+                  // Shows/Episodes takes next 50%
+                  percent = 50 + Math.round((current / total) * 50);
+                }
+                setPercentProgress(percent);
+              }
+            } catch (err) {
+              console.error("Failed to parse SSE line", err);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Import failed:", err);
+      const errMsg = err.message || 'An error occurred during import.';
+      toast.error(errMsg);
+      setImportStep('error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-base-100 p-4 md:p-10 animate-fade-in">
       <div className="max-w-3xl mx-auto">
@@ -192,6 +347,14 @@ export default function SettingsPage() {
             onClick={() => setActiveTab('preferences')}
           >
             Preferences
+          </button>
+          <button
+            role="tab"
+            type="button"
+            className={`tab text-base-content ${activeTab === 'import' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('import')}
+          >
+            Import / Export
           </button>
         </div>
 
@@ -397,6 +560,142 @@ export default function SettingsPage() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'import' && (
+              <div>
+                <h2 className="card-title mb-2">Import TV Time Data</h2>
+                <p className="text-base-content/60 text-sm mb-6">
+                  Upload a ZIP archive exported from TV Time containing <code>movies.json</code> and <code>shows.json</code> to sync your watched history and ratings.
+                </p>
+
+                <div className="flex flex-col gap-6">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 transition-all duration-200 ${
+                      isDragging
+                        ? 'border-primary bg-primary/10'
+                        : 'border-base-300 bg-base-200 hover:border-primary/50'
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-12 h-12 text-base-content/60 mb-4 animate-bounce"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
+                      />
+                    </svg>
+
+                    <div className="text-center">
+                      <span className="font-semibold text-base-content">
+                        Drag and drop your export ZIP here, or{' '}
+                      </span>
+                      <label className="text-primary font-semibold hover:underline cursor-pointer">
+                        browse files
+                        <input
+                          type="file"
+                          accept=".zip"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <span className="text-xs text-base-content/50 mt-1">
+                      Strictly accepting .zip files
+                    </span>
+
+                    {importFile && (
+                      <div className="badge badge-primary gap-2 mt-4 py-3 px-4 text-sm font-semibold">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          className="inline-block w-4 h-4 stroke-current"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          ></path>
+                        </svg>
+                        {importFile.name}
+                      </div>
+                    )}
+                  </div>
+
+                  {uploading && (
+                    <div className="flex flex-col gap-4 p-6 bg-base-300 rounded-xl border border-primary/20 shadow-md">
+                      <div className="flex items-center justify-between text-sm font-semibold text-base-content/80">
+                        <span className="capitalize flex items-center gap-2">
+                          <span className="loading loading-spinner loading-xs text-primary"></span>
+                          Step: {importStep}
+                        </span>
+                        <span>{percentProgress}%</span>
+                      </div>
+                      <progress className="progress progress-primary w-full shadow-inner h-3" value={percentProgress} max="100"></progress>
+                      <p className="text-xs font-medium text-base-content/60 truncate italic">
+                        {activeProgressText || "Processing your archive, this may take a few moments..."}
+                      </p>
+                    </div>
+                  )}
+
+                  {!uploading && importFile && (
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => setImportFile(null)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handleImportSubmit}
+                      >
+                        Upload Export ZIP
+                      </button>
+                    </div>
+                  )}
+
+                  {importMetrics && (
+                    <div className="alert alert-success border border-success/30 flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="stroke-current shrink-0 h-6 w-6 text-success-content"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-success-content">Import Metrics Summary</h3>
+                        <div className="text-sm opacity-90 text-success-content">
+                          <p>• Movies Imported: <strong>{importMetrics.importedMovies}</strong></p>
+                          <p>• Episodes Imported: <strong>{importMetrics.importedEpisodes}</strong></p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

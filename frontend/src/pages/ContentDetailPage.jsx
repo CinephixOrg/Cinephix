@@ -1,5 +1,5 @@
 // frontend/pages/ContentDetailPage.jsx
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
 import { contentService } from '../api/contentService';
@@ -10,6 +10,7 @@ import { getCacheItem, CACHE_KEYS } from '../api/cacheService';
 import toast from 'react-hot-toast';
 
 import { AuthContext } from '../context/AuthContext';
+import { RatingsContext } from '../context/RatingsContext';
 import StarRating from '../components/StarRating';
 import ReviewCard from '../components/ReviewCard';
 import FavoritesModal from '../components/FavoritesModal';
@@ -170,8 +171,9 @@ function ReviewSection({ contentId, user, contentType }) {
 export default function ContentDetailPage() {
   const { type, contentId } = useParams();
   const { user } = useContext(AuthContext);
+  const { ratingsMap, updateRating } = useContext(RatingsContext) || { ratingsMap: new Map(), updateRating: () => {} };
 
-    // --- MEVCUT STATE'LER (Dokunulmadı) ---
+  // --- MEVCUT STATE'LER (Dokunulmadı) ---
     const [content, setContent] = useState(null);
     const [loading, setLoading] = useState(true); // BU GENEL YÜKLEME DURUMU OLARAK KALACAK
     const [error, setError] = useState(null);
@@ -184,8 +186,23 @@ export default function ContentDetailPage() {
     const [favoriteMovies, setFavoriteMovies] = useState([]);
     const [favoriteSeries, setFavoriteSeries] = useState([]);
     const [allRatings, setAllRatings] = useState([]);
+    const [loadingAllRatings, setLoadingAllRatings] = useState(true);
     const [showReviewLink, setShowReviewLink] = useState(false);
     // --- BİTİŞ ---
+
+    // Calculate rating from ratingsMap synchronously (convert from 5-star to 10-star scale)
+    const existingRating = useMemo(() => {
+        const val = ratingsMap.get(contentId) || 
+                    (content?._id ? ratingsMap.get(content._id.toString()) : 0) || 
+                    (content?.tvdb ? ratingsMap.get(content.tvdb.toString()) : 0) || 
+                    0;
+        return val * 2;
+    }, [ratingsMap, contentId, content]);
+
+    // Sync rating state when existingRating changes
+    useEffect(() => {
+        setRating(existingRating);
+    }, [existingRating]);
 
   // Review input state
   const [reviewText, setReviewText] = useState("");
@@ -247,6 +264,7 @@ export default function ContentDetailPage() {
 
                 // Tüm ratingleri çek (rating dağılımı için)
                 try {
+                    setLoadingAllRatings(true);
                     const allRatingsRes = await ratingService.getAllRatingsForContent(currentContentId);
                     const ratingsData = allRatingsRes.data || allRatingsRes || [];
                     // Backend'den 1-10 aralığında geliyor, 0.5-5 aralığına çeviriyoruz
@@ -258,6 +276,8 @@ export default function ContentDetailPage() {
                 } catch (allRatingsErr) {
                     console.error("Tüm ratingler çekilirken hata:", allRatingsErr);
                     setAllRatings([]);
+                } finally {
+                    setLoadingAllRatings(false);
                 }
 
                 setLoading(false);
@@ -295,6 +315,9 @@ export default function ContentDetailPage() {
     setIsRatingLoading(true);
     try {
       await ratingService.createRating({ contentId: currentContentId, contentType: content.type || type, value: newValue });
+      if (updateRating) {
+        updateRating(currentContentId, newValue);
+      }
       toast.success("Rating saved!");
     } catch (err) {
       toast.error("Couldn't save rating.");
@@ -590,8 +613,25 @@ export default function ContentDetailPage() {
                                 )}
                             </div>
 
-                            {/* Rating Distribution */}
-                            <RatingDistribution ratings={allRatings} />
+                            {/* Rating Distribution — skeleton while async fetch resolves */}
+                            {loadingAllRatings ? (
+                                <div className="mt-6 pt-4 border-t border-base-300/30 animate-pulse">
+                                    <div className="h-3 w-16 bg-base-300 rounded mb-3" />
+                                    <div className="flex items-end gap-4">
+                                        <div className="flex-1 flex items-end gap-1 h-16">
+                                            {[40, 70, 100, 80, 55, 90, 65, 45, 30, 75].map((h, i) => (
+                                                <div key={i} className="flex-1 bg-base-300 rounded-sm" style={{ height: `${h}%` }} />
+                                            ))}
+                                        </div>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="h-8 w-10 bg-base-300 rounded" />
+                                            <div className="h-3 w-8 bg-base-300 rounded" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <RatingDistribution ratings={allRatings} />
+                            )}
                             {showReviewLink && (
                                 <div className="absolute bottom-4 right-4 text-xs uppercase tracking-[0.08em] text-base-content/60">
                                     share

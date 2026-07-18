@@ -28,7 +28,7 @@ export default function MoviesPage() {
 
       const params = new URLSearchParams({
         page: currentPage,
-        limit: 18,
+        limit: 24,
         title: searchParams.get('query') || '',
         years: searchParams.get('years') || '',
         hasPoster: searchParams.get('hasPoster') || '',
@@ -93,7 +93,7 @@ export default function MoviesPage() {
           {loading ? (
             <LoadingSpinner />
           ) : movies.length === 0 ? (
-             <p className="col-span-full text-center text-lg text-base-content/70">No results found.</p>
+            <p className="col-span-full text-center text-lg text-base-content/70">No results found.</p>
           ) : (
             movies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
@@ -104,9 +104,9 @@ export default function MoviesPage() {
         {/* Sayfalama Butonları */}
         {!loading && movies.length > 0 && totalPages > 1 && (
           <div className="join flex justify-center mt-8">
-            <button 
-              className="join-item btn" 
-              onClick={() => handlePageChange(currentPage - 1)} 
+            <button
+              className="join-item btn"
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
               « Previous
@@ -114,9 +114,9 @@ export default function MoviesPage() {
             <button className="join-item btn">
               Page {currentPage} of {totalPages}
             </button>
-            <button 
-              className="join-item btn" 
-              onClick={() => handlePageChange(currentPage + 1)} 
+            <button
+              className="join-item btn"
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
               Next »

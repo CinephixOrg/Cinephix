@@ -44,6 +44,7 @@ export const API_ROUTES = {
     GET_ALL: `${API_BASE_URL}/movies`,
     GET_BY_ID: (movieId) => `${API_BASE_URL}/movies/${movieId}`,
     SEARCH: `${API_BASE_URL}/movies/search`,
+    BULK: `${API_BASE_URL}/movies/bulk`,
   },
 
   // Series Routes
@@ -51,6 +52,7 @@ export const API_ROUTES = {
     GET_ALL: `${API_BASE_URL}/series`,
     GET_BY_ID: (seriesId) => `${API_BASE_URL}/series/${seriesId}`,
     SEARCH: `${API_BASE_URL}/series/search`,
+    BULK: `${API_BASE_URL}/series/bulk`,
   },
 
   // Ratings Routes

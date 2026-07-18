@@ -33,7 +33,9 @@ import {
   removeFromWatchlist,
   uploadProfilePic,
   getMyProfile,
-  getSuggestedUsers
+  getSuggestedUsers,
+  getProfileAnalysis,
+  importTVTimeData
   // End of imports
 } from "../controllers/userController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -84,6 +86,7 @@ router.delete("/me/watchlist/:itemId", authMiddleware, removeFromWatchlist);
 router.post('/profile/:id/upload-profile-pic', authMiddleware, upload.single('profilePic'), uploadProfilePic);
 router.get("/me", authMiddleware, getMyProfile);
 router.get("/me/suggestions", authMiddleware, getSuggestedUsers);
+router.get("/profile-analysis", authMiddleware, getProfileAnalysis);
 
 // Follow/unfollow operations
 router.post("/:id/follow", authMiddleware, followUser);
@@ -115,4 +118,5 @@ router.get("/cinegraph-data/:id", authMiddleware, getUserCineGraph);
 router.post("/matches", authMiddleware, validateRequest(validationSchemas.findMatches), findMatches);
 router.put("/profile/password", authMiddleware, validateRequest(validationSchemas.updatePassword), updatePassword);
 router.delete("/profile", authMiddleware, deleteAccount);
+router.post("/import-tvtime", authMiddleware, upload.single("zipFile"), importTVTimeData);
 export default router;

@@ -11,9 +11,7 @@ export const RatingsProvider = ({ children }) => {
   const [ratings, setRatings] = useState([]); 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    console.log("[RatingsContext] useEffect çalıştı. User:", user?.username);
-
+  const fetchRatings = async () => {
     if (!user?._id) {
       console.log("[RatingsContext] Kullanıcı ID'si yok, oylar temizleniyor.");
       setRatings([]); 
@@ -21,24 +19,25 @@ export const RatingsProvider = ({ children }) => {
       return;
     }
 
-    const fetchRatings = async () => {
-      setLoading(true);
-      console.log(`[RatingsContext] Oylar çekiliyor... API isteği: /users/ratings/${user._id}`);
-      try {
-        const response = await API.get(`/users/ratings/${user._id}`);
-        
-        // Gelen veride artık 'contentId' ve 'value' olmalı
-        console.log("[RatingsContext] Oylar BAŞARIYLA ÇEKİLDİ. Gelen veri:", response.data);
+    setLoading(true);
+    console.log(`[RatingsContext] Oylar çekiliyor... API isteği: /users/ratings/${user._id}`);
+    try {
+      const response = await API.get(`/users/ratings/${user._id}`);
+      
+      // Gelen veride artık 'contentId' ve 'value' olmalı
+      console.log("[RatingsContext] Oylar BAŞARIYLA ÇEKİLDİ. Gelen veri:", response.data);
 
-        setRatings(response.data);
-      } catch (error) {
-        console.error("[RatingsContext] OYLAR ÇEKİLİRKEN HATA:", error);
-        setRatings([]); 
-      } finally {
-        setLoading(false);
-      }
-    };
+      setRatings(response.data);
+    } catch (error) {
+      console.error("[RatingsContext] OYLAR ÇEKİLİRKEN HATA:", error);
+      setRatings([]); 
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    console.log("[RatingsContext] useEffect çalıştı. User:", user?.username);
     fetchRatings();
   }, [user]);
 
@@ -46,10 +45,35 @@ export const RatingsProvider = ({ children }) => {
   const ratingsMap = useMemo(() => {
     const map = new Map();
     ratings.forEach(rating => {
-      // 'rating.content' yerine 'rating.contentId' kullan
-      // 'rating.rating' yerine 'rating.value' kullan
-      // VE 10'luk puanı 5'liğe çevirmek için 2'ye böl
-      map.set(rating.contentId, rating.value / 2); 
+      const val = rating.value || rating.rating || 0;
+      const score = val / 2;
+
+      if (rating.contentId) {
+        map.set(rating.contentId.toString(), score);
+      }
+      if (rating._id) {
+        map.set(rating._id.toString(), score);
+      }
+
+      const tvdbId = rating.movieId?.tvdb || rating.seriesId?.tvdb || rating.movieId?.id?.tvdb || rating.seriesId?.id?.tvdb;
+      if (tvdbId) {
+        map.set(tvdbId.toString(), score);
+      }
+
+      if (rating.movieId) {
+        if (typeof rating.movieId === 'object') {
+          if (rating.movieId._id) map.set(rating.movieId._id.toString(), score);
+        } else {
+          map.set(rating.movieId.toString(), score);
+        }
+      }
+      if (rating.seriesId) {
+        if (typeof rating.seriesId === 'object') {
+          if (rating.seriesId._id) map.set(rating.seriesId._id.toString(), score);
+        } else {
+          map.set(rating.seriesId.toString(), score);
+        }
+      }
     });
     
     console.log("[RatingsContext] ratingsMap oluşturuldu. Harita boyutu:", map.size);
@@ -76,6 +100,7 @@ export const RatingsProvider = ({ children }) => {
   const value = {
     ratingsMap,   
     updateRating, 
+    refreshRatings: fetchRatings,
     loadingRatings: loading
   };
 
