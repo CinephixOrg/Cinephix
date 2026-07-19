@@ -2,17 +2,18 @@
 
 **Find your perfect movie match! Cinephix is a social discovery platform designed to connect cinephiles and TV show enthusiasts based on their shared tastes.**
 
-Have you ever finished an amazing season finale and had no one to discuss it with? Or wanted to find friends who appreciate the same niche films as you? Cinephix solves that problem by matching you with people who love what you love.
+Have you ever finished an amazing season finale and had no one to discuss it with? Or wanted to find friends who appreciate the same niche films as you? Cinephix solves that problem by matching you with people who share your cinematic passions, allowing you to build your network, track your viewing habits, and discover new favorites.
 
 ---
 
 ## ✨ Key Features
 
-* **🎬 Browse & Discover:** Explore a vast library of movies and TV shows powered by the TMDB API.
-* **⭐ Rate & Watchlist:** Rate the content you've seen and add others to your watchlist to build your unique taste profile.
-* **🎭 Build Your Profile:** Customize your profile with your favorite genres, a short bio, and see a summary of your viewing habits.
-* **🤝 Get Matched:** Our core algorithm analyzes your ratings and watchlist to calculate a compatibility score with other users, suggesting potential friends.
-* **💬 Chat with Cinephiles:** Once you match with someone, you can start a conversation and plan your next movie night!
+* **👤 Social Network:** Follow users, manage your followers/following lists, and build your community.
+* **🔒 Privacy Control:** Set your account to "Private" to approve follow requests and keep your CineGraph statistics exclusive to your connections.
+* **🔔 Intelligent Notifications:** Stay updated with real-time alerts for new follow requests and accepted connections.
+* **📊 Visual Profiling:** Visualize your movie and TV genre distribution with the dynamic CineGraph.
+* **🎬 Content Discovery:** Explore a vast library of movies and TV shows powered by the TMDB API.
+* **⭐ Taste Profile:** Rate content, build your watchlist, and manage your favorite movies and series.
 
 ---
 
@@ -24,7 +25,8 @@ Cinephix is a full-stack application built with the MERN stack and other modern 
     * [React.js](https://reactjs.org/)
     * [React Router](https://reactrouter.com/) for page navigation
     * [Axios](https://axios-http.com/) for API requests
-    * [CSS / Styled-Components / Tailwind CSS] * **Backend:**
+    * [Tailwind CSS](https://tailwindcss.com/)
+* **Backend:**
     * [Node.js](https://nodejs.org/)
     * [Express.js](https://expressjs.com/) for the REST API
     * [Mongoose](https://mongoosejs.com/) as the Object Data Modeler (ODM)
@@ -56,7 +58,7 @@ To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the repo**
     ```sh
-    git clone [https://github.com/your-username/Cinephix.git](https://github.com/your-username/Cinephix.git)
+    git clone https://github.com/furkantr18/Cinephix.git
     ```
 2.  **Install backend dependencies**
     ```sh
@@ -88,12 +90,13 @@ To get a local copy up and running, follow these simple steps.
 
 ## 🗺️ Roadmap
 
+* [x] Core Profile & Movie Discovery
+* [x] Follow System & Privacy Controls
+* [x] Notification System
 * [ ] Real-time chat with Socket.IO
 * [ ] Advanced filtering for matches (by genre, decade, etc.)
-* [ ] Group matching functionality
-* [ ] Push notifications for new matches and messages
 
-See the [open issues](https://github.com/your-username/Cinephix/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/furkantr18/Cinephix/issues) for a full list of proposed features (and known issues).
 
 ---
 
@@ -117,8 +120,10 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 ---
 
-## 📧 Contact
+## 📧 Contact - cinephixcontact@gmail.com
 
-Your Name - [@your_twitter_handle](https://twitter.com/your_twitter_handle) - your.email@example.com
+Furkan Gökgöz - [LinkedIn](https://www.linkedin.com/in/furkan-g%C3%B6kg%C3%B6z-027479336/)
 
-Project Link: [https://github.com/your-username/Cinephix](https://github.com/your-username/Cinephix)
+Nursena Doksanbir - [LinkedIn](https://www.linkedin.com/in/nursena-doksanbir)
+
+Project Link: [https://github.com/furkantr18/Cinephix](https://github.com/furkantr18/Cinephix)
