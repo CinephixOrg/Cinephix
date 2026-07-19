@@ -259,7 +259,7 @@ export const userService = {
 
   follow: async (userId) => {
     try {
-      const response = await API.post(API_ROUTES.USERS.FOLLOW(userId));
+      const response = await API.post('/users/follow', { targetId: userId });
       
       // Invalidate profiles and user caches
       clearCacheItem(CACHE_KEYS.CURRENT_USER);
@@ -273,7 +273,7 @@ export const userService = {
 
   unfollow: async (userId) => {
     try {
-      const response = await API.post(API_ROUTES.USERS.UNFOLLOW(userId));
+      const response = await API.post('/users/unfollow', { targetId: userId });
       
       // Invalidate profiles and user caches
       clearCacheItem(CACHE_KEYS.CURRENT_USER);
@@ -282,6 +282,35 @@ export const userService = {
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to unfollow user' };
+    }
+  },
+
+  getPendingRequests: async () => {
+    try {
+      const response = await API.get(API_ROUTES.USERS.GET_PENDING_REQUESTS);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch pending requests' };
+    }
+  },
+
+  acceptFollowRequest: async (userId) => {
+    try {
+      const response = await API.post(API_ROUTES.USERS.ACCEPT_FOLLOW_REQUEST(userId));
+      clearCacheItem(CACHE_KEYS.CURRENT_USER);
+      clearCacheByPattern('user:');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to accept follow request' };
+    }
+  },
+
+  rejectFollowRequest: async (userId) => {
+    try {
+      const response = await API.post(API_ROUTES.USERS.REJECT_FOLLOW_REQUEST(userId));
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to reject follow request' };
     }
   },
 

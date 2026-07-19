@@ -23,25 +23,37 @@ export default function NotificationDropdown({
       navigate(`/dm/${notification.conversationId._id || notification.conversationId}`);
     } else if (notification.type === "follow") {
       navigate(`/users/${notification.sender._id}`);
+    } else if (notification.type === "follow_request") {
+      navigate('/network?tab=requests');
+    } else if (notification.type === "follow_accepted") {
+      navigate(`/profile/${notification.sender._id}`);
     }
 
     onClose();
   };
 
   const getNotificationText = (notification) => {
-    if (notification.type === "message") {
-      return `${notification.sender.username} sent you a message`;
-    } else if (notification.type === "follow") {
-      return `${notification.sender.username} started following you`;
+    switch (notification.type) {
+      case "follow_request":
+        return "New follow request";
+      case "follow_accepted":
+        return "Follow request accepted";
+      case "message":
+        return "sent you a message";
+      case "follow":
+        return "started following you";
+      default:
+        return "New notification";
     }
-    return "New notification";
   };
 
   const getNotificationIcon = (notification) => {
     if (notification.type === "message") {
       return "💬";
-    } else if (notification.type === "follow") {
+    } else if (notification.type === "follow" || notification.type === "follow_accepted") {
       return "👤";
+    } else if (notification.type === "follow_request") {
+      return "🛎️";
     }
     return "📌";
   };

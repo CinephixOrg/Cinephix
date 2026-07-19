@@ -15,6 +15,10 @@ import {
   // --- NEW ADDED FUNCTIONS ---
   followUser,
   unfollowUser,
+  removeFollower,
+  acceptFollowRequest,
+  rejectFollowRequest,
+  getPendingRequests,
   getNotifications,
   getMyFollowing,
   getMyFollowers,
@@ -91,12 +95,18 @@ router.get("/me/suggestions", authMiddleware, getSuggestedUsers);
 router.get("/profile-analysis", authMiddleware, getProfileAnalysis);
 
 // Follow/unfollow operations
+router.post("/follow", authMiddleware, followUser); // Support body targetId
+router.post("/unfollow", authMiddleware, unfollowUser); // Support body targetId
+router.post("/remove-follower", authMiddleware, removeFollower); // New route
 router.post("/:id/follow", authMiddleware, followUser);
 router.post("/:id/unfollow", authMiddleware, unfollowUser);
+router.post("/:targetId/follow-request/accept", authMiddleware, acceptFollowRequest);
+router.post("/:targetId/follow-request/reject", authMiddleware, rejectFollowRequest);
 
-// Get current user's following and followers
+// Get current user's following, followers, and pending requests
 router.get("/me/following", authMiddleware, getMyFollowing);
 router.get("/me/followers", authMiddleware, getMyFollowers);
+router.get("/me/follow-requests", authMiddleware, getPendingRequests);
 
 // Get notifications
 router.get("/notifications", authMiddleware, getNotifications);

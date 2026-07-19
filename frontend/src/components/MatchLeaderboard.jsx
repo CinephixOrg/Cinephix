@@ -41,7 +41,7 @@ export default function MatchLeaderboard({ matches }) {
 
           {/* Avatar Circle with Border */}
           <Link
-            to={`/users/${match.user._id}`}
+            to={`/profile/${match.user._id}`}
             className={`relative rounded-full border-4 border-primary overflow-hidden block
             transition-all duration-300 hover:scale-105 cursor-pointer
             ${
@@ -74,7 +74,7 @@ export default function MatchLeaderboard({ matches }) {
         </div>
 
         {/* Username */}
-        <Link to={`/users/${match.user._id}`}>
+        <Link to={`/profile/${match.user._id}`}>
           <h3 className="text-lg font-bold text-white mb-1 text-center max-w-xs truncate hover:text-primary hover:underline transition-all">
             {match.user.username}
           </h3>
@@ -96,7 +96,7 @@ export default function MatchLeaderboard({ matches }) {
 
         {/* Action Buttons */}
         <Link
-          to={`/users/${match.user._id}`}
+          to={`/profile/${match.user._id}`}
           className="btn btn-sm btn-primary text-white"
         >
           View Profile
