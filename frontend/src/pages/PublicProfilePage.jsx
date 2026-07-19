@@ -1,17 +1,26 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import axios from "axios";
 import API from "../api/axios";
 import { matchService } from "../api/matchService.js";
 import CineGraph from "../components/CineGraph.jsx";
 import { AuthContext } from "../context/AuthContext.jsx";
+import { NotificationContext } from "../context/NotificationContext.jsx";
 import MovieCard from "../components/MovieCard.jsx";
 import SeriesCard from "../components/SeriesCard.jsx";
+
+const LockIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+  </svg>
+);
 
 export default function PublicProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: authUser } = useContext(AuthContext);
+  const { fetchUnreadCount, fetchNotifications } = useContext(NotificationContext);
   console.log("🔥 PublicProfilePage MOUNTED");
   console.log("PUBLIC PROFILE ID:", id);
 
@@ -28,6 +37,7 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadingLists, setLoadingLists] = useState(true);
   const [isFollowed, setIsFollowed] = useState(false);
+  const [isRequested, setIsRequested] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -36,7 +46,7 @@ export default function PublicProfilePage() {
   const [matchResult, setMatchResult] = useState(null);
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchError, setMatchError] = useState(null);
-  
+
   // Cinematch Filters
   const [matchType, setMatchType] = useState('movie');
   const [selectedGenres, setSelectedGenres] = useState([]);
@@ -81,7 +91,7 @@ export default function PublicProfilePage() {
 
   useEffect(() => {
     if (!id) return;
-    
+
     if (!authUser?.token) {
       navigate("/login");
       return;
@@ -138,9 +148,10 @@ export default function PublicProfilePage() {
         const favRes = await API.get(`/users/favorites/${id}`, { headers, signal });
         if (!mounted) return;
 
-        const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
-        const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];
-        setFavorites({ movies, series });
+        const movies = Array.isArray(favRes.data?.data?.movies || favRes.data?.movies) ? (favRes.data?.data?.movies || favRes.data?.movies) : [];
+        const series = Array.isArray(favRes.data?.data?.series || favRes.data?.series) ? (favRes.data?.data?.series || favRes.data?.series) : [];
+        const isPrivateAndHidden = favRes.data?.data?.isPrivateAndHidden || favRes.data?.isPrivateAndHidden;
+        setFavorites({ movies, series, isPrivateAndHidden });
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to load favorites", err);
@@ -156,7 +167,7 @@ export default function PublicProfilePage() {
         const res = await API.get(`/users/cinegraph-data/${id}`, { headers, signal });
         if (!mounted) return;
 
-        setCineGraphData(res.data);
+        setCineGraphData(res.data?.data || res.data);
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to load cinegraph", err);
@@ -183,16 +194,16 @@ export default function PublicProfilePage() {
         API.get(`/users/favorites/${id}`, { headers }),
         API.get(`/users/cinegraph-data/${id}`, { headers })
       ]);
-      
+
       const p = profileRes.data;
       if (p?.profile_pic_url) p.profile_pic_url = makeAbsolute(p.profile_pic_url);
       if (p && p.followers && !Array.isArray(p.followers)) p.followers = [p.followers];
       setProfile(p);
-      
+
       const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
       const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];
       setFavorites({ movies, series });
-      
+
       setCineGraphData(cgRes.data);
     } catch (err) {
       console.error("Failed to refresh profile data", err);
@@ -207,29 +218,25 @@ export default function PublicProfilePage() {
     setFollowLoading(true);
     try {
       const headers = { Authorization: `Bearer ${authUser.token}` };
-      const tryEndpoints = async (attempts) => {
-        let lastErr = null;
-        for (const fn of attempts) {
-          try { return await fn(); } catch (e) { lastErr = e; }
-        }
-        throw lastErr;
-      };
+      if (!isFollowed && !isRequested) {
+        // Using configured API instance which sets the correct base URL
+        const res = await API.post('/users/follow', { targetId: profile._id }, { headers });
+        const resType = res.data?.data?.type || res.data?.type || res.type;
 
-      if (!isFollowed) {
-        await tryEndpoints([
-          () => API.post(`/users/${id}/follow`, {}, { headers }),
-          () => API.post(`/users/follow`, { userId: id }, { headers }),
-          () => API.post(`/follow/${id}`, {}, { headers }),
-        ]);
-        setIsFollowed(true);
+        if (resType === 'requested') {
+          setIsRequested(true);
+        } else if (resType === 'following') {
+          setIsFollowed(true);
+        }
+        if (fetchUnreadCount) fetchUnreadCount();
+        if (fetchNotifications) fetchNotifications();
         await refreshProfileData();
       } else {
-        await tryEndpoints([
-          () => API.post(`/users/${id}/unfollow`, {}, { headers }),
-          () => API.delete(`/users/${id}/follow`, { headers }),
-          () => API.post(`/users/unfollow`, { userId: id }, { headers }),
-        ]);
+        await API.post('/users/unfollow', { targetId: profile._id }, { headers });
         setIsFollowed(false);
+        setIsRequested(false);
+        if (fetchUnreadCount) fetchUnreadCount();
+        if (fetchNotifications) fetchNotifications();
         await refreshProfileData();
       }
     } catch (err) {
@@ -243,14 +250,14 @@ export default function PublicProfilePage() {
 
   const avatar = profile.profile_pic_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.username || 'U')}&size=256`;
   const favoritesCount = Array.isArray(favorites) ? favorites.length : 0;
-  const cinegraphCount = (cineGraphData && ((Object.values(cineGraphData.movieStats || {}).reduce((a,b)=>a+b,0) || 0) + (Object.values(cineGraphData.seriesStats || {}).reduce((a,b)=>a+b,0) || 0))) || 0;
+  const cinegraphCount = (cineGraphData && ((Object.values(cineGraphData.movieStats || {}).reduce((a, b) => a + b, 0) || 0) + (Object.values(cineGraphData.seriesStats || {}).reduce((a, b) => a + b, 0) || 0))) || 0;
 
   const derivedFollowersCount = Array.isArray(profile?.followers) ? profile.followers.length : (profile?.followersCount ?? profile?.followers ?? 0);
   const derivedFollowingCount = Array.isArray(profile?.following) ? profile.following.length : (profile?.followingCount ?? profile?.following ?? 0);
 
   const topGenres = profile.topGenres && Array.isArray(profile.topGenres) && profile.topGenres.length > 0 ? profile.topGenres : (() => {
     const map = new Map();
-    const add = (obj) => { if (!obj) return; Object.entries(obj).forEach(([k,v]) => map.set(k, (map.get(k)||0)+v)); };
+    const add = (obj) => { if (!obj) return; Object.entries(obj).forEach(([k, v]) => map.set(k, (map.get(k) || 0) + v)); };
     if (cineGraphData) { add(cineGraphData.movieStats); add(cineGraphData.seriesStats); }
     if (favorites?.movies) {
       favorites.movies.forEach(m => {
@@ -263,8 +270,16 @@ export default function PublicProfilePage() {
         (s.genres || []).forEach(g => map.set(g, (map.get(g) || 0) + 1));
       });
     }
-    return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]);
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
   })();
+
+  const PrivateLockUI = () => (
+    <div className="flex flex-col items-center justify-center p-12 bg-base-100 rounded-xl border border-base-200">
+      <LockIcon className="w-12 h-12 text-warning mb-4"/>
+      <h3 className="text-xl font-bold">This account is private</h3>
+      <p>Follow to see detailed CineGraph and Favorites.</p>
+    </div>
+  );
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -282,9 +297,13 @@ export default function PublicProfilePage() {
             <div>•</div>
             <div>{favoritesCount} Favorites</div>
             <div>•</div>
-            <div>{derivedFollowersCount} followers</div>
+            <div className="hover:text-primary transition-colors cursor-pointer" onClick={() => navigate(`/network?tab=followers&user=${id}`)}>
+              <span className="font-bold">{derivedFollowersCount}</span> followers
+            </div>
             <div>•</div>
-            <div>{derivedFollowingCount} following</div>
+            <div className="hover:text-primary transition-colors cursor-pointer" onClick={() => navigate(`/network?tab=following&user=${id}`)}>
+              <span className="font-bold">{derivedFollowingCount}</span> following
+            </div>
           </div>
 
           {topGenres && topGenres.length > 0 && (
@@ -305,7 +324,13 @@ export default function PublicProfilePage() {
           {!isOwn && (
             <div>
               <div className="mt-4 flex gap-2">
-                <button className={`btn ${isFollowed ? 'btn-success' : 'btn-primary'} btn-sm`} onClick={toggleFollow} disabled={followLoading}>{followLoading ? '...' : isFollowed ? 'Following' : 'Follow'}</button>
+                <button
+                  className={`btn ${isFollowed ? 'btn-success' : isRequested ? 'btn-disabled' : 'btn-primary'} btn-sm`}
+                  onClick={toggleFollow}
+                  disabled={followLoading || isRequested}
+                >
+                  {followLoading ? '...' : isRequested ? 'Requested' : isFollowed ? 'Unfollow' : 'Follow'}
+                </button>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="btn btn-sm btn-outline gap-2"
@@ -321,7 +346,7 @@ export default function PublicProfilePage() {
                   Cinematch
                 </button>
               </div>
-              
+
               {/* Filtreleme seçenekleri */}
               {showFilters && (
                 <div className="mt-4 p-4 bg-base-200 rounded-lg space-y-3">
@@ -343,7 +368,7 @@ export default function PublicProfilePage() {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Criteria toggles */}
                   <div className="flex gap-3">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -365,7 +390,7 @@ export default function PublicProfilePage() {
                       <span className="text-sm">Use Rating</span>
                     </label>
                   </div>
-                  
+
                   {/* Genre selection - en yaygın türleri göster */}
                   <div>
                     <span className="text-sm font-semibold block mb-2">Genres:</span>
@@ -389,7 +414,7 @@ export default function PublicProfilePage() {
                   </div>
                 </div>
               )}
-              
+
               {/* YENİ: Match Result Bar */}
               {matchResult && (
                 <div role="alert" className="alert alert-info mt-3">
@@ -397,7 +422,7 @@ export default function PublicProfilePage() {
                   <span>Your match score is <strong>{matchResult.matchPercentage}%</strong> 🎬</span>
                 </div>
               )}
-              
+
               {matchError && (
                 <div role="alert" className="alert alert-error mt-3">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -415,11 +440,9 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {profile?.isAuthorized === false ? (
-        <div className="text-center p-12 bg-base-200 rounded-lg shadow-inner mt-8 border border-base-300">
-          <div className="text-6xl mb-4">🔒</div>
-          <h3 className="text-2xl font-bold mb-2">This account is private</h3>
-          <p className="text-base-content/70">Follow to see detailed lists.</p>
+      {favorites?.isPrivateAndHidden || cineGraphData?.isPrivateAndHidden ? (
+        <div className="mt-12">
+          <PrivateLockUI />
         </div>
       ) : (
         <>
@@ -428,7 +451,7 @@ export default function PublicProfilePage() {
             <h3 className="text-lg font-semibold mb-3">CineGraph</h3>
             {loadingLists ? (
               <div>Loading cinegraph...</div>
-            ) : cineGraphData ? (
+            ) : cineGraphData && (Object.keys(cineGraphData.movieStats || {}).length > 0 || Object.keys(cineGraphData.seriesStats || {}).length > 0) ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <CineGraph data={cineGraphData.movieStats || {}} title="Movie Genres" />
                 <CineGraph data={cineGraphData.seriesStats || {}} title="Series Genres" />
@@ -441,7 +464,6 @@ export default function PublicProfilePage() {
           {/* Favorites section */}
           <section className="mt-12">
             <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
-
             {favorites.movies && favorites.movies.length > 0 ? (
               <div className="flex gap-4 overflow-x-auto pb-4">
                 {favorites.movies.map((movie) => (
@@ -460,7 +482,6 @@ export default function PublicProfilePage() {
           {/* --- FAVORİ DİZİLER --- */}
           <section className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
-
             {favorites.series && favorites.series.length > 0 ? (
               <div className="flex gap-4 overflow-x-auto pb-4">
                 {favorites.series.map((series) => (

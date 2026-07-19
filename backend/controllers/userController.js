@@ -13,6 +13,7 @@ import Notification from "../models/Notification.js";
 import ActivityLog from "../models/ActivityLog.js";
 import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
+import FollowRequest from "../models/FollowRequest.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -167,15 +168,18 @@ export const getUsers = asyncHandler(async (req, res) => {
 // ... (registerUser, loginUser, getUsers functions remain the same)
 
 // @desc    Follow a user
-// @route   POST /api/users/:id/follow
+// @route   POST /api/users/follow
 // @access  Private (Login required)
 export const followUser = asyncHandler(async (req, res) => {
   const loggedInUserId = req.user.id;
-  const userToFollowId = req.params.id;
+  
+  // As requested by user: extract targetId from req.body
+  const { targetId } = req.body;
+  const userToFollowId = targetId || req.params.id;
 
-  // Validation
-  if (!userToFollowId.match(/^[0-9a-fA-F]{24}$/)) {
-    return sendError(res, 'Invalid user ID', 400);
+  if (!userToFollowId) {
+    console.error("Backend Error: targetId is missing in request body! req.body =", req.body, "req.params =", req.params);
+    return res.status(400).json({ message: "Validation Error: targetId is required" });
   }
 
   if (loggedInUserId === userToFollowId) {
@@ -188,41 +192,52 @@ export const followUser = asyncHandler(async (req, res) => {
   }
 
   if (req.user.following.includes(userToFollowId)) {
-    return sendError(res, 'You are already following this user', 400);
+    return res.status(200).json({ success: true, data: { type: 'following' } });
   }
 
-  await User.updateOne(
-    { _id: loggedInUserId },
-    { $addToSet: { following: userToFollowId } }
-  );
+  const visibility = userToFollow.visibility || 'public';
 
-  await User.updateOne(
-    { _id: userToFollowId },
-    { $addToSet: { followers: loggedInUserId } }
-  );
+  if (visibility === 'private') {
+    const existingReq = await FollowRequest.findOne({ requesterId: loggedInUserId, targetId: userToFollowId });
+    if (!existingReq) {
+       await FollowRequest.create({ requesterId: loggedInUserId, targetId: userToFollowId, status: 'pending' });
+       await Notification.create({ user: userToFollowId, sender: loggedInUserId, type: 'follow_request', read: false });
+       console.log("Notification created successfully for:", userToFollowId);
+    }
+    return sendSuccess(res, { type: 'requested' }, 'Follow request sent', 200);
+  } else {
+    await User.updateOne(
+      { _id: loggedInUserId },
+      { $addToSet: { following: userToFollowId } }
+    );
 
-  await Notification.findOneAndDelete({
-    user: userToFollowId,
-    sender: loggedInUserId,
-    type: 'follow'
-  });
+    await User.updateOne(
+      { _id: userToFollowId },
+      { $addToSet: { followers: loggedInUserId } }
+    );
 
-  await Notification.create({
-    user: userToFollowId,
-    sender: loggedInUserId,
-    type: 'follow'
-  });
+    await Notification.create({
+      user: userToFollowId,
+      sender: loggedInUserId,
+      type: 'follow'
+    });
 
-  sendSuccess(res, null, 'User followed successfully', 200);
+    return sendSuccess(res, { type: 'following' }, 'User followed successfully', 200);
+  }
 });
 
 // @desc    Unfollow a user
-// @route   POST /api/users/:id/unfollow
+// @route   POST /api/users/unfollow
 // @access  Private (Login required)
 export const unfollowUser = asyncHandler(async (req, res) => {
   const loggedInUserId = req.user.id;
-  const userToUnfollowId = req.params.id;
+  const userToUnfollowId = req.body.targetId || req.params.id;
 
+  if (!userToUnfollowId) {
+    return sendError(res, 'Missing target ID', 400);
+  }
+
+  // Remove from following/followers
   await User.updateOne(
     { _id: loggedInUserId },
     { $pull: { following: userToUnfollowId } }
@@ -233,6 +248,9 @@ export const unfollowUser = asyncHandler(async (req, res) => {
     { $pull: { followers: loggedInUserId } }
   );
 
+  // Remove follow request if exists
+  await FollowRequest.deleteOne({ requesterId: loggedInUserId, targetId: userToUnfollowId });
+
   await Notification.deleteOne({
     user: userToUnfollowId,
     sender: loggedInUserId,
@@ -241,6 +259,133 @@ export const unfollowUser = asyncHandler(async (req, res) => {
 
   sendSuccess(res, null, 'User unfollowed successfully', 200);
 });
+
+// @desc    Remove a follower
+// @route   POST /api/users/remove-follower
+// @access  Private
+export const removeFollower = asyncHandler(async (req, res) => {
+  const { followerId } = req.body;
+  const userId = req.user.id;
+
+  if (!followerId) {
+    return res.status(400).json({ message: "Missing followerId" });
+  }
+
+  await User.updateOne(
+    { _id: userId },
+    { $pull: { followers: followerId } }
+  );
+
+  await User.updateOne(
+    { _id: followerId },
+    { $pull: { following: userId } }
+  );
+
+  return res.status(200).json({ success: true, message: "Follower removed successfully" });
+});
+
+// @desc    Accept follow request
+// @route   POST /api/users/:targetId/follow-request/accept
+// @access  Private
+export const acceptFollowRequest = asyncHandler(async (req, res) => {
+  const { targetId } = req.params;
+  const { requesterId } = req.body;
+
+  if (!targetId || !requesterId) {
+    return res.status(400).json({ message: "Missing targetId or requesterId" });
+  }
+
+  // Ensure the person accepting the request is actually the target
+  if (targetId !== req.user.id) {
+    return res.status(403).json({ message: "You can only accept requests directed to you." });
+  }
+
+  const followRequest = await FollowRequest.findOne({
+    requesterId,
+    targetId,
+    status: 'pending'
+  });
+
+  if (!followRequest) {
+    return res.status(404).json({ message: 'Follow request not found' });
+  }
+
+  await User.updateOne(
+    { _id: requesterId },
+    { $addToSet: { following: targetId } }
+  );
+
+  await User.updateOne(
+    { _id: targetId },
+    { $addToSet: { followers: requesterId } }
+  );
+
+  await FollowRequest.findByIdAndDelete(followRequest._id);
+
+  await Notification.findOneAndDelete({
+    user: targetId,
+    sender: requesterId,
+    type: 'follow_request'
+  });
+
+  await Notification.create({
+    user: requesterId,
+    sender: targetId,
+    type: 'follow_accepted',
+    read: false
+  });
+  console.log("Notification created successfully for:", requesterId);
+
+  return res.status(200).json({ success: true, message: 'Follow request accepted' });
+});
+
+// @desc    Reject follow request
+// @route   POST /api/users/:targetId/follow-request/reject
+// @access  Private
+export const rejectFollowRequest = asyncHandler(async (req, res) => {
+  const { targetId } = req.params;
+  const { requesterId } = req.body;
+
+  if (!targetId || !requesterId) {
+    return res.status(400).json({ message: "Missing targetId or requesterId" });
+  }
+
+  if (targetId !== req.user.id) {
+    return res.status(403).json({ message: "You can only reject requests directed to you." });
+  }
+
+  const followRequest = await FollowRequest.findOneAndDelete({
+    requesterId,
+    targetId,
+    status: 'pending'
+  });
+
+  if (!followRequest) {
+    return res.status(404).json({ message: 'Follow request not found' });
+  }
+
+  await Notification.findOneAndDelete({
+    user: targetId,
+    sender: requesterId,
+    type: 'follow_request'
+  });
+
+  return res.status(200).json({ success: true, message: 'Follow request rejected' });
+});
+
+// @desc    Get pending follow requests
+// @route   GET /api/users/me/follow-requests
+// @access  Private
+export const getPendingRequests = asyncHandler(async (req, res) => {
+  const loggedInUserId = req.user.id;
+
+  const requests = await FollowRequest.find({ targetId: loggedInUserId, status: 'pending' })
+    .populate('requesterId', '_id username profile_pic_url name bio')
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json(requests.map(r => r.requesterId).filter(Boolean));
+});
+
 
 // @desc    Get logged-in user's notifications
 // @route   GET /api/notifications
@@ -421,8 +566,6 @@ export const isAuthorizedToView = (viewerId, targetUser) => {
  */
 export const getUserProfile = async (req, res) => {
   try {
-    // Use .findById() to get all information of the user in :id parameter
-    // EXCEPT for password
     const user = await User.findById(req.params.id).select('-password').lean();
     
     if (!user) {
@@ -430,6 +573,16 @@ export const getUserProfile = async (req, res) => {
     }
 
     const currentUserId = req.user ? req.user.id.toString() : null;
+    let isRequested = false;
+
+    if (currentUserId) {
+      const existingRequest = await FollowRequest.findOne({
+        requesterId: currentUserId,
+        targetId: user._id,
+        status: 'pending'
+      });
+      if (existingRequest) isRequested = true;
+    }
 
     if (!isAuthorizedToView(currentUserId, user)) {
       return res.status(200).json({
@@ -438,13 +591,14 @@ export const getUserProfile = async (req, res) => {
         profile_pic_url: user.profile_pic_url,
         isPrivate: true,
         isPrivateMasked: true,
+        isPrivateAndHidden: true,
         isAuthorized: false,
+        isRequested,
         message: "Profile is private"
       });
     }
     
-    // Send user's bio, username, createdAt etc. to frontend
-    res.status(200).json({ ...user, isAuthorized: true });
+    res.status(200).json({ ...user, isAuthorized: true, isRequested });
 
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -496,6 +650,7 @@ export const getUserFavorites = asyncHandler(async (req, res) => {
       movies: [],
       series: [],
       isPrivateMasked: true,
+      isPrivateAndHidden: true,
       isAuthorized: false
     }, 'User favorites fetched (masked)');
   }
@@ -505,6 +660,7 @@ export const getUserFavorites = asyncHandler(async (req, res) => {
       movies: [],
       series: [],
       isPrivateMasked: true,
+      isPrivateAndHidden: true,
       isAuthorized: false
     }, 'User favorites fetched (masked)');
   }
@@ -667,6 +823,7 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
       movieStats: {}, 
       seriesStats: {}, 
       isPrivateMasked: true,
+      isPrivateAndHidden: true,
       isAuthorized: false,
       totalMovies: movieCount,
       totalSeries: seriesCount

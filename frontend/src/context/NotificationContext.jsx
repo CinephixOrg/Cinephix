@@ -106,13 +106,22 @@ export function NotificationProvider({ children }) {
     }));
   }, []);
 
-  // Initial load
+  // Initial load and polling
   useEffect(() => {
+    let interval;
     if (user) {
       fetchNotifications();
       fetchUnreadCount();
       fetchMessageUnreadCounts();
+
+      // Poll every 10 seconds
+      interval = setInterval(() => {
+        fetchUnreadCount();
+      }, 10000);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [user, fetchNotifications, fetchUnreadCount, fetchMessageUnreadCounts]);
 
   const value = {

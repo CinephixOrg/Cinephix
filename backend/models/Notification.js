@@ -16,10 +16,10 @@ const notificationSchema = new Schema({
         ref: 'User',
         required: true
     },
-    // Bildirim tipi: follow, message
+    // Bildirim tipi: follow, message, follow_request, follow_accepted
     type: {
         type: String,
-        enum: ['follow', 'message'], // follow or message
+        enum: ['follow', 'message', 'follow_request', 'follow_accepted'],
         required: true
     },
     // Mesaj bildiriminde konuşma ID'si

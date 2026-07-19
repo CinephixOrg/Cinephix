@@ -50,7 +50,7 @@ export default function MatchCard({ match, rank, animationDelay }) {
             {/* Avatar Circle */}
             <div className="relative mb-6">
               <Link
-                to={`/users/${match.user._id}`}
+                to={`/profile/${match.user._id}`}
                 className={`
                 rounded-full overflow-hidden border-4 border-primary block
                 transition-transform duration-300 group-hover:scale-105
@@ -85,7 +85,7 @@ export default function MatchCard({ match, rank, animationDelay }) {
             </div>
 
             {/* Username */}
-            <Link to={`/users/${match.user._id}`}>
+            <Link to={`/profile/${match.user._id}`}>
               <h3 className="text-xl font-bold text-white text-center mb-2 line-clamp-2 hover:text-primary hover:underline transition-all">
                 {match.user.username}
               </h3>
@@ -120,7 +120,7 @@ export default function MatchCard({ match, rank, animationDelay }) {
           {/* Buttons Section */}
           <div className="flex flex-col gap-3">
             <Link
-              to={`/users/${match.user._id}`}
+              to={`/profile/${match.user._id}`}
               className="btn btn-primary btn-sm text-white font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-primary/40"
             >
                 View Profile

@@ -11,7 +11,7 @@ import MovieCard from '../components/MovieCard.jsx';
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import SeriesCard from '../components/SeriesCard.jsx';
 import CineGraph from "../components/CineGraph.jsx"; // CineGraph component'ini import et
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 export default function ProfilePage() {
   const { user, updateUser } = useContext(AuthContext); // use updateUser from context
@@ -57,7 +57,7 @@ export default function ProfilePage() {
   const [matchResult, setMatchResult] = useState(null);
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchError, setMatchError] = useState(null);
-  
+
   // Cinematch Filters
   const [matchType, setMatchType] = useState('movie');
   const [selectedGenres, setSelectedGenres] = useState([]);
@@ -114,13 +114,13 @@ export default function ProfilePage() {
         } else {
           setIsAccessDenied(false);
         }
-        
+
         // ALWAYS fetch these, since backend now returns masked data if unauthorized
         const [favoritesData, cineGraphData] = await Promise.all([
           userService.getFavorites(targetUserId),
           userService.getCineGraphData(targetUserId),
         ]);
-        
+
         setFavorites(favoritesData);
         setCineGraphData(cineGraphData);
 
@@ -217,7 +217,7 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-        
+
         {/* {lastSelectedFile && (
           <button className="btn btn-sm btn-outline ml-2" onClick={() => { setSelectedFileForCrop(lastSelectedFile); setIsCropOpen(true); }}>
             Re-edit last
@@ -225,6 +225,15 @@ export default function ProfilePage() {
         )} */}
         <div className="flex flex-col items-center gap-2 mt-4">
           <h1 className="text-3xl font-bold">{profile?.username || user.username}</h1>
+          <div className="flex gap-4 mt-2 text-sm">
+            <Link to="/network?tab=followers" className="hover:text-primary transition-colors cursor-pointer">
+              <span className="font-bold">{profile?.followers?.length || 0}</span> Followers
+            </Link>
+            <Link to="/network?tab=following" className="hover:text-primary transition-colors cursor-pointer">
+              <span className="font-bold">{profile?.following?.length || 0}</span> Following
+            </Link>
+
+          </div>
           {isOwnProfile && (
             <button
               onClick={handleAnalyzeProfile}
@@ -253,7 +262,7 @@ export default function ProfilePage() {
                   Cinematch
                 </button>
               </div>
-              
+
               {/* Filtreleme seçenekleri */}
               {showFilters && (
                 <div className="mt-3 p-4 bg-base-200 rounded-lg space-y-3 w-full max-w-md">
@@ -275,7 +284,7 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-                  
+
                   {/* Criteria toggles */}
                   <div className="flex gap-3">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -297,7 +306,7 @@ export default function ProfilePage() {
                       <span className="text-sm">Use Rating</span>
                     </label>
                   </div>
-                  
+
                   {/* Genre selection */}
                   <div>
                     <span className="text-sm font-semibold block mb-2">Genres:</span>
@@ -321,7 +330,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
-              
+
               {/* YENİ: Match Result Bar */}
               {matchResult && (
                 <div role="alert" className="alert alert-info mt-3">
@@ -329,7 +338,7 @@ export default function ProfilePage() {
                   <span>Your match score is <strong>{matchResult.matchPercentage}%</strong> 🎬</span>
                 </div>
               )}
-              
+
               {matchError && (
                 <div role="alert" className="alert alert-error mt-3">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -379,12 +388,12 @@ export default function ProfilePage() {
               </p>
 
               {isOwnProfile && (
-                  <button
-                    className="btn btn-ghost btn-sm btn-circle absolute -top-2 -right-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => setIsEditingBio(true)}
-                  >
-                    ✏️
-                  </button>
+                <button
+                  className="btn btn-ghost btn-sm btn-circle absolute -top-2 -right-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => setIsEditingBio(true)}
+                >
+                  ✏️
+                </button>
               )}
             </div>
           )}
@@ -393,18 +402,18 @@ export default function ProfilePage() {
 
       <section className="mt-12">
         <h2 className="text-3xl font-bold mb-6 text-center">
-            {isOwnProfile ? "My CineGraph" : `${profile?.username || 'User'}'s CineGraph`}
+          {isOwnProfile ? "My CineGraph" : `${profile?.username || 'User'}'s CineGraph`}
         </h2>
         {cineGraphData?.isPrivateMasked ? (
-           <div className="text-center p-8 bg-base-200 rounded-lg shadow-inner mt-4 border border-base-300">
-             <div className="text-4xl mb-2">🔒</div>
-             <p className="text-xl font-semibold mb-2">This account is private.</p>
-             <p className="text-base-content/70">Follow to see detailed lists and genres.</p>
-             <div className="flex justify-center gap-4 mt-4">
-               <div className="badge badge-primary badge-lg">Movies Logged: {cineGraphData.totalMovies}</div>
-               <div className="badge badge-secondary badge-lg">Series Logged: {cineGraphData.totalSeries}</div>
-             </div>
-           </div>
+          <div className="text-center p-8 bg-base-200 rounded-lg shadow-inner mt-4 border border-base-300">
+            <div className="text-4xl mb-2">🔒</div>
+            <p className="text-xl font-semibold mb-2">This account is private.</p>
+            <p className="text-base-content/70">Follow to see detailed lists and genres.</p>
+            <div className="flex justify-center gap-4 mt-4">
+              <div className="badge badge-primary badge-lg">Movies Logged: {cineGraphData.totalMovies}</div>
+              <div className="badge badge-secondary badge-lg">Series Logged: {cineGraphData.totalSeries}</div>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {cineGraphData ? (
@@ -433,10 +442,10 @@ export default function ProfilePage() {
       <section className="mt-12 max-w-5xl mx-auto">
         <h2 className="text-2xl font-bold mb-4">Favorite Movies</h2>
         {favorites?.isPrivateMasked ? (
-           <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
-             <div className="text-2xl mb-2">🔒</div>
-             <p className="text-base-content/70">Follow to see favorite movies.</p>
-           </div>
+          <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
+            <div className="text-2xl mb-2">🔒</div>
+            <p className="text-base-content/70">Follow to see favorite movies.</p>
+          </div>
         ) : favorites && favorites.movies && favorites.movies.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {favorites.movies.map((movie) => (
@@ -457,10 +466,10 @@ export default function ProfilePage() {
       <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Favorite Series</h2>
         {favorites?.isPrivateMasked ? (
-           <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
-             <div className="text-2xl mb-2">🔒</div>
-             <p className="text-base-content/70">Follow to see favorite series.</p>
-           </div>
+          <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
+            <div className="text-2xl mb-2">🔒</div>
+            <p className="text-base-content/70">Follow to see favorite series.</p>
+          </div>
         ) : favorites && favorites.series && favorites.series.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {favorites.series.map((series) => (
@@ -484,7 +493,7 @@ export default function ProfilePage() {
           <div className="bg-base-100 rounded-lg shadow-xl p-8 max-w-md w-full">
             <div className="text-center">
               <h3 className="text-3xl font-bold mb-4">🎬 Cinematch Result</h3>
-              
+
               <div className="mb-6">
                 <img
                   src={matchResult.targetUser?.profile_pic_url || `https://ui-avatars.com/api/?name=${matchResult.targetUser?.username}&size=80`}
@@ -557,7 +566,7 @@ export default function ProfilePage() {
                 alt="Profile large"
                 className="max-h-[80vh] object-contain rounded-md"
               />
-              
+
             </div>
           </div>
         </div>
@@ -569,7 +578,7 @@ export default function ProfilePage() {
           <div className="modal-box w-11/12 max-w-2xl bg-base-100 border border-base-300 shadow-2xl rounded-2xl overflow-hidden p-0">
             {/* Modal Header Banner */}
             <div className="bg-gradient-to-r from-primary to-secondary p-6 text-primary-content relative">
-              <button 
+              <button
                 onClick={() => setIsAnalysisModalOpen(false)}
                 className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-primary-content hover:bg-black/10"
               >
@@ -580,7 +589,7 @@ export default function ProfilePage() {
                 {analysisData?.nickname || "Silent Observer"}
               </h2>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {analysisData ? (
                 <div className="space-y-5">
@@ -628,7 +637,7 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-            
+
             <div className="px-6 pb-6 pt-2 flex justify-end">
               <button className="btn btn-outline border-base-300 hover:bg-base-200 hover:text-base-content font-bold px-6" onClick={() => setIsAnalysisModalOpen(false)}>
                 Close

@@ -80,6 +80,17 @@ export default function App() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    console.log("Registered Routes in App:");
+    console.log([
+      "/login", "/register", "/verify-email", "/forgot-password", "/oauth-success",
+      "/", "/setup-profile", "/home", "/list", "/watchlist", "/my-lists", "/lists/:id",
+      "/profile/:id", "/profile", "/network", "/movies", "/series", "/match",
+      "/settings", "/community", "/community/:slug", "/dm", "/dm/:conversationId",
+      "/notifications", "/content/:type/:contentId", "/about", "/privacy", "/terms"
+    ].join("\\n"));
+  }, []);
+
   if (showSplash) {
     return <SplashScreen />;
   }
@@ -110,7 +121,7 @@ export default function App() {
             <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
             <Route path="/my-lists" element={<ProtectedRoute><MyListsPage /></ProtectedRoute>} />
             <Route path="/lists/:id" element={<ListDetailPage />} />
-            <Route path="/users/:id" element={<PublicProfilePage />} />
+            <Route path="/profile/:id" element={<PublicProfilePage />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
             <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
