@@ -1,7 +1,7 @@
-// pages/HomePage.jsx
 import React, { useContext, useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import FeedItem from "../components/FeedItem.jsx";
 import SuggestedUsers from "../components/SuggestedUsers.jsx";
 import TopPicks from "../components/TopPicks.jsx";
@@ -33,15 +33,16 @@ function FeedSkeleton() {
 }
 
 function EmptyFeed() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
       <span className="text-5xl">🎬</span>
-      <h3 className="text-lg font-semibold text-base-content">Your feed is empty</h3>
+      <h3 className="text-lg font-semibold text-base-content">{t("Your feed is empty")}</h3>
       <p className="text-sm text-base-content/50 max-w-xs">
-        Follow other cinephiles to see their ratings, reviews, and watchlist updates here.
+        {t("Follow other cinephiles to see their ratings, reviews, and watchlist updates here.")}
       </p>
       <Link to="/network" className="btn btn-primary btn-sm mt-2">
-        Find people to follow
+        {t("Find people to follow")}
       </Link>
     </div>
   );
@@ -62,15 +63,16 @@ function ListsSkeleton() {
 }
 
 function EmptyLists() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
       <span className="text-5xl">📋</span>
-      <h3 className="text-lg font-semibold">No public lists yet</h3>
+      <h3 className="text-lg font-semibold">{t("No public lists yet")}</h3>
       <p className="text-sm text-base-content/50 max-w-xs">
-        Follow more people or be the first to create and share a public list.
+        {t("Follow more people or be the first to create and share a public list.")}
       </p>
       <Link to="/my-lists" className="btn btn-primary btn-sm mt-2">
-        Create a list
+        {t("Create a list")}
       </Link>
     </div>
   );
@@ -78,6 +80,7 @@ function EmptyLists() {
 
 // ── Tab panels ────────────────────────────────────────────────────
 function ActivityTab() {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -108,13 +111,13 @@ function ActivityTab() {
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-base-content">Activity Feed</h2>
+        <h2 className="text-xl font-bold text-base-content">{t("Activity Feed")}</h2>
         <button
           onClick={() => fetchFeed(1)}
           className="btn btn-ghost btn-sm text-base-content/50"
           disabled={loading}
         >
-          ↻ Refresh
+          ↻ {t("Refresh")}
         </button>
       </div>
 
@@ -138,7 +141,7 @@ function ActivityTab() {
                 disabled={loadingMore}
                 className="btn btn-outline btn-sm"
               >
-                {loadingMore ? "Loading…" : "Load more"}
+                {loadingMore ? t("Loading") : t("Load more")}
               </button>
             </div>
           )}
@@ -149,6 +152,7 @@ function ActivityTab() {
 }
 
 function ListsTab() {
+  const { t } = useTranslation();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -164,13 +168,13 @@ function ListsTab() {
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold">Discover Lists</h2>
+          <h2 className="text-xl font-bold">{t("Discover Lists")}</h2>
           <p className="text-sm text-base-content/50 mt-0.5">
-            Public lists from people you follow and the community
+            {t("Public lists from people you follow and the community")}
           </p>
         </div>
         <Link to="/my-lists" className="btn btn-outline btn-sm">
-          My Lists
+          {t("My Lists")}
         </Link>
       </div>
 
@@ -199,6 +203,7 @@ function ForYouTab() {
 
 // ── Main page ─────────────────────────────────────────────────────
 export default function HomePage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Activity");
 
   return (
@@ -222,7 +227,7 @@ export default function HomePage() {
                     : "border-transparent text-base-content/50 hover:text-base-content"
                 }`}
               >
-                {tab}
+                {t(tab)}
               </button>
             ))}
           </div>

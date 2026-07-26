@@ -16,35 +16,60 @@ export default async function (seriesModel) {
         });
       }
 
+      const safeQ = q.replace(/[^\w\s]/gi, '');
+      const queryTokens = safeQ.split(/\s+/).filter(w => w);
+      const queryStr = queryTokens.length > 0 ? queryTokens.map(w => `${w}*`).join(" AND ") : "";
+
+      const shouldArray = [
+        {
+          autocomplete: {
+            query: q,
+            path: "name"
+          }
+        },
+        {
+          text: {
+            query: q,
+            path: "name",
+            fuzzy: {
+              maxEdits: 1,
+              prefixLength: 2
+            }
+          }
+        }
+      ];
+
+      if (queryStr) {
+        shouldArray.push({
+          queryString: {
+            defaultPath: "name",
+            query: queryStr
+          }
+        });
+      }
+
       const pipeline = [
         {
           $search: {
             index: "default",
             compound: {
-              should: [
-                {
-                  autocomplete: {
-                    query: q,
-                    path: "name",
-                    fuzzy: {
-                      maxEdits: 2,
-                      prefixLength: 1
-                    }
-                  }
-                },
-                {
-                  text: {
-                    query: q,
-                    path: "name",
-                    fuzzy: {
-                      maxEdits: 2
-                    }
-                  }
-                }
+              should: shouldArray
+            }
+          }
+        },
+        { $limit: 150 },
+        {
+          $addFields: {
+            combinedScore: {
+              $multiply: [
+                { $meta: "searchScore" },
+                { $add: [{ $ifNull: ["$popularity", 1] }, 1] }
               ]
             }
           }
         },
+        { $sort: { combinedScore: -1 } },
+        { $limit: 20 },
         {
           $project: {
             _id: 1,
@@ -62,12 +87,10 @@ export default async function (seriesModel) {
             vote_average: 1
           }
         },
-        {
-          $limit: 20
-        }
+
       ];
 
-      const results = await seriesModel.aggregate(pipeline);
+      const results = await seriesModel.aggregate(pipeline).allowDiskUse(true);
       res.json({
         success: true,
         data: results
@@ -90,29 +113,47 @@ export default async function (seriesModel) {
 
       // 🔹 Atlas Search: fuzzy + autocomplete
       if (query) {
+        const safeTitle = query.replace(/[^\w\s]/gi, '');
+        const titleTokens = safeTitle.split(/\s+/).filter(w => w);
+        const titleQueryStr = titleTokens.length > 0 ? titleTokens.map(w => `${w}*`).join(" AND ") : "";
+
+        const shouldArray = [
+          {
+            autocomplete: {
+              query: query,
+              path: "name"
+            }
+          },
+          {
+            text: {
+              query: query,
+              path: "name",
+              fuzzy: {
+                maxEdits: 1,
+                prefixLength: 2
+              }
+            }
+          }
+        ];
+
+        if (titleQueryStr) {
+          shouldArray.push({
+            queryString: {
+              defaultPath: "name",
+              query: titleQueryStr
+            }
+          });
+        }
+
         pipeline.push({
           $search: {
             index: "default", // your index name
             compound: {
-              should: [
-                {
-                  autocomplete: {
-                    query: query,
-                    path: "name",
-                    fuzzy: { maxEdits: 2, prefixLength: 1 },
-                  },
-                },
-                {
-                  text: {
-                    query: query,
-                    path: "name",
-                    fuzzy: { maxEdits: 2 },
-                  },
-                },
-              ],
-            },
-          },
+              should: shouldArray
+            }
+          }
         });
+        pipeline.push({ $limit: 200 }); // Fast limit for Atlas Search
       }
 
       // 🔹 Ek filtreler
@@ -132,6 +173,28 @@ export default async function (seriesModel) {
       if (hasPoster === "yes") match.poster_path = { $ne: null };
       if (hasPoster === "no") match.poster_path = null;
       if (Object.keys(match).length > 0) pipeline.push({ $match: match });
+
+      if (query) {
+        pipeline.push({
+          $addFields: {
+            combinedScore: {
+              $multiply: [
+                { $meta: "searchScore" },
+                { $add: [{ $ifNull: ["$popularity", 1] }, 1] } // Score * Popularity
+              ]
+            }
+          }
+        });
+        pipeline.push({ $sort: { combinedScore: -1 } });
+      } else {
+        // Sort results by popularity and newest when no search query
+        pipeline.push({
+          $sort: { popularity: -1, vote_count: -1, first_air_date: -1 }
+        });
+      }
+
+      // 🔹 Prevent $facet memory issues by capping results to top 2000
+      pipeline.push({ $limit: 2000 });
 
       // 🔹 Optimize: Only select needed fields for search results
       pipeline.push({
@@ -158,7 +221,7 @@ export default async function (seriesModel) {
       });
 
       // 🔹 Execute optimized pipeline
-      const result = await seriesModel.aggregate(pipeline);
+      const result = await seriesModel.aggregate(pipeline).allowDiskUse(true);
       const total = result[0]?.metadata[0]?.total || 0;
       const docs = result[0]?.data || [];
 
@@ -185,7 +248,7 @@ export default async function (seriesModel) {
   // POST /api/series/bulk
   router.post("/bulk", authMiddleware, async (req, res) => {
     try {
-      const { ids } = req.body;
+      const { ids, lightweight } = req.body;
       if (!ids || !Array.isArray(ids)) {
         return res.status(400).json({
           success: false,
@@ -194,7 +257,13 @@ export default async function (seriesModel) {
       }
 
       const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
-      const series = await seriesModel.find({ _id: { $in: objectIds } });
+      
+      let query = seriesModel.find({ _id: { $in: objectIds } });
+      if (lightweight) {
+        query = query.select("_id title name poster_path vote_average first_air_date release_date tvdb id genre_ids");
+      }
+      
+      const series = await query.lean();
 
       return res.json({
         success: true,
@@ -212,7 +281,7 @@ export default async function (seriesModel) {
   // GET /api/series/:id
   router.get("/:id", async (req, res) => {
     try {
-      const doc = await seriesModel.findById(req.params.id);
+      const doc = await seriesModel.findById(req.params.id).lean();
       if (!doc) {
         return res.status(404).json({
           success: false,

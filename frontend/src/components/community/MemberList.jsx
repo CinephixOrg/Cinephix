@@ -69,7 +69,7 @@ export default function MemberList({ members = [], loading }) {
         ) : (
           <Link
             key={m.user._id}
-            to={`/users/${m.user._id}`}
+            to={`/profile/${m.user._id}`}
             className={`${cardClass} hover:bg-base-200`}
           >
             {inner}

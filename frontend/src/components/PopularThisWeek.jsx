@@ -1,12 +1,13 @@
-// frontend/src/components/PopularThisWeek.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import feedService from "../api/feedService.js";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 const POSTER_PLACEHOLDER = "https://placehold.co/300x450/1d232a/e0e0e0?text=No+Poster";
 
 function PopularCard({ item }) {
+  const { t } = useTranslation();
   const { content, addCount } = item;
   return (
     <Link to={`/content/${content.type}/${content.id}`} className="flex-shrink-0 w-32 group">
@@ -30,7 +31,7 @@ function PopularCard({ item }) {
           {content.title}
         </p>
         <p className="text-xs text-base-content/50 mt-0.5">
-          {addCount === 1 ? "1 add this week" : `${addCount} adds this week`}
+          {addCount === 1 ? t("add_this_week", { count: 1 }) : t("add_this_week_plural", { count: addCount })}
         </p>
       </div>
     </Link>
@@ -50,6 +51,7 @@ function SkeletonCard() {
 }
 
 export default function PopularThisWeek() {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
@@ -73,7 +75,7 @@ export default function PopularThisWeek() {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-bold text-base-content">Popular this week</h2>
+        <h2 className="text-base font-bold text-base-content">{t("Popular this week")}</h2>
         <div className="flex gap-1">
           <button
             onClick={() => scroll(-1)}

@@ -93,8 +93,10 @@ export default function WatchlistPage() {
                     setLoading(true);
                 }
 
-                const freshMovies = await contentService.getMoviesBulk(movieIds);
-                const freshSeries = await contentService.getSeriesBulk(seriesIds);
+                const [freshMovies, freshSeries] = await Promise.all([
+                    contentService.getMoviesBulk(movieIds, true),
+                    contentService.getSeriesBulk(seriesIds, true)
+                ]);
 
                 console.log("WatchlistPage - Fresh movies resolved:", freshMovies);
                 console.log("WatchlistPage - Fresh series resolved:", freshSeries);
@@ -305,7 +307,7 @@ export default function WatchlistPage() {
     };
 
     // Defensive loading guard — waits until ratings have finished loading to resolve async racing flashes
-    if (loading || loadingRatings) {
+    if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
                 <span className="loading loading-spinner text-primary loading-lg"></span>

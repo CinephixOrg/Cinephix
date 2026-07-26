@@ -1,20 +1,20 @@
-// frontend/src/components/FeedItem.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w92";
 const AVATAR_PLACEHOLDER = "https://placehold.co/40x40/1d232a/e0e0e0?text=?";
 const POSTER_PLACEHOLDER = "https://placehold.co/92x138/1d232a/e0e0e0?text=?";
 
-function timeAgo(date) {
+function timeAgo(date, t) {
   const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return t("just now");
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t("m_ago", { val: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("h_ago", { val: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return t("d_ago", { val: days });
   return new Date(date).toLocaleDateString();
 }
 
@@ -32,7 +32,7 @@ function StarBar({ value }) {
 
 function Avatar({ user }) {
   return (
-    <Link to={`/users/${user._id}`} className="flex-shrink-0">
+    <Link to={`/profile/${user._id}`} className="flex-shrink-0">
       <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-base-300">
         <img
           src={user.profile_pic_url || AVATAR_PLACEHOLDER}
@@ -75,18 +75,18 @@ function ContentLink({ content }) {
 
 function UserLink({ user }) {
   return (
-    <Link to={`/users/${user._id}`} className="font-semibold hover:underline">
+    <Link to={`/profile/${user._id}`} className="font-semibold hover:underline">
       {user.username}
     </Link>
   );
 }
 
-function ActivityText({ item }) {
+function ActivityText({ item, t }) {
   switch (item.type) {
     case "rated":
       return (
         <span>
-          <UserLink user={item.user} /> rated <ContentLink content={item.content} />
+          <UserLink user={item.user} /> {t("rated")} <ContentLink content={item.content} />
           <span className="ml-2 inline-block">
             <StarBar value={item.value} />
           </span>
@@ -95,7 +95,7 @@ function ActivityText({ item }) {
     case "reviewed":
       return (
         <span>
-          <UserLink user={item.user} /> wrote a review for <ContentLink content={item.content} />
+          <UserLink user={item.user} /> {t("wrote a review for")} <ContentLink content={item.content} />
           {item.excerpt && (
             <span className="block mt-1 text-sm text-base-content/60 italic line-clamp-2">
               "{item.excerpt}{item.excerpt?.length >= 150 ? "…" : ""}"
@@ -106,14 +106,14 @@ function ActivityText({ item }) {
     case "watchlisted":
       return (
         <span>
-          <UserLink user={item.user} /> added <ContentLink content={item.content} /> to their watchlist
+          <UserLink user={item.user} /> {t("added")} <ContentLink content={item.content} /> {t("to their watchlist")}
         </span>
       );
     case "followed":
       return (
         <span>
-          <UserLink user={item.user} /> started following{" "}
-          {item.targetUser ? <UserLink user={item.targetUser} /> : "someone"}
+          <UserLink user={item.user} /> {t("started following")}{" "}
+          {item.targetUser ? <UserLink user={item.targetUser} /> : t("someone")}
         </span>
       );
     default:
@@ -136,6 +136,7 @@ function ActivityIcon({ type }) {
 }
 
 export default function FeedItem({ item }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-3 py-3 px-4 rounded-xl hover:bg-base-200/60 transition-colors">
       <div className="relative flex-shrink-0">
@@ -145,9 +146,9 @@ export default function FeedItem({ item }) {
 
       <div className="flex-1 min-w-0">
         <p className="text-sm leading-snug text-base-content">
-          <ActivityText item={item} />
+          <ActivityText item={item} t={t} />
         </p>
-        <p className="text-xs text-base-content/40 mt-0.5">{timeAgo(item.createdAt)}</p>
+        <p className="text-xs text-base-content/40 mt-0.5">{timeAgo(item.createdAt, t)}</p>
       </div>
 
       {item.content && <Poster content={item.content} />}

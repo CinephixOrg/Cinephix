@@ -42,7 +42,7 @@ export default function NotificationsPage() {
     if (notification.type === 'message' && notification.conversationId) {
       navigate(`/dm/${notification.conversationId._id || notification.conversationId}`);
     } else if (notification.type === 'follow') {
-      navigate(`/users/${notification.sender._id}`);
+      navigate(`/profile/${notification.sender._id}`);
     }
   };
 
@@ -120,7 +120,7 @@ export default function NotificationsPage() {
                 <div className="flex gap-4 items-start">
                   {/* Avatar */}
                   <Link
-                    to={`/users/${notification.sender._id}`}
+                    to={`/profile/${notification.sender._id}`}
                     onClick={(e) => e.stopPropagation()}
                     className="flex-shrink-0 hover:opacity-80 transition-opacity"
                   >
@@ -137,7 +137,7 @@ export default function NotificationsPage() {
                       <h3 className="font-semibold text-base flex items-center gap-2">
                         <span className="text-lg">{getNotificationIcon(notification)}</span>
                         <Link
-                          to={`/users/${notification.sender._id}`}
+                          to={`/profile/${notification.sender._id}`}
                           onClick={(e) => e.stopPropagation()}
                           className="hover:underline hover:text-primary transition-all"
                         >

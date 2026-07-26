@@ -44,13 +44,13 @@ export default function ListDetailPage() {
           .filter((i) => i.itemType === "series")
           .map((i) => i.itemId);
 
-        const [movieResults, seriesResults] = await Promise.all([
-          Promise.allSettled(movieIds.map((iid) => contentService.getMovieById(iid).then((r) => r.data || r))),
-          Promise.allSettled(seriesIds.map((iid) => contentService.getSeriesById(iid).then((r) => r.data || r))),
+        const [moviesData, seriesData] = await Promise.all([
+          contentService.getMoviesBulk(movieIds, true),
+          contentService.getSeriesBulk(seriesIds, true),
         ]);
 
-        setMovies(movieResults.filter((r) => r.status === "fulfilled").map((r) => r.value));
-        setSeries(seriesResults.filter((r) => r.status === "fulfilled").map((r) => r.value));
+        setMovies(moviesData);
+        setSeries(seriesData);
       } catch (err) {
         setError(err.message || "Failed to load list");
       } finally {
@@ -162,7 +162,7 @@ export default function ListDetailPage() {
               )}
               <p className="text-sm text-base-content/40 mt-1">
                 By{" "}
-                <Link to={`/users/${list.owner._id}`} className="hover:text-primary">
+                <Link to={`/profile/${list.owner._id}`} className="hover:text-primary">
                   {list.owner.username}
                 </Link>{" "}
                 · {totalItems} item{totalItems !== 1 ? "s" : ""}
@@ -253,13 +253,13 @@ export default function ListDetailPage() {
               const movieIds = data.list.items.filter((i) => i.itemType === "movie").map((i) => i.itemId);
               const seriesIds = data.list.items.filter((i) => i.itemType === "series").map((i) => i.itemId);
 
-              const [mr, sr] = await Promise.all([
-                Promise.allSettled(movieIds.map((iid) => contentService.getMovieById(iid).then((r) => r.data || r))),
-                Promise.allSettled(seriesIds.map((iid) => contentService.getSeriesById(iid).then((r) => r.data || r))),
+              const [moviesData, seriesData] = await Promise.all([
+                contentService.getMoviesBulk(movieIds, true),
+                contentService.getSeriesBulk(seriesIds, true),
               ]);
 
-              setMovies(mr.filter((r) => r.status === "fulfilled").map((r) => r.value));
-              setSeries(sr.filter((r) => r.status === "fulfilled").map((r) => r.value));
+              setMovies(moviesData);
+              setSeries(seriesData);
             } catch { /* silent — toast already shown */ }
           }}
         />

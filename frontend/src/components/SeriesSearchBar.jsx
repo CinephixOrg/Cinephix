@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FaSearch, FaFilter, FaTimes } from "react-icons/fa";
 import { useDebounce } from "../hooks/index.js";
 import API from "../api/axios.js";
 import genresData from "../data/seriesGenres.json";
 
-export default function SeriesSearchBar({ onResults }) {
+export default function SeriesSearchBar({ onSearch, useURLParams = true }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [years, setYears] = useState([]);
   const [hasPoster, setHasPoster] = useState("");
@@ -19,11 +21,13 @@ export default function SeriesSearchBar({ onResults }) {
   const genres = genresData.genres;
 
   useEffect(() => {
-    setQuery(searchParams.get("query") || "");
-    setYears(searchParams.get("years")?.split(",") || []);
-    setHasPoster(searchParams.get("hasPoster") || "");
-    setSelectedGenres(searchParams.get("genres")?.split(",") || []);
-  }, [searchParams]);
+    if (useURLParams) {
+      setQuery(searchParams.get("query") || "");
+      setYears(searchParams.get("years")?.split(",") || []);
+      setHasPoster(searchParams.get("hasPoster") || "");
+      setSelectedGenres(searchParams.get("genres")?.split(",") || []);
+    }
+  }, [searchParams, useURLParams]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -37,13 +41,17 @@ export default function SeriesSearchBar({ onResults }) {
 
     newSearchParams.page = 1;
 
-    onResults({
-      query: trimmedQuery,
-      years,
-      hasPoster,
-      genres: selectedGenres,
-    });
-    setSearchParams(newSearchParams);
+    if (onSearch) {
+      onSearch({
+        query: trimmedQuery,
+        years,
+        hasPoster,
+        genres: selectedGenres,
+      });
+    }
+    if (useURLParams) {
+      setSearchParams(newSearchParams);
+    }
   };
 
   const toggleGenreSelection = (genreId) => {
@@ -71,7 +79,7 @@ export default function SeriesSearchBar({ onResults }) {
       >
         <input
           type="text"
-          placeholder="Search series..."
+          placeholder={t("Search series...")}
           className="input input-bordered w-full sm:w-2/3"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -90,7 +98,7 @@ export default function SeriesSearchBar({ onResults }) {
       {filtersVisible && (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div className="flex flex-col">
-            <label className="font-bold mb-2">Years</label>
+            <label className="font-bold mb-2">{t("Years")}</label>
             <div className="grid grid-cols-3 gap-4 overflow-y-auto max-h-40">
               {Array.from({ length: 126 }, (_, i) => 1900 + i).map((y) => (
                 <button
@@ -106,7 +114,7 @@ export default function SeriesSearchBar({ onResults }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="font-bold mb-2">Genres</label>
+            <label className="font-bold mb-2">{t("Genres")}</label>
             <div className="grid grid-cols-3 gap-4 overflow-y-auto max-h-40">
               {genres.map((genre) => (
                 <button
@@ -122,15 +130,15 @@ export default function SeriesSearchBar({ onResults }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="font-bold mb-2">Has Poster?</label>
+            <label className="font-bold mb-2">{t("Has Poster?")}</label>
             <select
               value={hasPoster}
               onChange={(e) => setHasPoster(e.target.value)}
               className="select select-bordered w-full"
             >
-              <option value="">All</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
+              <option value="">{t("All")}</option>
+              <option value="yes">{t("Yes")}</option>
+              <option value="no">{t("No")}</option>
             </select>
           </div>
         </div>

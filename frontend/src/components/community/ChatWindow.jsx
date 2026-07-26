@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
 import { AuthContext } from '../../context/AuthContext';
 import { useChat } from '../../hooks/useChat';
+import { useTranslation } from 'react-i18next';
 import RecommendationCard from './RecommendationCard';
+import AnalyzeModal from '../AnalyzeModal';
 import { FiSend } from 'react-icons/fi';
 import { format } from 'date-fns';
 
@@ -23,9 +25,11 @@ export default function ChatWindow({
   roomId,
   initialMessages = [],
   canChat = false,
-  emptyText = 'No messages yet. Say hello!',
+  emptyText,
   className = '',
 }) {
+  const { t } = useTranslation();
+  emptyText = emptyText || t('No messages yet. Say something!');
   const { user } = useContext(AuthContext);
   const token = user?.token;
   const currentUserId = user?._id;
@@ -47,6 +51,9 @@ export default function ChatWindow({
   const initialized = useRef(false);
   const currentRoomId = useRef(null);
   const suppressScrollRef = useRef(false);
+
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [selectedAnalysisData, setSelectedAnalysisData] = useState(null);
 
   const mergeMessages = (base, incoming) => {
     const ids = new Set(base.map((msg) => msg._id));
@@ -149,7 +156,7 @@ export default function ChatWindow({
             connected ? 'bg-success/10 text-success' : 'bg-base-200 text-base-content/40'
           }`}
         >
-          {connected ? 'Live' : 'Connecting…'}
+          {connected ? t('Live') : t('Connecting…')}
         </div>
       )}
 
@@ -163,7 +170,7 @@ export default function ChatWindow({
               onClick={handleLoadOlderMessages}
               disabled={loadingOlderMessages}
             >
-              {loadingOlderMessages ? 'Loading earlier messages…' : 'Load earlier messages'}
+              {loadingOlderMessages ? t('Loading earlier messages…') : t('Load earlier messages')}
             </button>
           </div>
         )}
@@ -176,7 +183,7 @@ export default function ChatWindow({
 
         {messages.map((msg, idx) => {
           const isOwn = msg.sender?._id === currentUserId || msg.sender === currentUserId;
-          const senderName = msg.sender?.username ?? 'Unknown';
+          const senderName = msg.sender?.username ?? t('Unknown');
           const avatar = msg.sender?.profile_pic_url;
           const time = msg.createdAt ? format(new Date(msg.createdAt), 'HH:mm') : '';
 
@@ -189,7 +196,7 @@ export default function ChatWindow({
               >
                 {/* Avatar */}
                 <Link
-                  to={isOwn ? "/profile" : `/users/${msg.sender?._id || msg.sender}`}
+                  to={isOwn ? "/profile" : `/profile/${msg.sender?._id || msg.sender}`}
                   className="avatar flex-shrink-0 mt-0.5 hover:opacity-80 transition-opacity"
                 >
                   {avatar ? (
@@ -207,13 +214,77 @@ export default function ChatWindow({
                 <div className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
                   {!isOwn && (
                     <Link
-                      to={`/users/${msg.sender?._id || msg.sender}`}
+                      to={`/profile/${msg.sender?._id || msg.sender}`}
                       className="text-xs text-base-content/50 px-1 hover:text-primary transition-colors font-medium"
                     >
                       {senderName}
                     </Link>
                   )}
                   <RecommendationCard message={msg} />
+                  <span className="text-xs text-base-content/30 px-1">{time}</span>
+                </div>
+              </div>
+            );
+          }
+
+          if (msg.type === 'analysis_share') {
+            return (
+              <div
+                key={msg._id ?? idx}
+                className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                {/* Avatar */}
+                <Link
+                  to={isOwn ? "/profile" : `/profile/${msg.sender?._id || msg.sender}`}
+                  className="avatar flex-shrink-0 mt-0.5 hover:opacity-80 transition-opacity"
+                >
+                  {avatar ? (
+                    <div className="w-8 rounded-full">
+                      <img src={avatar} alt={senderName} />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-neutral flex items-center justify-center text-xs font-bold text-neutral-content">
+                      {senderName[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </Link>
+
+                <div className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                  {!isOwn && (
+                    <Link
+                      to={`/profile/${msg.sender?._id || msg.sender}`}
+                      className="text-xs text-base-content/50 px-1 hover:text-primary transition-colors font-medium"
+                    >
+                      {senderName}
+                    </Link>
+                  )}
+                  
+                  <div className={`p-4 rounded-2xl flex flex-col gap-2 max-w-sm border border-base-300 shadow-sm ${
+                    isOwn
+                      ? 'bg-primary/10 text-base-content rounded-br-sm'
+                      : 'bg-base-200 text-base-content rounded-bl-sm'
+                  }`}>
+                    <p className="text-sm font-medium">
+                      {msg.analysisData?.type === 'profile'
+                        ? isOwn 
+                          ? t("You shared your profile analysis.")
+                          : t("{{user}} is sharing their profile analysis with you.", { user: senderName })
+                        : isOwn
+                          ? t("You shared a CineMatch analysis.")
+                          : t("{{user}} shared a CineMatch analysis with you.", { user: senderName })
+                      }
+                    </p>
+                    <button 
+                      className="btn btn-primary btn-sm mt-2 w-full"
+                      onClick={() => {
+                        setSelectedAnalysisData(msg.analysisData);
+                        setIsAnalysisModalOpen(true);
+                      }}
+                    >
+                      {t("Click to view")}
+                    </button>
+                  </div>
+
                   <span className="text-xs text-base-content/30 px-1">{time}</span>
                 </div>
               </div>
@@ -228,7 +299,7 @@ export default function ChatWindow({
             >
               {/* Avatar */}
               <Link
-                to={isOwn ? "/profile" : `/users/${msg.sender?._id || msg.sender}`}
+                to={isOwn ? "/profile" : `/profile/${msg.sender?._id || msg.sender}`}
                 className="avatar flex-shrink-0 hover:opacity-80 transition-opacity"
               >
                 {avatar ? (
@@ -246,7 +317,7 @@ export default function ChatWindow({
               <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
                 {!isOwn && (
                   <Link
-                    to={`/users/${msg.sender?._id || msg.sender}`}
+                    to={`/profile/${msg.sender?._id || msg.sender}`}
                     className="text-xs text-base-content/50 px-1 hover:text-primary transition-colors font-medium"
                   >
                     {senderName}
@@ -275,7 +346,7 @@ export default function ChatWindow({
           <div className="relative flex-1">
             <textarea
               className="textarea textarea-bordered w-full resize-none text-sm min-h-[2.5rem] max-h-32"
-              placeholder="Type a message… (Enter to send)"
+              placeholder={t("Type a message")}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -311,9 +382,16 @@ export default function ChatWindow({
         </div>
       ) : (
         <div className="border-t border-base-200 p-4 text-center text-sm text-base-content/50">
-          Join this group to participate in the chat.
+          {t("Join this group to participate in the chat.")}
         </div>
       )}
+
+      {/* Analysis Modal for viewing shared analysis */}
+      <AnalyzeModal 
+        isOpen={isAnalysisModalOpen} 
+        onClose={() => setIsAnalysisModalOpen(false)} 
+        data={selectedAnalysisData} 
+      />
     </div>
   );
 }

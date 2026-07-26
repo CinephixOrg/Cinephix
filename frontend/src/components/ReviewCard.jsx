@@ -1,6 +1,6 @@
-// frontend/src/components/ReviewCard.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { reviewService } from "../api/reviewService.js";
 import toast from "react-hot-toast";
@@ -15,12 +15,13 @@ export default function ReviewCard({
   onDelete,
   showContent = false,
 }) {
+  const { t } = useTranslation();
   const [likeCount, setLikeCount] = useState(review.likeCount || 0);
   const [hasLiked, setHasLiked] = useState(review.hasLiked || false);
   const [liking, setLiking] = useState(false);
 
   const handleLike = async () => {
-    if (!currentUserId) return toast.error("Log in to like reviews");
+    if (!currentUserId) return toast.error(t("Log in to like reviews"));
     if (liking) return;
     setLiking(true);
     // Optimistic update
@@ -32,7 +33,7 @@ export default function ReviewCard({
       // Revert on error
       setHasLiked((prev) => !prev);
       setLikeCount((prev) => prev + (hasLiked ? 1 : -1));
-      toast.error("Failed to like review");
+      toast.error(t("Failed to like review"));
     } finally {
       setLiking(false);
     }
@@ -43,9 +44,9 @@ export default function ReviewCard({
     try {
       await reviewService.deleteReview(review._id, review.contentId);
       onDelete(review._id);
-      toast.success("Review deleted");
+      toast.success(t("Review deleted"));
     } catch {
-      toast.error("Failed to delete review");
+      toast.error(t("Failed to delete review"));
     }
   };
 
@@ -83,7 +84,7 @@ export default function ReviewCard({
       {/* Reviewer header */}
       <div className="flex items-center justify-between gap-2">
         <Link
-          to={`/users/${review.user?._id}`}
+          to={`/profile/${review.user?._id}`}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-base-300">
@@ -95,7 +96,7 @@ export default function ReviewCard({
             />
           </div>
           <span className="text-sm font-semibold text-base-content">
-            {review.user?.username || "Unknown"}
+            {review.user?.username || t("Unknown")}
           </span>
         </Link>
         <span className="text-xs text-base-content/40 flex-shrink-0">
@@ -136,7 +137,7 @@ export default function ReviewCard({
             />
           </svg>
           {likeCount > 0 && <span>{likeCount}</span>}
-          <span>{hasLiked ? "Liked" : "Like"}</span>
+          <span>{hasLiked ? t("Liked") : t("Like")}</span>
         </button>
 
         {isOwn && onDelete && (
@@ -144,7 +145,7 @@ export default function ReviewCard({
             onClick={handleDelete}
             className="text-xs text-error/60 hover:text-error transition-colors px-2 py-1 rounded-lg hover:bg-error/5"
           >
-            Delete
+            {t("Delete")}
           </button>
         )}
       </div>

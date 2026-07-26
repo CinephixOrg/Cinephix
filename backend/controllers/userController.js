@@ -381,9 +381,23 @@ export const getPendingRequests = asyncHandler(async (req, res) => {
 
   const requests = await FollowRequest.find({ targetId: loggedInUserId, status: 'pending' })
     .populate('requesterId', '_id username profile_pic_url name bio')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   return res.status(200).json(requests.map(r => r.requesterId).filter(Boolean));
+});
+
+// @desc    Get sent follow requests
+// @route   GET /api/users/me/sent-requests
+// @access  Private
+export const getSentRequests = asyncHandler(async (req, res) => {
+  const loggedInUserId = req.user.id;
+
+  const requests = await FollowRequest.find({ requesterId: loggedInUserId, status: 'pending' })
+    .select('targetId')
+    .lean();
+
+  return res.status(200).json(requests.map(r => r.targetId).filter(Boolean));
 });
 
 
@@ -410,10 +424,11 @@ export const getNotifications = asyncHandler(async (req, res) => {
 // @route   GET /api/users/me/following
 // @access  Private (Login required)
 export const getMyFollowing = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, userId } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    const targetUserId = userId || req.user.id;
 
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(targetUserId)
         .populate({
             path: 'following',
             select: '_id username profile_pic_url',
@@ -428,8 +443,8 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
         return sendError(res, 'User not found', 404);
     }
 
-    const userWithCount = await User.findById(req.user.id).lean();
-    const total = userWithCount.following ? userWithCount.following.length : 0;
+    const userWithCount = await User.findById(targetUserId).select('following').lean();
+    const total = userWithCount?.following ? userWithCount.following.length : 0;
 
     sendPaginated(res, user.following || [], total, parseInt(page), parseInt(limit), 'Following list fetched');
 });
@@ -438,10 +453,11 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
 // @route   GET /api/users/me/followers
 // @access  Private (Login required)
 export const getMyFollowers = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, userId } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    const targetUserId = userId || req.user.id;
 
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(targetUserId)
         .populate({
             path: 'followers',
             select: '_id username profile_pic_url',
@@ -456,8 +472,8 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
         return sendError(res, 'User not found', 404);
     }
 
-    const userWithCount = await User.findById(req.user.id).lean();
-    const total = userWithCount.followers ? userWithCount.followers.length : 0;
+    const userWithCount = await User.findById(req.user.id).select('followers').lean();
+    const total = userWithCount?.followers ? userWithCount.followers.length : 0;
 
     sendPaginated(res, user.followers || [], total, parseInt(page), parseInt(limit), 'Followers list fetched');
 });
@@ -552,9 +568,10 @@ export const updateFavorites = async (req, res) => {
 
 export const isAuthorizedToView = (viewerId, targetUser) => {
   if (!targetUser) return false;
-  if (!viewerId) return targetUser.visibility === 'public';
+  const visibility = targetUser.visibility || 'public';
+  if (!viewerId) return visibility === 'public';
   if (viewerId === targetUser._id.toString()) return true;
-  if (targetUser.visibility === 'public') return true;
+  if (visibility === 'public') return true;
   if (targetUser.followers && targetUser.followers.some(id => id.toString() === viewerId)) return true;
   return false;
 };
@@ -655,7 +672,7 @@ export const getUserFavorites = asyncHandler(async (req, res) => {
     }, 'User favorites fetched (masked)');
   }
 
-  if (user.visibility === 'private' && !isAuthorizedToView(currentUserId, user)) {
+  if (!isAuthorizedToView(currentUserId, user)) {
     return sendSuccess(res, {
       movies: [],
       series: [],
@@ -1192,7 +1209,10 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
   }
 
   // Get who each of your followings follows
-  const followingsData = await User.find({ _id: { $in: followingIds } })
+  // OPTIMIZATION: Only sample the last 50 followings to prevent massive lag if user follows thousands of people
+  const sampleFollowingIds = followingIds.slice(-50);
+
+  const followingsData = await User.find({ _id: { $in: sampleFollowingIds } })
     .select('following')
     .lean();
 
@@ -1574,17 +1594,12 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
     "Cache-Control": "no-cache",
     "Connection": "keep-alive"
   });
-  if (typeof res.flushHeaders === "function") {
-    res.flushHeaders();
-  }
+  if (typeof res.flushHeaders === "function") res.flushHeaders();
 
-  const sendEvent = (data) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
+  const sendEvent = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
   try {
     if (!req.file) {
-      console.log("No file uploaded");
       sendEvent({ status: "error", message: "Please upload a ZIP file" });
       return res.end();
     }
@@ -1592,18 +1607,14 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
     let zip;
     try {
       zip = new AdmZip(req.file.buffer);
-      console.log("ZIP buffer loaded successfully");
     } catch (err) {
-      console.error("Failed to load ZIP buffer:", err);
       sendEvent({ status: "error", message: "Invalid ZIP archive" });
       return res.end();
     }
 
     const zipEntries = zip.getEntries();
-    console.log("ZIP entries count:", zipEntries.length);
     const moviesEntry = zipEntries.find(e => e.entryName.toLowerCase().endsWith("movies.json"));
     const showsEntry = zipEntries.find(e => e.entryName.toLowerCase().endsWith("shows.json"));
-    console.log("moviesEntry found:", !!moviesEntry, "showsEntry found:", !!showsEntry);
 
     if (!moviesEntry && !showsEntry) {
       sendEvent({ status: "error", message: "Archive must contain movies.json or shows.json" });
@@ -1612,315 +1623,220 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
 
     const Movie = mongoose.model("Movie");
     const Series = mongoose.model("Series");
-    console.log("Mongoose models resolved successfully");
-
     const user = await User.findById(userId);
     if (!user) {
       sendEvent({ status: "error", message: "User not found" });
       return res.end();
     }
-    console.log("User retrieved, current watchlist count:", user.watchlist ? user.watchlist.length : 0);
+
+    user.watchlist = user.watchlist || [];
+    user.toWatchList = user.toWatchList || [];
+    const existingWatchlistMovieIds = new Set(user.watchlist.filter(w => w.itemType === 'movie').map(w => w.itemId.toString()));
+    const existingToWatchMovieIds = new Set(user.toWatchList.filter(w => w.itemType === 'movie').map(w => w.itemId.toString()));
+    const existingWatchlistSeriesIds = new Set(user.watchlist.filter(w => w.itemType === 'series').map(w => w.itemId.toString()));
+
+    const existingRatingsDocs = await Rating.find({ user: userId }).select('contentId contentType value').lean();
+    const existingRatingsMap = new Map();
+    existingRatingsDocs.forEach(r => existingRatingsMap.set(`${r.contentType}_${r.contentId.toString()}`, r.value));
 
     let importedMovies = 0;
     let importedEpisodes = 0;
     let hasChanges = false;
     let hasRatingsChanges = false;
+    const newRatingsToInsert = [];
 
     // Process Movies
-    let moviesData = [];
     if (moviesEntry) {
-      try {
-        moviesData = JSON.parse(moviesEntry.getData().toString("utf8"));
-      } catch (err) {
-        console.error("Failed to parse movies.json inside zip", err);
-      }
-    }
-
-    const totalMovies = Array.isArray(moviesData) ? moviesData.length : 0;
-    console.log("Parsed movies count from zip:", totalMovies);
-
-    if (totalMovies > 0 && Array.isArray(moviesData)) {
-      let movieIndex = 0;
-      let watchedCount = 0;
-      let watchlistCount = 0;
-      for (const movieItem of moviesData) {
-        movieIndex++;
-        const tvdbId = movieItem.id?.tvdb || movieItem["id.tvdb"];
-        const imdbId = movieItem.id?.imdb || movieItem["id.imdb"];
-        const title = movieItem.title || "Untitled Movie";
-        const isWatched = movieItem.is_watched;
-        const watchedAt = movieItem.watched_at ? new Date(movieItem.watched_at) : new Date();
-        const ratingValue = movieItem.rating;
-
-        // Stream progress for movie matching
-        sendEvent({
-          step: "movies",
-          current: movieIndex,
-          total: totalMovies,
-          text: `Matching movie database entries... (${title})`
-        });
-
-        // Try matching prioritizing TVDB, IMDb, then title fallback
-        let dbMovie = null;
-        if (tvdbId) {
-          dbMovie = await Movie.findOne({
-            $or: [
-              { "id.tvdb": tvdbId },
-              { "tvdb": tvdbId },
-              { "tvdb_id": tvdbId }
-            ]
-          });
+      let moviesData = [];
+      try { moviesData = JSON.parse(moviesEntry.getData().toString("utf8")); } catch (err) {}
+      
+      if (Array.isArray(moviesData) && moviesData.length > 0) {
+        sendEvent({ step: "movies", current: 0, total: moviesData.length, text: "Pre-fetching movie data..." });
+        
+        // Bulk fetch movies
+        const tvdbIds = [], imdbIds = [], titles = [];
+        for (const m of moviesData) {
+          const tvdbId = m.id?.tvdb || m["id.tvdb"];
+          const imdbId = m.id?.imdb || m["id.imdb"];
+          if (tvdbId) tvdbIds.push(tvdbId);
+          if (imdbId && imdbId !== "-1" && imdbId !== -1) imdbIds.push(imdbId);
+          if (m.title) titles.push(new RegExp(`^${m.title.trim()}$`, "i"));
         }
-        if (!dbMovie && imdbId && imdbId !== "-1" && imdbId !== -1) {
-          dbMovie = await Movie.findOne({
-            $or: [
-              { "id.imdb": imdbId },
-              { "imdb": imdbId },
-              { "imdb_id": imdbId }
-            ]
-          });
-        }
-        if (!dbMovie && title) {
-          dbMovie = await Movie.findOne({ title: new RegExp(`^${title.trim()}$`, "i") });
-        }
+        
+        const dbMovies = await Movie.find({
+          $or: [
+            { "id.tvdb": { $in: tvdbIds } }, { tvdb: { $in: tvdbIds } }, { tvdb_id: { $in: tvdbIds } },
+            { "id.imdb": { $in: imdbIds } }, { imdb: { $in: imdbIds } }, { imdb_id: { $in: imdbIds } },
+            { title: { $in: titles } }
+          ]
+        }).lean();
 
-        if (dbMovie) {
-          console.log(`Matched movie: ${dbMovie.title} (_id: ${dbMovie._id})`);
-          const contentIdStr = dbMovie._id.toString();
-
-          if (isWatched) {
-            user.watchlist = user.watchlist || [];
-            const alreadyInWatchlist = user.watchlist.some(
-              w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
-            );
-
-            if (!alreadyInWatchlist) {
-              user.watchlist.push({
-                itemId: dbMovie._id,
-                itemType: "movie",
-                addedAt: watchedAt
-              });
-              hasChanges = true;
-              importedMovies++;
-            }
-
-            const existingRating = await Rating.findOne({
-              user: userId,
-              contentId: contentIdStr,
-              contentType: "movie"
-            });
-
-            if (ratingValue && ratingValue > 0 && !existingRating) {
-              const val = Math.max(1, Math.min(10, ratingValue));
-              await Rating.create({
-                user: userId,
-                contentId: contentIdStr,
-                contentType: "movie",
-                value: val
-              });
-              hasRatingsChanges = true;
-            }
-            watchedCount++;
-          } else {
-            user.toWatchList = user.toWatchList || [];
-            const alreadyInToWatchList = user.toWatchList.some(
-              w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
-            );
-
-            if (!alreadyInToWatchList) {
-              user.toWatchList.push({
-                itemId: dbMovie._id,
-                itemType: "movie",
-                addedAt: watchedAt
-              });
-              hasChanges = true;
-            }
-            watchlistCount++;
+        for (let i = 0; i < moviesData.length; i++) {
+          if (i % 50 === 0) {
+            sendEvent({ step: "movies", current: i, total: moviesData.length, text: `Matching movies... (${i}/${moviesData.length})` });
           }
-        } else {
-          console.log(`No match in DB for movie: ${title} (tvdb: ${tvdbId}, imdb: ${imdbId})`);
+          const movieItem = moviesData[i];
+          const tvdbId = movieItem.id?.tvdb || movieItem["id.tvdb"];
+          const imdbId = movieItem.id?.imdb || movieItem["id.imdb"];
+          const title = movieItem.title || "Untitled Movie";
+          const isWatched = movieItem.is_watched;
+          const watchedAt = movieItem.watched_at ? new Date(movieItem.watched_at) : new Date();
+          const ratingValue = movieItem.rating;
+
+          // Find in pre-fetched dbMovies
+          let dbMovie = dbMovies.find(m => 
+            (tvdbId && (m.id?.tvdb == tvdbId || m.tvdb == tvdbId || m.tvdb_id == tvdbId)) ||
+            (imdbId && imdbId !== "-1" && imdbId !== -1 && (m.id?.imdb == imdbId || m.imdb == imdbId || m.imdb_id == imdbId)) ||
+            (title && m.title.toLowerCase() === title.trim().toLowerCase())
+          );
+
+          if (dbMovie) {
+            const contentIdStr = dbMovie._id.toString();
+            if (isWatched) {
+              if (!existingWatchlistMovieIds.has(contentIdStr)) {
+                user.watchlist.push({ itemId: dbMovie._id, itemType: "movie", addedAt: watchedAt });
+                existingWatchlistMovieIds.add(contentIdStr);
+                hasChanges = true;
+                importedMovies++;
+              }
+              if (ratingValue && ratingValue > 0 && !existingRatingsMap.has(`movie_${contentIdStr}`)) {
+                const val = Math.max(1, Math.min(10, ratingValue));
+                newRatingsToInsert.push({ user: userId, contentId: contentIdStr, contentType: "movie", value: val });
+                existingRatingsMap.set(`movie_${contentIdStr}`, val);
+                hasRatingsChanges = true;
+              }
+            } else {
+              if (!existingToWatchMovieIds.has(contentIdStr)) {
+                user.toWatchList.push({ itemId: dbMovie._id, itemType: "movie", addedAt: watchedAt });
+                existingToWatchMovieIds.add(contentIdStr);
+                hasChanges = true;
+              }
+            }
+          }
         }
       }
-      console.log(`Total Processed = Watched (${watchedCount}) + Watchlist/Not Watched (${watchlistCount})`);
     }
 
     // Process Shows
-    let showsData = [];
     if (showsEntry) {
-      try {
-        showsData = JSON.parse(showsEntry.getData().toString("utf8"));
-      } catch (err) {
-        console.error("Failed to parse shows.json inside zip", err);
-      }
-    }
+      let showsData = [];
+      try { showsData = JSON.parse(showsEntry.getData().toString("utf8")); } catch (err) {}
 
-    // Calculate total episodes count first
-    let totalEpisodes = 0;
-    if (Array.isArray(showsData)) {
-      for (const showItem of showsData) {
-        if (showItem.seasons && Array.isArray(showItem.seasons)) {
-          for (const season of showItem.seasons) {
-            if (season.episodes && Array.isArray(season.episodes)) {
-              for (const ep of season.episodes) {
-                if (ep.is_watched) {
-                  totalEpisodes++;
-                }
+      let totalEpisodes = 0;
+      if (Array.isArray(showsData)) {
+        for (const s of showsData) {
+          if (s.seasons) {
+            for (const season of s.seasons) {
+              if (season.episodes) {
+                totalEpisodes += season.episodes.filter(ep => ep.is_watched).length;
               }
             }
           }
         }
       }
-    }
 
-    console.log("Parsed shows count from zip:", showsData.length, "Total watched episodes:", totalEpisodes);
+      if (totalEpisodes > 0 && Array.isArray(showsData)) {
+        sendEvent({ step: "shows", current: 0, total: totalEpisodes, text: "Pre-fetching series data..." });
 
-    if (totalEpisodes > 0 && Array.isArray(showsData)) {
-      let currentEpIndex = 0;
-      for (const showItem of showsData) {
-        const tvdbId = showItem.id?.tvdb || showItem["id.tvdb"];
-        const imdbId = showItem.id?.imdb || showItem["id.imdb"];
-        const showTitle = showItem.title || showItem.name || "Untitled Show";
-
-        // Try matching prioritizing TVDB, IMDb, then title fallback
-        let dbSeries = null;
-        if (tvdbId) {
-          dbSeries = await Series.findOne({
-            $or: [
-              { "id.tvdb": tvdbId },
-              { "tvdb": tvdbId },
-              { "tvdb_id": tvdbId }
-            ]
-          });
-        }
-        if (!dbSeries && imdbId && imdbId !== "-1" && imdbId !== -1) {
-          dbSeries = await Series.findOne({
-            $or: [
-              { "id.imdb": imdbId },
-              { "imdb": imdbId },
-              { "imdb_id": imdbId }
-            ]
-          });
-        }
-        if (!dbSeries && showTitle) {
-          dbSeries = await Series.findOne({ name: new RegExp(`^${showTitle.trim()}$`, "i") });
+        const tvdbIds = [], imdbIds = [], titles = [];
+        for (const s of showsData) {
+          const tvdbId = s.id?.tvdb || s["id.tvdb"];
+          const imdbId = s.id?.imdb || s["id.imdb"];
+          if (tvdbId) tvdbIds.push(tvdbId);
+          if (imdbId && imdbId !== "-1" && imdbId !== -1) imdbIds.push(imdbId);
+          if (s.title || s.name) titles.push(new RegExp(`^${(s.title || s.name).trim()}$`, "i"));
         }
 
-        if (dbSeries) {
-          console.log(`Matched series: ${dbSeries.name} (_id: ${dbSeries._id})`);
-          const contentIdStr = dbSeries._id.toString();
+        const dbSeriesList = await Series.find({
+          $or: [
+            { "id.tvdb": { $in: tvdbIds } }, { tvdb: { $in: tvdbIds } }, { tvdb_id: { $in: tvdbIds } },
+            { "id.imdb": { $in: imdbIds } }, { imdb: { $in: imdbIds } }, { imdb_id: { $in: imdbIds } },
+            { name: { $in: titles } }
+          ]
+        }).lean();
 
-          let watchedEpisodesCount = 0;
-          let ratingSum = 0;
-          let ratingCount = 0;
-          let maxWatchedAt = null;
+        let currentEpIndex = 0;
+        for (const showItem of showsData) {
+          const tvdbId = showItem.id?.tvdb || showItem["id.tvdb"];
+          const imdbId = showItem.id?.imdb || showItem["id.imdb"];
+          const showTitle = showItem.title || showItem.name || "Untitled Show";
 
-          if (showItem.seasons && Array.isArray(showItem.seasons)) {
-            for (const season of showItem.seasons) {
-              if (season.episodes && Array.isArray(season.episodes)) {
-                for (const ep of season.episodes) {
-                  if (ep.is_watched) {
-                    watchedEpisodesCount++;
-                    currentEpIndex++;
-
-                    // Stream progress for show/episode processing
-                    sendEvent({
-                      step: "shows",
-                      current: currentEpIndex,
-                      total: totalEpisodes,
-                      text: `Synchronizing nested episode histories... (${showTitle})`
-                    });
-
-                    const epWatchedAt = ep.watched_at ? new Date(ep.watched_at) : new Date();
-                    if (!maxWatchedAt || epWatchedAt > maxWatchedAt) {
-                      maxWatchedAt = epWatchedAt;
-                    }
-                  }
-                  if (ep.rating && ep.rating > 0) {
-                    ratingSum += ep.rating;
-                    ratingCount++;
-                  }
-                }
-              }
-            }
-          }
-
-          // Skip if already tracked to avoid duplicates
-          user.watchlist = user.watchlist || [];
-          const alreadyInWatchlist = user.watchlist.some(
-            w => w.itemId.toString() === contentIdStr && w.itemType === "series"
+          let dbSeries = dbSeriesList.find(s => 
+            (tvdbId && (s.id?.tvdb == tvdbId || s.tvdb == tvdbId || s.tvdb_id == tvdbId)) ||
+            (imdbId && imdbId !== "-1" && imdbId !== -1 && (s.id?.imdb == imdbId || s.imdb == imdbId || s.imdb_id == imdbId)) ||
+            (showTitle && s.name.toLowerCase() === showTitle.trim().toLowerCase())
           );
-          const existingRating = await Rating.findOne({
-            user: userId,
-            contentId: contentIdStr,
-            contentType: "series"
-          });
 
-          if (alreadyInWatchlist || existingRating) {
-            console.log(`Skipping already tracked series: ${dbSeries.name}`);
-            continue;
-          }
+          if (dbSeries) {
+            const contentIdStr = dbSeries._id.toString();
+            let watchedEpisodesCount = 0;
+            let ratingSum = 0, ratingCount = 0;
+            let maxWatchedAt = null;
 
-          // Import show status if there are watched episodes
-          if (watchedEpisodesCount > 0) {
-            user.watchlist.push({
-              itemId: dbSeries._id,
-              itemType: "series",
-              addedAt: maxWatchedAt || new Date()
-            });
-            hasChanges = true;
-            importedEpisodes += watchedEpisodesCount;
-          }
-
-          // Import show rating based on average episode ratings
-          if (ratingCount > 0) {
-            const avgRating = Math.round(ratingSum / ratingCount);
-            const val = Math.max(1, Math.min(10, avgRating));
-            await Rating.create({
-              user: userId,
-              contentId: contentIdStr,
-              contentType: "series",
-              value: val
-            });
-            hasRatingsChanges = true;
-          }
-        } else {
-          console.log(`No match in DB for series: ${showTitle} (tvdb: ${tvdbId}, imdb: ${imdbId})`);
-          
-          // Increment ep index for unmatched shows too, so progress bar matches total count
-          if (showItem.seasons && Array.isArray(showItem.seasons)) {
-            for (const season of showItem.seasons) {
-              if (season.episodes && Array.isArray(season.episodes)) {
-                for (const ep of season.episodes) {
-                  if (ep.is_watched) {
-                    currentEpIndex++;
-                    sendEvent({
-                      step: "shows",
-                      current: currentEpIndex,
-                      total: totalEpisodes,
-                      text: `Synchronizing nested episode histories... (${showTitle})`
-                    });
+            if (showItem.seasons) {
+              for (const season of showItem.seasons) {
+                if (season.episodes) {
+                  for (const ep of season.episodes) {
+                    if (ep.is_watched) {
+                      watchedEpisodesCount++;
+                      currentEpIndex++;
+                      if (currentEpIndex % 100 === 0) {
+                        sendEvent({ step: "shows", current: currentEpIndex, total: totalEpisodes, text: `Syncing episodes... (${currentEpIndex}/${totalEpisodes})` });
+                      }
+                      const epWatchedAt = ep.watched_at ? new Date(ep.watched_at) : new Date();
+                      if (!maxWatchedAt || epWatchedAt > maxWatchedAt) maxWatchedAt = epWatchedAt;
+                    }
+                    if (ep.rating && ep.rating > 0) { ratingSum += ep.rating; ratingCount++; }
                   }
                 }
               }
             }
+
+            if (!existingWatchlistSeriesIds.has(contentIdStr) && !existingRatingsMap.has(`series_${contentIdStr}`)) {
+              if (watchedEpisodesCount > 0) {
+                user.watchlist.push({ itemId: dbSeries._id, itemType: "series", addedAt: maxWatchedAt || new Date() });
+                existingWatchlistSeriesIds.add(contentIdStr);
+                hasChanges = true;
+                importedEpisodes += watchedEpisodesCount;
+              }
+              if (ratingCount > 0) {
+                const avgRating = Math.round(ratingSum / ratingCount);
+                const val = Math.max(1, Math.min(10, avgRating));
+                newRatingsToInsert.push({ user: userId, contentId: contentIdStr, contentType: "series", value: val });
+                existingRatingsMap.set(`series_${contentIdStr}`, val);
+                hasRatingsChanges = true;
+              }
+            }
+          } else {
+             // Just increment progress for unmatched shows
+             if (showItem.seasons) {
+                for (const season of showItem.seasons) {
+                   if (season.episodes) {
+                      for (const ep of season.episodes) {
+                         if (ep.is_watched) {
+                            currentEpIndex++;
+                            if (currentEpIndex % 100 === 0) sendEvent({ step: "shows", current: currentEpIndex, total: totalEpisodes, text: `Syncing episodes... (${currentEpIndex}/${totalEpisodes})` });
+                         }
+                      }
+                   }
+                }
+             }
           }
+        }
+        if (currentEpIndex > 0) {
+           sendEvent({ step: "shows", current: totalEpisodes, total: totalEpisodes, text: `Syncing episodes completed.` });
         }
       }
     }
 
+    if (newRatingsToInsert.length > 0) {
+      await Rating.insertMany(newRatingsToInsert);
+    }
     if (hasChanges) {
       await user.save();
-      console.log("User watchlist saved successfully");
     }
-
-    // Rebuild CineGraph if ratings changed
     if (hasRatingsChanges) {
-      try {
-        await rebuildUserCineGraph(userId);
-        console.log("CineGraph rebuilt successfully");
-      } catch (err) {
-        console.error("Failed to rebuild CineGraph for user during import:", err);
-      }
+      try { await rebuildUserCineGraph(userId); } catch (err) {}
     }
 
     const addedRatings = await Rating.find({ user: userId, createdAt: { $gte: importStartTime } }).select('_id').lean();
@@ -1930,24 +1846,12 @@ export const importTVTimeData = asyncHandler(async (req, res) => {
     const addedWatchlistIds = addedWatchlistItems.map(item => item.itemId.toString());
 
     await ActivityLog.create({
-      userId,
-      actionType: 'IMPORT_TVTIME',
-      details: 'Imported TV Time ZIP archive',
-      payload: {
-         addedWatchlistIds,
-         addedRatingIds,
-         updatedCineGraph: hasRatingsChanges
-      }
+      userId, actionType: 'IMPORT_TVTIME', details: 'Imported TV Time ZIP archive',
+      payload: { addedWatchlistIds, addedRatingIds, updatedCineGraph: hasRatingsChanges }
     });
 
-    // Send final completed payload
-    sendEvent({
-      status: "completed",
-      importedMovies,
-      importedEpisodes
-    });
+    sendEvent({ status: "completed", importedMovies, importedEpisodes });
     return res.end();
-
   } catch (error) {
     console.error("Unhandled error in importTVTimeData:", error);
     sendEvent({ status: "error", message: error.message });
@@ -2014,13 +1918,9 @@ export const importLetterboxdData = asyncHandler(async (req, res) => {
     "Cache-Control": "no-cache",
     "Connection": "keep-alive"
   });
-  if (typeof res.flushHeaders === "function") {
-    res.flushHeaders();
-  }
+  if (typeof res.flushHeaders === "function") res.flushHeaders();
 
-  const sendEvent = (data) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
+  const sendEvent = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
   try {
     if (!req.file) {
@@ -2045,8 +1945,7 @@ export const importLetterboxdData = asyncHandler(async (req, res) => {
       return new Promise((resolve, reject) => {
         const results = [];
         const stream = Readable.from(buffer.toString('utf-8'));
-        stream
-          .pipe(csv())
+        stream.pipe(csv())
           .on('data', (data) => results.push(data))
           .on('end', () => resolve(results))
           .on('error', (error) => reject(error));
@@ -2054,10 +1953,7 @@ export const importLetterboxdData = asyncHandler(async (req, res) => {
     };
 
     // Step A: Extract files
-    let watchedData = [];
-    let ratingsData = [];
-    let watchlistData = [];
-    let likesData = [];
+    let watchedData = [], ratingsData = [], watchlistData = [], likesData = [];
 
     const watchedEntry = zipEntries.find(e => e.entryName === "watched.csv");
     const ratingsEntry = zipEntries.find(e => e.entryName === "ratings.csv");
@@ -2066,10 +1962,14 @@ export const importLetterboxdData = asyncHandler(async (req, res) => {
 
     sendEvent({ step: "parse", text: "Parsing CSV files..." });
 
-    if (watchedEntry) watchedData = await parseCsvBuffer(watchedEntry.getData());
-    if (ratingsEntry) ratingsData = await parseCsvBuffer(ratingsEntry.getData());
-    if (watchlistEntry) watchlistData = await parseCsvBuffer(watchlistEntry.getData());
-    if (likesEntry) likesData = await parseCsvBuffer(likesEntry.getData());
+    // Parse concurrently
+    const [wData, rData, wlData, lData] = await Promise.all([
+      watchedEntry ? parseCsvBuffer(watchedEntry.getData()) : Promise.resolve([]),
+      ratingsEntry ? parseCsvBuffer(ratingsEntry.getData()) : Promise.resolve([]),
+      watchlistEntry ? parseCsvBuffer(watchlistEntry.getData()) : Promise.resolve([]),
+      likesEntry ? parseCsvBuffer(likesEntry.getData()) : Promise.resolve([])
+    ]);
+    watchedData = wData; ratingsData = rData; watchlistData = wlData; likesData = lData;
 
     // Step B: Unified Map
     const unifiedMap = new Map();
@@ -2104,227 +2004,206 @@ export const importLetterboxdData = asyncHandler(async (req, res) => {
       return res.end();
     }
 
+    user.watchlist = user.watchlist || [];
+    user.toWatchList = user.toWatchList || [];
+    user.favorites = user.favorites || [];
+
+    const existingWatchlistIds = new Set(user.watchlist.filter(w => w.itemType === 'movie').map(w => w.itemId.toString()));
+    const existingToWatchIds = new Set(user.toWatchList.filter(w => w.itemType === 'movie').map(w => w.itemId.toString()));
+    const existingFavoritesIds = new Set(user.favorites.filter(w => w.itemType === 'movie').map(w => w.itemId.toString()));
+    
+    const existingRatingsDocs = await Rating.find({ user: userId, contentType: "movie" }).select('contentId value').lean();
+    const existingRatingsMap = new Map();
+    existingRatingsDocs.forEach(r => existingRatingsMap.set(r.contentId.toString(), r.value));
+
     let importedMovies = 0;
     let hasChanges = false;
     let hasRatingsChanges = false;
+    const newRatingsToInsert = [];
 
-    // Step C: TMDB Matching
-    let movieIndex = 0;
+    // Step C: Bulk DB Match & TMDB Fetch
+    sendEvent({ step: "movies", current: 0, total: totalMovies, text: "Pre-fetching movie data..." });
+    
+    const titlesForRegex = unifiedList.map(m => new RegExp(`^${m.title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i"));
+    const dbMovies = await Movie.find({ title: { $in: titlesForRegex } }).lean();
+    const dbMoviesMap = new Map();
+    dbMovies.forEach(m => {
+       const key = `${m.title.toLowerCase()}_${m.release_date ? m.release_date.substring(0,4) : 'unknown'}`;
+       if (!dbMoviesMap.has(key)) dbMoviesMap.set(key, []);
+       dbMoviesMap.get(key).push(m);
+    });
+
+    const moviesToFetchTMDB = [];
+
+    // Phase 1: Local DB Matching
     for (const movieItem of unifiedList) {
-      movieIndex++;
-      const { title, year, isWatched, rating, inWatchlist, isLiked } = movieItem;
+       const { title, year } = movieItem;
+       let dbMovie = null;
+       
+       const titleLower = title.toLowerCase();
+       let possibleMatches = [];
+       // Find all movies with matching title ignoring case
+       for (const dbm of dbMovies) {
+          if (dbm.title.toLowerCase() === titleLower) possibleMatches.push(dbm);
+       }
 
-      sendEvent({
-        step: "movies",
-        current: movieIndex,
-        total: totalMovies,
-        text: `Matching titles... (${title})`
-      });
-
-      // Search local database first
-      let searchRegex;
-      try {
-        searchRegex = new RegExp(`^${title.trim()}$`, "i");
-      } catch (err) {
-        searchRegex = title.trim();
-      }
-      
-      let dbMovies = await Movie.find({ title: searchRegex });
-      let dbMovie = null;
-
-      if (dbMovies.length > 0) {
-         if (year) {
-            const targetYear = parseInt(year, 10);
-            const validMovies = dbMovies.filter(m => {
-               if (!m.release_date) return false;
-               const mYear = parseInt(m.release_date.substring(0, 4), 10);
-               return Math.abs(mYear - targetYear) <= 1;
-            });
-            if (validMovies.length > 0) {
-               // Sort by closest year
-               validMovies.sort((a, b) => {
-                 const diffA = Math.abs(parseInt(a.release_date.substring(0, 4), 10) - targetYear);
-                 const diffB = Math.abs(parseInt(b.release_date.substring(0, 4), 10) - targetYear);
-                 return diffA - diffB;
-               });
-               dbMovie = validMovies[0];
-            }
-         } else {
-            dbMovie = dbMovies[0];
-         }
-      }
-
-      // If not found, use TMDB API Search if API key exists
-      if (!dbMovie && process.env.TMDB_API_KEY) {
-        try {
-           let tmdbResult = null;
-           const targetYear = year ? parseInt(year, 10) : null;
-           
-           if (year) {
-             // 1. Strict Year Search
-             const strictUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&primary_release_year=${year}&api_key=${process.env.TMDB_API_KEY}`;
-             console.log(`\n[TMDB Strict Search] URL: ${strictUrl.replace(process.env.TMDB_API_KEY, "HIDDEN_KEY")}`);
-             const strictRes = await fetch(strictUrl);
-             console.log(`[TMDB Strict Search] Status: ${strictRes.status}`);
-             const strictData = await strictRes.json();
-             console.log(`[TMDB Strict Search] Results found: ${strictData.results ? strictData.results.length : 0}`);
-             
-             if (strictData.results && strictData.results.length > 0) {
-               for (const r of strictData.results) {
-                 const matchTitle = r.title?.toLowerCase() === title.toLowerCase() || r.original_title?.toLowerCase() === title.toLowerCase();
-                 let matchYear = false;
-                 if (r.release_date) {
-                   const rYear = parseInt(r.release_date.substring(0, 4), 10);
-                   matchYear = Math.abs(rYear - targetYear) <= 1; // +/- 1 year tolerance
-                 }
-                 console.log(`  -> Verifying "${r.title}" (${r.release_date}): TitleMatch=${matchTitle}, YearMatch=${matchYear}`);
-                 if (matchTitle && matchYear) {
-                   tmdbResult = r;
-                   break;
-                 }
-               }
-             }
-           }
-
-           // 2. Fallback to Title-Only Search
-           if (!tmdbResult) {
-             const fallbackUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&api_key=${process.env.TMDB_API_KEY}`;
-             console.log(`\n[TMDB Fallback Search] URL: ${fallbackUrl.replace(process.env.TMDB_API_KEY, "HIDDEN_KEY")}`);
-             const fallbackRes = await fetch(fallbackUrl);
-             console.log(`[TMDB Fallback Search] Status: ${fallbackRes.status}`);
-             const fallbackData = await fallbackRes.json();
-             console.log(`[TMDB Fallback Search] Results found: ${fallbackData.results ? fallbackData.results.length : 0}`);
-             
-             if (fallbackData.results && fallbackData.results.length > 0) {
-               for (const r of fallbackData.results) {
-                 const matchTitle = r.title?.toLowerCase() === title.toLowerCase() || r.original_title?.toLowerCase() === title.toLowerCase();
-                 let matchYear = true;
-                 if (targetYear && r.release_date) {
-                   const rYear = parseInt(r.release_date.substring(0, 4), 10);
-                   matchYear = Math.abs(rYear - targetYear) <= 1; // +/- 1 year tolerance
-                 } else if (targetYear && !r.release_date) {
-                   matchYear = false; // Cannot verify year
-                 }
-                 console.log(`  -> Verifying "${r.title}" (${r.release_date}): TitleMatch=${matchTitle}, YearMatch=${matchYear}`);
-                 if (matchTitle && matchYear) {
-                   tmdbResult = r;
-                   break;
-                 }
-               }
-             }
-           }
-
-           // 3. Database Lookup & Creation
-           if (tmdbResult) {
-              const tmdbId = tmdbResult.id;
-              dbMovie = await Movie.findOne({
-                $or: [ { "id.tmdb": tmdbId }, { "tmdb_id": tmdbId }, { "tmdb": tmdbId } ]
-              });
-
-              if (!dbMovie) {
-                console.log(`[TMDB Match] Creating NEW local movie entry for TMDB ID: ${tmdbId}`);
-                dbMovie = new Movie({
-                  title: tmdbResult.title || title,
-                  "id": { tmdb: tmdbId },
-                  tmdb_id: tmdbId,
-                  release_date: tmdbResult.release_date,
-                  poster_path: tmdbResult.poster_path,
-                  overview: tmdbResult.overview,
-                  type: "movie"
+       if (possibleMatches.length > 0) {
+          if (year) {
+             const targetYear = parseInt(year, 10);
+             const validMovies = possibleMatches.filter(m => {
+                if (!m.release_date) return false;
+                const mYear = parseInt(m.release_date.substring(0, 4), 10);
+                return Math.abs(mYear - targetYear) <= 1;
+             });
+             if (validMovies.length > 0) {
+                validMovies.sort((a, b) => {
+                  const diffA = Math.abs(parseInt(a.release_date.substring(0, 4), 10) - targetYear);
+                  const diffB = Math.abs(parseInt(b.release_date.substring(0, 4), 10) - targetYear);
+                  return diffA - diffB;
                 });
-                await dbMovie.save();
-              } else {
-                let updated = false;
-                if (!dbMovie.poster_path && tmdbResult.poster_path) {
-                  dbMovie.poster_path = tmdbResult.poster_path;
-                  updated = true;
-                }
-                if (!dbMovie.release_date && tmdbResult.release_date) {
-                  dbMovie.release_date = tmdbResult.release_date;
-                  updated = true;
-                }
-                if (updated) {
-                  console.log(`[TMDB Match] Updating existing local movie to include poster/release_date for TMDB ID: ${tmdbId}`);
-                  await dbMovie.save();
-                }
-              }
-           } else {
-              console.log(`[TMDB Mismatch] No precise match found for "${title} (${year})". Skipping import.`);
-           }
-        } catch(e) {
-           console.error("TMDB search failed:", e);
-        }
-      }
-
-      if (dbMovie) {
-        const contentIdStr = dbMovie._id.toString();
-        let movieImported = false;
-
-        if (isWatched) {
-          user.watchlist = user.watchlist || [];
-          const alreadyInWatchlist = user.watchlist.some(
-            w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
-          );
-          if (!alreadyInWatchlist) {
-            user.watchlist.push({ itemId: dbMovie._id, itemType: "movie", addedAt: new Date() });
-            hasChanges = true;
-            movieImported = true;
+                dbMovie = validMovies[0];
+             }
+          } else {
+             dbMovie = possibleMatches[0];
           }
-        }
+       }
 
-        if (inWatchlist && !isWatched) {
-          user.toWatchList = user.toWatchList || [];
-          const alreadyInToWatch = user.toWatchList.some(
-            w => w.itemId.toString() === contentIdStr && w.itemType === "movie"
-          );
-          if (!alreadyInToWatch) {
-            user.toWatchList.push({ itemId: dbMovie._id, itemType: "movie", addedAt: new Date() });
-            hasChanges = true;
-            movieImported = true;
+       if (dbMovie) {
+          movieItem.dbMovie = dbMovie; // Attach local match
+       } else if (process.env.TMDB_API_KEY) {
+          moviesToFetchTMDB.push(movieItem);
+       }
+    }
+
+    // Phase 2: Concurrent TMDB Fetching (Chunked to avoid rate limits)
+    if (moviesToFetchTMDB.length > 0) {
+       sendEvent({ step: "movies", current: 0, total: totalMovies, text: `Fetching missing movies from TMDB (${moviesToFetchTMDB.length})...` });
+       const chunkSize = 20; // Parallel fetches
+       
+       for (let i = 0; i < moviesToFetchTMDB.length; i += chunkSize) {
+          const chunk = moviesToFetchTMDB.slice(i, i + chunkSize);
+          await Promise.all(chunk.map(async (movieItem) => {
+             const { title, year } = movieItem;
+             let tmdbResult = null;
+             const targetYear = year ? parseInt(year, 10) : null;
+             
+             try {
+                if (year) {
+                   const strictUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&primary_release_year=${year}&api_key=${process.env.TMDB_API_KEY}`;
+                   const strictRes = await fetch(strictUrl);
+                   const strictData = await strictRes.json();
+                   if (strictData.results && strictData.results.length > 0) {
+                      for (const r of strictData.results) {
+                         const matchTitle = r.title?.toLowerCase() === title.toLowerCase() || r.original_title?.toLowerCase() === title.toLowerCase();
+                         let matchYear = false;
+                         if (r.release_date) {
+                            const rYear = parseInt(r.release_date.substring(0, 4), 10);
+                            matchYear = Math.abs(rYear - targetYear) <= 1;
+                         }
+                         if (matchTitle && matchYear) { tmdbResult = r; break; }
+                      }
+                   }
+                }
+                if (!tmdbResult) {
+                   const fallbackUrl = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&api_key=${process.env.TMDB_API_KEY}`;
+                   const fallbackRes = await fetch(fallbackUrl);
+                   const fallbackData = await fallbackRes.json();
+                   if (fallbackData.results && fallbackData.results.length > 0) {
+                      for (const r of fallbackData.results) {
+                         const matchTitle = r.title?.toLowerCase() === title.toLowerCase() || r.original_title?.toLowerCase() === title.toLowerCase();
+                         let matchYear = true;
+                         if (targetYear && r.release_date) {
+                            const rYear = parseInt(r.release_date.substring(0, 4), 10);
+                            matchYear = Math.abs(rYear - targetYear) <= 1;
+                         } else if (targetYear && !r.release_date) { matchYear = false; }
+                         if (matchTitle && matchYear) { tmdbResult = r; break; }
+                      }
+                   }
+                }
+
+                if (tmdbResult) {
+                   const tmdbId = tmdbResult.id;
+                   let dbMovie = await Movie.findOne({
+                     $or: [ { "id.tmdb": tmdbId }, { "tmdb_id": tmdbId }, { "tmdb": tmdbId } ]
+                   });
+
+                   if (!dbMovie) {
+                     dbMovie = new Movie({
+                       title: tmdbResult.title || title,
+                       "id": { tmdb: tmdbId },
+                       tmdb_id: tmdbId,
+                       release_date: tmdbResult.release_date,
+                       poster_path: tmdbResult.poster_path,
+                       overview: tmdbResult.overview,
+                       type: "movie"
+                     });
+                     await dbMovie.save();
+                   }
+                   movieItem.dbMovie = dbMovie; // Attach new local match
+                }
+             } catch(e) {}
+          }));
+          
+          sendEvent({ step: "movies", current: i + chunk.length, total: totalMovies, text: `Fetching from TMDB (${i + chunk.length}/${moviesToFetchTMDB.length})...` });
+       }
+    }
+
+    // Phase 3: Apply changes
+    sendEvent({ step: "movies", current: totalMovies, total: totalMovies, text: `Applying user lists...` });
+    for (const movieItem of unifiedList) {
+       const dbMovie = movieItem.dbMovie;
+       if (!dbMovie) continue;
+
+       const contentIdStr = dbMovie._id.toString();
+       let movieImported = false;
+
+       if (movieItem.isWatched) {
+          if (!existingWatchlistIds.has(contentIdStr)) {
+             user.watchlist.push({ itemId: dbMovie._id, itemType: "movie", addedAt: new Date() });
+             existingWatchlistIds.add(contentIdStr);
+             hasChanges = true;
+             movieImported = true;
           }
-        }
+       }
 
-        if (isLiked) {
-          user.favorites = user.favorites || [];
-          const alreadyFavorite = user.favorites.some(
-            f => f.itemId.toString() === contentIdStr && f.itemType === "movie"
-          );
-          if (!alreadyFavorite && user.favorites.length < 4) {
-            user.favorites.push({ itemId: dbMovie._id, itemType: "movie" });
-            hasChanges = true;
-            movieImported = true;
+       if (movieItem.inWatchlist && !movieItem.isWatched) {
+          if (!existingToWatchIds.has(contentIdStr)) {
+             user.toWatchList.push({ itemId: dbMovie._id, itemType: "movie", addedAt: new Date() });
+             existingToWatchIds.add(contentIdStr);
+             hasChanges = true;
+             movieImported = true;
           }
-        }
+       }
 
-        if (rating) {
-           const existingRating = await Rating.findOne({
-              user: userId,
-              contentId: contentIdStr,
-              contentType: "movie"
-           });
-           if (!existingRating) {
-              let val = rating;
-              if (val <= 5) val = val * 2;
-              val = Math.max(1, Math.min(10, val));
-              await Rating.create({
-                 user: userId,
-                 contentId: contentIdStr,
-                 contentType: "movie",
-                 value: val
-              });
-              hasRatingsChanges = true;
-              movieImported = true;
-           }
-        }
+       if (movieItem.isLiked) {
+          if (!existingFavoritesIds.has(contentIdStr) && user.favorites.length < 4) {
+             user.favorites.push({ itemId: dbMovie._id, itemType: "movie" });
+             existingFavoritesIds.add(contentIdStr);
+             hasChanges = true;
+             movieImported = true;
+          }
+       }
 
-        if (movieImported) {
+       if (movieItem.rating && !existingRatingsMap.has(contentIdStr)) {
+          let val = movieItem.rating;
+          if (val <= 5) val = val * 2;
+          val = Math.max(1, Math.min(10, val));
+          newRatingsToInsert.push({ user: userId, contentId: contentIdStr, contentType: "movie", value: val });
+          existingRatingsMap.set(contentIdStr, val);
+          hasRatingsChanges = true;
+          movieImported = true;
+       }
+
+       if (movieImported) {
           importedMovies++;
-        }
-      }
+       }
     }
 
     sendEvent({ step: "save", text: "Saving to Database..." });
 
+    if (newRatingsToInsert.length > 0) {
+       await Rating.insertMany(newRatingsToInsert);
+    }
     if (hasChanges) {
       await user.save();
     }
@@ -2332,9 +2211,7 @@ export const importLetterboxdData = asyncHandler(async (req, res) => {
     if (hasRatingsChanges) {
       try {
         await rebuildUserCineGraph(userId);
-      } catch (err) {
-        console.error("Failed to rebuild CineGraph:", err);
-      }
+      } catch (err) {}
     }
 
     const addedRatings = await Rating.find({ user: userId, createdAt: { $gte: importStartTime } }).select('_id').lean();

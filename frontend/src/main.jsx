@@ -12,6 +12,9 @@ import "./index.css";
 // Initialize cache debugging utilities (available in browser console)
 import './api/cacheDebug';
 
+// Initialize i18n
+import './i18n';
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>

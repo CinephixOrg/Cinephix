@@ -22,7 +22,7 @@ export default function NotificationDropdown({
     if (notification.type === "message" && notification.conversationId) {
       navigate(`/dm/${notification.conversationId._id || notification.conversationId}`);
     } else if (notification.type === "follow") {
-      navigate(`/users/${notification.sender._id}`);
+      navigate(`/profile/${notification.sender._id}`);
     } else if (notification.type === "follow_request") {
       navigate('/network?tab=requests');
     } else if (notification.type === "follow_accepted") {

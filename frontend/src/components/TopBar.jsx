@@ -3,13 +3,16 @@ import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useUnread } from "../context/UnreadContext";
 import { NotificationContext } from "../context/NotificationContext";
+import { useTranslation } from "react-i18next";
 import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "./NotificationBell";
+import LanguageSwitcher from "./common/LanguageSwitcher";
 import logo from "../assets/cinephix_logo.svg";
 
 export default function TopBar() {
   const { user, logout } = useContext(AuthContext);
   const { totalUnread } = useUnread();
+  const { t } = useTranslation();
 
   if (!user) return null; // login/register sayfalarında görünmesin
 
@@ -34,13 +37,13 @@ export default function TopBar() {
             to="/movies"
             className={({ isActive }) => isActive ? 'text-primary font-semibold' : 'hover:text-primary'}
           >
-            Movies
+            {t('Movies')}
           </NavLink>
           <NavLink
             to="/series"
             className={({ isActive }) => isActive ? 'text-primary font-semibold' : 'hover:text-primary'}
           >
-            Series
+            {t('Series')}
           </NavLink>
           <NavLink
             to="/match"
@@ -55,7 +58,7 @@ export default function TopBar() {
             to="/community"
             className={({ isActive }) => isActive ? 'text-primary font-semibold' : 'hover:text-primary'}
           >
-            Community
+            {t('Community')}
           </NavLink>
           <NavLink
             to="/dm"
@@ -63,7 +66,7 @@ export default function TopBar() {
               `relative flex items-center gap-1.5 ${isActive ? 'text-primary font-semibold' : 'hover:text-primary'}`
             }
           >
-            Messages
+            {t('Messages')}
             {totalUnread > 0 && (
               <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-content text-[10px] font-bold leading-none">
                 {totalUnread > 9 ? '9+' : totalUnread}
@@ -74,9 +77,10 @@ export default function TopBar() {
 
         {/* SAĞ */}
         <div className="flex items-center gap-4">
+          <LanguageSwitcher />
           <NotificationBell />
           <span className="text-sm text-base-content/70">
-            Welcome back, {user.username}
+            {t('Welcome back', { name: user.username })}
           </span>
           <ProfileMenu onLogout={logout} />
         </div>

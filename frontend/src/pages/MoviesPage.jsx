@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import API from '../api/axios.js';
 import MovieCard from '../components/MovieCard.jsx';
 import MovieSearchBar from '../components/MovieSearchBar.jsx';
@@ -12,6 +13,7 @@ const LoadingSpinner = () => (
 );
 
 export default function MoviesPage() {
+  const { t } = useTranslation();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,7 +49,7 @@ export default function MoviesPage() {
     } catch (err) {
       console.error("Error fetching movies:", err);
       console.error("Error response:", err.response?.data); // Debugging log
-      setError("Could not load movies. Please try again later.");
+      setError(t("Could not load movies"));
       setMovies([]);
       setTotalPages(1);
     } finally {
@@ -85,7 +87,15 @@ export default function MoviesPage() {
 
       {/* Film Grid'i ve Sonuçlar */}
       <section>
-        <h2 className="text-2xl font-bold mb-4">Movies</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {searchParams.get('query')
+            ? t("Results for", { query: searchParams.get('query') })
+            : searchParams.get('years')
+              ? t("Movies from", { years: searchParams.get('years') })
+              : searchParams.get('genres')
+                ? t("Genres list", { genres: searchParams.get('genres') })
+                : t("Movies")}
+        </h2>
 
         {error && <div className="alert alert-error mb-4">{error}</div>}
 
@@ -93,7 +103,7 @@ export default function MoviesPage() {
           {loading ? (
             <LoadingSpinner />
           ) : movies.length === 0 ? (
-            <p className="col-span-full text-center text-lg text-base-content/70">No results found.</p>
+            <p className="col-span-full text-center text-lg text-base-content/70">{t("No results found")}</p>
           ) : (
             movies.map((movie) => (
               <MovieCard key={movie._id} movie={movie} />
@@ -109,17 +119,17 @@ export default function MoviesPage() {
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              « Previous
+              « {t("Previous")}
             </button>
             <button className="join-item btn">
-              Page {currentPage} of {totalPages}
+              {t("Page of", { current: currentPage, total: totalPages })}
             </button>
             <button
               className="join-item btn"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              Next »
+              {t("Next")} »
             </button>
           </div>
         )}

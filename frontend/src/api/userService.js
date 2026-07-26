@@ -173,9 +173,9 @@ export const userService = {
     }
   },
 
-  removeFromWatchlist: async (contentId) => {
+  removeFromWatchlist: async (contentId, contentType) => {
     try {
-      const response = await API.delete(API_ROUTES.USERS.REMOVE_FROM_WATCHLIST(contentId));
+      const response = await API.delete(API_ROUTES.USERS.REMOVE_FROM_WATCHLIST(contentId, contentType));
       
       // Invalidate watchlist cache
       clearCacheItem(CACHE_KEYS.WATCHLIST);
@@ -220,9 +220,7 @@ export const userService = {
 
   removeFromToWatchList: async (contentId, contentType) => {
     try {
-      const response = await API.delete(
-        `${API_ROUTES.USERS.REMOVE_FROM_TO_WATCH_LIST(contentId)}?itemType=${contentType}`
-      );
+      const response = await API.delete(API_ROUTES.USERS.REMOVE_FROM_TO_WATCH_LIST(contentId, contentType));
       clearCacheItem(CACHE_KEYS.TO_WATCH_LIST);
       clearCacheItem(CACHE_KEYS.CURRENT_USER);
       return response.data;
@@ -291,6 +289,16 @@ export const userService = {
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch pending requests' };
+    }
+  },
+
+  getSentRequests: async () => {
+    try {
+      const response = await API.get(API_ROUTES.USERS.GET_SENT_REQUESTS);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get sent requests:', error);
+      return [];
     }
   },
 

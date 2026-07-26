@@ -17,6 +17,29 @@ import { callLLM } from "../services/llmAdapter.js";
 
 /* ---------- helper math ---------- */
 
+
+const pearsonCorrelation = (ratings1, ratings2) => {
+  const commonKeys = Object.keys(ratings1).filter(k => ratings2[k] !== undefined);
+  const n = commonKeys.length;
+  if (n < 3) return null; // Need at least 3 co-rated items
+
+  let sum1 = 0, sum2 = 0, sum1Sq = 0, sum2Sq = 0, pSum = 0;
+  for (const k of commonKeys) {
+    const r1 = ratings1[k];
+    const r2 = ratings2[k];
+    sum1 += r1;
+    sum2 += r2;
+    sum1Sq += r1 * r1;
+    sum2Sq += r2 * r2;
+    pSum += r1 * r2;
+  }
+
+  const num = pSum - (sum1 * sum2 / n);
+  const den = Math.sqrt((sum1Sq - sum1 * sum1 / n) * (sum2Sq - sum2 * sum2 / n));
+  if (den === 0) return 0;
+  return num / den;
+};
+
 const cosineSimilarity = (a, b) => {
   let dot = 0, normA = 0, normB = 0;
   for (const k in a) {
@@ -215,12 +238,31 @@ export const findMatches = asyncHandler(async (req, res) => {
   }
 
   const myGraph = me[cineKey];
-  const startTime = Date.now();
+
+  // ⚡ FETCH OPTIMIZATION FOR PEARSON CORRELATION
+  const myRatings = await Rating.find({ user: meId, contentType: type }).lean();
+  const myRatingMap = {};
+  myRatings.forEach(r => myRatingMap[r.contentId.toString()] = r.value);
+  const myRatedIds = Object.keys(myRatingMap);
 
   const others = await User.find({ _id: { $ne: meId } })
-    .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`)
-    .limit(1000)  // ⚡ OPTIMIZATION: Limit to 1000 users max
+    .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries watchlist`)
+    .limit(1000)
     .lean();
+
+  const otherIds = others.map(u => u._id);
+  const relevantRatings = await Rating.find({ 
+    user: { $in: otherIds }, 
+    contentType: type, 
+    contentId: { $in: myRatedIds } 
+  }).lean();
+
+  const targetRatingsMap = {};
+  relevantRatings.forEach(r => {
+    const uId = r.user.toString();
+    if (!targetRatingsMap[uId]) targetRatingsMap[uId] = {};
+    targetRatingsMap[uId][r.contentId.toString()] = r.value;
+  });
 
   const results = [];
 
@@ -231,9 +273,8 @@ export const findMatches = asyncHandler(async (req, res) => {
       let finalScore = 0;
 
       if (hybridMode) {
-        // ===== HYBRID APPROACH =====
+        // ===== ADVANCED HYBRID APPROACH =====
 
-        // 1. COLLABORATIVE FILTERING (35%) - IN-MEMORY ONLY
         const g1 = {};
         const g2 = {};
         const r1 = {};
@@ -242,70 +283,114 @@ export const findMatches = asyncHandler(async (req, res) => {
         for (const [genre, v] of Object.entries(myGraph)) {
           if (genres.length && !genres.includes(genre)) continue;
           if (useCount) g1[genre] = v.count;
-          if (useAvgRating) r1[genre] = v.avgRating;
+          if (useAvgRating && v.ratedCount > 0) r1[genre] = v.avgRating;
         }
 
         for (const [genre, v] of Object.entries(u[cineKey])) {
           if (genres.length && !genres.includes(genre)) continue;
           if (useCount) g2[genre] = v.count;
-          if (useAvgRating) r2[genre] = v.avgRating;
+          if (useAvgRating && v.ratedCount > 0) r2[genre] = v.avgRating;
         }
 
         const genreScore = useCount ? cosineSimilarity(g1, g2) : 0;
-        const ratingScore = useAvgRating ? avgRatingSimilarity(r1, r2) : 0;
+        const fallbackRatingScore = useAvgRating ? avgRatingSimilarity(r1, r2) : 0;
 
-        const collaborativeScore =
-          (useCount ? 0.5 * genreScore : 0) +
-          (useAvgRating ? 0.5 * ratingScore : 0);
-
-        finalScore += 0.35 * collaborativeScore;
-
-        // 2. CONTENT-BASED (25%) - IN-MEMORY ONLY
-        const favorites1 = (type === "movie" ? me.favoriteMovies : me.favoriteSeries) || [];
-        const favorites2 = (type === "movie" ? u.favoriteMovies : u.favoriteSeries) || [];
-        let contentScore = 0;
-
-        if (favorites1.length > 0 && favorites2.length > 0) {
-          const set1 = new Set(favorites1.map((id) => id.toString()));
-          const set2 = new Set(favorites2.map((id) => id.toString()));
-          const intersection = [...set1].filter((x) => set2.has(x)).length;
-          const union = new Set([...set1, ...set2]).size;
-          contentScore = union === 0 ? 0 : intersection / union;
+        let weightCF = 0.35;
+        let weightGenre = 0.15;
+        
+        if (!useAvgRating) {
+          weightGenre += weightCF;
+          weightCF = 0;
+        } else if (!useCount) {
+          weightCF += weightGenre;
+          weightGenre = 0;
         }
 
-        finalScore += 0.25 * contentScore;
+        // 1. TRUE COLLABORATIVE FILTERING (Pearson)
+        if (useAvgRating) {
+          const uRatings = targetRatingsMap[u._id.toString()] || {};
+          const pearsonVal = pearsonCorrelation(myRatingMap, uRatings);
+          
+          let pearsonScore = 0;
+          if (pearsonVal !== null) {
+            pearsonScore = (pearsonVal + 1) / 2;
+            finalScore += weightCF * pearsonScore;
+          } else {
+            finalScore += weightCF * fallbackRatingScore;
+          }
+        }
 
-        // 3. SOCIAL SCORE (20%) - IN-MEMORY ONLY
+        // 2. GENRE AFFINITY PROFILE
+        if (useCount) {
+          finalScore += weightGenre * genreScore;
+        }
+
+        // 3. CONTENT OVERLAP (Jaccard on Watchlist + Favorites) - 20%
+        const myWatchlist = (me.watchlist || []).filter(w => w.itemType === type).map(w => w.itemId.toString());
+        const uWatchlist = (u.watchlist || []).filter(w => w.itemType === type).map(w => w.itemId.toString());
+        
+        const myFavs = ((type === "movie" ? me.favoriteMovies : me.favoriteSeries) || []).map(id => id.toString());
+        const uFavs = ((type === "movie" ? u.favoriteMovies : u.favoriteSeries) || []).map(id => id.toString());
+
+        // We weigh favorites as 3 standard items to increase their impact
+        let intersectionCount = 0;
+        let unionCount = 0;
+        const uWatchlistSet = new Set(uWatchlist);
+        const uFavsSet = new Set(uFavs);
+
+        const myTotalSet = new Set([...myWatchlist, ...myFavs]);
+        const uTotalSet = new Set([...uWatchlist, ...uFavs]);
+
+        for (const item of myTotalSet) {
+          const isMyFav = myFavs.includes(item);
+          const isUFav = uFavsSet.has(item);
+          const isMyWl = myWatchlist.includes(item);
+          const isUWl = uWatchlistSet.has(item);
+
+          const weight = (isMyFav && isUFav) ? 3 : 1;
+
+          if ((isMyWl || isMyFav) && (isUWl || isUFav)) {
+            intersectionCount += weight;
+            unionCount += weight;
+          } else {
+            unionCount += isMyFav ? 3 : 1; // If only one has it, just add normal weight for union
+          }
+        }
+        
+        // Add target's non-overlapping items to union
+        for (const item of uTotalSet) {
+          if (!myTotalSet.has(item)) {
+            unionCount += uFavsSet.has(item) ? 3 : 1;
+          }
+        }
+
+        const contentScore = unionCount === 0 ? 0 : intersectionCount / unionCount;
+        finalScore += 0.20 * contentScore;
+
+        // 4. SOCIAL SCORE (15%)
         const myFollowing = new Set((me.following || []).map((id) => id.toString()));
         const myFollowers = new Set((me.followers || []).map((id) => id.toString()));
         const uFollowing = new Set((u.following || []).map((id) => id.toString()));
         const uFollowers = new Set((u.followers || []).map((id) => id.toString()));
 
-        // Mutual following
         const mutualFollowing = [...myFollowing].filter((x) => uFollowing.has(x)).length;
         const unionFollowing = new Set([...myFollowing, ...uFollowing]).size;
         const followingScore = unionFollowing === 0 ? 0 : mutualFollowing / unionFollowing;
 
-        // Mutual followers
         const mutualFollowers = [...myFollowers].filter((x) => uFollowers.has(x)).length;
         const unionFollowers = new Set([...myFollowers, ...uFollowers]).size;
         const followersScore = unionFollowers === 0 ? 0 : mutualFollowers / unionFollowers;
 
-        const socialScore = 0.4 * followingScore + 0.4 * followersScore;
+        const socialScore = 0.5 * followingScore + 0.5 * followersScore;
+        finalScore += 0.15 * socialScore;
 
-        finalScore += 0.20 * socialScore;
-
-        // 4. DIVERSITY SCORE (15%) - IN-MEMORY ONLY
+        // 5. DIVERSITY SCORE (15%)
         const myDiversity = calculateDiversityInMemory(me[cineKey]);
         const uDiversity = calculateDiversityInMemory(u[cineKey]);
         const diversityDiff = Math.abs(myDiversity - uDiversity);
         const diversityScore = 1 - Math.min(1, diversityDiff);
 
         finalScore += 0.15 * diversityScore;
-
-        // 5. BONUS METRICS (5%) - NEUTRAL DEFAULT (no DB queries)
-        const bonusScore = 0.5;  // Neutral score
-        finalScore += 0.05 * bonusScore;
 
       } else {
         // ===== ORIGINAL APPROACH (fallback) =====
@@ -343,14 +428,12 @@ export const findMatches = asyncHandler(async (req, res) => {
         matchPercentage: Math.round(finalScore * 100),
       });
     } catch (error) {
-      // Silently skip this user on error
       continue;
     }
   }
 
   results.sort((a, b) => b.matchPercentage - a.matchPercentage);
   
-  // Apply pagination
   const pageNum = parseInt(page) || 1;
   const limitNum = parseInt(limit) || 10;
   const skip = (pageNum - 1) * limitNum;

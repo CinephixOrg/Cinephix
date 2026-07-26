@@ -36,16 +36,7 @@ const RatingDistribution = ({ ratings = [] }) => {
         };
     }, [ratings]);
 
-    if (!ratings || ratings.length === 0) {
-        return (
-            <div className="mt-6 pt-4 border-t border-base-300/30">
-                <div className="text-xs font-semibold uppercase tracking-widest text-base-content/70 mb-3">
-                    Ratings
-                </div>
-                <p className="text-sm text-base-content/60">No ratings yet</p>
-            </div>
-        );
-    }
+    // (Removed the early return to always display the chart structure, even when empty)
 
     return (
         <div className="mt-6 pt-4 border-t border-base-300/30">

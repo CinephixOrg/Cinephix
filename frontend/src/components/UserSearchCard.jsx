@@ -78,7 +78,7 @@ export default function UserSearchCard({ user }) {
     <div className="card bg-base-100 shadow-xl border border-base-300">
       <div className="card-body p-4 flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/users/${user._id || user.id}`} className="flex items-center gap-3">
+          <Link to={`/profile/${user._id || user.id}`} className="flex items-center gap-3">
             <div className="avatar">
               <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
                 <img

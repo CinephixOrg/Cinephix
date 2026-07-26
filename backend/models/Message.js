@@ -32,7 +32,7 @@ const messageSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["text", "recommendation"],
+      enum: ["text", "recommendation", "analysis_share"],
       default: "text",
     },
     // For recommendation messages
@@ -53,6 +53,8 @@ const messageSchema = new Schema(
       overview: String,
       rating: Number,
     },
+    // For analysis sharing
+    analysisData: Schema.Types.Mixed,
   },
   { timestamps: true }
 );

@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import { matchService } from "../api/matchService.js";
+import dmService from "../api/dmService.js";
 import AnalyzeModal from "./AnalyzeModal";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { AuthContext } from "../context/AuthContext";
 
 /**
  * MatchCard Component
@@ -9,10 +13,33 @@ import AnalyzeModal from "./AnalyzeModal";
  * Includes avatar, bio, percentage, action buttons, and optional rank badge
  */
 export default function MatchCard({ match, rank, animationDelay }) {
+  const { t } = useTranslation();
+  const { user: currentUser } = useContext(AuthContext);
   const isTopThree = rank !== undefined && rank <= 3;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleShare = async (data) => {
+    try {
+      // 1. Get or create conversation with the matched user
+      const conv = await dmService.getOrCreateConversation(match.user._id);
+      
+      // 2. Send the message
+      const message = {
+        type: 'analysis_share',
+        text: t("User shared an analysis with you.", { user: currentUser?.username }),
+        analysisData: data
+      };
+      
+      await dmService.sendMessage(conv._id, message);
+      toast.success(t("Analysis shared successfully!"));
+      setIsModalOpen(false); // Optionally close modal
+    } catch (e) {
+      console.error(e);
+      toast.error(t("Failed to share analysis"));
+    }
+  };
 
   return (
     <div
@@ -144,9 +171,14 @@ export default function MatchCard({ match, rank, animationDelay }) {
               title="Analyze with LLM (mock)"
               disabled={isAnalyzing}
             >
-              {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+              {isAnalyzing ? t('Analyzing...') : t('Analyze')}
             </button>
-            <AnalyzeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} data={analysisData} />
+            <AnalyzeModal 
+              isOpen={isModalOpen} 
+              onClose={() => setIsModalOpen(false)} 
+              data={analysisData} 
+              onShare={handleShare}
+            />
           </div>
         </div>
       </div>

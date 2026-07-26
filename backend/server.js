@@ -13,6 +13,8 @@ import { requestLogger, logger } from "./middleware/logger.js";
 import { simpleRateLimiter } from "./middleware/rateLimiter.js";
 import { setupChat } from "./sockets/chatSocket.js";
 import { seedGroups } from "./scripts/seedGroups.js";
+import cron from "node-cron";
+import { syncTMDBTrending } from "./services/tmdbSyncService.js";
 
 dotenv.config();
 const app = express();
@@ -27,6 +29,15 @@ app.use(express.json());
 app.use(requestLogger);
 configurePassport();
 app.use(passport.initialize());
+// Prevent browser caching for API responses
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 app.use("/api/", simpleRateLimiter);
 
 // Model and Route imports
@@ -109,6 +120,12 @@ async function start() {
 
     // Seed preset community groups (no-op if already seeded)
     await seedGroups();
+
+    // Schedule TMDB sync every day at 03:00
+    cron.schedule("0 3 * * *", () => {
+      logger.info("Running scheduled TMDB sync...");
+      syncTMDBTrending().catch(err => logger.error(`TMDB sync error: ${err.message}`));
+    });
 
     // Attach Socket.io chat handler
     setupChat(io);

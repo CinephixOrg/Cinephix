@@ -54,7 +54,7 @@ router.get("/discover", authMiddleware, async (req, res) => {
 // ── GET /api/lists/me ── my lists
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const lists = await CustomList.find({ owner: req.user._id }).sort({ createdAt: -1 });
+    const lists = await CustomList.find({ owner: req.user._id }).sort({ createdAt: -1 }).lean();
     return res.json({ lists });
   } catch {
     return res.status(500).json({ message: "Server error" });
@@ -83,7 +83,7 @@ router.post("/", authMiddleware, async (req, res) => {
 // ── GET /api/lists/:id ── view a list (public or owned)
 router.get("/:id", optionalAuth, async (req, res) => {
   try {
-    const list = await CustomList.findById(req.params.id).populate("owner", "username profile_pic_url");
+    const list = await CustomList.findById(req.params.id).populate("owner", "username profile_pic_url").lean();
     if (!list) return res.status(404).json({ message: "List not found" });
 
     const isOwner = req.user && list.owner._id.toString() === req.user._id.toString();

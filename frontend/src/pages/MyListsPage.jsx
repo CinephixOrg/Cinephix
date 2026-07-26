@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { listService } from "../api/listService";
 import { toast } from "react-hot-toast";
 import CreateListModal from "../components/CreateListModal";
+import { useTranslation } from "react-i18next";
 
 export default function MyListsPage() {
+  const { t } = useTranslation();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -14,7 +16,7 @@ export default function MyListsPage() {
     listService
       .getMyLists()
       .then((data) => setLists(data.lists || []))
-      .catch(() => toast.error("Failed to load lists"))
+      .catch(() => toast.error(t("Failed to load lists")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,9 +33,9 @@ export default function MyListsPage() {
     try {
       await listService.deleteList(listToDelete._id);
       setLists((prev) => prev.filter((l) => l._id !== listToDelete._id));
-      toast.success("List deleted");
+      toast.success(t("List deleted"));
     } catch {
-      toast.error("Failed to delete list");
+      toast.error(t("Failed to delete list"));
     } finally {
       setListToDelete(null);
     }
@@ -43,11 +45,11 @@ export default function MyListsPage() {
     <div className="max-w-5xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Lists</h1>
-          <p className="text-base-content/60 mt-1">Curated collections you can share with others.</p>
+          <h1 className="text-3xl font-bold">{t("My Lists")}</h1>
+          <p className="text-base-content/60 mt-1">{t("Curated collections")}</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-          + New List
+          {t("+ New List")}
         </button>
       </div>
 
@@ -57,8 +59,8 @@ export default function MyListsPage() {
         </div>
       ) : lists.length === 0 ? (
         <div className="text-center py-20 text-base-content/50">
-          <p className="text-xl mb-4">No lists yet.</p>
-          <p>Create your first list — like "90s Movies" or "French Series".</p>
+          <p className="text-xl mb-4">{t("No lists yet.")}</p>
+          <p>{t("Create your first list")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -73,22 +75,22 @@ export default function MyListsPage() {
                     {list.name}
                   </Link>
                   <span className={`badge badge-sm shrink-0 ${list.isPublic ? "badge-success" : "badge-ghost"}`}>
-                    {list.isPublic ? "Public" : "Private"}
+                    {list.isPublic ? t("Public") : t("Private")}
                   </span>
                 </div>
                 {list.description && (
                   <p className="text-sm text-base-content/60 line-clamp-2">{list.description}</p>
                 )}
-                <p className="text-xs text-base-content/40">{list.items?.length ?? 0} items</p>
+                <p className="text-xs text-base-content/40">{list.items?.length ?? 0} {t("items")}</p>
                 <div className="card-actions justify-end mt-2 gap-2">
                   <Link to={`/lists/${list._id}`} className="btn btn-sm btn-outline">
-                    Open
+                    {t("Open")}
                   </Link>
                   <button
                     className="btn btn-sm btn-error btn-outline"
                     onClick={() => handleDelete(list)}
                   >
-                    Delete
+                    {t("Delete")}
                   </button>
                 </div>
               </div>
@@ -107,16 +109,16 @@ export default function MyListsPage() {
       {listToDelete && (
         <dialog open className="modal modal-open bg-black/60 animate-fade-in">
           <div className="modal-box">
-            <h3 className="font-bold text-lg text-error">Delete List</h3>
+            <h3 className="font-bold text-lg text-error">{t("Delete List")}</h3>
             <p className="py-4">
-              Are you sure you want to delete the list <strong>"{listToDelete.name}"</strong>? This action cannot be undone.
+              {t("Are you sure you want to delete the list")} <strong>"{listToDelete.name}"</strong>{t("This action cannot be undone.")}
             </p>
             <div className="modal-action">
               <button className="btn btn-ghost" onClick={() => setListToDelete(null)}>
-                Cancel
+                {t("Cancel")}
               </button>
               <button className="btn btn-error" onClick={handleExecuteDelete}>
-                Delete
+                {t("Delete")}
               </button>
             </div>
           </div>

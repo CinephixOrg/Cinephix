@@ -51,7 +51,7 @@ export default function MatchPage() {
       };
 
       const res = await API.post("/match", payload);
-      
+
       setMatches(res.data);
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.message || "Eşleşme sırasında bir hata oluştu.";
@@ -150,11 +150,10 @@ export default function MatchPage() {
                   <button
                     key={genre}
                     onClick={() => toggleGenre(genre)}
-                    className={`btn btn-sm ${
-                      selectedGenres.includes(genre)
+                    className={`btn btn-sm ${selectedGenres.includes(genre)
                         ? "btn-primary"
                         : "btn-outline"
-                    }`}
+                      }`}
                   >
                     {genre}
                   </button>

@@ -44,7 +44,7 @@ export default function GroupDetailPage() {
     communityService
       .getMessages(slug)
       .then(setInitialMessages)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setMessagesLoading(false));
   }, [slug, group?.isMember]);
 

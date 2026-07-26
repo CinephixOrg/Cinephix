@@ -11,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { API_ROUTES } from '../constants/apiRoutes';
 import { FiSearch, FiEdit, FiX, FiMessageSquare, FiGift, FiSend } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 // ── Avatar helper ─────────────────────────────────────────────────────────────
 function Avatar({ user: u, size = 'md' }) {
@@ -26,9 +27,9 @@ function Avatar({ user: u, size = 'md' }) {
 }
 
 // ── Conversation list item (DM or Group) ─────────────────────────────────────
-function ConversationItem({ conv, isActive, onClick, inRecommendationMode, isSelected, onToggleSelection }) {
+function ConversationItem({ conv, isActive, onClick, inRecommendationMode, isSelected, onToggleSelection, t }) {
   const unread = conv.unreadCount ?? 0;
-  const preview = conv.lastMessage || 'No messages yet';
+  const preview = conv.lastMessage || t("No messages yet");
   const time = conv.lastMessageAt
     ? formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })
     : '';
@@ -126,9 +127,9 @@ function ConversationItem({ conv, isActive, onClick, inRecommendationMode, isSel
 }
 
 // ── Group item ────────────────────────────────────────────────────────────────
-function GroupItem({ group, isActive, onClick, inRecommendationMode, isSelected, onToggleSelection }) {
+function GroupItem({ group, isActive, onClick, inRecommendationMode, isSelected, onToggleSelection, t }) {
   const unread = group.unreadCount ?? 0;
-  const preview = group.lastMessage || 'No messages yet';
+  const preview = group.lastMessage || t("No messages yet");
   const time = group.lastMessageAt
     ? formatDistanceToNow(new Date(group.lastMessageAt), { addSuffix: true })
     : '';
@@ -180,7 +181,7 @@ function GroupItem({ group, isActive, onClick, inRecommendationMode, isSelected,
 }
 
 // ── User search modal for new DM ──────────────────────────────────────────────
-function NewDMModal({ onSelect, onClose }) {
+function NewDMModal({ onSelect, onClose, t }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -208,7 +209,7 @@ function NewDMModal({ onSelect, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-base-200">
-          <h2 className="text-lg font-semibold">New Message</h2>
+          <h2 className="text-lg font-semibold">{t("New Message")}</h2>
           <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <FiX size={18} />
           </button>
@@ -220,7 +221,7 @@ function NewDMModal({ onSelect, onClose }) {
             <input
               autoFocus
               type="text"
-              placeholder="Search by username…"
+              placeholder={t("Search by username…")}
               className="grow bg-transparent outline-none text-sm"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -231,7 +232,7 @@ function NewDMModal({ onSelect, onClose }) {
 
         <div className="max-h-72 overflow-y-auto px-2 pb-4">
           {results.length === 0 && query.trim() && !loading && (
-            <p className="text-center text-sm text-base-content/40 py-8">No users found</p>
+            <p className="text-center text-sm text-base-content/40 py-8">{t("No users found")}</p>
           )}
           {results.map((u) => (
             <button
@@ -279,7 +280,7 @@ function ChatHeader({ conversation, onBack }) {
         </Link>
       ) : (
         <Link
-          to={`/users/${other?._id}`}
+          to={`/profile/${other?._id}`}
           className="flex items-center gap-3 no-underline text-base-content hover:text-primary"
         >
           <Avatar user={other} size="sm" />
@@ -292,6 +293,7 @@ function ChatHeader({ conversation, onBack }) {
 
 // ── Main DMPage ───────────────────────────────────────────────────────────────
 export default function DMPage() {
+  const { t } = useTranslation();
   const { user } = useContext(AuthContext);
   const { setTotalUnread } = useUnread();
   const { conversationId } = useParams();
@@ -375,7 +377,7 @@ export default function DMPage() {
       .then((convs) => {
         setConversations(convs);
       })
-      .catch(() => toast.error('Failed to load messages'))
+      .catch(() => toast.error(t('Failed to load messages')))
       .finally(() => setLoadingConvs(false));
   }, []);
 
@@ -426,7 +428,7 @@ export default function DMPage() {
     // Safely resolve _id — Mongoose docs expose both _id (ObjectId) and id (string)
     const participantId = (targetUser._id ?? targetUser.id)?.toString();
     if (!participantId) {
-      toast.error('Invalid user selected');
+      toast.error(t('Invalid user selected'));
       return;
     }
     try {
@@ -437,7 +439,7 @@ export default function DMPage() {
       });
       openConversation(conv);
     } catch {
-      toast.error('Could not open conversation');
+      toast.error(t('Could not open conversation'));
     }
   }, [openConversation]);
 
@@ -448,7 +450,7 @@ export default function DMPage() {
 
   const handleSendRecommendations = async () => {
     if (!selectedRecommendation || selectedConversationsForRecommendation.size === 0) {
-      toast.error('Lütfen en az bir sohbeti seçin');
+      toast.error(t('Please select at least one chat'));
       return;
     }
 
@@ -469,52 +471,44 @@ export default function DMPage() {
       // Get selected conversation IDs (all should be conversation IDs now)
       const conversationIds = Array.from(selectedConversationsForRecommendation);
 
-      // Send to each conversation or group
-      for (const convId of conversationIds) {
-        // Check if this is a group or DM
+      // Send to each conversation or group concurrently
+      const sendPromises = conversationIds.map((convId) => {
         const conv = conversations.find(c => c._id === convId);
-        
-        if (conv?.type === 'group') {
-          // Send to group via REST API using group ID
-          const message = {
-            text: `${user?.username} size ${selectedRecommendation.title} ${contentType === 'movie' ? 'filmini' : 'dizisini'} öneriyor`,
-            contentType,
-            contentId,
-            contentData,
-            type: 'recommendation'
-          };
-          
-          // Use group ID directly (baseURL already has /api)
-          await API.post(`/groups/${convId}/messages`, message);
+        const message = {
+          text: t("User recommends you", { 
+            user: user?.username, 
+            title: selectedRecommendation.title, 
+            type: contentType === 'movie' ? t('movie_acc') : t('series_acc') 
+          }),
+          contentType,
+          contentId,
+          contentData,
+          type: 'recommendation'
+        };
 
-          // Update local group conversation preview so it moves to top immediately
-          setConversations((prev) => {
-            const updated = prev.map((c) =>
-              c._id === convId
-                ? {
-                    ...c,
-                    lastMessage: message.text,
-                    lastMessageAt: new Date().toISOString(),
-                  }
-                : c
-            );
-            return updated.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+        if (conv?.type === 'group') {
+          return API.post(`/groups/${convId}/messages`, message).then(() => {
+            setConversations((prev) => {
+              const updated = prev.map((c) =>
+                c._id === convId
+                  ? {
+                      ...c,
+                      lastMessage: message.text,
+                      lastMessageAt: new Date().toISOString(),
+                    }
+                  : c
+              );
+              return updated.sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+            });
           });
         } else {
-          // Send to DM
-          const message = {
-            text: `${user?.username} size ${selectedRecommendation.title} ${contentType === 'movie' ? 'filmini' : 'dizisini'} öneriyor`,
-            contentType,
-            contentId,
-            contentData,
-            type: 'recommendation'
-          };
-          
-          await dmService.sendMessage(convId, message);
+          return dmService.sendMessage(convId, message);
         }
-      }
+      });
 
-      toast.success(`${selectedRecommendation.title} ${conversationIds.length} sohbete gönderildi`);
+      await Promise.all(sendPromises);
+
+      toast.success(t("Sent to chats", { title: selectedRecommendation.title, count: conversationIds.length }));
       
       // Reset recommendation selection
       setRecommendationSelectionMode(false);
@@ -522,7 +516,7 @@ export default function DMPage() {
       setSelectedRecommendation(null);
       setShowRecommendationModal(false);
     } catch (err) {
-      toast.error('Öneri gönderilirken hata oluştu');
+      toast.error(t('Error sending recommendation'));
       console.error('Error sending recommendation:', err);
     }
   };
@@ -544,7 +538,7 @@ export default function DMPage() {
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-base-200">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-lg">Messages</h2>
+              <h2 className="font-bold text-lg">{t("Messages")}</h2>
               {totalUnread > 0 && (
                 <span className="badge badge-primary badge-sm">{totalUnread}</span>
               )}
@@ -552,14 +546,14 @@ export default function DMPage() {
             <div className="flex gap-1">
               <button
                 className="btn btn-ghost btn-sm btn-circle tooltip tooltip-left"
-                data-tip="Film/Dizi Öner"
+                data-tip={t("Recommend Movie/Series")}
                 onClick={() => setShowRecommendationModal(true)}
               >
                 <FiGift size={17} />
               </button>
               <button
                 className="btn btn-ghost btn-sm btn-circle tooltip tooltip-left"
-                data-tip="New message"
+                data-tip={t("New message")}
                 onClick={() => setShowNewDM(true)}
               >
                 <FiEdit size={17} />
@@ -595,6 +589,7 @@ export default function DMPage() {
                       }
                       setSelectedConversationsForRecommendation(newSet);
                     }}
+                    t={t}
                   />
                 ))}
               </div>
@@ -605,24 +600,24 @@ export default function DMPage() {
               <div className="flex flex-col items-center justify-center h-full gap-4 text-base-content/40 px-6 text-center py-16">
                 <FiMessageSquare size={40} />
                 <div>
-                  <p className="font-semibold text-base-content/60 mb-1">No messages yet</p>
-                  <p className="text-sm">Follow people or search to start chatting.</p>
+                  <p className="font-semibold text-base-content/60 mb-1">{t("No messages yet")}</p>
+                  <p className="text-sm">{t("Follow people or search to start chatting")}</p>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setShowNewDM(true)}>
-                  New Message
+                  {t("New Message")}
                 </button>
               </div>
             )}
 
             {/* Recommendation Send Button */}
             {recommendationSelectionMode && selectedConversationsForRecommendation.size > 0 && (
-              <div className="flex gap-2 mt-3 px-2">
+              <div className="sticky bottom-0 flex gap-2 p-3 border-t border-base-200 bg-base-100 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-20 mt-2 rounded-xl">
                 <button
                   className="flex-1 btn btn-primary btn-sm gap-2"
                   onClick={handleSendRecommendations}
                 >
                   <FiSend size={16} />
-                  Gönder ({selectedConversationsForRecommendation.size})
+                  {t("Send_Count", { count: selectedConversationsForRecommendation.size })}
                 </button>
                 <button
                   className="btn btn-ghost btn-sm"
@@ -632,11 +627,13 @@ export default function DMPage() {
                     setSelectedRecommendation(null);
                   }}
                 >
-                  İptal
+                  {t("Cancel")}
                 </button>
               </div>
             )}
+
           </div>
+
         </div>
 
         {/* ── RIGHT PANEL ─────────────────────────────────────────────── */}
@@ -657,7 +654,7 @@ export default function DMPage() {
                   roomId={activeConv._id}
                   initialMessages={initialMessages}
                   canChat={true}
-                  emptyText="No messages yet. Say something!"
+                  emptyText={t("No messages yet. Say something!")}
                   className="h-full rounded-none"
                 />
               </div>
@@ -666,11 +663,11 @@ export default function DMPage() {
             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-base-content/30 p-8">
               <FiMessageSquare size={56} />
               <div className="text-center">
-                <p className="text-lg font-semibold text-base-content/50 mb-1">Your messages</p>
-                <p className="text-sm">Select a conversation or start a new one.</p>
+                <p className="text-lg font-semibold text-base-content/50 mb-1">{t("Your messages")}</p>
+                <p className="text-sm">{t("Select a conversation or start a new one")}</p>
               </div>
               <button className="btn btn-primary btn-sm" onClick={() => setShowNewDM(true)}>
-                New Message
+                {t("New Message")}
               </button>
             </div>
           )}
@@ -678,7 +675,7 @@ export default function DMPage() {
       </div>
 
       {showNewDM && (
-        <NewDMModal onSelect={handleNewDMSelect} onClose={() => setShowNewDM(false)} />
+        <NewDMModal onSelect={handleNewDMSelect} onClose={() => setShowNewDM(false)} t={t} />
       )}
 
       <RecommendationModal
