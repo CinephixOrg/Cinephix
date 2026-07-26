@@ -98,8 +98,10 @@ export default function ListPage() {
                 }
 
                 // Always fetch fresh content data in background
-                const freshMovies = await contentService.getMoviesBulk(movieItemsIds);
-                const freshSeries = await contentService.getSeriesBulk(seriesItemsIds);
+                const [freshMovies, freshSeries] = await Promise.all([
+                    contentService.getMoviesBulk(movieItemsIds, true),
+                    contentService.getSeriesBulk(seriesItemsIds, true)
+                ]);
 
                 console.log("ListPage - Fresh movies resolved:", freshMovies);
                 console.log("ListPage - Fresh series resolved:", freshSeries);
@@ -290,7 +292,7 @@ export default function ListPage() {
     };
 
     // Defensive loading guard — waits until ratings have finished loading to resolve async racing flashes
-    if (loading || loadingRatings) {
+    if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
                 <span className="loading loading-spinner text-primary loading-lg"></span>
@@ -331,7 +333,7 @@ export default function ListPage() {
                             showRemove
                             onRemove={async () => {
                                 try {
-                                    await userService.removeFromWatchlist(m._id);
+                                    await userService.removeFromWatchlist(m._id, "movie");
                                     setMovies(prev => prev.filter(x => x._id !== m._id));
                                     toast.success("Removed from watchlist");
                                 } catch (err) {
@@ -373,7 +375,7 @@ export default function ListPage() {
                         showRemove
                         onRemove={async () => {
                             try {
-                                await userService.removeFromWatchlist(s._id);
+                                await userService.removeFromWatchlist(s._id, "series");
                                 setSeries(prev => prev.filter(x => x._id !== s._id));
                                 toast.success("Removed from watchlist");
                             } catch (err) {

@@ -1,11 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/w92";
 const AVATAR_PLACEHOLDER = (name) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "U")}&size=32`;
 
 export default function PublicListCard({ list }) {
+  const { t } = useTranslation();
   const { _id, name, description, owner, items = [], fromFollowing } = list;
 
   // Show up to 4 item poster thumbnails (we only have itemId, not poster — show count instead)
@@ -27,7 +29,7 @@ export default function PublicListCard({ list }) {
           />
           <span className="text-xs text-base-content/50">{owner.username}</span>
           {fromFollowing && (
-            <span className="badge badge-xs badge-primary ml-auto">Following</span>
+            <span className="badge badge-xs badge-primary ml-auto">{t("Following")}</span>
           )}
         </div>
 
@@ -41,9 +43,9 @@ export default function PublicListCard({ list }) {
         {/* Footer */}
         <div className="flex items-center justify-between mt-1">
           <span className="text-xs text-base-content/40">
-            {itemCount} item{itemCount !== 1 ? "s" : ""}
+            {itemCount === 1 ? t("item_count", { count: 1 }) : t("item_count_plural", { count: itemCount })}
           </span>
-          <span className="badge badge-ghost badge-xs">Public</span>
+          <span className="badge badge-ghost badge-xs">{t("Public")}</span>
         </div>
       </div>
     </Link>

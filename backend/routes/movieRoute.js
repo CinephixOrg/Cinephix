@@ -17,35 +17,60 @@ export default async function(movieModel) {
         });
       }
 
+      const safeQ = q.replace(/[^\w\s]/gi, '');
+      const queryTokens = safeQ.split(/\s+/).filter(w => w);
+      const queryStr = queryTokens.length > 0 ? queryTokens.map(w => `${w}*`).join(" AND ") : "";
+
+      const shouldArray = [
+        {
+          autocomplete: {
+            query: q,
+            path: "title"
+          }
+        },
+        {
+          text: {
+            query: q,
+            path: "title",
+            fuzzy: {
+              maxEdits: 1,
+              prefixLength: 2 // Sadece 3 harf ve üstü kelimelerde harf hatasına izin verir
+            }
+          }
+        }
+      ];
+
+      if (queryStr) {
+        shouldArray.push({
+          queryString: {
+            defaultPath: "title",
+            query: queryStr
+          }
+        });
+      }
+
       const pipeline = [
         {
           $search: {
             index: "default",
             compound: {
-              should: [
-                {
-                  autocomplete: {
-                    query: q,
-                    path: "title",
-                    fuzzy: {
-                      maxEdits: 2,
-                      prefixLength: 1
-                    }
-                  }
-                },
-                {
-                  text: {
-                    query: q,
-                    path: "title",
-                    fuzzy: {
-                      maxEdits: 2
-                    }
-                  }
-                }
+              should: shouldArray
+            }
+          }
+        },
+        { $limit: 150 },
+        {
+          $addFields: {
+            combinedScore: {
+              $multiply: [
+                { $meta: "searchScore" },
+                { $add: [{ $ifNull: ["$popularity", 1] }, 1] }
               ]
             }
           }
         },
+        { $sort: { combinedScore: -1 } },
+        { $limit: 20 },
         {
           $project: {
             _id: 1,
@@ -63,12 +88,10 @@ export default async function(movieModel) {
             vote_average: 1
           }
         },
-        {
-          $limit: 20
-        }
+
       ];
 
-      const results = await movieModel.aggregate(pipeline);
+      const results = await movieModel.aggregate(pipeline).allowDiskUse(true);
       res.json({
         success: true,
         data: results
@@ -91,34 +114,47 @@ export default async function(movieModel) {
 
       // 🔹 Atlas Search fuzzy query
       if (title) {
+        const safeTitle = title.replace(/[^\w\s]/gi, '');
+        const titleTokens = safeTitle.split(/\s+/).filter(w => w);
+        const titleQueryStr = titleTokens.length > 0 ? titleTokens.map(w => `${w}*`).join(" AND ") : "";
+
+        const shouldArray = [
+          {
+            autocomplete: {
+              query: title,
+              path: "title"
+            }
+          },
+          {
+            text: {
+              query: title,
+              path: "title",
+              fuzzy: {
+                maxEdits: 1,
+                prefixLength: 2
+              }
+            }
+          }
+        ];
+
+        if (titleQueryStr) {
+          shouldArray.push({
+            queryString: {
+              defaultPath: "title",
+              query: titleQueryStr
+            }
+          });
+        }
+
         pipeline.push({
           $search: {
             index: "default", // Atlas index name
             compound: {
-              should: [
-                {
-                  autocomplete: {
-                    query: title,
-                    path: "title",
-                    fuzzy: {
-                      maxEdits: 2, // Tolerates up to 2 character errors
-                      prefixLength: 1
-                    }
-                  }
-                },
-                {
-                  text: {
-                    query: title,
-                    path: "title",
-                    fuzzy: {
-                      maxEdits: 2
-                    }
-                  }
-                }
-              ]
+              should: shouldArray
             }
           }
         });
+        pipeline.push({ $limit: 200 }); // Fast limit for Atlas Search
       }
 
       // Apply other filters
@@ -149,6 +185,28 @@ export default async function(movieModel) {
         pipeline.push({ $match: {} });
       }
 
+      if (title) {
+        pipeline.push({
+          $addFields: {
+            combinedScore: {
+              $multiply: [
+                { $meta: "searchScore" },
+                { $add: [{ $ifNull: ["$popularity", 1] }, 1] } // Score * Popularity
+              ]
+            }
+          }
+        });
+        pipeline.push({ $sort: { combinedScore: -1 } });
+      } else {
+        // Sort results by popularity and newest when no search query
+        pipeline.push({
+          $sort: { popularity: -1, vote_count: -1, release_date: -1 }
+        });
+      }
+
+      // 🔹 Prevent $facet memory issues by capping results to top 2000
+      pipeline.push({ $limit: 2000 });
+
       // 🔹 Optimize: Only select needed fields for search results
       pipeline.push({
         $project: {
@@ -173,7 +231,7 @@ export default async function(movieModel) {
         }
       });
 
-      const result = await movieModel.aggregate(pipeline);
+      const result = await movieModel.aggregate(pipeline).allowDiskUse(true);
       const total = result[0]?.metadata[0]?.total || 0;
       const docs = result[0]?.data || [];
 
@@ -200,7 +258,7 @@ export default async function(movieModel) {
   // POST /api/movies/bulk
   router.post("/bulk", authMiddleware, async (req, res) => {
     try {
-      const { ids } = req.body;
+      const { ids, lightweight } = req.body;
       if (!ids || !Array.isArray(ids)) {
         return res.status(400).json({
           success: false,
@@ -209,7 +267,15 @@ export default async function(movieModel) {
       }
 
       const objectIds = ids.map(id => new mongoose.Types.ObjectId(id));
-      const movies = await movieModel.find({ _id: { $in: objectIds } });
+      
+      let query = movieModel.find({ _id: { $in: objectIds } });
+      if (lightweight) {
+        query = query.select("_id title name poster_path vote_average first_air_date release_date tvdb id genre_ids");
+      }
+      
+      console.time("movie_bulk_query");
+      const movies = await query.lean();
+      console.timeEnd("movie_bulk_query");
 
       return res.json({
         success: true,
@@ -227,7 +293,7 @@ export default async function(movieModel) {
   // GET /api/movies/:id
   router.get("/:id", async (req, res) => {
     try {
-      const doc = await movieModel.findById(req.params.id);
+      const doc = await movieModel.findById(req.params.id).lean();
       if (!doc) {
         return res.status(404).json({
           success: false,

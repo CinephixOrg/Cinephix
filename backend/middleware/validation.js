@@ -202,27 +202,27 @@ export const validationSchemas = {
 
   // Ratings
   createRating: {
-    contentId: { required: true, type: 'string' },
+    contentId: { required: true },
     contentType: { required: true, enum: ['movie', 'series'] },
     value: { required: true, type: 'number', min: 1, max: 10 },
   },
 
   addRating: {
-    contentId: { required: true, type: 'string' },
+    contentId: { required: true },
     contentType: { required: true, enum: ['movie', 'series'] },
     value: { required: true, type: 'number', min: 1, max: 10 },
   },
 
   // Reviews
   createReview: {
-    contentId: { required: true, type: 'string' },
+    contentId: { required: true },
     contentType: { required: true, enum: ['movie', 'series'] },
     text: { required: true, type: 'string', minLength: 1, maxLength: 5000 },
   },
 
   // Watchlist
   addToWatchlist: {
-    id: { required: true, type: 'string' },
+    id: { required: true },
     type: { required: true, enum: ['movie', 'series'] },
   },
 

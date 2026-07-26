@@ -2,6 +2,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
+import { useTranslation } from "react-i18next";
 import { reviewService } from "../api/reviewService.js";
 import toast from "react-hot-toast";
 
@@ -10,6 +11,7 @@ const POSTER_PLACEHOLDER = "https://placehold.co/300x450/1d232a/e0e0e0?text=No+P
 const AVATAR_PLACEHOLDER = "https://placehold.co/24x24/1d232a/e0e0e0?text=?";
 
 function ReviewPosterCard({ review, currentUserId, onLikeToggle }) {
+  const { t } = useTranslation();
   const { content, user, text, likeCount: initialLikeCount, hasLiked: initialHasLiked, _id } = review;
   const [likeCount, setLikeCount] = useState(initialLikeCount || 0);
   const [hasLiked, setHasLiked] = useState(initialHasLiked || false);
@@ -17,7 +19,7 @@ function ReviewPosterCard({ review, currentUserId, onLikeToggle }) {
 
   const handleLike = async (e) => {
     e.preventDefault();
-    if (!currentUserId) return toast.error("Log in to like reviews");
+    if (!currentUserId) return toast.error(t("Log in to like reviews"));
     if (liking) return;
     setLiking(true);
     setHasLiked((p) => !p);
@@ -27,7 +29,7 @@ function ReviewPosterCard({ review, currentUserId, onLikeToggle }) {
     } catch {
       setHasLiked((p) => !p);
       setLikeCount((p) => p + (hasLiked ? 1 : -1));
-      toast.error("Failed to like review");
+      toast.error(t("Failed to like review"));
     } finally {
       setLiking(false);
     }
@@ -65,7 +67,7 @@ function ReviewPosterCard({ review, currentUserId, onLikeToggle }) {
         </Link>
 
         {/* Reviewer */}
-        <Link to={`/users/${user?._id}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+        <Link to={`/profile/${user?._id}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
           <div className="w-4 h-4 rounded-full overflow-hidden ring-1 ring-base-300 flex-shrink-0">
             <img
               src={user?.profile_pic_url || AVATAR_PLACEHOLDER}
@@ -98,7 +100,7 @@ function ReviewPosterCard({ review, currentUserId, onLikeToggle }) {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
-          {hasLiked ? "Liked" : "Like"}
+          {hasLiked ? t("Liked") : t("Like")}
         </button>
       </div>
     </div>
@@ -120,6 +122,7 @@ function SkeletonCard() {
 }
 
 export default function PopularReviews() {
+  const { t } = useTranslation();
   const { user } = useContext(AuthContext);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +147,7 @@ export default function PopularReviews() {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-bold text-base-content">Popular reviews</h2>
+        <h2 className="text-base font-bold text-base-content">{t("Popular reviews")}</h2>
         <div className="flex gap-1">
           <button
             onClick={() => scroll(-1)}

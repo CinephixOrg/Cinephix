@@ -56,18 +56,20 @@ export const contentService = {
     }
   },
 
-  getMoviesBulk: async (movieIds) => {
+  getMoviesBulk: async (movieIds, lightweight = false) => {
     try {
       if (!movieIds || movieIds.length === 0) return [];
-      const response = await API.post(API_ROUTES.MOVIES.BULK, { ids: movieIds });
+      const response = await API.post(API_ROUTES.MOVIES.BULK, { ids: movieIds, lightweight });
       const movies = response.data || [];
       
-      // Populate cache for each movie
-      movies.forEach((movie) => {
-        if (movie && movie._id) {
-          setCacheItem(CACHE_KEYS.MOVIE(movie._id), movie, 30 * 60 * 1000);
-        }
-      });
+      // Populate cache for each movie only if it's a full fetch
+      if (!lightweight) {
+        movies.forEach((movie) => {
+          if (movie && movie._id) {
+            setCacheItem(CACHE_KEYS.MOVIE(movie._id), movie, 30 * 60 * 1000);
+          }
+        });
+      }
       return movies;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch bulk movies' };
@@ -122,18 +124,20 @@ export const contentService = {
     }
   },
 
-  getSeriesBulk: async (seriesIds) => {
+  getSeriesBulk: async (seriesIds, lightweight = false) => {
     try {
       if (!seriesIds || seriesIds.length === 0) return [];
-      const response = await API.post(API_ROUTES.SERIES.BULK, { ids: seriesIds });
+      const response = await API.post(API_ROUTES.SERIES.BULK, { ids: seriesIds, lightweight });
       const series = response.data || [];
       
-      // Populate cache for each series
-      series.forEach((s) => {
-        if (s && s._id) {
-          setCacheItem(CACHE_KEYS.SERIES(s._id), s, 30 * 60 * 1000);
-        }
-      });
+      // Populate cache for each series only if it's a full fetch
+      if (!lightweight) {
+        series.forEach((s) => {
+          if (s && s._id) {
+            setCacheItem(CACHE_KEYS.SERIES(s._id), s, 30 * 60 * 1000);
+          }
+        });
+      }
       return series;
     } catch (error) {
       throw error.response?.data || { message: 'Failed to fetch bulk series' };

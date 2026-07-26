@@ -19,6 +19,7 @@ import {
   acceptFollowRequest,
   rejectFollowRequest,
   getPendingRequests,
+  getSentRequests,
   getNotifications,
   getMyFollowing,
   getMyFollowers,
@@ -85,9 +86,7 @@ const googleCallbackMiddleware = process.env.GOOGLE_CLIENT_ID
 router.get("/auth/google", googleAuthMiddleware);
 router.get("/auth/google/callback", googleCallbackMiddleware, googleAuthCallback);
 
-// Watchlist operations (moved to controller)
-router.post("/me/watchlist", authMiddleware, validateRequest(validationSchemas.addToWatchlist), addToWatchlist);
-router.delete("/me/watchlist/:itemId", authMiddleware, removeFromWatchlist);
+// Watchlist operations (handled in userWatchlistRoute.js)
 
 router.post('/profile/:id/upload-profile-pic', authMiddleware, upload.single('profilePic'), uploadProfilePic);
 router.get("/me", authMiddleware, getMyProfile);
@@ -107,6 +106,7 @@ router.post("/:targetId/follow-request/reject", authMiddleware, rejectFollowRequ
 router.get("/me/following", authMiddleware, getMyFollowing);
 router.get("/me/followers", authMiddleware, getMyFollowers);
 router.get("/me/follow-requests", authMiddleware, getPendingRequests);
+router.get("/me/sent-requests", authMiddleware, getSentRequests);
 
 // Get notifications
 router.get("/notifications", authMiddleware, getNotifications);

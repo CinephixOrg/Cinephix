@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FaSearch, FaFilter, FaTimes } from "react-icons/fa";
 import { useDebounce } from "../hooks/index.js";
 import API from "../api/axios.js";
 import genresData from "../data/movieGenres.json";
 
-export default function MovieSearchBar({ onResults }) {
+export default function MovieSearchBar({ onSearch, useURLParams = true }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [years, setYears] = useState([]);
   const [hasPoster, setHasPoster] = useState("");
@@ -19,11 +21,13 @@ export default function MovieSearchBar({ onResults }) {
   const genres = genresData.genres;
 
   useEffect(() => {
-    setQuery(searchParams.get("query") || "");
-    setYears(searchParams.get("years")?.split(",") || []);
-    setHasPoster(searchParams.get("hasPoster") || "");
-    setSelectedGenres(searchParams.get("genres")?.split(",") || []);
-  }, [searchParams]);
+    if (useURLParams) {
+      setQuery(searchParams.get("query") || "");
+      setYears(searchParams.get("years")?.split(",") || []);
+      setHasPoster(searchParams.get("hasPoster") || "");
+      setSelectedGenres(searchParams.get("genres")?.split(",") || []);
+    }
+  }, [searchParams, useURLParams]);
 
   // Auto-search when debounced query changes (optional feature for search-as-you-type)
   // Uncomment below if you want auto-search on type instead of requiring form submission
@@ -44,7 +48,19 @@ export default function MovieSearchBar({ onResults }) {
     if (selectedGenres.length > 0) newSearchParams.genres = selectedGenres.join(",");
 
     newSearchParams.page = 1;
-    setSearchParams(newSearchParams);
+
+    if (onSearch) {
+      onSearch({
+        query: trimmedQuery,
+        years,
+        hasPoster,
+        genres: selectedGenres,
+      });
+    }
+
+    if (useURLParams) {
+      setSearchParams(newSearchParams);
+    }
   };
 
   const toggleGenreSelection = (genreId) => {
@@ -73,7 +89,7 @@ export default function MovieSearchBar({ onResults }) {
       >
         <input
           type="text"
-          placeholder="Search movies..."
+          placeholder={t("Search movies...")}
           className="input input-bordered w-full sm:w-2/3"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -92,7 +108,7 @@ export default function MovieSearchBar({ onResults }) {
       {filtersVisible && (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div className="flex flex-col">
-            <label className="font-bold mb-2">Years</label>
+            <label className="font-bold mb-2">{t("Years")}</label>
             <div className="grid grid-cols-3 gap-4 overflow-y-auto max-h-40">
               {Array.from({ length: 126 }, (_, i) => 1900 + i).map((y) => (
                 <button
@@ -108,7 +124,7 @@ export default function MovieSearchBar({ onResults }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="font-bold mb-2">Genres</label>
+            <label className="font-bold mb-2">{t("Genres")}</label>
             <div className="grid grid-cols-3 gap-4 overflow-y-auto max-h-40">
               {genres.map((genre) => (
                 <button
@@ -124,15 +140,15 @@ export default function MovieSearchBar({ onResults }) {
           </div>
 
           <div className="flex flex-col">
-            <label className="font-bold mb-2">Has Poster?</label>
+            <label className="font-bold mb-2">{t("Has Poster?")}</label>
             <select
               value={hasPoster}
               onChange={(e) => setHasPoster(e.target.value)}
               className="select select-bordered w-full"
             >
-              <option value="">All</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
+              <option value="">{t("All")}</option>
+              <option value="yes">{t("Yes")}</option>
+              <option value="no">{t("No")}</option>
             </select>
           </div>
         </div>

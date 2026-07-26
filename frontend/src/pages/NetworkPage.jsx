@@ -30,38 +30,43 @@ export default function NetworkPage() {
 
   const token = user?.token;
 
-  const fetchLists = async () => {
+  const fetchLists = async (hideLoading = false) => {
     if (!token) {
       setError("Please log in to view this page.");
-      setLoading(false);
+      if (!hideLoading) setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    if (!hideLoading) setLoading(true);
+    if (!hideLoading) setError(null);
 
     const headers = { Authorization: `Bearer ${token}` };
     const queryUserId = params.get("user");
     const qs = queryUserId ? `?userId=${queryUserId}` : "";
 
     try {
-      const [followersRes, followingRes, requestsRes, suggestionsRes] = await Promise.all([
-        API.get(API_ROUTES.USERS.GET_FOLLOWING.replace('following', 'followers') + qs, { headers }),
-        API.get(API_ROUTES.USERS.GET_FOLLOWING + qs, { headers }),
+      const limitQuery = qs ? `${qs}&limit=1000` : `?limit=1000`;
+
+      const [followersRes, followingRes, requestsRes, suggestionsRes, sentRequestsRes] = await Promise.all([
+        API.get(API_ROUTES.USERS.GET_FOLLOWING.replace('following', 'followers') + limitQuery, { headers }),
+        API.get(API_ROUTES.USERS.GET_FOLLOWING + limitQuery, { headers }),
         userService.getPendingRequests(),
-        userService.getSuggestions(5)
+        userService.getSuggestions(5),
+        userService.getSentRequests()
       ]);
 
-      // Handle pagination wrapper from API
       setFollowers(followersRes.data?.data || followersRes.data || []);
       setFollowing(followingRes.data?.data || followingRes.data || []);
       setPendingRequests(requestsRes?.data || requestsRes || []);
       setSuggestions(suggestionsRes?.data || suggestionsRes || []);
+      
+      const sentIds = Array.isArray(sentRequestsRes) ? sentRequestsRes : (sentRequestsRes?.data || []);
+      setRequestedIds(new Set(sentIds.map(id => typeof id === 'object' ? id._id : id)));
     } catch (err) {
       console.error("Error fetching network data:", err);
-      setError("Failed to load network data. Please try again.");
+      if (!hideLoading) setError("Failed to load network data. Please try again.");
     } finally {
-      setLoading(false);
+      if (!hideLoading) setLoading(false);
     }
   };
 
@@ -76,18 +81,34 @@ export default function NetworkPage() {
       const targetId = typeof userId === 'object' ? (userId._id || userId.id) : userId;
       
       if (isCurrentlyFollowing) {
-        await API.post('/users/unfollow', { targetId }, { headers });
+        // Optimistic update
+        setFollowing(prev => prev.filter(u => u._id !== targetId));
         setRequestedIds(prev => {
           const newSet = new Set(prev);
           newSet.delete(targetId);
           return newSet;
         });
+
+        await API.post('/users/unfollow', { targetId }, { headers });
         toast.success("Unfollowed successfully");
       } else {
+        // Optimistic update
+        const userToAdd = followers.find(u => u._id === targetId) || suggestions.find(u => u._id === targetId);
+        if (userToAdd) {
+          setFollowing(prev => [...prev, userToAdd]);
+        }
+        // Remove from suggestions optimistically
+        setSuggestions(prev => prev.filter(u => u._id !== targetId));
+
         const res = await API.post('/users/follow', { targetId }, { headers });
         const resType = res.data?.data?.type || res.data?.type || res.type;
         
         if (resType === 'requested') {
+          // Revert optimistic add if it was just a request
+          setFollowing(prev => prev.filter(u => u._id !== targetId));
+          if (userToAdd) {
+            setSuggestions(prev => [userToAdd, ...prev]);
+          }
           setRequestedIds(prev => new Set(prev).add(targetId));
           toast.success("Follow request sent");
         } else {
@@ -97,10 +118,10 @@ export default function NetworkPage() {
         if (fetchUnreadCount) fetchUnreadCount();
         if (fetchNotifications) fetchNotifications();
       }
-      await fetchLists();
     } catch (err) {
       console.error("Follow toggle error:", err);
       toast.error(err.message || "Operation failed.");
+      fetchLists(true); // Revert on error
     }
   };
 
@@ -109,12 +130,15 @@ export default function NetworkPage() {
       const headers = { Authorization: `Bearer ${token}` };
       const targetId = typeof followerId === 'object' ? (followerId._id || followerId.id) : followerId;
       
+      // Optimistic update
+      setFollowers(prev => prev.filter(u => u._id !== targetId));
+
       await API.post('/users/remove-follower', { followerId: targetId }, { headers });
       toast.success("Follower removed successfully");
-      await fetchLists();
     } catch (err) {
       console.error("Remove follower error:", err);
       toast.error(err.message || "Failed to remove follower");
+      fetchLists(true);
     }
   };
 
@@ -123,11 +147,23 @@ export default function NetworkPage() {
       const headers = { Authorization: `Bearer ${token}` };
       const currentUserId = user?._id || user?.id;
       
+      // Find the requester from pendingRequests to add them to followers list
+      const requestObj = pendingRequests.find(req => {
+        const id = req?.requesterId?._id || req?.requesterId || req?._id || req;
+        return id === requesterId;
+      });
+      const userToAdd = requestObj?.requesterId || requestObj;
+      const isLastRequest = pendingRequests.length <= 1;
+
       // Optimistic UI update
       setPendingRequests(prev => prev.filter(req => {
         const id = req?.requesterId?._id || req?.requesterId || req?._id || req;
         return id !== requesterId;
       }));
+      
+      if (userToAdd) {
+         setFollowers(prev => [...prev, userToAdd]);
+      }
 
       await API.post(`/users/${currentUserId}/follow-request/accept`, { requesterId }, { headers });
       toast.success("Follow request accepted");
@@ -136,13 +172,16 @@ export default function NetworkPage() {
       if (fetchUnreadCount) fetchUnreadCount();
       if (fetchNotifications) fetchNotifications();
 
-      await fetchLists();
-      if (pendingRequests.length === 1 && activeTab === "pending") {
-        navigate("/network?tab=followers");
-      }
+      // Let it navigate if needed
+      setTimeout(() => {
+        if (isLastRequest && activeTab === "pending") {
+          navigate("/network?tab=followers");
+        }
+      }, 100);
     } catch (err) {
       console.error("Accept error:", err);
       toast.error("Failed to accept request");
+      fetchLists(true);
     }
   };
 
@@ -150,15 +189,27 @@ export default function NetworkPage() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const currentUserId = user?._id || user?.id;
+      
+      const isLastRequest = pendingRequests.length <= 1;
+
+      // Optimistic UI update
+      setPendingRequests(prev => prev.filter(req => {
+        const id = req?.requesterId?._id || req?.requesterId || req?._id || req;
+        return id !== requesterId;
+      }));
+
       await API.post(`/users/${currentUserId}/follow-request/reject`, { requesterId }, { headers });
       toast.success("Follow request rejected");
-      await fetchLists();
-      if (pendingRequests.length === 1 && activeTab === "pending") {
-        navigate("/network?tab=followers");
-      }
+      
+      setTimeout(() => {
+        if (isLastRequest && activeTab === "pending") {
+          navigate("/network?tab=followers");
+        }
+      }, 100);
     } catch (err) {
       console.error("Reject error:", err);
       toast.error("Failed to reject request");
+      fetchLists(true);
     }
   };
 
@@ -217,13 +268,13 @@ export default function NetworkPage() {
             <>
               <button
                 onClick={() => handleAcceptRequest(u._id)}
-                className="btn btn-sm btn-primary"
+                className="btn btn-sm btn-primary no-animation"
               >
                 <FiCheck className="mr-1" /> Accept
               </button>
               <button
                 onClick={() => handleRejectRequest(u._id)}
-                className="btn btn-sm btn-ghost text-error"
+                className="btn btn-sm btn-ghost text-error no-animation"
               >
                 <FiX className="mr-1" /> Reject
               </button>
@@ -233,7 +284,7 @@ export default function NetworkPage() {
               <button
                 onClick={() => handleFollowToggle(u._id || u.id, isFollowing)}
                 disabled={requestedIds.has(u._id || u.id)}
-                className={`btn btn-sm ${requestedIds.has(u._id || u.id) ? 'btn-disabled' : isFollowing ? "btn-outline" : "btn-primary"}`}
+                className={`btn btn-sm no-animation ${requestedIds.has(u._id || u.id) ? 'btn-disabled' : isFollowing ? "btn-outline" : "btn-primary"}`}
               >
                 {requestedIds.has(u._id || u.id) ? (
                   'Requested'
@@ -246,7 +297,7 @@ export default function NetworkPage() {
               {activeTab === "followers" && (
                 <button
                   onClick={() => handleRemoveFollower(u._id || u.id)}
-                  className="btn btn-sm btn-ghost text-error"
+                  className="btn btn-sm btn-ghost text-error no-animation"
                 >
                   Remove
                 </button>
@@ -309,7 +360,7 @@ export default function NetworkPage() {
                 <p className="text-lg">Nothing to see here yet.</p>
               </div>
             ) : (
-              <div className="animate-fade-in">
+              <div>
                 {displayedUsers.map((u, index) => (
                   <UserListItem
                     key={u._id || index}
@@ -357,7 +408,7 @@ export default function NetworkPage() {
                       <p className="text-xs text-base-content/60 truncate">Suggested User</p>
                     </div>
                     <button
-                      className={`btn btn-xs shrink-0 ${requestedIds.has(u._id) ? 'btn-disabled' : 'btn-primary'}`}
+                      className={`btn btn-xs shrink-0 no-animation ${requestedIds.has(u._id) ? 'btn-disabled' : 'btn-primary'}`}
                       disabled={requestedIds.has(u._id)}
                       onClick={() => handleFollowToggle(u._id, false)}
                     >

@@ -18,10 +18,13 @@ router.post("/to-watch", authMiddleware, async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const exists = user.toWatchList.some(
-      (w) => w.itemId.toString() === contentId && w.itemType === contentType
+    const toWatchList = user.toWatchList || [];
+    const exists = toWatchList.some(
+      (w) => w.itemId?.toString() === contentId?.toString() && w.itemType === contentType
     );
     if (exists) return res.status(409).json({ message: "Already in watchlist" });
+
+    if (!user.toWatchList) user.toWatchList = [];
 
     user.toWatchList.push({ itemId: contentId, itemType: contentType });
     await user.save();
@@ -44,9 +47,10 @@ router.delete("/to-watch/:itemId", authMiddleware, async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const beforeLen = user.toWatchList.length;
-    user.toWatchList = user.toWatchList.filter(
-      (w) => !(w.itemId.toString() === itemId && w.itemType === itemType)
+    const toWatchList = user.toWatchList || [];
+    const beforeLen = toWatchList.length;
+    user.toWatchList = toWatchList.filter(
+      (w) => !(w.itemId?.toString() === itemId?.toString() && w.itemType === itemType)
     );
 
     if (user.toWatchList.length === beforeLen) {

@@ -6,6 +6,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import Group from "../models/Group.js";
+import Notification from "../models/Notification.js";
 
 // GET /api/conversations
 // Returns all conversations (DMs) and groups for the current user, sorted by most recent message.
@@ -199,7 +200,7 @@ export const markAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/conversations/:id/messages  (REST fallback)
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { text, type = "text", contentId, contentType, contentData } = req.body;
+  const { text, type = "text", contentId, contentType, contentData, analysisData } = req.body;
 
   // Validate message based on type
   if (type === "recommendation") {
@@ -207,6 +208,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
       return sendError(res, "Invalid message text", 400);
     if (!contentId || !contentType || !["movie", "series"].includes(contentType))
       return sendError(res, "Invalid recommendation data", 400);
+  } else if (type === "analysis_share") {
+    if (!analysisData) return sendError(res, "Missing analysis data", 400);
   } else {
     // text message
     if (!text?.trim() || text.length > 1000)
@@ -246,6 +249,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
         rating: contentData.rating || null,
       };
     }
+  } else if (type === "analysis_share") {
+    messageData.analysisData = analysisData;
   }
 
   const message = await Message.create(messageData);
@@ -267,6 +272,15 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   // Broadcast via Socket.io
   const io = getIo();
+  
+  // Create DB notification
+  await Notification.create({
+    user: otherId,
+    sender: userId,
+    type: 'message',
+    conversationId: conversation._id
+  });
+
   if (io) {
     io.to(roomKey("dm", conversation._id.toString())).emit(
       "new-message",
@@ -280,6 +294,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
         lastMessageAt: new Date(),
         senderId: userId,
       });
+    });
+
+    // Send real-time notification to the receiver
+    io.to(`user:${otherId}`).emit("new-notification", {
+      type: 'message',
+      sender: { _id: userId, username: req.user.username },
+      conversationId: conversation._id,
+      createdAt: new Date()
     });
   }
 

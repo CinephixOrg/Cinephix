@@ -17,7 +17,7 @@ export default function UserRow({ user, isFollowing, onToggle }) {
     <tr className="hover:bg-base-200">
       <td>
         <div className="flex items-center gap-3">
-          <Link to={`/users/${user._id}`} className="flex items-center gap-3">
+          <Link to={`/profile/${user._id}`} className="flex items-center gap-3">
             <div className="avatar">
               {user.profile_pic_url ? (
                 <div className="w-10 rounded-full overflow-hidden">

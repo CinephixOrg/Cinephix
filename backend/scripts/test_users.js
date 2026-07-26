@@ -30,6 +30,7 @@ async function main() {
         username: `test${i}`,
         email: `test${i}@email.com`,
         password: hashed,
+        isEmailVerified: true,
       });
       console.log(`➕ test${i} user prepared.`);
     }

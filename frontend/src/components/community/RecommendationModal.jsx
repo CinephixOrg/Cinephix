@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FiSearch, FiX, FiArrowRight } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
+import MovieSearchBar from '../MovieSearchBar';
+import SeriesSearchBar from '../SeriesSearchBar';
 import contentService from '../../api/contentService';
+import API from '../../api/axios';
 import toast from 'react-hot-toast';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w154';
@@ -11,50 +15,55 @@ const resolvePosterUrl = (url) => {
 };
 
 export default function RecommendationModal({ isOpen, onClose, onSelectContent }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const { t } = useTranslation();
+  const [searchResults, setSearchResults] = useState([]);
   const [selectedContent, setSelectedContent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [contentType, setContentType] = useState('movie'); // 'movie' or 'series'
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // Search for movies/series
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
+  const performSearch = async (paramsObj) => {
+    setLoading(true);
+    setHasSearched(true);
+    try {
+      const endpoint = contentType === 'movie' ? '/movies' : '/series';
+      // paramsObj has query, years, hasPoster, genres
+      const reqObject = {
+        title: paramsObj.query || '',
+        years: paramsObj.years ? (Array.isArray(paramsObj.years) ? paramsObj.years.join(",") : paramsObj.years) : '',
+        hasPoster: paramsObj.hasPoster || '',
+        genres: paramsObj.genres ? (Array.isArray(paramsObj.genres) ? paramsObj.genres.join(",") : paramsObj.genres) : '',
+        limit: 15,
+      };
+
+      const res = await API.get(endpoint, { params: reqObject });
+      setSearchResults(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
     }
-
-    const delaySearch = setTimeout(async () => {
-      setLoading(true);
-      try {
-        let data = [];
-        if (contentType === 'movie') {
-          data = await contentService.searchMovies(searchQuery);
-        } else {
-          data = await contentService.searchSeries(searchQuery);
-        }
-        setResults(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Search error:', err);
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(delaySearch);
-  }, [searchQuery, contentType]);
+  };
 
   const handleSelectContent = (content) => {
+    const title = content.title || content.name;
+    const posterUrl = content.posterUrl || content.poster_path;
+    const releaseDate = content.releaseYear || content.release_date || content.first_air_date;
+    const releaseYear = releaseDate ? releaseDate.toString().substring(0, 4) : '';
+
     setSelectedContent({
       ...content,
+      title,
+      posterUrl,
+      releaseYear,
       type: contentType
     });
   };
 
   const handleConfirm = () => {
     if (!selectedContent) {
-      toast.error('Lütfen bir film veya dizi seçin');
+      toast.error(t('Please select at least one chat')); // Actually we need a new translation: please select content
       return;
     }
     onSelectContent(selectedContent);
@@ -62,9 +71,9 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
   };
 
   const handleClose = () => {
-    setSearchQuery('');
-    setResults([]);
+    setSearchResults([]);
     setSelectedContent(null);
+    setHasSearched(false);
     onClose();
   };
 
@@ -75,7 +84,7 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
       <div className="bg-base-100 rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-base-200">
-          <h2 className="text-xl font-bold">Film veya Dizi Öner</h2>
+          <h2 className="text-xl font-bold">{t("Recommend Movie/Series")}</h2>
           <button
             onClick={handleClose}
             className="btn btn-ghost btn-sm btn-circle"
@@ -90,63 +99,63 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
             <button
               onClick={() => {
                 setContentType('movie');
-                setResults([]);
+                setSearchResults([]);
                 setSelectedContent(null);
+                setHasSearched(false);
               }}
               className={`join-item flex-1 btn btn-sm ${
                 contentType === 'movie' ? 'btn-active' : ''
               }`}
             >
-              Film
+              {t("movie_acc")}
             </button>
             <button
               onClick={() => {
                 setContentType('series');
-                setResults([]);
+                setSearchResults([]);
                 setSelectedContent(null);
+                setHasSearched(false);
               }}
               className={`join-item flex-1 btn btn-sm ${
                 contentType === 'series' ? 'btn-active' : ''
               }`}
             >
-              Dizi
+              {t("series_acc")}
             </button>
           </div>
         </div>
 
         {/* Search */}
         <div className="px-6 py-3 border-b border-base-200">
-          <label className="input input-bordered flex items-center gap-2">
-            <FiSearch size={16} className="text-base-content/40" />
-            <input
-              autoFocus
-              type="text"
-              placeholder="Ara..."
-              className="grow bg-transparent outline-none text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {loading && <span className="loading loading-spinner loading-xs" />}
-          </label>
+          {contentType === 'movie' ? (
+            <MovieSearchBar onSearch={performSearch} useURLParams={false} />
+          ) : (
+            <SeriesSearchBar onSearch={performSearch} useURLParams={false} />
+          )}
         </div>
 
         {/* Results */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {searchQuery.trim() === '' ? (
+          {!hasSearched ? (
             <div className="text-center text-base-content/50 py-8">
-              {contentType === 'movie' ? 'Film' : 'Dizi'} adını yazarak ara
+              {t("Search movies...")}
             </div>
           ) : loading ? (
             <div className="flex justify-center py-8">
               <span className="loading loading-spinner loading-md" />
             </div>
-          ) : results.length === 0 ? (
+          ) : searchResults.length === 0 ? (
             <div className="text-center text-base-content/50 py-8">
-              Sonuç bulunamadı
+              {t("No users found")} {/* Fallback to no results found */}
             </div>
           ) : (
             <div className="space-y-3">
-              {results.map((content) => (
+              {searchResults.map((content) => {
+                const title = content.title || content.name;
+                const posterUrl = content.posterUrl || content.poster_path;
+                const releaseDate = content.releaseYear || content.release_date || content.first_air_date;
+                const releaseYear = releaseDate ? releaseDate.toString().substring(0, 4) : '';
+                return (
                 <div
                   key={content._id}
                   onClick={() => handleSelectContent(content)}
@@ -157,19 +166,19 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
                   }`}
                 >
                   <div className="flex gap-3">
-                    {resolvePosterUrl(content.posterUrl) && (
+                    {resolvePosterUrl(posterUrl) && (
                       <img
-                        src={resolvePosterUrl(content.posterUrl)}
-                        alt={content.title}
+                        src={resolvePosterUrl(posterUrl)}
+                        alt={title}
                         className="w-12 h-16 object-cover rounded"
                       />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate">
-                        {content.title}
+                        {title}
                       </p>
                       <p className="text-xs text-base-content/60">
-                        {content.releaseYear}
+                        {releaseYear}
                       </p>
                       {content.genres && (
                         <p className="text-xs text-base-content/50 truncate mt-1">
@@ -181,7 +190,7 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
@@ -201,7 +210,7 @@ export default function RecommendationModal({ isOpen, onClose, onSelectContent }
             className="btn btn-primary w-full btn-sm"
           >
             <FiArrowRight size={16} />
-            Devam Et
+            {t("Continue")}
           </button>
         </div>
       </div>

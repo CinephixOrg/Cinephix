@@ -33,23 +33,25 @@ const updateCineGraph = async ({
       : user.seriesCineGraph;
 
   genres.forEach((genre) => {
-    const node = graph.get(genre) || { count: 0, avgRating: 0 };
+    const node = graph.get(genre) || { count: 0, ratedCount: 0, avgRating: 0 };
+
+    // Initialize ratedCount if missing (for legacy data that hasn't been migrated yet)
+    if (node.ratedCount === undefined) node.ratedCount = node.count || 0;
 
     if (oldValue === null) {
-      const newCount = node.count + 1;
-      const newAvg =
-        (node.avgRating * node.count + newValue) / newCount;
+      const newRatedCount = node.ratedCount + 1;
+      const newAvg = (node.avgRating * node.ratedCount + newValue) / newRatedCount;
 
       graph.set(genre, {
-        count: newCount,
+        ...node,
+        ratedCount: newRatedCount,
         avgRating: Number(newAvg.toFixed(2)),
       });
     } else {
-      const newAvg =
-        (node.avgRating * node.count - oldValue + newValue) / node.count;
+      const newAvg = (node.avgRating * node.ratedCount - oldValue + newValue) / (node.ratedCount || 1);
 
       graph.set(genre, {
-        count: node.count,
+        ...node,
         avgRating: Number(newAvg.toFixed(2)),
       });
     }
@@ -140,7 +142,7 @@ export const getMyRating = asyncHandler(async (req, res) => {
   const rating = await Rating.findOne({ user: userId, contentId }).lean();
 
   if (!rating) {
-    return sendError(res, 'Rating not found', 404);
+    return sendSuccess(res, null, 'No rating found', 200);
   }
 
   sendSuccess(res, rating, 'Rating fetched', 200);

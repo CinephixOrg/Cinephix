@@ -131,6 +131,7 @@ export default function PublicProfilePage() {
           followed = Boolean(p?.isFollowed || p?.followedByMe);
         }
         setIsFollowed(Boolean(followed));
+        setIsRequested(Boolean(p?.isRequested));
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to fetch public profile", err);
@@ -199,6 +200,22 @@ export default function PublicProfilePage() {
       if (p?.profile_pic_url) p.profile_pic_url = makeAbsolute(p.profile_pic_url);
       if (p && p.followers && !Array.isArray(p.followers)) p.followers = [p.followers];
       setProfile(p);
+
+      let followed = false;
+      if (authUser && p) {
+        if (Array.isArray(p.followers)) {
+          followed = p.followers.some((f) => {
+            if (!f) return false;
+            if (typeof f === "string") return f === authUser._id || f === authUser.id;
+            return f._id === authUser._id || f._id === authUser.id || f.id === authUser._id || f.id === authUser.id;
+          });
+        }
+        if (!followed) followed = Boolean(p?.isFollowed || p?.followedByMe || p?.followedByCurrentUser);
+      } else {
+        followed = Boolean(p?.isFollowed || p?.followedByMe);
+      }
+      setIsFollowed(Boolean(followed));
+      setIsRequested(Boolean(p?.isRequested));
 
       const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
       const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];

@@ -1,6 +1,6 @@
-// frontend/src/components/TopPicks.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import feedService from "../api/feedService.js";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
@@ -29,6 +29,7 @@ function RaterAvatars({ raters }) {
 }
 
 function PickCard({ pick }) {
+  const { t } = useTranslation();
   const { content, avgRating, raterCount, topRaters } = pick;
   return (
     <Link
@@ -56,7 +57,7 @@ function PickCard({ pick }) {
         <div className="flex items-center gap-1 mt-1">
           <RaterAvatars raters={topRaters} />
           <span className="text-xs text-base-content/50">
-            {raterCount === 1 ? "1 rating" : `${raterCount} ratings`}
+            {raterCount === 1 ? t("rating_count", { count: 1 }) : t("rating_count_plural", { count: raterCount })}
           </span>
         </div>
       </div>
@@ -77,6 +78,7 @@ function SkeletonCard() {
 }
 
 export default function TopPicks() {
+  const { t } = useTranslation();
   const [picks, setPicks] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
@@ -101,7 +103,7 @@ export default function TopPicks() {
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-bold text-base-content">
-          Your network's top picks
+          {t("Your network's top picks")}
         </h2>
         <div className="flex gap-1">
           <button

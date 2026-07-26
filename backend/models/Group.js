@@ -42,7 +42,7 @@ const groupSchema = new Schema(
   { timestamps: true }
 );
 
-groupSchema.index({ slug: 1 });
+// (Index removed as slug is unique and automatically indexed)
 groupSchema.index({ category: 1 });
 groupSchema.index({ "members.user": 1 });
 // Fast lookups for user's groups sorted by recent activity

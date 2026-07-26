@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { listService } from "../api/listService";
 import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import CreateListModal from "./CreateListModal";
 
 export default function AddToListModal({ itemId, itemType, onClose }) {
+  const { t } = useTranslation();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(null); // listId being added
@@ -13,7 +15,7 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
     listService
       .getMyLists()
       .then((data) => setLists(data.lists || []))
-      .catch(() => toast.error("Failed to load lists"))
+      .catch(() => toast.error(t("Failed to load lists")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -21,10 +23,10 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
     setAdding(list._id);
     try {
       await listService.addItem(list._id, itemId, itemType);
-      toast.success(`Added to "${list.name}"`);
+      toast.success(t("Added to list name", { name: list.name }));
       onClose();
     } catch (err) {
-      toast.error(err.message || "Failed to add to list");
+      toast.error(err.message || t("Failed to add to list"));
     } finally {
       setAdding(null);
     }
@@ -46,14 +48,14 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
   return (
     <div className="modal modal-open">
       <div className="modal-box max-w-sm">
-        <h3 className="font-bold text-lg mb-4">Add to a List</h3>
+        <h3 className="font-bold text-lg mb-4">{t("Add to a List_Title")}</h3>
 
         {loading ? (
           <div className="flex justify-center py-6">
             <span className="loading loading-spinner" />
           </div>
         ) : lists.length === 0 ? (
-          <p className="text-base-content/60 text-sm mb-4">You have no lists yet.</p>
+          <p className="text-base-content/60 text-sm mb-4">{t("You have no lists yet.")}</p>
         ) : (
           <ul className="flex flex-col gap-2 mb-4 max-h-72 overflow-y-auto">
             {lists.map((list) => (
@@ -65,7 +67,7 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
                 >
                   <span className="truncate">{list.name}</span>
                   <span className="badge badge-ghost text-xs ml-2">
-                    {list.isPublic ? "Public" : "Private"} · {list.items?.length ?? 0} items
+                    {list.isPublic ? t("Public") : t("Private")} · {list.items?.length ?? 0} {t("items")}
                   </span>
                 </button>
               </li>
@@ -77,12 +79,12 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
           className="btn btn-primary btn-sm w-full mb-2"
           onClick={() => setShowCreate(true)}
         >
-          + Create New List
+          {t("+ Create New List")}
         </button>
 
         <div className="modal-action mt-0">
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </button>
         </div>
       </div>

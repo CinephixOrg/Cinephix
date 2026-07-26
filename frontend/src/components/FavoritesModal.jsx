@@ -1,6 +1,6 @@
-// frontend/src/components/FavoritesModal.jsx (GÜNCELLENMİŞ TAM DOSYA)
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import API from '../api/axios';
 import MovieCard from './MovieCard';
 import SeriesCard from './SeriesCard';
@@ -12,6 +12,7 @@ export default function FavoritesModal({
   onClose,       // Modalı kapatma fonksiyonu
   onSaveSuccess  // Başarılı kayıttan sonra çağrılacak fonksiyon
 }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]); // Tam objeleri tutacak state
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -86,7 +87,7 @@ export default function FavoritesModal({
       
     } catch (error) {
       console.error("Favoriler kaydedilemedi:", error);
-      toast.error(error.response?.data?.message || "An error occurred.");
+      toast.error(error.response?.data?.message || t("An error occurred"));
     } finally {
       setSaveLoading(false);
     }
@@ -99,7 +100,7 @@ export default function FavoritesModal({
     <dialog open className="modal modal-open bg-black/60">
       <div className="modal-box w-11/12 max-w-5xl">
         <h3 className="font-bold text-lg">
-          {type === 'movie' ? 'Favorite Movies' : 'Favorite Series'} ({items.length}/5)
+          {type === 'movie' ? t('Favorite Movies') : t('Favorite Series')} ({items.length}/5)
         </h3>
         
         {/* Kartların Listesi */}
@@ -136,16 +137,16 @@ export default function FavoritesModal({
         <div className="modal-action flex items-center justify-end gap-4">
           {isOverLimit && (
             <span className="text-error text-sm">
-              En fazla 5 favori {type === 'movie' ? 'film' : 'dizi'} bulunmalı.
+              {t("max_favorites_error", { type: type === 'movie' ? t('movies_lower') : t('series_lower') })}
             </span>
           )}
-          <button className="btn" onClick={onClose} disabled={loading}>Cancel</button>
+          <button className="btn" onClick={onClose} disabled={loading}>{t("Cancel")}</button>
           <button 
             className={`btn btn-primary ${saveLoading ? 'loading' : ''}`}
             onClick={handleSave}
             disabled={isOverLimit || saveLoading || loading}
           >
-            Save
+            {t("Save")}
           </button>
         </div>
       </div>

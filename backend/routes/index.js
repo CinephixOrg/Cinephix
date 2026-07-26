@@ -9,6 +9,8 @@ import seriesRoute from './seriesRoute.js';
 import reviewRoutes from './reviewRoutes.js';
 import ratingRoutes from './rating.js';
 import matchRoute from './matchRoute.js';
+import userWatchlistRoute from './userWatchlistRoute.js';
+import userToWatchListRoute from './userToWatchListRoute.js';
 
 /**
  * Initializes all API routes
@@ -20,6 +22,10 @@ export const setupRoutes = (app) => {
 
   // User Authentication & Profile Routes
   app.use(`${API_PREFIX}/users`, userRoute);
+  
+  // Custom User Lists Routes
+  app.use(`${API_PREFIX}/users/me`, userWatchlistRoute);
+  app.use(`${API_PREFIX}/users/me`, userToWatchListRoute);
 
   // Content Routes
   app.use(`${API_PREFIX}/movies`, movieRoute);

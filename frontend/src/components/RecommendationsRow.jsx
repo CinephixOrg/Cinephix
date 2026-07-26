@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import feedService from "../api/feedService";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/w300";
@@ -55,6 +56,7 @@ function SkeletonCard() {
 }
 
 export default function RecommendationsRow() {
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasPersonalization, setHasPersonalization] = useState(false);
@@ -82,10 +84,10 @@ export default function RecommendationsRow() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-base font-bold text-base-content">
-            {hasPersonalization ? "Picked for you" : "Popular right now"}
+            {hasPersonalization ? t("Picked for you") : t("Popular right now")}
           </h2>
           {hasPersonalization && (
-            <p className="text-xs text-base-content/40 mt-0.5">Based on your genre preferences</p>
+            <p className="text-xs text-base-content/40 mt-0.5">{t("Based on your genre preferences")}</p>
           )}
         </div>
         <div className="flex gap-1">

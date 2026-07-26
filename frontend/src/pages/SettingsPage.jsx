@@ -7,8 +7,10 @@ import { userService } from '../api/userService';
 import API from '../api/axios';
 import ImageCropper from '../components/ImageCropper.jsx';
 import { clearCacheItem, CACHE_KEYS } from '../api/cacheService';
+import { useTranslation } from "react-i18next";
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { user, updateUser, logout } = useContext(AuthContext);
   const { refreshRatings } = useContext(RatingsContext) || {};
   const navigate = useNavigate();
@@ -407,7 +409,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-base-100 p-4 md:p-10 animate-fade-in">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-base-content mb-8">Settings</h1>
+        <h1 className="text-3xl font-bold text-base-content mb-8">{t("Settings")}</h1>
 
         <div role="tablist" className="tabs tabs-lifted mb-6">
           <button
@@ -416,7 +418,7 @@ export default function SettingsPage() {
             className={`tab text-base-content ${activeTab === 'profile' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
-            Profile
+            {t("Profile")}
           </button>
           <button
             role="tab"
@@ -424,7 +426,7 @@ export default function SettingsPage() {
             className={`tab text-base-content ${activeTab === 'account' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('account')}
           >
-            Account
+            {t("Account")}
           </button>
           <button
             role="tab"
@@ -432,7 +434,7 @@ export default function SettingsPage() {
             className={`tab text-base-content ${activeTab === 'preferences' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('preferences')}
           >
-            Preferences
+            {t("Preferences")}
           </button>
           <button
             role="tab"
@@ -440,7 +442,7 @@ export default function SettingsPage() {
             className={`tab text-base-content ${activeTab === 'import' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('import')}
           >
-            Import / Export
+            {t("Import / Export")}
           </button>
           <button
             role="tab"
@@ -448,7 +450,7 @@ export default function SettingsPage() {
             className={`tab text-base-content ${activeTab === 'activity' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('activity')}
           >
-            Activity Log
+            {t("Activity Log")}
           </button>
         </div>
 
@@ -457,7 +459,7 @@ export default function SettingsPage() {
             {activeTab === 'profile' && (
               <div className="space-y-8">
                 <div>
-                  <h2 className="card-title mb-4">Avatar</h2>
+                  <h2 className="card-title mb-4">{t("Avatar")}</h2>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-5 mb-4">
                     <div className="avatar">
                       <div className="w-20 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 bg-base-300 overflow-hidden">
@@ -477,7 +479,7 @@ export default function SettingsPage() {
                     <form onSubmit={submitAvatarChange} className="flex-1 flex flex-col gap-3">
                       <div className="flex items-center gap-3 w-full">
                         <label className="btn btn-outline btn-sm cursor-pointer">
-                          Choose File
+                          {t("Choose File")}
                           <input
                             type="file"
                             accept="image/*"
@@ -491,11 +493,11 @@ export default function SettingsPage() {
                             className="btn btn-outline btn-sm"
                             onClick={handleEditCurrentAvatar}
                           >
-                            Edit
+                            {t("Edit")}
                           </button>
                         )}
                         <span className="text-sm text-base-content/60 truncate max-w-xs">
-                          {avatarFile ? avatarFile.name : "No file chosen"}
+                          {avatarFile ? avatarFile.name : t("No file chosen")}
                         </span>
                       </div>
                       <div className="flex justify-end">
@@ -504,7 +506,7 @@ export default function SettingsPage() {
                           className={`btn btn-primary ${loadingAvatar ? 'loading' : ''}`}
                           disabled={loadingAvatar || !avatarFile}
                         >
-                          Update Avatar
+                          {t("Update Avatar")}
                         </button>
                       </div>
                     </form>
@@ -512,16 +514,16 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <h2 className="card-title mb-1">Username</h2>
+                  <h2 className="card-title mb-1">{t("Username")}</h2>
                   <p className="text-base-content/60 text-sm mb-4">
-                    Current username: <span className="font-semibold text-primary">@{user?.username}</span>
+                    {t("Current username:")} <span className="font-semibold text-primary">@{user?.username}</span>
                   </p>
                   <form onSubmit={submitUsernameChange} className="flex flex-col gap-4">
                     <div className="form-control">
-                      <label className="label"><span className="label-text">New Username</span></label>
+                      <label className="label"><span className="label-text">{t("New Username")}</span></label>
                       <input
                         type="text"
-                        placeholder="Enter new username (3–20 chars)"
+                        placeholder={t("Enter new username")}
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value)}
                         className="input input-bordered"
@@ -536,7 +538,7 @@ export default function SettingsPage() {
                         className={`btn btn-primary ${loadingUsername ? 'loading' : ''}`}
                         disabled={loadingUsername}
                       >
-                        Update Username
+                        {t("Update Username")}
                       </button>
                     </div>
                   </form>
@@ -547,15 +549,15 @@ export default function SettingsPage() {
             {activeTab === 'account' && (
               <div className="flex flex-col gap-8">
                 <div>
-                  <h2 className="card-title mb-4">Security</h2>
+                  <h2 className="card-title mb-4">{t("Security")}</h2>
                   {isOAuthUser ? (
                     <div className="alert alert-info">
-                      <span>Logged in via Google. Password management is handled by Google.</span>
+                      <span>{t("Logged in via Google")}</span>
                     </div>
                   ) : (
                     <form onSubmit={submitPasswordChange} className="flex flex-col gap-4">
                       <div className="form-control">
-                        <label className="label"><span className="label-text">Current Password</span></label>
+                        <label className="label"><span className="label-text">{t("Current Password")}</span></label>
                         <input
                           type="password"
                           name="currentPassword"
@@ -567,7 +569,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="form-control">
-                          <label className="label"><span className="label-text">New Password</span></label>
+                          <label className="label"><span className="label-text">{t("New Password")}</span></label>
                           <input
                             type="password"
                             name="newPassword"
@@ -578,7 +580,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div className="form-control">
-                          <label className="label"><span className="label-text">Confirm New Password</span></label>
+                          <label className="label"><span className="label-text">{t("Confirm New Password")}</span></label>
                           <input
                             type="password"
                             name="confirmPassword"
@@ -595,7 +597,7 @@ export default function SettingsPage() {
                           className={`btn btn-primary ${loadingPass ? 'loading' : ''}`}
                           disabled={loadingPass}
                         >
-                          Update Password
+                          {t("Update Password")}
                         </button>
                       </div>
                     </form>
@@ -603,12 +605,12 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <h2 className="card-title mb-4">Privacy</h2>
+                  <h2 className="card-title mb-4">{t("Privacy")}</h2>
                   <div className="flex items-center justify-between p-4 bg-base-300 rounded-lg">
                     <div>
-                      <h3 className="font-semibold">Private Profile</h3>
+                      <h3 className="font-semibold">{t("Private Profile")}</h3>
                       <p className="text-sm text-base-content/70">
-                        When private, only your followers can see your profile data.
+                        {t("When private")}
                       </p>
                     </div>
                     <input 
@@ -623,13 +625,13 @@ export default function SettingsPage() {
 
                 <div className="card bg-base-300 shadow-xl border border-error/30">
                   <div className="card-body">
-                    <h2 className="card-title text-error mb-2">Danger Zone</h2>
+                    <h2 className="card-title text-error mb-2">{t("Danger Zone")}</h2>
                     <p className="text-base-content/70 mb-4">
-                      Once you delete your account, there is no going back. Please be certain.
+                      {t("Delete warning")}
                     </p>
                     <div className="card-actions justify-start">
                       <button onClick={() => setShowDeleteModal(true)} className="btn btn-outline btn-error">
-                        Delete Account
+                        {t("Delete Account")}
                       </button>
                     </div>
                   </div>
@@ -639,9 +641,9 @@ export default function SettingsPage() {
 
             {activeTab === 'preferences' && (
               <div>
-                <h2 className="card-title mb-2">Appearance</h2>
+                <h2 className="card-title mb-2">{t("Appearance")}</h2>
                 <p className="text-base-content/60 text-sm mb-6">
-                  Choose the theme that fits your viewing style.
+                  {t("Choose the theme")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {availableThemes.map((themeName) => {
@@ -660,7 +662,7 @@ export default function SettingsPage() {
                           <div className="card-body p-4 gap-2">
                             <div className="flex items-center justify-between gap-3">
                               <h3 className="font-semibold capitalize text-base-content">{themeName}</h3>
-                              {isActive && <span className="badge badge-primary">Active</span>}
+                              {isActive && <span className="badge badge-primary">{t("Active")}</span>}
                             </div>
                             <div className="flex gap-2 mt-1">
                               <span className="inline-block h-3 w-3 rounded-full bg-primary" />
@@ -678,9 +680,9 @@ export default function SettingsPage() {
 
             {activeTab === 'import' && (
               <div>
-                <h2 className="card-title mb-2">Import TV Time Data</h2>
+                <h2 className="card-title mb-2">{t("Import TV Time Data")}</h2>
                 <p className="text-base-content/60 text-sm mb-6">
-                  Upload a ZIP archive exported from TV Time containing <code>movies.json</code> and <code>shows.json</code> to sync your watched history and ratings.
+                  {t("Upload a ZIP archive")}
                 </p>
 
                 <div className="flex flex-col gap-6">
@@ -720,10 +722,10 @@ export default function SettingsPage() {
                         </label>
                       </div>
                       <span className="font-semibold text-base-content">
-                        Drag and drop your {importSource === 'letterboxd' ? 'Letterboxd' : 'TV Time'} export ZIP here, or{' '}
+                        {t("Drag and drop your")} {importSource === 'letterboxd' ? 'Letterboxd' : 'TV Time'} {t("export ZIP here, or")}{' '}
                       </span>
                       <label className="text-primary font-semibold hover:underline cursor-pointer">
-                        browse files
+                        {t("browse files")}
                         <input
                           type="file"
                           accept=".zip"
@@ -733,7 +735,7 @@ export default function SettingsPage() {
                       </label>
                     </div>
                     <span className="text-xs text-base-content/50 mt-1">
-                      Strictly accepting .zip files
+                      {t("Strictly accepting .zip files")}
                     </span>
 
                     {importFile && (
@@ -761,13 +763,13 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between text-sm font-semibold text-base-content/80">
                         <span className="capitalize flex items-center gap-2">
                           <span className="loading loading-spinner loading-xs text-primary"></span>
-                          Step: {importStep}
+                          {t("Step:")} {importStep}
                         </span>
                         <span>{percentProgress}%</span>
                       </div>
                       <progress className="progress progress-primary w-full shadow-inner h-3" value={percentProgress} max="100"></progress>
                       <p className="text-xs font-medium text-base-content/60 truncate italic">
-                        {activeProgressText || "Processing your archive, this may take a few moments..."}
+                        {activeProgressText || t("Processing your archive")}
                       </p>
                     </div>
                   )}
@@ -779,14 +781,14 @@ export default function SettingsPage() {
                         className="btn btn-ghost"
                         onClick={() => setImportFile(null)}
                       >
-                        Cancel
+                        {t("Cancel")}
                       </button>
                       <button
                         type="button"
                         className="btn btn-primary"
                         onClick={handleImportSubmit}
                       >
-                        Upload Export ZIP
+                        {t("Upload Export ZIP")}
                       </button>
                     </div>
                   )}
@@ -809,10 +811,10 @@ export default function SettingsPage() {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-success-content">Import Metrics Summary</h3>
+                        <h3 className="font-bold text-success-content">{t("Import Metrics Summary")}</h3>
                         <div className="text-sm opacity-90 text-success-content">
-                          <p>• Movies Imported: <strong>{importMetrics.importedMovies}</strong></p>
-                          <p>• Episodes Imported: <strong>{importMetrics.importedEpisodes}</strong></p>
+                          <p>• {t("Movies Imported:")} <strong>{importMetrics.importedMovies}</strong></p>
+                          <p>• {t("Episodes Imported:")} <strong>{importMetrics.importedEpisodes}</strong></p>
                         </div>
                       </div>
                     </div>
@@ -823,9 +825,9 @@ export default function SettingsPage() {
 
             {activeTab === 'activity' && (
               <div>
-                <h2 className="card-title mb-2">Activity Log</h2>
+                <h2 className="card-title mb-2">{t("Activity Log")}</h2>
                 <p className="text-base-content/60 text-sm mb-6">
-                  Review your recent actions and undo any unwanted changes.
+                  {t("Review your recent actions")}
                 </p>
 
                 <div className="flex justify-between items-center mb-4">
@@ -834,30 +836,30 @@ export default function SettingsPage() {
                     disabled={selectedLogs.size === 0 || revertingLogs}
                     onClick={handleUndoSelected}
                   >
-                    Undo Selected ({selectedLogs.size})
+                    {t("Undo Selected")} ({selectedLogs.size})
                   </button>
                   <button 
                     className="btn btn-outline btn-error btn-sm"
                     onClick={() => setShowResetModal(true)}
                   >
-                    Reset All Data
+                    {t("Reset All Data")}
                   </button>
                 </div>
 
                 {loadingLogs ? (
                   <div className="flex justify-center p-10"><span className="loading loading-spinner text-primary"></span></div>
                 ) : logs.length === 0 ? (
-                  <div className="text-center p-10 bg-base-200 rounded-lg text-base-content/60">No recent activity.</div>
+                  <div className="text-center p-10 bg-base-200 rounded-lg text-base-content/60">{t("No recent activity.")}</div>
                 ) : (
                   <div className="overflow-x-auto bg-base-200 rounded-lg border border-base-300">
                     <table className="table table-sm w-full">
                       <thead>
                         <tr>
                           <th></th>
-                          <th>Date</th>
-                          <th>Action</th>
-                          <th>Details</th>
-                          <th>Status</th>
+                          <th>{t("Date")}</th>
+                          <th>{t("Action")}</th>
+                          <th>{t("Details")}</th>
+                          <th>{t("Status")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -878,9 +880,9 @@ export default function SettingsPage() {
                             <td>{log.details}</td>
                             <td>
                               {log.isReverted ? (
-                                <span className="text-error font-semibold text-xs">Reverted</span>
+                                <span className="text-error font-semibold text-xs">{t("Reverted")}</span>
                               ) : (
-                                <span className="text-success font-semibold text-xs">Active</span>
+                                <span className="text-success font-semibold text-xs">{t("Active")}</span>
                               )}
                             </td>
                           </tr>
@@ -908,16 +910,16 @@ export default function SettingsPage() {
       {showDeleteModal && (
         <dialog open className="modal modal-open bg-black/60 animate-fade-in">
           <div className="modal-box border border-error/20">
-            <h3 className="font-bold text-lg text-error">Delete Account</h3>
+            <h3 className="font-bold text-lg text-error">{t("Delete Account")}</h3>
             <p className="py-4">
-              Are you sure you want to delete your account? This action cannot be undone!
+              {t("Are you sure you want to delete your account?")}
             </p>
             <div className="modal-action">
               <button className="btn btn-ghost" onClick={() => setShowDeleteModal(false)}>
-                Cancel
+                {t("Cancel")}
               </button>
               <button className="btn btn-error" onClick={handleDeleteAccount}>
-                Delete Forever
+                {t("Delete Forever")}
               </button>
             </div>
           </div>
@@ -927,16 +929,16 @@ export default function SettingsPage() {
       {showResetModal && (
         <dialog open className="modal modal-open bg-black/60 animate-fade-in">
           <div className="modal-box border border-error/20">
-            <h3 className="font-bold text-lg text-error">Reset All Data</h3>
+            <h3 className="font-bold text-lg text-error">{t("Reset All Data")}</h3>
             <p className="py-4">
-              Are you sure you want to reset all your data? This will clear your entire watchlist, favorites, and ratings! This action CANNOT be undone!
+              {t("Are you sure you want to reset all your data?")}
             </p>
             <div className="modal-action">
               <button className="btn btn-ghost" onClick={() => setShowResetModal(false)} disabled={resettingData}>
-                Cancel
+                {t("Cancel")}
               </button>
               <button className={`btn btn-error ${resettingData ? 'loading' : ''}`} onClick={handleResetData} disabled={resettingData}>
-                Reset Everything
+                {t("Reset Everything")}
               </button>
             </div>
           </div>

@@ -81,6 +81,7 @@ const userSchema = new Schema({
   type: Map,
   of: {
     count: Number,
+    ratedCount: { type: Number, default: 0 },
     avgRating: Number
   },
   default: {}
@@ -89,6 +90,7 @@ seriesCineGraph: {
   type: Map,
   of: {
     count: Number,
+    ratedCount: { type: Number, default: 0 },
     avgRating: Number
   },
   default: {}
@@ -98,9 +100,7 @@ seriesCineGraph: {
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
 
 // ===== DATABASE INDEXES (Issue #13) =====
-// Fast lookups for authentication
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// Note: email and username are implicitly indexed because they are unique: true
 
 // Fast text search on username and email
 userSchema.index({ username: "text", email: "text" });

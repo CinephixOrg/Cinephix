@@ -1,11 +1,13 @@
 // frontend/src/components/SuggestedUsers.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import userService from "../api/userService.js";
 
 const AVATAR_PLACEHOLDER = "https://placehold.co/40x40/1d232a/e0e0e0?text=?";
 
 function SuggestionRow({ user, onFollow }) {
+  const { t } = useTranslation();
   const [following, setFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +27,7 @@ function SuggestionRow({ user, onFollow }) {
 
   return (
     <div className="flex items-center gap-3 py-2">
-      <Link to={`/users/${user._id}`} className="flex-shrink-0">
+      <Link to={`/profile/${user._id}`} className="flex-shrink-0">
         <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-base-300">
           <img
             src={user.profile_pic_url || AVATAR_PLACEHOLDER}
@@ -38,15 +40,15 @@ function SuggestionRow({ user, onFollow }) {
 
       <div className="flex-1 min-w-0">
         <Link
-          to={`/users/${user._id}`}
+          to={`/profile/${user._id}`}
           className="text-sm font-semibold hover:underline block truncate"
         >
           {user.username}
         </Link>
         <p className="text-xs text-base-content/50">
           {user.mutualCount === 1
-            ? "1 mutual connection"
-            : `${user.mutualCount} mutual connections`}
+            ? t("mutual_connection", { count: 1 })
+            : t("mutual_connection_plural", { count: user.mutualCount })}
         </p>
       </div>
 
@@ -57,13 +59,14 @@ function SuggestionRow({ user, onFollow }) {
           following ? "btn-disabled" : "btn-primary"
         }`}
       >
-        {following ? "Following" : loading ? "…" : "Follow"}
+        {following ? t("Following") : loading ? "…" : t("Follow")}
       </button>
     </div>
   );
 }
 
 export default function SuggestedUsers() {
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -104,7 +107,7 @@ export default function SuggestedUsers() {
 
   return (
     <div className="bg-base-100 rounded-2xl shadow p-4">
-      <h2 className="text-sm font-bold text-base-content mb-3">People you might know</h2>
+      <h2 className="text-sm font-bold text-base-content mb-3">{t("People you might know")}</h2>
       <div className="divide-y divide-base-200">
         {suggestions.map((user) => (
           <SuggestionRow key={user._id} user={user} onFollow={handleFollow} />
@@ -114,7 +117,7 @@ export default function SuggestedUsers() {
         to="/network"
         className="block text-center text-xs text-primary hover:underline mt-3"
       >
-        See more →
+        {t("See more")} →
       </Link>
     </div>
   );

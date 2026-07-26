@@ -1,6 +1,6 @@
-// frontend/pages/ContentDetailPage.jsx
 import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import EmojiPicker from 'emoji-picker-react';
 import { contentService } from '../api/contentService';
 import { ratingService } from '../api/ratingService';
@@ -21,13 +21,15 @@ import RatingDistribution from '../components/RatingDistribution';
 const REVIEW_TABS = ["Friends", "Popular"];
 
 // ── Review section ───────────────────────────────────────────────────
-function ReviewSection({ contentId, user, contentType }) {
+function ReviewSection({ contentId, user, contentType, t }) {
   const AVATAR_PLACEHOLDER = "https://placehold.co/64x64/1d232a/e0e0e0?text=?";
-  const [activeTab, setActiveTab] = useState("Friends");
+  const [activeTab, setActiveTab] = useState(t("Friends"));
   const [friendsReviews, setFriendsReviews] = useState([]);
   const [popularReviews, setPopularReviews] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingPopular, setLoadingPopular] = useState(true);
+
+  const REVIEW_TABS = [t("Friends"), t("Popular")];
 
   const renderFriendStars = (review, index) => {
     const count = Math.min(5, Math.max(1, review.likeCount || index + 1));
@@ -69,14 +71,14 @@ function ReviewSection({ contentId, user, contentType }) {
     setPopularReviews((prev) => prev.filter((r) => r._id !== reviewId));
   };
 
-  const currentList = activeTab === "Friends" ? friendsReviews : popularReviews;
-  const isLoading = activeTab === "Friends" ? loadingFriends : loadingPopular;
+  const currentList = activeTab === t("Friends") ? friendsReviews : popularReviews;
+  const isLoading = activeTab === t("Friends") ? loadingFriends : loadingPopular;
 
   const emptyMessages = {
-    Friends: user
-      ? "None of the people you follow have reviewed this yet."
-      : "Log in to see reviews from people you follow.",
-    Popular: "No reviews yet. Be the first!",
+    [t("Friends")]: user
+      ? t("None of the people you follow have reviewed this yet")
+      : t("Log in to see reviews from people you follow"),
+    [t("Popular")]: t("No reviews yet. Be the first!"),
   };
 
   return (
@@ -84,18 +86,20 @@ function ReviewSection({ contentId, user, contentType }) {
       <div className="mb-6 rounded-3xl border border-base-300/40 bg-base-100 p-4">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-lg font-normal">Activity from friends</h3>
+            <h3 className="text-lg font-normal">{t("Activity from friends")}</h3>
           </div>
-          <span className="text-sm text-base-content/60">{friendsReviews.length} friends</span>
+          <span className="text-sm text-base-content/60">
+            {friendsReviews.length === 1 ? t("friend_count", { count: 1 }) : t("friend_count_plural", { count: friendsReviews.length })}
+          </span>
         </div>
         {friendsReviews.length === 0 ? (
-          <p className="text-sm text-center text-base-content/50 py-6">No friends have rated this yet.</p>
+          <p className="text-sm text-center text-base-content/50 py-6">{t("No friends have rated this yet")}</p>
         ) : (
           <div className="flex gap-4 overflow-x-auto pb-1">
             {friendsReviews.map((review, index) => (
               <Link
                 key={review._id}
-                to={`/users/${review.user?._id}`}
+                to={`/profile/${review.user?._id}`}
                 className="min-w-[72px] flex-shrink-0 text-center"
               >
                 <div className="avatar mx-auto">
@@ -116,7 +120,7 @@ function ReviewSection({ contentId, user, contentType }) {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Reviews</h2>
+        <h2 className="text-2xl font-bold">{t("Reviews")}</h2>
       </div>
 
       {/* Tab bar */}
@@ -132,7 +136,7 @@ function ReviewSection({ contentId, user, contentType }) {
             }`}
           >
             {tab}
-            {tab === "Friends" && !loadingFriends && friendsReviews.length > 0 && (
+            {tab === t("Friends") && !loadingFriends && friendsReviews.length > 0 && (
               <span className="ml-1.5 text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
                 {friendsReviews.length}
               </span>
@@ -169,7 +173,9 @@ function ReviewSection({ contentId, user, contentType }) {
 
 // ── Main page ─────────────────────────────────────────────────────────
 export default function ContentDetailPage() {
-  const { type, contentId } = useParams();
+  const { t } = useTranslation();
+  const { type: rawType, contentId } = useParams();
+  const type = rawType?.toLowerCase();
   const { user } = useContext(AuthContext);
   const { ratingsMap, updateRating } = useContext(RatingsContext) || { ratingsMap: new Map(), updateRating: () => {} };
 
@@ -237,54 +243,54 @@ export default function ContentDetailPage() {
       }
 
       try {
-        const contentRes = type === 'movie'
-          ? await contentService.getMovieById(contentId)
-          : await contentService.getSeriesById(contentId);
-        const userRes = await userService.getCurrentUser();
+        setLoadingAllRatings(true);
+        const [contentResult, userResult, ratingResult, allRatingsResult] = await Promise.allSettled([
+          type === 'movie' ? contentService.getMovieById(contentId) : contentService.getSeriesById(contentId),
+          userService.getCurrentUser(),
+          ratingService.getMyRating(contentId),
+          ratingService.getAllRatingsForContent(contentId)
+        ]);
 
-        setContent(contentRes.data || contentRes);
-        currentContentId = (contentRes.data || contentRes)._id;
+        if (contentResult.status === "rejected") {
+            throw contentResult.reason;
+        }
 
-        const userData = userRes.data || userRes;
-        setAdded(!!userData.watchlist.find(item => item.itemId === currentContentId));
-        setInToWatchList(!!userData.toWatchList?.find(item => item.itemId === currentContentId));
-        setFavoriteMovies(userData.favoriteMovies || []);
-        setFavoriteSeries(userData.favoriteSeries || []);
+        const contentData = contentResult.value.data || contentResult.value;
+        setContent(contentData);
+        currentContentId = contentData._id;
 
-                try {
-                    const ratingRes = await ratingService.getMyRating(currentContentId);
-                    setRating((ratingRes.data || ratingRes).value || 0);
-                } catch (ratingErr) {
-                    if (ratingErr.response?.status === 404 || ratingErr.message === 'Rating not found') {
-                        setRating(0);
-                    } else {
-                        console.error("Puan çekilirken hata:", ratingErr);
-                    }
-                }
+        if (userResult.status === "fulfilled") {
+            const userData = userResult.value.data || userResult.value;
+            setAdded(!!(userData.watchlist && userData.watchlist.find(item => item.itemId === currentContentId)));
+            setInToWatchList(!!(userData.toWatchList && userData.toWatchList.find(item => item.itemId === currentContentId)));
+            setFavoriteMovies(userData.favoriteMovies || []);
+            setFavoriteSeries(userData.favoriteSeries || []);
+        }
 
-                // Tüm ratingleri çek (rating dağılımı için)
-                try {
-                    setLoadingAllRatings(true);
-                    const allRatingsRes = await ratingService.getAllRatingsForContent(currentContentId);
-                    const ratingsData = allRatingsRes.data || allRatingsRes || [];
-                    // Backend'den 1-10 aralığında geliyor, 0.5-5 aralığına çeviriyoruz
-                    const ratingValues = ratingsData.map(r => {
-                        const val = r.value || r;
-                        return val / 2; // 1-10 -> 0.5-5
-                    });
-                    setAllRatings(ratingValues);
-                } catch (allRatingsErr) {
-                    console.error("Tüm ratingler çekilirken hata:", allRatingsErr);
-                    setAllRatings([]);
-                } finally {
-                    setLoadingAllRatings(false);
-                }
+        if (ratingResult.status === "fulfilled") {
+            const ratingObj = ratingResult.value?.data || ratingResult.value;
+            setRating(ratingObj?.value || 0);
+        } else {
+            setRating(0);
+        }
 
-                setLoading(false);
+        if (allRatingsResult.status === "fulfilled") {
+            const ratingsData = allRatingsResult.value.data || allRatingsResult.value || [];
+            const ratingValues = ratingsData.map(r => {
+                const val = r.value || r;
+                return val / 2;
+            });
+            setAllRatings(ratingValues);
+        } else {
+            setAllRatings([]);
+        }
+        
+        setLoadingAllRatings(false);
+        setLoading(false);
 
             } catch (err) {
                 console.error("İçerik/Kullanıcı verisi çekilirken hata:", err);
-                setError("Content could not be loaded."); // Ana hata durumu
+                setError(t("Content could not be loaded")); // Ana hata durumu
                 setLoading(false);
             }
         };
@@ -312,67 +318,146 @@ export default function ContentDetailPage() {
     const currentContentId = content._id;
     const oldValue = rating;
     setRating(newValue);
+
+    if (!added && !isFavorite) {
+      toast.success(t("Rating set locally. Add to Watchedlist to save."));
+      return;
+    }
+
     setIsRatingLoading(true);
-    try {
-      await ratingService.createRating({ contentId: currentContentId, contentType: content.type || type, value: newValue });
-      if (updateRating) {
-        updateRating(currentContentId, newValue);
+    
+    // Optimistic update for context and local allRatings
+    if (updateRating) {
+      updateRating(currentContentId, newValue);
+    }
+    
+    // Update local allRatings for the chart
+    setAllRatings(prev => {
+      // If the user already rated, we should theoretically replace their old rating,
+      // but finding it in the array of anonymous numbers is hard.
+      // So we'll just add the new one and optionally remove one old value if they had rated.
+      const newRatings = [...prev];
+      if (oldValue > 0) {
+        const oldIndex = newRatings.indexOf(oldValue / 2);
+        if (oldIndex > -1) newRatings.splice(oldIndex, 1);
       }
-      toast.success("Rating saved!");
+      newRatings.push(newValue / 2);
+      return newRatings;
+    });
+
+    try {
+      await ratingService.createRating({ contentId: currentContentId, contentType: type, value: newValue });
+      toast.success(t("Rating saved!"));
     } catch (err) {
-      toast.error("Couldn't save rating.");
+      toast.error(t("Couldn't save rating."));
       setRating(oldValue);
+      if (updateRating) {
+        updateRating(currentContentId, oldValue);
+      }
+      // Revert allRatings
+      setAllRatings(prev => {
+        const reverted = [...prev];
+        const newIndex = reverted.lastIndexOf(newValue / 2);
+        if (newIndex > -1) reverted.splice(newIndex, 1);
+        if (oldValue > 0) reverted.push(oldValue / 2);
+        return reverted;
+      });
     } finally { setIsRatingLoading(false); }
   };
 
   const handleAddToList = async () => {
-    const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
+    setAdded(true);
     try {
-      await userService.addToWatchlist(content._id, contentType);
-      setAdded(true);
-      toast.success("Added to your list");
-    } catch (error) { toast.error(error.response?.data?.message || "An error occurred"); }
+      await userService.addToWatchlist(content._id, type);
+      toast.success(t("Added to your list"));
+      
+      // If there's a rating set locally but not saved yet, save it now
+      if (rating > 0) {
+        if (updateRating) {
+          updateRating(content._id, rating);
+        }
+        setAllRatings(prev => {
+          const newRatings = [...prev];
+          newRatings.push(rating / 2);
+          return newRatings;
+        });
+        await ratingService.createRating({ contentId: content._id, contentType: type, value: rating }).catch(console.error);
+      }
+    } catch (error) { 
+      setAdded(false);
+      toast.error(error.response?.data?.message || "An error occurred"); 
+    }
   };
 
   const handleRemoveFromList = async () => {
+    setAdded(false);
     try {
-      await userService.removeFromWatchlist(content._id);
-      setAdded(false);
-      toast.success("Removed from your list");
-    } catch (err) { toast.error(err.response?.data?.message || "An error occurred"); }
+      await userService.removeFromWatchlist(content._id, type);
+      toast.success(t("Removed from your list"));
+      
+      // Also remove from favorites locally since backend does it
+      if (type === 'movie') {
+        setFavoriteMovies(prev => prev.filter(id => id !== content._id));
+      } else {
+        setFavoriteSeries(prev => prev.filter(id => id !== content._id));
+      }
+
+      // Remove rating locally and update rate chart
+      if (rating > 0) {
+        setAllRatings(prev => {
+          const newRatings = [...prev];
+          const index = newRatings.lastIndexOf(rating / 2);
+          if (index > -1) newRatings.splice(index, 1);
+          return newRatings;
+        });
+        if (updateRating) {
+          updateRating(content._id, 0); // clear from Context
+        }
+        setRating(0); // clear local state
+      }
+
+    } catch (err) { 
+      setAdded(true);
+      toast.error(err.response?.data?.message || "An error occurred"); 
+    }
   };
 
   const handleAddToToWatchList = async () => {
-    const contentType = content.type || (type === 'movie' ? 'movie' : 'series');
+    setInToWatchList(true);
     try {
-      await userService.addToToWatchList(content._id, contentType);
-      setInToWatchList(true);
-      toast.success("Added to watchlist");
-    } catch (error) { toast.error(error.message || "An error occurred"); }
+      await userService.addToToWatchList(content._id, type);
+      toast.success(t("Added to watchlist"));
+    } catch (error) { 
+      setInToWatchList(false);
+      toast.error(error.message || "An error occurred"); 
+    }
   };
 
   const handleRemoveFromToWatchList = async () => {
+    setInToWatchList(false);
     try {
-      await userService.removeFromToWatchList(content._id, content.type || type);
-      setInToWatchList(false);
-      toast.success("Removed from watchlist");
-    } catch (err) { toast.error(err.message || "An error occurred"); }
+      await userService.removeFromToWatchList(content._id, type);
+      toast.success(t("Removed from watchlist"));
+    } catch (err) { 
+      setInToWatchList(true);
+      toast.error(err.message || "An error occurred"); 
+    }
   };
 
-  const handleOpenFavModal = async () => {
-    if (!added) { await handleAddToList(); }
+  const handleOpenFavModal = () => {
+    if (!added) { handleAddToList(); }
     setIsFavModalOpen(true);
   };
 
   const handleSaveFavorites = (updatedList) => {
     if (type === 'movie') setFavoriteMovies(updatedList);
     else setFavoriteSeries(updatedList);
-    toast.success("Favorites saved!");
+    toast.success(t("Favorites saved!"));
     setIsFavModalOpen(false);
   };
 
   const handleSaveReview = async () => {
-    if (!reviewText.trim()) return toast.error("Review cannot be empty.");
+    if (!reviewText.trim()) return toast.error(t("Review cannot be empty."));
     setIsSavingReview(true);
     try {
       const response = await reviewService.createReview({
@@ -383,9 +468,9 @@ export default function ContentDetailPage() {
       const saved = response.data || response;
       setUserHasReviewed(true);
       setUserReviewId(saved._id);
-      toast.success(userHasReviewed ? "Review updated!" : "Review added!");
+      toast.success(userHasReviewed ? t("Review updated!") : t("Review added!"));
     } catch (err) {
-      toast.error("Could not save review.");
+      toast.error(t("Could not save review."));
     } finally {
       setIsSavingReview(false);
     }
@@ -398,9 +483,9 @@ export default function ContentDetailPage() {
       setUserHasReviewed(false);
       setReviewText("");
       setUserReviewId(null);
-      toast.success("Review deleted");
+      toast.success(t("Review deleted"));
     } catch {
-      toast.error("Could not delete review.");
+      toast.error(t("Could not delete review."));
     }
   };
 
@@ -452,7 +537,7 @@ export default function ContentDetailPage() {
                                 {type === 'series' && content.number_of_seasons && (
                                     <div className="mt-2">
                                         <div className="badge badge-secondary badge-lg">
-                                            {content.number_of_seasons} Sezon
+                                            {content.number_of_seasons === 1 ? t("season_count", { count: 1 }) : t("season_count_plural", { count: content.number_of_seasons })}
                                         </div>
                                     </div>
                                 )}
@@ -474,13 +559,13 @@ export default function ContentDetailPage() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-success text-base font-semibold">
                                             <span>✓</span>
-                                            <span>Added to List</span>
+                                            <span>{t("Added to List")}</span>
                                         </div>
                                         <button 
                                             className="btn btn-error btn-sm btn-outline w-full"
                                             onClick={handleRemoveFromList}
                                         >
-                                            Remove
+                                            {t("Remove")}
                                         </button>
                                     </div>
                                 ) : (
@@ -488,13 +573,9 @@ export default function ContentDetailPage() {
                                         <button 
                                             className="btn btn-primary w-full btn-sm"
                                             onClick={handleAddToList}
-                                            disabled={!isRated}
                                         >
-                                            Add to Watchedlist
+                                            {t("Add to Watchedlist")}
                                         </button>
-                                        {!isRated && (
-                                            <p className="text-xs italic opacity-60">(Rate first to add)</p>
-                                        )}
                                     </div>
                                 )}
                             </div>
@@ -504,23 +585,19 @@ export default function ContentDetailPage() {
                                 <button 
                                     className={`btn btn-sm w-full ${isFavorite ? 'btn-warning' : 'btn-outline'}`}
                                     onClick={handleOpenFavModal}
-                                    disabled={!isRated}
                                 >
-                                    {isFavorite ? '★ Manage Favorites' : '☆ Add to Favorites'}
+                                    {isFavorite ? `★ ${t("Manage Favorites")}` : `☆ ${t("Add to Favorites")}`}
                                 </button>
-                                {!isRated && (
-                                    <p className="text-xs italic opacity-60 mt-1">(Rate first to favorite)</p>
-                                )}
                             </div>
 
                             {/* 3. Rating Stars */}
                             <div className="py-4 border-b border-base-300/30">
-                                <label className="text-sm font-semibold block mb-2 text-center">Your Rating</label>
+                                <label className="text-sm font-semibold block mb-2 text-center">{t("Your Rating")}</label>
                                 <div className="flex gap-1 justify-center">
                                     <StarRating rating={rating} onRatingChange={handleRatingChange} />
                                 </div>
                                 {isRatingLoading && (
-                                    <span className="text-xs italic opacity-60 block mt-1">Saving...</span>
+                                    <span className="text-xs italic opacity-60 block mt-1">{t("Saving...")}</span>
                                 )}
                             </div>
 
@@ -530,7 +607,7 @@ export default function ContentDetailPage() {
                                     className="btn btn-outline btn-sm w-full justify-center"
                                     onClick={() => setIsAddToListOpen(true)}
                                 >
-                                    Add to List
+                                    {t("Add to List")}
                                 </button>
                             </div>
 
@@ -541,14 +618,14 @@ export default function ContentDetailPage() {
                                         className="btn btn-sm btn-secondary w-full"
                                         onClick={() => setShowReviewLink(true)}
                                     >
-                                        Add a Review
+                                        {t("Add a Review")}
                                     </button>
                                 ) : (
                                     <div className="mt-3 space-y-2">
                                         <div className="relative">
                                             <textarea
                                                 className="textarea textarea-bordered w-full h-24 resize-none"
-                                                placeholder="Write your review..."
+                                                placeholder={t("Write your review...")}
                                                 value={reviewText}
                                                 onChange={(e) => setReviewText(e.target.value)}
                                             />
@@ -576,13 +653,13 @@ export default function ContentDetailPage() {
                                             onClick={handleSaveReview}
                                             disabled={isSavingReview || !reviewText.trim()}
                                         >
-                                            {isSavingReview ? 'Saving...' : 'Save Review'}
+                                            {isSavingReview ? t("Saving...") : t("Save Review")}
                                         </button>
                                         <button
                                             className="btn btn-link btn-xs px-0 normal-case"
                                             onClick={() => setShowReviewLink(false)}
                                         >
-                                            Cancel
+                                            {t("Cancel")}
                                         </button>
                                     </div>
                                 )}
@@ -594,13 +671,13 @@ export default function ContentDetailPage() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-accent text-base font-semibold">
                                             <span>🕓</span>
-                                            <span>In Watchlist</span>
+                                            <span>{t("In Watchlist")}</span>
                                         </div>
                                         <button 
                                             className="btn btn-error btn-sm btn-outline w-full"
                                             onClick={handleRemoveFromToWatchList}
                                         >
-                                            Remove
+                                            {t("Remove")}
                                         </button>
                                     </div>
                                 ) : (
@@ -608,7 +685,7 @@ export default function ContentDetailPage() {
                                         className="btn btn-outline btn-sm w-full justify-center"
                                         onClick={handleAddToToWatchList}
                                     >
-                                        Add to Watchlist
+                                        {t("Add to Watchlist")}
                                     </button>
                                 )}
                             </div>
@@ -634,7 +711,7 @@ export default function ContentDetailPage() {
                             )}
                             {showReviewLink && (
                                 <div className="absolute bottom-4 right-4 text-xs uppercase tracking-[0.08em] text-base-content/60">
-                                    share
+                                    {t("share")}
                                 </div>
                             )}
                         </div>
@@ -646,6 +723,7 @@ export default function ContentDetailPage() {
                   contentId={content._id}
                   user={user}
                   contentType={type}
+                  t={t}
                 />
 
             

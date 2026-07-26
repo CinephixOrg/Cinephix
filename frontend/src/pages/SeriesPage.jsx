@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import API from '../api/axios.js';
+import { useTranslation } from 'react-i18next';
 import SeriesCard from '../components/SeriesCard.jsx';
 import SeriesSearchBar from '../components/SeriesSearchBar.jsx';
 import genresData from '../data/seriesGenres.json';
@@ -11,6 +12,7 @@ const LoadingSpinner = () => (
 );
 
 export default function SeriesPage() {
+  const { t } = useTranslation();
   const [series, setSeries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -38,7 +40,7 @@ export default function SeriesPage() {
 
     } catch (err) {
       console.error("Error fetching series:", err);
-      setError("Could not load series. Please try again later.");
+      setError(t("Could not load series"));
       setSeries([]);
       setTotalPages(1);
     } finally {
@@ -73,15 +75,17 @@ export default function SeriesPage() {
       <section>
         <h2 className="text-2xl font-bold mb-4">
           {activeFilters.query
-            ? `Results for "${activeFilters.query}"`
+            ? t("Results for", { query: activeFilters.query })
             : activeFilters.years.length > 0
-              ? `Series from ${activeFilters.years.join(', ')}`
+              ? t("Series from", { years: activeFilters.years.join(', ') })
               : activeFilters.genres.length > 0
-                ? `Genres: ${activeFilters.genres.map((id) => {
-                  const genre = genresData.genres.find((g) => g.id === Number(id));
-                  return genre ? genre.name : id;
-                }).join(', ')}`
-                : `Series`}
+                ? t("Genres list", {
+                    genres: activeFilters.genres.map((id) => {
+                      const genre = genresData.genres.find((g) => g.id === Number(id));
+                      return genre ? genre.name : id;
+                    }).join(', ')
+                  })
+                : t("Series")}
         </h2>
 
         {error && <div className="alert alert-error mb-4">{error}</div>}
@@ -91,7 +95,7 @@ export default function SeriesPage() {
             <LoadingSpinner />
           ) : series.length === 0 ? (
             <p className="col-span-full text-center text-lg text-base-content/70">
-              No results found.
+              {t("No results found")}
             </p>
           ) : (
             series.map((item) => <SeriesCard key={item._id} series={item} />)
@@ -106,17 +110,17 @@ export default function SeriesPage() {
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              « Previous
+              « {t("Previous")}
             </button>
             <button className="join-item btn">
-              Page {currentPage} of {totalPages}
+              {t("Page of", { current: currentPage, total: totalPages })}
             </button>
             <button
               className="join-item btn"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              Next »
+              {t("Next")} »
             </button>
           </div>
         )}
