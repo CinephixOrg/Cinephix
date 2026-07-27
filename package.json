@@ -1,0 +1,18 @@
+{
+  "name": "cinephix-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "mobile",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:mobile": "npm run start --workspace=mobile",
+    "build:frontend": "npm run build --workspace=frontend",
+    "test": "npm test --workspaces --if-present"
+  }
+}
