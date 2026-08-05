@@ -1376,6 +1376,17 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     isNewOAuthUser: req.authInfo?.isNewOAuthUser || false
   }));
 
+  if (req.query.state) {
+    try {
+      const decoded = JSON.parse(Buffer.from(req.query.state, 'base64url').toString('utf8'));
+      if (decoded?.mobile && decoded.redirectUri) {
+        return res.redirect(`${decoded.redirectUri}?data=${userData}`);
+      }
+    } catch (e) {
+      // Not a mobile state payload (or malformed) — fall through to the web redirect.
+    }
+  }
+
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   res.redirect(`${frontendUrl}/oauth-success?data=${userData}`);
 });

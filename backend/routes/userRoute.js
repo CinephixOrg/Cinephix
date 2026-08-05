@@ -72,8 +72,37 @@ router.post("/forgot-password", authRateLimiter, forgotPassword);
 router.post("/reset-password", authRateLimiter, resetPassword);
 
 // --- Google OAuth ---
+// ?platform=mobile&redirectUri=<...> is threaded through as the OAuth
+// `state` param (base64url JSON) so the callback knows to redirect back to
+// the mobile app's own redirect URL instead of the web frontend. The
+// redirectUri is NOT hardcoded server-side (e.g. a fixed "cinephix://"
+// scheme) because it must match whatever Linking.createURL() produced on
+// the client for the CURRENT run — that's an "exp://<lan-ip>:8081/..." URL
+// in Expo Go during development, and only a real "cinephix://..." URL in a
+// standalone/dev-client build. Expo Go can't handle arbitrary custom
+// schemes, so a hardcoded scheme silently breaks OAuth during dev testing.
+//
+// callbackURL itself is NOT overridden per-platform: Google's "Web
+// application" client type rejects raw private IPs (192.168.x.x) as
+// redirect URIs outright, so a LAN-IP callback can never be registered.
+// Instead, mobile testing relies on `adb reverse tcp:5000 tcp:5000` so the
+// device's own `localhost:5000` forwards to this machine — letting mobile
+// reuse the exact same already-registered `localhost:5000` callback as web,
+// with zero Google Console changes and zero risk to the web flow.
+function encodeMobileState(redirectUri) {
+  return Buffer.from(JSON.stringify({ mobile: true, redirectUri })).toString("base64url");
+}
+
 const googleAuthMiddleware = process.env.GOOGLE_CLIENT_ID
-  ? passport.authenticate("google", { scope: ["profile", "email"], session: false })
+  ? (req, res, next) =>
+      passport.authenticate("google", {
+        scope: ["profile", "email"],
+        session: false,
+        state:
+          req.query.platform === "mobile" && req.query.redirectUri
+            ? encodeMobileState(req.query.redirectUri)
+            : undefined,
+      })(req, res, next)
   : (req, res) => res.status(503).json({ success: false, message: "Google OAuth not configured" });
 
 const googleCallbackMiddleware = process.env.GOOGLE_CLIENT_ID
