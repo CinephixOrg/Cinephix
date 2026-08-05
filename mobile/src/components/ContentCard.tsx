@@ -1,0 +1,74 @@
+import { View, Text, Image, Pressable, StyleSheet, ViewStyle } from "react-native";
+import { useRouter } from "expo-router";
+import type { ContentType } from "../types";
+import { colors } from "../theme/colors";
+import { fonts } from "../theme/typography";
+
+const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
+
+interface Props {
+  id: string;
+  type: ContentType;
+  title: string;
+  posterPath?: string | null;
+  year?: string;
+  voteAverage?: number;
+  // Overrides the default 48% width — pass { width: "100%" } when already
+  // wrapped in a parent that controls the 48% column width itself (e.g.
+  // lists/[id].tsx, which needs its own wrapper for a remove-item button).
+  style?: ViewStyle;
+  // Which tab's own nested content/[type]/[id] route to push to (e.g.
+  // "/movies", "/lists") — content detail is duplicated into every tab's
+  // own Stack (see (app)/_layout.tsx) so back navigation returns to the
+  // right tab instead of bottom-tabs' default of jumping to the first one.
+  basePath: "/movies" | "/series" | "/watchlist" | "/lists";
+}
+
+export default function ContentCard({
+  id,
+  type,
+  title,
+  posterPath,
+  year,
+  voteAverage,
+  style,
+  basePath,
+}: Props) {
+  const router = useRouter();
+
+  return (
+    <Pressable
+      style={[styles.card, style]}
+      onPress={() => router.push(`${basePath}/content/${type}/${id}` as any)}
+    >
+      {posterPath ? (
+        <Image source={{ uri: `${POSTER_BASE}${posterPath}` }} style={styles.poster} />
+      ) : (
+        <View style={[styles.poster, styles.posterFallback]}>
+          <Text style={styles.posterFallbackText}>No image</Text>
+        </View>
+      )}
+      <Text style={styles.title} numberOfLines={2}>
+        {title}
+      </Text>
+      <Text style={styles.meta}>
+        {year || "—"}
+        {voteAverage ? `  ★ ${voteAverage.toFixed(1)}` : ""}
+      </Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: { width: "48%", marginBottom: 16 },
+  poster: {
+    width: "100%",
+    aspectRatio: 2 / 3,
+    borderRadius: 8,
+    backgroundColor: colors.base200,
+  },
+  posterFallback: { alignItems: "center", justifyContent: "center" },
+  posterFallbackText: { color: colors.placeholder, fontSize: 12 },
+  title: { marginTop: 6, fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
+  meta: { color: colors.placeholder, fontSize: 12, marginTop: 2 },
+});

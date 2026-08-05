@@ -1,19 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import ReactCountryFlag from "react-country-flag";
+
 const languages = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'pt', name: 'Português', flag: '🇵🇹' }
+  { code: 'en', name: 'English', countryCode: 'GB' },
+  { code: 'tr', name: 'Türkçe', countryCode: 'TR' },
+  { code: 'ru', name: 'Русский', countryCode: 'RU' },
+  { code: 'ja', name: '日本語', countryCode: 'JP' },
+  { code: 'zh', name: '中文', countryCode: 'CN' },
+  { code: 'fr', name: 'Français', countryCode: 'FR' },
+  { code: 'ko', name: '한국어', countryCode: 'KR' },
+  { code: 'ar', name: 'العربية', countryCode: 'SA' },
+  { code: 'it', name: 'Italiano', countryCode: 'IT' },
+  { code: 'es', name: 'Español', countryCode: 'ES' },
+  { code: 'de', name: 'Deutsch', countryCode: 'DE' },
+  { code: 'pt', name: 'Português', countryCode: 'PT' }
 ];
 
 export default function LanguageSwitcher() {
@@ -47,7 +49,7 @@ export default function LanguageSwitcher() {
         className="btn btn-ghost btn-sm btn-circle text-lg"
         title={currentLang.name}
       >
-        {currentLang.flag}
+        <ReactCountryFlag countryCode={currentLang.countryCode} svg style={{ width: '1.2em', height: '1.2em', borderRadius: '2px' }} />
       </button>
 
       {isOpen && (
@@ -61,7 +63,7 @@ export default function LanguageSwitcher() {
                   currentLang.code === lang.code ? 'font-bold bg-base-200/50' : ''
                 }`}
               >
-                <span className="text-lg">{lang.flag}</span>
+                <ReactCountryFlag countryCode={lang.countryCode} svg style={{ width: '1.5em', height: '1.5em', borderRadius: '2px' }} />
                 <span>{lang.name}</span>
               </button>
             ))}
