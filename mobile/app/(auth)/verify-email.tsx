@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
 import * as authService from "../../src/api/authService";
 import { colors } from "../../src/theme/colors";
 import { fonts } from "../../src/theme/typography";
 
 export default function VerifyEmailScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ email?: string }>();
   const { verifyEmail } = useAuth();
   const [email, setEmail] = useState(params.email ?? "");
@@ -30,7 +32,7 @@ export default function VerifyEmailScreen() {
     try {
       await verifyEmail(email.trim(), code.trim());
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Verification failed.");
+      setError(e?.response?.data?.message || t("Verification failed."));
     } finally {
       setSubmitting(false);
     }
@@ -42,9 +44,9 @@ export default function VerifyEmailScreen() {
     setResending(true);
     try {
       await authService.sendVerificationCode(email.trim());
-      setInfo("A new code has been sent to your email.");
+      setInfo(t("A new code has been sent to your email."));
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Could not resend code.");
+      setError(e?.response?.data?.message || t("Could not resend code."));
     } finally {
       setResending(false);
     }
@@ -52,14 +54,14 @@ export default function VerifyEmailScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Verify your email</Text>
+      <Text style={styles.title}>{t("Verify your email")}</Text>
       <Text style={styles.subtitle}>
-        Enter the code we sent to your email address.
+        {t("Enter the code we sent to your email address.")}
       </Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t("Email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -67,7 +69,7 @@ export default function VerifyEmailScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Verification code"
+        placeholder={t("Verification code")}
         keyboardType="number-pad"
         value={code}
         onChangeText={setCode}
@@ -84,13 +86,13 @@ export default function VerifyEmailScreen() {
         {submitting ? (
           <ActivityIndicator color={colors.primaryContent} />
         ) : (
-          <Text style={styles.buttonText}>Verify</Text>
+          <Text style={styles.buttonText}>{t("Verify")}</Text>
         )}
       </Pressable>
 
       <Pressable onPress={handleResend} disabled={resending || !email}>
         <Text style={styles.link}>
-          {resending ? "Sending..." : "Resend code"}
+          {resending ? t("Sending...") : t("Resend code")}
         </Text>
       </Pressable>
     </View>

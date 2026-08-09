@@ -1,8 +1,11 @@
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
+import NotificationBell from "../../../src/components/NotificationBell";
 import { colors } from "../../../src/theme/colors";
 import { fonts } from "../../../src/theme/typography";
 
 export default function ProfileStackLayout() {
+  const { t } = useTranslation();
   return (
     <Stack
       screenOptions={{
@@ -11,10 +14,13 @@ export default function ProfileStackLayout() {
         headerTintColor: colors.baseContent,
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Profile" }} />
-      <Stack.Screen name="edit" options={{ title: "Edit Profile" }} />
-      <Stack.Screen name="settings" options={{ title: "Settings" }} />
-      <Stack.Screen name="connections" options={{ title: "Connections" }} />
+      <Stack.Screen
+        name="index"
+        options={{ title: t("Profile"), headerRight: () => <NotificationBell /> }}
+      />
+      <Stack.Screen name="edit" options={{ title: t("Edit Profile") }} />
+      <Stack.Screen name="settings" options={{ title: t("Settings") }} />
+      <Stack.Screen name="connections" options={{ title: t("Connections") }} />
     </Stack>
   );
 }

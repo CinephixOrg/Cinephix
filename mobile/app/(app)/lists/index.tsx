@@ -13,12 +13,15 @@ import {
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { createList, deleteList, getMyLists } from "../../../src/api/listService";
+import { SkeletonListRow } from "../../../src/components/Skeleton";
 import type { CustomList } from "../../../src/types";
 import { colors } from "../../../src/theme/colors";
 import { fonts } from "../../../src/theme/typography";
 
 export default function ListsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [lists, setLists] = useState<CustomList[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +39,7 @@ export default function ListsScreen() {
       setLists(data);
       setError(null);
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to load lists.");
+      setError(e?.response?.data?.message || t("Failed to load lists."));
     }
   }, []);
 
@@ -57,24 +60,24 @@ export default function ListsScreen() {
       setIsPublic(false);
       router.push(`/lists/${list._id}`);
     } catch (e: any) {
-      Alert.alert("Error", e?.response?.data?.message || "Failed to create list.");
+      Alert.alert("Error", e?.response?.data?.message || t("Failed to create list."));
     } finally {
       setCreating(false);
     }
   };
 
   const handleDelete = (list: CustomList) => {
-    Alert.alert("Delete list", `Delete "${list.name}"? This cannot be undone.`, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("Delete List"), t("Delete list question", { name: list.name }), [
+      { text: t("Cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("Delete"),
         style: "destructive",
         onPress: async () => {
           try {
             await deleteList(list._id);
             setLists((prev) => prev.filter((l) => l._id !== list._id));
           } catch (e: any) {
-            Alert.alert("Error", e?.response?.data?.message || "Failed to delete list.");
+            Alert.alert("Error", e?.response?.data?.message || t("Failed to delete list."));
           }
         },
       },
@@ -85,13 +88,17 @@ export default function ListsScreen() {
     <View style={styles.container}>
       <Pressable style={styles.newButton} onPress={() => setModalVisible(true)}>
         <Ionicons name="add" size={18} color={colors.primaryContent} />
-        <Text style={styles.newButtonText}>New List</Text>
+        <Text style={styles.newButtonText}>{t("New List")}</Text>
       </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} size="large" color={colors.primary} />
+        <View style={styles.list}>
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonListRow key={i} />
+          ))}
+        </View>
       ) : (
         <FlatList
           data={lists}
@@ -103,7 +110,7 @@ export default function ListsScreen() {
                 <View style={styles.rowHeader}>
                   <Text style={styles.rowName}>{item.name}</Text>
                   <View style={[styles.badge, item.isPublic ? styles.badgePublic : styles.badgePrivate]}>
-                    <Text style={styles.badgeText}>{item.isPublic ? "Public" : "Private"}</Text>
+                    <Text style={styles.badgeText}>{item.isPublic ? t("Public") : t("Private")}</Text>
                   </View>
                 </View>
                 {item.description ? (
@@ -111,36 +118,36 @@ export default function ListsScreen() {
                     {item.description}
                   </Text>
                 ) : null}
-                <Text style={styles.rowCount}>{item.items.length} items</Text>
+                <Text style={styles.rowCount}>{t("item_count", { count: item.items.length })}</Text>
               </View>
               <Pressable onPress={() => handleDelete(item)} hitSlop={8} style={styles.deleteButton}>
                 <Ionicons name="trash-outline" size={20} color={colors.error} />
               </Pressable>
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>You haven't created any lists yet.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t("You haven't created any lists yet.")}</Text>}
         />
       )}
 
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>New List</Text>
+            <Text style={styles.modalTitle}>{t("New List")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Name"
+              placeholder={t("Name")}
               value={name}
               onChangeText={setName}
             />
             <TextInput
               style={[styles.input, styles.descInput]}
-              placeholder="Description (optional)"
+              placeholder={t("Description (optional)")}
               value={description}
               onChangeText={setDescription}
               multiline
             />
             <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Public</Text>
+              <Text style={styles.switchLabel}>{t("Public")}</Text>
               <Switch
                 value={isPublic}
                 onValueChange={setIsPublic}
@@ -153,7 +160,7 @@ export default function ListsScreen() {
                 onPress={() => setModalVisible(false)}
                 disabled={creating}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>{t("Cancel")}</Text>
               </Pressable>
               <Pressable
                 style={styles.modalCreateButton}
@@ -163,7 +170,7 @@ export default function ListsScreen() {
                 {creating ? (
                   <ActivityIndicator color={colors.primaryContent} />
                 ) : (
-                  <Text style={styles.modalCreateText}>Create</Text>
+                  <Text style={styles.modalCreateText}>{t("Create List")}</Text>
                 )}
               </Pressable>
             </View>

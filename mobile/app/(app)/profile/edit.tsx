@@ -11,12 +11,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
 import { getMyProfile, updateBio, uploadAvatar } from "../../../src/api/userService";
 import { colors } from "../../../src/theme/colors";
 import { fonts } from "../../../src/theme/typography";
 
 export default function EditProfileScreen() {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const router = useRouter();
 
@@ -38,7 +40,7 @@ export default function EditProfileScreen() {
         setUsername(profile.username);
         setAvatarUri(profile.profile_pic_url ?? null);
       } catch (e: any) {
-        setError(e?.response?.data?.message || "Failed to load profile.");
+        setError(e?.response?.data?.message || t("Failed to load profile."));
       } finally {
         setLoading(false);
       }
@@ -48,7 +50,7 @@ export default function EditProfileScreen() {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError("Photo library permission is required to change your avatar.");
+      setError(t("Photo library permission is required to change your avatar."));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -83,7 +85,7 @@ export default function EditProfileScreen() {
 
       router.back();
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to save profile.");
+      setError(e?.response?.data?.message || t("Failed to save profile."));
     } finally {
       setSaving(false);
     }
@@ -100,22 +102,22 @@ export default function EditProfileScreen() {
           <Image source={{ uri: avatarUri }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarFallbackText}>Add photo</Text>
+            <Text style={styles.avatarFallbackText}>{t("Add photo")}</Text>
           </View>
         )}
-        <Text style={styles.changePhoto}>Change photo</Text>
+        <Text style={styles.changePhoto}>{t("Change photo")}</Text>
       </Pressable>
 
-      <Text style={styles.label}>Username</Text>
+      <Text style={styles.label}>{t("Username")}</Text>
       <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
 
-      <Text style={styles.label}>Bio</Text>
+      <Text style={styles.label}>{t("Bio")}</Text>
       <TextInput
         style={[styles.input, styles.bioInput]}
         value={bio}
         onChangeText={setBio}
         multiline
-        placeholder="Tell people about yourself"
+        placeholder={t("Tell people about yourself")}
       />
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -124,7 +126,7 @@ export default function EditProfileScreen() {
         {saving ? (
           <ActivityIndicator color={colors.primaryContent} />
         ) : (
-          <Text style={styles.buttonText}>Save</Text>
+          <Text style={styles.buttonText}>{t("Save")}</Text>
         )}
       </Pressable>
     </ScrollView>

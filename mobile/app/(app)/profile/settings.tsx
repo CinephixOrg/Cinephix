@@ -8,9 +8,12 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  FlatList,
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
 import {
   deleteAccount,
@@ -18,12 +21,30 @@ import {
   updatePassword,
   updateVisibility,
 } from "../../../src/api/userService";
+import { changeLanguage } from "../../../src/i18n";
 import { colors } from "../../../src/theme/colors";
 import { fonts } from "../../../src/theme/typography";
+
+// Native names — proper nouns, not translated (matches web's LanguageSwitcher.jsx).
+const LANGUAGES: { code: string; name: string }[] = [
+  { code: "en", name: "English" },
+  { code: "tr", name: "Türkçe" },
+  { code: "ru", name: "Русский" },
+  { code: "ja", name: "日本語" },
+  { code: "zh", name: "中文" },
+  { code: "fr", name: "Français" },
+  { code: "ko", name: "한국어" },
+  { code: "ar", name: "العربية" },
+  { code: "it", name: "Italiano" },
+  { code: "es", name: "Español" },
+  { code: "de", name: "Deutsch" },
+  { code: "pt", name: "Português" },
+];
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { t, i18n } = useTranslation();
 
   const [isPrivate, setIsPrivate] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
@@ -36,6 +57,7 @@ export default function SettingsScreen() {
 
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -44,7 +66,7 @@ export default function SettingsScreen() {
         const profile = await getMyProfile(user._id);
         setIsPrivate(profile.visibility === "private");
       } catch (e: any) {
-        setError(e?.response?.data?.message || "Failed to load settings.");
+        setError(e?.response?.data?.message || t("Failed to load settings."));
       }
     })();
   }, [user?._id]);
@@ -56,7 +78,7 @@ export default function SettingsScreen() {
       await updateVisibility(value ? "private" : "public");
     } catch (e: any) {
       setIsPrivate(!value);
-      setError(e?.response?.data?.message || "Failed to update privacy.");
+      setError(e?.response?.data?.message || t("Failed to update privacy."));
     } finally {
       setVisibilityBusy(false);
     }
@@ -68,11 +90,11 @@ export default function SettingsScreen() {
     setPasswordSaving(true);
     try {
       await updatePassword(oldPassword, newPassword);
-      setPasswordMessage("Password updated.");
+      setPasswordMessage(t("Password updated."));
       setOldPassword("");
       setNewPassword("");
     } catch (e: any) {
-      setPasswordError(e?.response?.data?.message || "Failed to update password.");
+      setPasswordError(e?.response?.data?.message || t("Failed to update password."));
     } finally {
       setPasswordSaving(false);
     }
@@ -80,12 +102,12 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Delete account",
-      "This permanently deletes your account, ratings, and data. This cannot be undone.",
+      t("Delete account"),
+      t("This permanently deletes your account, ratings, and data. This cannot be undone."),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("Cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("Delete"),
           style: "destructive",
           onPress: async () => {
             setDeleting(true);
@@ -93,7 +115,7 @@ export default function SettingsScreen() {
               await deleteAccount();
               await logout();
             } catch (e: any) {
-              setError(e?.response?.data?.message || "Failed to delete account.");
+              setError(e?.response?.data?.message || t("Failed to delete account."));
               setDeleting(false);
             }
           },
@@ -102,13 +124,16 @@ export default function SettingsScreen() {
     );
   };
 
+  const currentLanguageName =
+    LANGUAGES.find((l) => l.code === i18n.language)?.name ?? LANGUAGES[0].name;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Text style={styles.sectionTitle}>Privacy</Text>
+      <Text style={styles.sectionTitle}>{t("Privacy")}</Text>
       <View style={styles.row}>
-        <Text style={styles.rowLabel}>Private account</Text>
+        <Text style={styles.rowLabel}>{t("Private account")}</Text>
         <Switch
           value={isPrivate}
           onValueChange={togglePrivacy}
@@ -117,19 +142,25 @@ export default function SettingsScreen() {
         />
       </View>
 
+      <Text style={styles.sectionTitle}>{t("Language")}</Text>
+      <Pressable style={styles.row} onPress={() => setLanguagePickerVisible(true)}>
+        <Text style={styles.rowLabel}>{t("Language")}</Text>
+        <Text style={styles.rowValue}>{currentLanguageName}</Text>
+      </Pressable>
+
       {!user?.isOAuthUser && (
         <>
-          <Text style={styles.sectionTitle}>Change Password</Text>
+          <Text style={styles.sectionTitle}>{t("Change Password")}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Current password"
+            placeholder={t("Current password")}
             secureTextEntry
             value={oldPassword}
             onChangeText={setOldPassword}
           />
           <TextInput
             style={styles.input}
-            placeholder="New password"
+            placeholder={t("New password")}
             secureTextEntry
             value={newPassword}
             onChangeText={setNewPassword}
@@ -144,7 +175,7 @@ export default function SettingsScreen() {
             {passwordSaving ? (
               <ActivityIndicator color={colors.primaryContent} />
             ) : (
-              <Text style={styles.buttonText}>Update Password</Text>
+              <Text style={styles.buttonText}>{t("Update Password")}</Text>
             )}
           </Pressable>
         </>
@@ -157,17 +188,47 @@ export default function SettingsScreen() {
           router.replace("/login");
         }}
       >
-        <Text style={styles.logoutButtonText}>Log Out</Text>
+        <Text style={styles.logoutButtonText}>{t("Log Out")}</Text>
       </Pressable>
 
-      <Text style={[styles.sectionTitle, styles.dangerTitle]}>Danger Zone</Text>
+      <Text style={[styles.sectionTitle, styles.dangerTitle]}>{t("Danger Zone")}</Text>
       <Pressable style={styles.deleteButton} onPress={handleDeleteAccount} disabled={deleting}>
         {deleting ? (
           <ActivityIndicator color={colors.error} />
         ) : (
-          <Text style={styles.deleteButtonText}>Delete Account</Text>
+          <Text style={styles.deleteButtonText}>{t("Delete Account")}</Text>
         )}
       </Pressable>
+
+      <Modal visible={languagePickerVisible} transparent animationType="fade">
+        <Pressable style={styles.modalOverlay} onPress={() => setLanguagePickerVisible(false)}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t("Language")}</Text>
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <Pressable
+                  style={styles.languageRow}
+                  onPress={async () => {
+                    await changeLanguage(item.code);
+                    setLanguagePickerVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.languageRowText,
+                      item.code === i18n.language && styles.languageRowTextActive,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </Pressable>
+              )}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -189,6 +250,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   rowLabel: { fontSize: 15, color: colors.baseContent },
+  rowValue: { fontSize: 15, color: colors.placeholder },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -226,4 +288,10 @@ const styles = StyleSheet.create({
   deleteButtonText: { color: colors.error, fontFamily: fonts.bold, fontSize: 16 },
   error: { color: colors.error, marginBottom: 12 },
   success: { color: colors.primary, marginBottom: 12 },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 24 },
+  modalCard: { backgroundColor: colors.base200, borderRadius: 12, padding: 16, maxHeight: "70%" },
+  modalTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, marginBottom: 10 },
+  languageRow: { paddingVertical: 12, paddingHorizontal: 4 },
+  languageRowText: { fontSize: 15, color: colors.baseContent },
+  languageRowTextActive: { color: colors.primary, fontFamily: fonts.bold },
 });

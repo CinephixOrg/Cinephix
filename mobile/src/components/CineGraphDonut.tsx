@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
+import { useTranslation } from "react-i18next";
 import type { CineGraphStats } from "../types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
@@ -30,6 +31,7 @@ const RADIUS = (SIZE - STROKE_WIDTH_SELECTED) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export default function CineGraphDonut({ title, stats }: Props) {
+  const { t } = useTranslation();
   const entries = Object.entries(stats);
   const total = entries.reduce((sum, [, count]) => sum + count, 0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function CineGraphDonut({ title, stats }: Props) {
       <Text style={styles.title}>{title}</Text>
 
       {entries.length === 0 ? (
-        <Text style={styles.empty}>No data for {title} yet.</Text>
+        <Text style={styles.empty}>{t("No data for {{title}} yet.", { title })}</Text>
       ) : (
         <>
           <View style={styles.chartRow}>
@@ -90,7 +92,8 @@ export default function CineGraphDonut({ title, stats }: Props) {
               ) : (
                 <>
                   {total}
-                  {"\n"}items
+                  {"\n"}
+                  {t("items")}
                 </>
               )}
             </Text>

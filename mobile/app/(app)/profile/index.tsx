@@ -4,19 +4,21 @@ import {
   Text,
   Image,
   ScrollView,
-  ActivityIndicator,
   Pressable,
   StyleSheet,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
 import { getCineGraph, getMyProfile } from "../../../src/api/userService";
 import CineGraphDonut from "../../../src/components/CineGraphDonut";
+import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import type { CineGraphData, UserProfile } from "../../../src/types";
 import { colors } from "../../../src/theme/colors";
 import { fonts } from "../../../src/theme/typography";
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -41,7 +43,7 @@ export default function ProfileScreen() {
             setCineGraph(cineGraphData);
           }
         } catch (e: any) {
-          if (!cancelled) setError(e?.response?.data?.message || "Failed to load profile.");
+          if (!cancelled) setError(e?.response?.data?.message || t("Failed to load profile."));
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -53,13 +55,17 @@ export default function ProfileScreen() {
   );
 
   if (loading) {
-    return <ActivityIndicator style={styles.center} size="large" color={colors.primary} />;
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <SkeletonProfileHeader />
+      </ScrollView>
+    );
   }
 
   if (error || !profile) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>{error || "Profile not found."}</Text>
+        <Text style={styles.error}>{error || t("Profile not found.")}</Text>
       </View>
     );
   }
@@ -82,7 +88,7 @@ export default function ProfileScreen() {
       )}
 
       <Text style={styles.username}>{profile.username}</Text>
-      <Text style={styles.joined}>Joined {joinedDate}</Text>
+      <Text style={styles.joined}>{t("Joined")} {joinedDate}</Text>
 
       <View style={styles.statsRow}>
         <Pressable
@@ -90,32 +96,32 @@ export default function ProfileScreen() {
           onPress={() => router.push("/profile/connections?tab=followers")}
         >
           <Text style={styles.statValue}>{profile.followers?.length ?? 0}</Text>
-          <Text style={styles.statLabel}>Followers</Text>
+          <Text style={styles.statLabel}>{t("Followers")}</Text>
         </Pressable>
         <Pressable
           style={styles.stat}
           onPress={() => router.push("/profile/connections?tab=following")}
         >
           <Text style={styles.statValue}>{profile.following?.length ?? 0}</Text>
-          <Text style={styles.statLabel}>Following</Text>
+          <Text style={styles.statLabel}>{t("Following")}</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.bio}>{profile.bio || "No bio yet."}</Text>
+      <Text style={styles.bio}>{profile.bio || t("No bio yet.")}</Text>
 
       <View style={styles.buttonRow}>
         <Pressable style={styles.button} onPress={() => router.push("/profile/edit")}>
-          <Text style={styles.buttonText}>Edit Profile</Text>
+          <Text style={styles.buttonText}>{t("Edit Profile")}</Text>
         </Pressable>
         <Pressable style={styles.buttonSecondary} onPress={() => router.push("/profile/settings")}>
-          <Text style={styles.buttonSecondaryText}>Settings</Text>
+          <Text style={styles.buttonSecondaryText}>{t("Settings")}</Text>
         </Pressable>
       </View>
 
       {cineGraph && (
         <>
-          <CineGraphDonut title="Watchlist Movie Genres" stats={cineGraph.movieStats} />
-          <CineGraphDonut title="Watchlist Series Genres" stats={cineGraph.seriesStats} />
+          <CineGraphDonut title={t("Watchlist Movie Genres")} stats={cineGraph.movieStats} />
+          <CineGraphDonut title={t("Watchlist Series Genres")} stats={cineGraph.seriesStats} />
         </>
       )}
     </ScrollView>

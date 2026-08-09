@@ -1,7 +1,9 @@
 import { Redirect, Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
+import { useChat } from "../../src/context/ChatContext";
 import { colors } from "../../src/theme/colors";
 import { fonts } from "../../src/theme/typography";
 
@@ -15,6 +17,8 @@ function TabIcon(focusedName: IconName, unfocusedName: IconName) {
 
 export default function AppLayout() {
   const { user } = useAuth();
+  const { totalUnread } = useChat();
+  const { t } = useTranslation();
 
   if (!user) {
     return <Redirect href="/login" />;
@@ -39,24 +43,44 @@ export default function AppLayout() {
       }}
     >
       <Tabs.Screen
+        name="home"
+        options={{ title: t("Home"), tabBarIcon: TabIcon("home", "home-outline") }}
+      />
+      <Tabs.Screen
         name="movies"
-        options={{ title: "Movies", tabBarIcon: TabIcon("film", "film-outline") }}
+        options={{ title: t("Movies"), tabBarIcon: TabIcon("film", "film-outline") }}
       />
       <Tabs.Screen
         name="series"
-        options={{ title: "Series", tabBarIcon: TabIcon("tv", "tv-outline") }}
+        options={{ title: t("Series"), tabBarIcon: TabIcon("tv", "tv-outline") }}
       />
       <Tabs.Screen
         name="watchlist"
-        options={{ title: "Watchlist", tabBarIcon: TabIcon("bookmark", "bookmark-outline") }}
+        options={{ title: t("Watchlist"), tabBarIcon: TabIcon("bookmark", "bookmark-outline") }}
       />
       <Tabs.Screen
         name="lists"
-        options={{ title: "Lists", tabBarIcon: TabIcon("list", "list-outline") }}
+        options={{ title: t("Lists"), tabBarIcon: TabIcon("list", "list-outline") }}
+      />
+      <Tabs.Screen
+        name="match"
+        options={{ title: t("Cinematch"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
+      />
+      <Tabs.Screen
+        name="community"
+        options={{ title: t("Community"), tabBarIcon: TabIcon("people", "people-outline") }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: t("Messages"),
+          tabBarIcon: TabIcon("chatbubble", "chatbubble-outline"),
+          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+        }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ title: "Profile", tabBarIcon: TabIcon("person-circle", "person-circle-outline") }}
+        options={{ title: t("Profile"), tabBarIcon: TabIcon("person-circle", "person-circle-outline") }}
       />
     </Tabs>
   );

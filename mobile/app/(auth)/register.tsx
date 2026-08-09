@@ -8,11 +8,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
 import { colors } from "../../src/theme/colors";
 import { fonts } from "../../src/theme/typography";
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const { register } = useAuth();
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -28,7 +30,7 @@ export default function RegisterScreen() {
       await register(username.trim(), email.trim(), password);
       router.push({ pathname: "/verify-email", params: { email: email.trim() } });
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Registration failed.");
+      setError(e?.response?.data?.message || t("Registration failed."));
     } finally {
       setSubmitting(false);
     }
@@ -36,18 +38,18 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create account</Text>
+      <Text style={styles.title}>{t("Create account")}</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Username"
+        placeholder={t("Username")}
         autoCapitalize="none"
         value={username}
         onChangeText={setUsername}
       />
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t("Email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -55,7 +57,7 @@ export default function RegisterScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder={t("Password")}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -71,12 +73,12 @@ export default function RegisterScreen() {
         {submitting ? (
           <ActivityIndicator color={colors.primaryContent} />
         ) : (
-          <Text style={styles.buttonText}>Register</Text>
+          <Text style={styles.buttonText}>{t("Register")}</Text>
         )}
       </Pressable>
 
       <Link href="/login" style={styles.link}>
-        Already have an account? Log in
+        {t("Already have an account? Log in")}
       </Link>
     </View>
   );

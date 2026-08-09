@@ -1,5 +1,6 @@
 import { View, Text, Image, Pressable, StyleSheet, ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import type { ContentType } from "../types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
@@ -21,7 +22,7 @@ interface Props {
   // "/movies", "/lists") — content detail is duplicated into every tab's
   // own Stack (see (app)/_layout.tsx) so back navigation returns to the
   // right tab instead of bottom-tabs' default of jumping to the first one.
-  basePath: "/movies" | "/series" | "/watchlist" | "/lists";
+  basePath: "/movies" | "/series" | "/watchlist" | "/lists" | "/home";
 }
 
 export default function ContentCard({
@@ -35,6 +36,7 @@ export default function ContentCard({
   basePath,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <Pressable
@@ -45,7 +47,7 @@ export default function ContentCard({
         <Image source={{ uri: `${POSTER_BASE}${posterPath}` }} style={styles.poster} />
       ) : (
         <View style={[styles.poster, styles.posterFallback]}>
-          <Text style={styles.posterFallbackText}>No image</Text>
+          <Text style={styles.posterFallbackText}>{t("No image")}</Text>
         </View>
       )}
       <Text style={styles.title} numberOfLines={2}>
