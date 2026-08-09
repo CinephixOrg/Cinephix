@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, CustomList } from "../types";
+import type { ContentType, CustomList, DiscoverListItem } from "../types";
 
 // Reads res.data.lists / res.data.list directly rather than relying on the
 // generic envelope-unwrap — works the same whether or not this endpoint
@@ -54,4 +54,9 @@ export async function removeItem(
 ): Promise<CustomList> {
   const res = await API.delete(API_ROUTES.LISTS.REMOVE_ITEM(id, itemId, itemType));
   return res.data.list;
+}
+
+export async function discoverLists(limit = 20): Promise<DiscoverListItem[]> {
+  const res = await API.get(API_ROUTES.LISTS.DISCOVER, { params: { limit } });
+  return res.data.lists;
 }

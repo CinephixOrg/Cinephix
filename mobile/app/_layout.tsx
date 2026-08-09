@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { View, ActivityIndicator, Text, TextInput } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { useTranslation } from "react-i18next";
 import {
   useFonts,
   DMSans_400Regular,
@@ -8,6 +10,9 @@ import {
   DMSans_700Bold,
 } from "@expo-google-fonts/dm-sans";
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
+import { NotificationProvider } from "../src/context/NotificationContext";
+import { ChatProvider } from "../src/context/ChatContext";
+import { initI18n } from "../src/i18n";
 import { colors } from "../src/theme/colors";
 import { fonts } from "../src/theme/typography";
 
@@ -26,6 +31,7 @@ const defaultInputProps = (TextInput as any).defaultProps || {};
 };
 
 function RootNavigator() {
+  const { t } = useTranslation();
   const { loading } = useAuth();
 
   if (loading) {
@@ -44,7 +50,22 @@ function RootNavigator() {
           headerShown: false,
           contentStyle: { backgroundColor: colors.base100 },
         }}
-      />
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+        <Stack.Screen
+          name="notifications"
+          options={{
+            presentation: "modal",
+            headerShown: true,
+            title: t("Notifications"),
+            headerStyle: { backgroundColor: colors.base200 },
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+      </Stack>
     </>
   );
 }
@@ -64,8 +85,13 @@ export default function RootLayout() {
     DMSans_500Medium,
     DMSans_700Bold,
   });
+  const [i18nReady, setI18nReady] = useState(false);
 
-  if (!fontsLoaded) {
+  useEffect(() => {
+    initI18n().then(() => setI18nReady(true));
+  }, []);
+
+  if (!fontsLoaded || !i18nReady) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -75,7 +101,11 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootNavigator />
+      <NotificationProvider>
+        <ChatProvider>
+          <RootNavigator />
+        </ChatProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

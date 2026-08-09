@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Link } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
 import { signInWithGoogle } from "../../src/api/googleAuth";
 import { colors } from "../../src/theme/colors";
 import { fonts } from "../../src/theme/typography";
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const { login, completeOAuthLogin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +29,7 @@ export default function LoginScreen() {
     try {
       await login(email.trim(), password);
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Login failed. Check your credentials.");
+      setError(e?.response?.data?.message || t("Login failed. Check your credentials."));
     } finally {
       setSubmitting(false);
     }
@@ -40,7 +42,7 @@ export default function LoginScreen() {
       const oauthUser = await signInWithGoogle();
       await completeOAuthLogin(oauthUser);
     } catch (e: any) {
-      setError(e?.message || "Google sign-in failed.");
+      setError(e?.message || t("Google sign-in failed."));
     } finally {
       setGoogleSubmitting(false);
     }
@@ -52,7 +54,7 @@ export default function LoginScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t("Email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -60,7 +62,7 @@ export default function LoginScreen() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder={t("Password")}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -76,7 +78,7 @@ export default function LoginScreen() {
         {submitting ? (
           <ActivityIndicator color={colors.primaryContent} />
         ) : (
-          <Text style={styles.buttonText}>Log in</Text>
+          <Text style={styles.buttonText}>{t("Log in")}</Text>
         )}
       </Pressable>
 
@@ -88,12 +90,12 @@ export default function LoginScreen() {
         {googleSubmitting ? (
           <ActivityIndicator color={colors.baseContent} />
         ) : (
-          <Text style={styles.googleButtonText}>Sign in with Google</Text>
+          <Text style={styles.googleButtonText}>{t("Sign in with Google")}</Text>
         )}
       </Pressable>
 
       <Link href="/register" style={styles.link}>
-        Don't have an account? Register
+        {t("Don't have an account? Register")}
       </Link>
     </View>
   );

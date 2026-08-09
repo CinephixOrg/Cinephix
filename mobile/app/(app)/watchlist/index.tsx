@@ -4,13 +4,16 @@ import {
   FlatList,
   ActivityIndicator,
   Text,
+  ScrollView,
   StyleSheet,
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { getWatchlist } from "../../../src/api/watchlistService";
 import { getMovieById, getSeriesById } from "../../../src/api/contentService";
 import ContentCard from "../../../src/components/ContentCard";
+import { SkeletonGrid, SkeletonPosterCard } from "../../../src/components/Skeleton";
 import type { ContentType, Movie, Series } from "../../../src/types";
 import { colors } from "../../../src/theme/colors";
 
@@ -21,6 +24,7 @@ interface HydratedItem {
 }
 
 export default function WatchlistScreen() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<HydratedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +43,7 @@ export default function WatchlistScreen() {
       setItems(hydrated);
       setError(null);
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to load watchlist.");
+      setError(e?.response?.data?.message || t("Failed to load watchlist."));
     }
   }, []);
 
@@ -58,11 +62,9 @@ export default function WatchlistScreen() {
 
   if (loading) {
     return (
-      <ActivityIndicator
-        style={{ flex: 1, backgroundColor: colors.base100 }}
-        size="large"
-        color={colors.primary}
-      />
+      <ScrollView style={{ backgroundColor: colors.base100 }} contentContainerStyle={styles.list}>
+        <SkeletonGrid count={6} columns={2} renderItem={() => <SkeletonPosterCard />} />
+      </ScrollView>
     );
   }
 
@@ -97,7 +99,7 @@ export default function WatchlistScreen() {
             basePath="/watchlist"
           />
         )}
-        ListEmptyComponent={<Text style={styles.empty}>Your watchlist is empty.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t("Your watchlist is empty.")}</Text>}
       />
     </View>
   );

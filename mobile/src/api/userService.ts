@@ -1,6 +1,7 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { CineGraphData, Connection, Pagination, UserProfile } from "../types";
+import type { CineGraphData, Connection, Pagination, UserProfile, UserSearchResult } from "../types";
+import type { ListResult } from "./contentService";
 
 // GET /users/profile/:id is NOT wrapped in the {success,data} envelope
 // (raw JSON on both the authorized and masked branches) — same quirk as
@@ -64,5 +65,14 @@ export async function getFollowing(page = 1, limit = 20): Promise<ConnectionsRes
 
 export async function getFollowers(page = 1, limit = 20): Promise<ConnectionsResult> {
   const res = await API.get(API_ROUTES.USERS.GET_FOLLOWERS, { params: { page, limit } });
+  return { items: res.data, pagination: (res as any).pagination };
+}
+
+export async function searchUsers(
+  query: string,
+  page = 1,
+  limit = 20
+): Promise<ListResult<UserSearchResult>> {
+  const res = await API.get(API_ROUTES.USERS.SEARCH, { params: { query, page, limit } });
   return { items: res.data, pagination: (res as any).pagination };
 }

@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, FlatList, ActivityIndicator, Text, ScrollView, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { getSeries } from "../../../src/api/contentService";
 import ContentCard from "../../../src/components/ContentCard";
 import SearchBar from "../../../src/components/SearchBar";
+import { SkeletonGrid, SkeletonPosterCard } from "../../../src/components/Skeleton";
 import type { Series } from "../../../src/types";
 import { colors } from "../../../src/theme/colors";
 
 export default function SeriesScreen() {
+  const { t } = useTranslation();
   const [series, setSeries] = useState<Series[]>([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -22,7 +25,7 @@ export default function SeriesScreen() {
       setHasMore(pagination ? pageNum < pagination.pages : items.length > 0);
       setError(null);
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to load series.");
+      setError(e?.response?.data?.message || t("Failed to load series."));
     }
   }, []);
 
@@ -43,12 +46,14 @@ export default function SeriesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.base100 }}>
-      <SearchBar placeholder="Search series" onChangeQuery={setQuery} />
+      <SearchBar placeholder={t("Search series...")} onChangeQuery={setQuery} />
 
       {error && <Text style={styles.error}>{error}</Text>}
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} size="large" color={colors.primary} />
+        <ScrollView contentContainerStyle={styles.list}>
+          <SkeletonGrid count={6} columns={2} renderItem={() => <SkeletonPosterCard />} />
+        </ScrollView>
       ) : (
         <FlatList
           data={series}
@@ -69,7 +74,7 @@ export default function SeriesScreen() {
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
-          ListEmptyComponent={<Text style={styles.empty}>No series found.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{t("No series found.")}</Text>}
           ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}
         />
       )}

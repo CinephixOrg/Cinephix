@@ -9,7 +9,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { getFollowers, getFollowing } from "../../../src/api/userService";
+import { SkeletonRow } from "../../../src/components/Skeleton";
 import type { Connection } from "../../../src/types";
 import { colors } from "../../../src/theme/colors";
 import { fonts } from "../../../src/theme/typography";
@@ -17,6 +19,7 @@ import { fonts } from "../../../src/theme/typography";
 type Tab = "followers" | "following";
 
 export default function ConnectionsScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ tab?: string }>();
   const navigation = useNavigation();
   const [tab, setTab] = useState<Tab>(params.tab === "following" ? "following" : "followers");
@@ -29,7 +32,7 @@ export default function ConnectionsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    navigation.setOptions({ title: tab === "followers" ? "Followers" : "Following" });
+    navigation.setOptions({ title: tab === "followers" ? t("Followers") : t("Following") });
   }, [tab]);
 
   const load = useCallback(async (pageNum: number, currentTab: Tab, append: boolean) => {
@@ -40,7 +43,7 @@ export default function ConnectionsScreen() {
       setHasMore(pagination ? pageNum < pagination.pages : newItems.length > 0);
       setError(null);
     } catch (e: any) {
-      setError(e?.response?.data?.message || "Failed to load list.");
+      setError(e?.response?.data?.message || t("Failed to load list."));
     }
   }, []);
 
@@ -67,7 +70,7 @@ export default function ConnectionsScreen() {
           onPress={() => setTab("followers")}
         >
           <Text style={[styles.tabButtonText, tab === "followers" && styles.tabButtonTextActive]}>
-            Followers
+            {t("Followers")}
           </Text>
         </Pressable>
         <Pressable
@@ -75,7 +78,7 @@ export default function ConnectionsScreen() {
           onPress={() => setTab("following")}
         >
           <Text style={[styles.tabButtonText, tab === "following" && styles.tabButtonTextActive]}>
-            Following
+            {t("Following")}
           </Text>
         </Pressable>
       </View>
@@ -83,7 +86,11 @@ export default function ConnectionsScreen() {
       {error && <Text style={styles.error}>{error}</Text>}
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} size="large" color={colors.primary} />
+        <View style={styles.list}>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <SkeletonRow key={i} />
+          ))}
+        </View>
       ) : (
         <FlatList
           data={items}
@@ -107,7 +114,7 @@ export default function ConnectionsScreen() {
           onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <Text style={styles.empty}>
-              {tab === "followers" ? "No followers yet." : "Not following anyone yet."}
+              {tab === "followers" ? t("No followers yet.") : t("Not following anyone yet.")}
             </Text>
           }
           ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}

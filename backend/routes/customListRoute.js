@@ -39,10 +39,14 @@ router.get("/discover", authMiddleware, async (req, res) => {
             .lean()
         : [];
 
-    const lists = [...followedLists, ...communityLists].map((l) => ({
-      ...l,
-      fromFollowing: followingIds.some((id) => id.toString() === l.owner._id.toString()),
-    }));
+    // owner can be null if the populated user was deleted but left a public
+    // list behind — skip those rather than crashing or surfacing a ghost card.
+    const lists = [...followedLists, ...communityLists]
+      .filter((l) => l.owner)
+      .map((l) => ({
+        ...l,
+        fromFollowing: followingIds.some((id) => id.toString() === l.owner._id.toString()),
+      }));
 
     return res.json({ lists });
   } catch (err) {

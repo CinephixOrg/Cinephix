@@ -35,6 +35,7 @@ export const API_ROUTES = {
     DELETE_ACCOUNT: "/users/profile",
     GET_FOLLOWING: "/users/me/following",
     GET_FOLLOWERS: "/users/me/followers",
+    SEARCH: "/users/search",
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
@@ -45,6 +46,40 @@ export const API_ROUTES = {
     ADD_ITEM: (id: string) => `/lists/${id}/items`,
     REMOVE_ITEM: (id: string, itemId: string, itemType: string) =>
       `/lists/${id}/items/${itemId}?itemType=${itemType}`,
+    DISCOVER: "/lists/discover",
+  },
+  FEED: {
+    POPULAR_THIS_WEEK: "/feed/popular-this-week",
+    RECOMMENDATIONS: "/feed/recommendations",
+  },
+  MATCH: {
+    FIND: "/match",
+    ANALYZE: (id: string) => `/match/${id}/analyze`,
+  },
+  NOTIFICATIONS: {
+    GET_ALL: "/notifications",
+    UNREAD_COUNT: "/notifications/unread/count",
+    MARK_READ: (id: string) => `/notifications/${id}/read`,
+    MARK_ALL_READ: "/notifications/mark-all-read",
+    DELETE: (id: string) => `/notifications/${id}`,
+    CLEAR_ALL: "/notifications",
+  },
+  CONVERSATIONS: {
+    GET_ALL: "/conversations",
+    GET_OR_CREATE: "/conversations",
+    GET_MESSAGES: (id: string) => `/conversations/${id}/messages`,
+    MARK_READ: (id: string) => `/conversations/${id}/read`,
+    SEND_MESSAGE: (id: string) => `/conversations/${id}/messages`,
+  },
+  GROUPS: {
+    GET_ALL: "/groups",
+    GET_BY_SLUG: (slug: string) => `/groups/${slug}`,
+    JOIN: (slug: string) => `/groups/${slug}/join`,
+    LEAVE: (slug: string) => `/groups/${slug}/leave`,
+    GET_MEMBERS: (slug: string) => `/groups/${slug}/members`,
+    GET_MESSAGES: (slugOrId: string) => `/groups/${slugOrId}/messages`,
+    SEND_MESSAGE: (slugOrId: string) => `/groups/${slugOrId}/messages`,
+    MARK_READ: (groupId: string) => `/groups/${groupId}/markAsRead`,
   },
   HEALTH: "/health",
 };
@@ -52,4 +87,5 @@ export const API_ROUTES = {
 export const STORAGE_KEYS = {
   TOKEN: "cinephix_token",
   USER: "cinephix_user",
+  LANGUAGE: "cinephix_language",
 };
