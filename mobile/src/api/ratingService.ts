@@ -9,6 +9,13 @@ export async function getMyRating(contentId: string): Promise<Rating | null> {
 
 // POST /api/ratings is an upsert (findOneAndUpdate) — one call handles both
 // creating a new rating and updating an existing one.
+// Public endpoint (no auth) — every individual rating value for a piece of
+// content, raw 1-10 ints, used to build the rating distribution chart.
+export async function getAllRatingsForContent(contentId: string): Promise<number[]> {
+  const res = await API.get(API_ROUTES.RATINGS.GET_ALL_FOR_CONTENT(contentId));
+  return res.data;
+}
+
 export async function rateContent(
   contentId: string,
   contentType: ContentType,

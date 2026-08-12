@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { TextInput, StyleSheet } from "react-native";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 
 interface Props {
   placeholder?: string;
@@ -9,6 +9,20 @@ interface Props {
 }
 
 export default function SearchBar({ placeholder = "Search", onChangeQuery, debounceMs = 400 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base200,
+    color: colors.baseContent,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    marginHorizontal: 16,
+    marginVertical: 12,
+  },
+}), [colors]);
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -27,16 +41,3 @@ export default function SearchBar({ placeholder = "Search", onChangeQuery, debou
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    color: colors.baseContent,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    marginHorizontal: 16,
-    marginVertical: 12,
-  },
-});

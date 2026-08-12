@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,13 +15,32 @@ import { getAllGroups, joinGroup, leaveGroup } from "../../../src/api/groupServi
 import GroupCard from "../../../src/components/GroupCard";
 import { SkeletonGrid, SkeletonGroupCard } from "../../../src/components/Skeleton";
 import type { Group, GroupCategory } from "../../../src/types";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 type Category = "all" | GroupCategory;
 const CATEGORIES: Category[] = ["all", "genre", "director", "era", "style"];
 
 export default function CommunityScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  categoryRow: { flexGrow: 0, paddingHorizontal: 16, paddingVertical: 12 },
+  categoryChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  categoryChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  categoryChipText: { fontSize: 13, color: colors.baseContent, textTransform: "capitalize" },
+  categoryChipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: { justifyContent: "space-between" },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+}), [colors]);
   const { t } = useTranslation();
   const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -125,21 +144,3 @@ export default function CommunityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  categoryRow: { flexGrow: 0, paddingHorizontal: 16, paddingVertical: 12 },
-  categoryChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginRight: 8,
-  },
-  categoryChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  categoryChipText: { fontSize: 13, color: colors.baseContent, textTransform: "capitalize" },
-  categoryChipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: { justifyContent: "space-between" },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-});

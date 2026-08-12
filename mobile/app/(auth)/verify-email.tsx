@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,36 @@ import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
 import * as authService from "../../src/api/authService";
-import { colors } from "../../src/theme/colors";
+import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
 
 export default function VerifyEmailScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", padding: 24, gap: 12, backgroundColor: colors.base100 },
+  title: { fontSize: 26, fontFamily: fonts.bold, textAlign: "center", color: colors.primary },
+  subtitle: { textAlign: "center", color: colors.placeholder, marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base200,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: colors.baseContent,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  buttonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 16 },
+  error: { color: colors.error },
+  info: { color: colors.secondary },
+  link: { textAlign: "center", marginTop: 16, color: colors.secondary },
+}), [colors]);
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ email?: string }>();
   const { verifyEmail } = useAuth();
@@ -99,28 +125,3 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 24, gap: 12, backgroundColor: colors.base100 },
-  title: { fontSize: 26, fontFamily: fonts.bold, textAlign: "center", color: colors.primary },
-  subtitle: { textAlign: "center", color: colors.placeholder, marginBottom: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: colors.baseContent,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 16 },
-  error: { color: colors.error },
-  info: { color: colors.secondary },
-  link: { textAlign: "center", marginTop: 16, color: colors.secondary },
-});

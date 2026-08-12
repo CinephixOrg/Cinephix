@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import type { MatchResult } from "../types";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -12,6 +13,27 @@ const PODIUM_ORDER = [1, 0, 2]; // 2nd, 1st, 3rd — 1st rendered elevated/cente
 // Plain percentage text here (not MatchPercentageRing) — mirrors web, where
 // the ring is MatchCard-only and the leaderboard just shows "N%".
 export default function MatchLeaderboard({ matches }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 10, marginBottom: 20 },
+  slot: { flex: 1, alignItems: "center" },
+  slotFirst: { marginBottom: 12 },
+  crown: { fontSize: 20, marginBottom: 2 },
+  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.base300 },
+  avatarFirst: { width: 72, height: 72, borderRadius: 36 },
+  avatarRing: { borderWidth: 2, borderColor: colors.primary },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 16, color: colors.primary },
+  username: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: colors.baseContent,
+    marginTop: 8,
+    maxWidth: 90,
+  },
+  bio: { fontSize: 11, color: colors.placeholder, maxWidth: 90, marginTop: 1 },
+  percentage: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary, marginTop: 4 },
+}), [colors]);
   const top3 = matches.slice(0, 3);
   if (top3.length === 0) return null;
 
@@ -60,23 +82,3 @@ export default function MatchLeaderboard({ matches }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 10, marginBottom: 20 },
-  slot: { flex: 1, alignItems: "center" },
-  slotFirst: { marginBottom: 12 },
-  crown: { fontSize: 20, marginBottom: 2 },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.base300 },
-  avatarFirst: { width: 72, height: 72, borderRadius: 36 },
-  avatarRing: { borderWidth: 2, borderColor: colors.primary },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 16, color: colors.primary },
-  username: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.baseContent,
-    marginTop: 8,
-    maxWidth: 90,
-  },
-  bio: { fontSize: 11, color: colors.placeholder, maxWidth: 90, marginTop: 1 },
-  percentage: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary, marginTop: 4 },
-});

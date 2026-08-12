@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,11 +13,41 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
-import { getMyProfile, updateBio, uploadAvatar } from "../../../src/api/userService";
-import { colors } from "../../../src/theme/colors";
+import { getUserProfile, updateBio, uploadAvatar } from "../../../src/api/userService";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 export default function EditProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { padding: 20, backgroundColor: colors.base100, flexGrow: 1 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
+  avatarWrap: { alignItems: "center", marginBottom: 24 },
+  avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.base200 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { color: colors.placeholder, fontSize: 12 },
+  changePhoto: { color: colors.secondary, fontFamily: fonts.medium, marginTop: 8 },
+  label: { color: colors.placeholder, fontSize: 13, marginBottom: 6, marginTop: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base200,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: colors.baseContent,
+  },
+  bioInput: { minHeight: 90, textAlignVertical: "top" },
+  error: { color: colors.error, marginTop: 12 },
+  button: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 24,
+  },
+  buttonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 16 },
+}), [colors]);
   const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const router = useRouter();
@@ -35,8 +65,8 @@ export default function EditProfileScreen() {
     if (!user) return;
     (async () => {
       try {
-        const profile = await getMyProfile(user._id);
-        setBio(profile.bio ?? "");
+        const profile = await getUserProfile(user._id);
+        if (profile.isAuthorized) setBio(profile.bio ?? "");
         setUsername(profile.username);
         setAvatarUri(profile.profile_pic_url ?? null);
       } catch (e: any) {
@@ -133,32 +163,3 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.base100, flexGrow: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
-  avatarWrap: { alignItems: "center", marginBottom: 24 },
-  avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { color: colors.placeholder, fontSize: 12 },
-  changePhoto: { color: colors.secondary, fontFamily: fonts.medium, marginTop: 8 },
-  label: { color: colors.placeholder, fontSize: 13, marginBottom: 6, marginTop: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: colors.baseContent,
-  },
-  bioInput: { minHeight: 90, textAlignVertical: "top" },
-  error: { color: colors.error, marginTop: 12 },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  buttonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 16 },
-});

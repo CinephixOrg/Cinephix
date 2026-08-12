@@ -1,10 +1,11 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../../../src/components/NotificationBell";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 export default function WatchlistStackLayout() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <Stack
@@ -16,7 +17,7 @@ export default function WatchlistStackLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: t("Watchlist"), headerRight: () => <NotificationBell /> }}
+        options={{ title: t("Watched List"), headerRight: () => <NotificationBell /> }}
       />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
     </Stack>

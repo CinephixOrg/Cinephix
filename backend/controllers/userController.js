@@ -427,6 +427,19 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, userId } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const targetUserId = userId || req.user.id;
+    const viewerId = req.user.id.toString();
+
+    const targetDoc = await User.findById(targetUserId)
+        .select('_id visibility followers following')
+        .lean();
+
+    if (!targetDoc) {
+        return sendError(res, 'User not found', 404);
+    }
+
+    if (userId && userId !== viewerId && !isAuthorizedToView(viewerId, targetDoc)) {
+        return sendError(res, 'This account is private', 403);
+    }
 
     const user = await User.findById(targetUserId)
         .populate({
@@ -439,14 +452,9 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
         })
         .lean();
 
-    if (!user) {
-        return sendError(res, 'User not found', 404);
-    }
+    const total = targetDoc.following ? targetDoc.following.length : 0;
 
-    const userWithCount = await User.findById(targetUserId).select('following').lean();
-    const total = userWithCount?.following ? userWithCount.following.length : 0;
-
-    sendPaginated(res, user.following || [], total, parseInt(page), parseInt(limit), 'Following list fetched');
+    sendPaginated(res, user?.following || [], total, parseInt(page), parseInt(limit), 'Following list fetched');
 });
 
 // @desc    Get logged-in user's FOLLOWERS list
@@ -456,6 +464,19 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, userId } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const targetUserId = userId || req.user.id;
+    const viewerId = req.user.id.toString();
+
+    const targetDoc = await User.findById(targetUserId)
+        .select('_id visibility followers following')
+        .lean();
+
+    if (!targetDoc) {
+        return sendError(res, 'User not found', 404);
+    }
+
+    if (userId && userId !== viewerId && !isAuthorizedToView(viewerId, targetDoc)) {
+        return sendError(res, 'This account is private', 403);
+    }
 
     const user = await User.findById(targetUserId)
         .populate({
@@ -468,14 +489,9 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
         })
         .lean();
 
-    if (!user) {
-        return sendError(res, 'User not found', 404);
-    }
+    const total = targetDoc.followers ? targetDoc.followers.length : 0;
 
-    const userWithCount = await User.findById(req.user.id).select('followers').lean();
-    const total = userWithCount?.followers ? userWithCount.followers.length : 0;
-
-    sendPaginated(res, user.followers || [], total, parseInt(page), parseInt(limit), 'Followers list fetched');
+    sendPaginated(res, user?.followers || [], total, parseInt(page), parseInt(limit), 'Followers list fetched');
 });
 
 // @desc    Search users by username

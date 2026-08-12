@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,10 +17,84 @@ import { useTranslation } from "react-i18next";
 import { createList, deleteList, getMyLists } from "../../../src/api/listService";
 import { SkeletonListRow } from "../../../src/components/Skeleton";
 import type { CustomList } from "../../../src/types";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 export default function ListsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  newButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    margin: 16,
+    paddingVertical: 12,
+  },
+  newButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 15 },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.base200,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+  },
+  rowHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  rowName: { fontFamily: fonts.bold, fontSize: 16, color: colors.baseContent, flexShrink: 1 },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badgePublic: { backgroundColor: colors.primary },
+  badgePrivate: { backgroundColor: colors.border },
+  badgeText: { fontSize: 10, fontFamily: fonts.medium, color: colors.baseContent },
+  rowDescription: { color: colors.placeholder, fontSize: 13, marginTop: 4 },
+  rowCount: { color: colors.placeholder, fontSize: 12, marginTop: 4 },
+  deleteButton: { padding: 6 },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+  error: { color: colors.error, textAlign: "center", marginBottom: 8 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalCard: { backgroundColor: colors.base200, borderRadius: 12, padding: 20 },
+  modalTitle: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent, marginBottom: 16 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base100,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: colors.baseContent,
+    marginBottom: 10,
+  },
+  descInput: { minHeight: 70, textAlignVertical: "top" },
+  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+  switchLabel: { color: colors.baseContent, fontSize: 15 },
+  modalButtonRow: { flexDirection: "row", gap: 10 },
+  modalCancelButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalCancelText: { color: colors.baseContent, fontFamily: fonts.medium },
+  modalCreateButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalCreateText: { color: colors.primaryContent, fontFamily: fonts.bold },
+}), [colors]);
   const { t } = useTranslation();
   const router = useRouter();
   const [lists, setLists] = useState<CustomList[]>([]);
@@ -181,76 +255,3 @@ export default function ListsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  newButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    margin: 16,
-    paddingVertical: 12,
-  },
-  newButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 15 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.base200,
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
-  },
-  rowHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  rowName: { fontFamily: fonts.bold, fontSize: 16, color: colors.baseContent, flexShrink: 1 },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-  badgePublic: { backgroundColor: colors.primary },
-  badgePrivate: { backgroundColor: colors.border },
-  badgeText: { fontSize: 10, fontFamily: fonts.medium, color: colors.baseContent },
-  rowDescription: { color: colors.placeholder, fontSize: 13, marginTop: 4 },
-  rowCount: { color: colors.placeholder, fontSize: 12, marginTop: 4 },
-  deleteButton: { padding: 6 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-  error: { color: colors.error, textAlign: "center", marginBottom: 8 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 24,
-  },
-  modalCard: { backgroundColor: colors.base200, borderRadius: 12, padding: 20 },
-  modalTitle: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent, marginBottom: 16 },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base100,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    color: colors.baseContent,
-    marginBottom: 10,
-  },
-  descInput: { minHeight: 70, textAlignVertical: "top" },
-  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  switchLabel: { color: colors.baseContent, fontSize: 15 },
-  modalButtonRow: { flexDirection: "row", gap: 10 },
-  modalCancelButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  modalCancelText: { color: colors.baseContent, fontFamily: fonts.medium },
-  modalCreateButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  modalCreateText: { color: colors.primaryContent, fontFamily: fonts.bold },
-});

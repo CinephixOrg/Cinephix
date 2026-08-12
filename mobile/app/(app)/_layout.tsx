@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
 import { useChat } from "../../src/context/ChatContext";
-import { colors } from "../../src/theme/colors";
+import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -19,6 +19,7 @@ export default function AppLayout() {
   const { user } = useAuth();
   const { totalUnread } = useChat();
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   if (!user) {
     return <Redirect href="/login" />;
@@ -56,7 +57,11 @@ export default function AppLayout() {
       />
       <Tabs.Screen
         name="watchlist"
-        options={{ title: t("Watchlist"), tabBarIcon: TabIcon("bookmark", "bookmark-outline") }}
+        options={{ title: t("Watched List"), tabBarIcon: TabIcon("bookmark", "bookmark-outline") }}
+      />
+      <Tabs.Screen
+        name="to-watch"
+        options={{ title: t("Watchlist"), tabBarIcon: TabIcon("time", "time-outline") }}
       />
       <Tabs.Screen
         name="lists"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import i18n from "../i18n";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { SkeletonChatBubbles } from "./Skeleton";
-import type { Message, MessagePagination, RoomType } from "../types";
-import { colors } from "../theme/colors";
+import RecommendationMessageCard from "./RecommendationMessageCard";
+import AnalyzeModal from "./AnalyzeModal";
+import ProfileAnalysisModal from "./ProfileAnalysisModal";
+import type { MatchAnalysis, Message, MessagePagination, ProfileAnalysis, RoomType } from "../types";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -33,19 +35,6 @@ interface Props {
   sendRest: (text: string) => Promise<Message>;
 }
 
-// Module-level (not a hook), so uses the i18n singleton's t() directly
-// rather than useTranslation()'s hook-bound version.
-function messageMeta(msg: Message): string {
-  switch (msg.type) {
-    case "recommendation":
-      return `${i18n.t("🎬 Shared a recommendation")}${msg.contentData?.title ? `: ${msg.contentData.title}` : ""}`;
-    case "analysis_share":
-      return i18n.t("📊 Shared a CineMatch analysis");
-    default:
-      return msg.text;
-  }
-}
-
 // Shared message-list/composer UI for both DM and group chat — socket room
 // membership (join-room/leave-room) is intentionally NOT handled here since
 // DM and group screens have genuinely different correct lifecycles (DM
@@ -53,6 +42,60 @@ function messageMeta(msg: Message): string {
 // tab actually mounts/unmounts with tab switches, so a plain useEffect in
 // the parent already does the right thing).
 export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMessages, markRead, sendRest }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  list: { padding: 16, gap: 10, flexGrow: 1 },
+  joinPrompt: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  joinPromptText: { color: colors.placeholder, fontSize: 14, textAlign: "center" },
+  messageRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 4 },
+  messageRowOwn: { justifyContent: "flex-end" },
+  messageRowOther: { justifyContent: "flex-start" },
+  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.base200 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 10, color: colors.primary },
+  bubbleColumn: { maxWidth: "75%" },
+  senderName: { fontSize: 11, color: colors.placeholder, marginBottom: 2, marginLeft: 4 },
+  bubble: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
+  bubbleOwn: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
+  bubbleOther: { backgroundColor: colors.base200, borderBottomLeftRadius: 4 },
+  bubblePending: { opacity: 0.6 },
+  bubbleTextOwn: { color: colors.primaryContent, fontSize: 14 },
+  bubbleTextOther: { color: colors.baseContent, fontSize: 14 },
+  timestamp: { fontSize: 10, color: colors.placeholder, marginTop: 2 },
+  timestampOwn: { textAlign: "right", marginRight: 4 },
+  timestampOther: { textAlign: "left", marginLeft: 4 },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40, transform: [{ scaleY: -1 }] },
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.base100,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base200,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: colors.baseContent,
+    maxHeight: 100,
+  },
+  sendButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  sendButtonDisabled: { opacity: 0.5 },
+  sendButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 14 },
+}), [colors]);
   const { t } = useTranslation();
   const { user } = useAuth();
   const { connected, sendMessage, onNewMessage } = useChat();
@@ -62,6 +105,8 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
   const [loading, setLoading] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState("");
+  const [viewingAnalysis, setViewingAnalysis] = useState<MatchAnalysis | null>(null);
+  const [viewingProfileAnalysis, setViewingProfileAnalysis] = useState<ProfileAnalysis | null>(null);
 
   useEffect(() => {
     if (!canChat) {
@@ -188,17 +233,43 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
                 )}
                 <View style={styles.bubbleColumn}>
                   {!isOwn && <Text style={styles.senderName}>{item.sender.username}</Text>}
-                  <View
-                    style={[
-                      styles.bubble,
-                      isOwn ? styles.bubbleOwn : styles.bubbleOther,
-                      item.status === "pending" && styles.bubblePending,
-                    ]}
-                  >
-                    <Text style={isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther}>
-                      {messageMeta(item)}
-                    </Text>
-                  </View>
+                  {item.type === "recommendation" ? (
+                    <RecommendationMessageCard message={item} />
+                  ) : item.type === "analysis_share" ? (
+                    <Pressable
+                      style={[
+                        styles.bubble,
+                        isOwn ? styles.bubbleOwn : styles.bubbleOther,
+                        item.status === "pending" && styles.bubblePending,
+                      ]}
+                      onPress={() => {
+                        const isProfile = (item.analysisData as any)?.type === "profile";
+                        if (isProfile) {
+                          setViewingProfileAnalysis((item.analysisData as ProfileAnalysis) ?? null);
+                        } else {
+                          setViewingAnalysis((item.analysisData as MatchAnalysis) ?? null);
+                        }
+                      }}
+                    >
+                      <Text style={isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther}>
+                        {(item.analysisData as any)?.type === "profile"
+                          ? t("📊 Shared their profile analysis")
+                          : t("📊 Shared a CineMatch analysis")}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <View
+                      style={[
+                        styles.bubble,
+                        isOwn ? styles.bubbleOwn : styles.bubbleOther,
+                        item.status === "pending" && styles.bubblePending,
+                      ]}
+                    >
+                      <Text style={isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther}>
+                        {item.text}
+                      </Text>
+                    </View>
+                  )}
                   <Text style={[styles.timestamp, isOwn ? styles.timestampOwn : styles.timestampOther]}>
                     {new Date(item.createdAt).toLocaleTimeString(undefined, {
                       hour: "2-digit",
@@ -235,60 +306,18 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
           <Text style={styles.sendButtonText}>{t("Send")}</Text>
         </Pressable>
       </View>
+
+      <AnalyzeModal
+        visible={!!viewingAnalysis}
+        onClose={() => setViewingAnalysis(null)}
+        data={viewingAnalysis}
+      />
+      <ProfileAnalysisModal
+        visible={!!viewingProfileAnalysis}
+        onClose={() => setViewingProfileAnalysis(null)}
+        data={viewingProfileAnalysis}
+      />
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  list: { padding: 16, gap: 10, flexGrow: 1 },
-  joinPrompt: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  joinPromptText: { color: colors.placeholder, fontSize: 14, textAlign: "center" },
-  messageRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 4 },
-  messageRowOwn: { justifyContent: "flex-end" },
-  messageRowOther: { justifyContent: "flex-start" },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 10, color: colors.primary },
-  bubbleColumn: { maxWidth: "75%" },
-  senderName: { fontSize: 11, color: colors.placeholder, marginBottom: 2, marginLeft: 4 },
-  bubble: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  bubbleOwn: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
-  bubbleOther: { backgroundColor: colors.base200, borderBottomLeftRadius: 4 },
-  bubblePending: { opacity: 0.6 },
-  bubbleTextOwn: { color: colors.primaryContent, fontSize: 14 },
-  bubbleTextOther: { color: colors.baseContent, fontSize: 14 },
-  timestamp: { fontSize: 10, color: colors.placeholder, marginTop: 2 },
-  timestampOwn: { textAlign: "right", marginRight: 4 },
-  timestampOther: { textAlign: "left", marginLeft: 4 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40, transform: [{ scaleY: -1 }] },
-  composerRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.base100,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: colors.baseContent,
-    maxHeight: 100,
-  },
-  sendButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  sendButtonDisabled: { opacity: 0.5 },
-  sendButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 14 },
-});

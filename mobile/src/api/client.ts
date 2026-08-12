@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { STORAGE_KEYS } from "../constants/apiRoutes";
+import i18next from "../i18n";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
@@ -32,7 +33,22 @@ API.interceptors.response.use(
     }
     return res;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    if (!error.response && error.request) {
+      // Network-level failure (offline, timeout, unreachable) — no server
+      // response at all. Synthesize one so every existing
+      // `e?.response?.data?.message || t(fallback)` call site across the
+      // app automatically shows a real "check your connection" message
+      // instead of silently falling through to its own generic fallback,
+      // with zero per-screen changes needed.
+      error.response = {
+        data: {
+          message: i18next.t("No internet connection. Please check your network and try again."),
+        },
+      };
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default API;

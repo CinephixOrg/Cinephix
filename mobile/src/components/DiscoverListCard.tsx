@@ -1,7 +1,8 @@
+import { useMemo } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { DiscoverListItem } from "../types";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -10,6 +11,33 @@ interface Props {
 }
 
 export default function DiscoverListCard({ list, onPress }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  card: {
+    width: 170,
+    marginRight: 12,
+    backgroundColor: colors.base200,
+    borderRadius: 12,
+    padding: 12,
+  },
+  ownerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  avatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.base300 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 9, color: colors.primary },
+  owner: { fontSize: 12, color: colors.placeholder, flexShrink: 1 },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 6,
+  },
+  badgeText: { fontSize: 10, fontFamily: fonts.medium, color: colors.primaryContent },
+  name: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent, marginTop: 8 },
+  description: { fontSize: 12, color: colors.baseContent, marginTop: 4, lineHeight: 16 },
+  count: { fontSize: 11, color: colors.placeholder, marginTop: 8 },
+}), [colors]);
   const { t } = useTranslation();
 
   return (
@@ -46,29 +74,3 @@ export default function DiscoverListCard({ list, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    width: 170,
-    marginRight: 12,
-    backgroundColor: colors.base200,
-    borderRadius: 12,
-    padding: 12,
-  },
-  ownerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  avatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.base300 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 9, color: colors.primary },
-  owner: { fontSize: 12, color: colors.placeholder, flexShrink: 1 },
-  badge: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 6,
-  },
-  badgeText: { fontSize: 10, fontFamily: fonts.medium, color: colors.primaryContent },
-  name: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent, marginTop: 8 },
-  description: { fontSize: 12, color: colors.baseContent, marginTop: 4, lineHeight: 16 },
-  count: { fontSize: 11, color: colors.placeholder, marginTop: 8 },
-});

@@ -1,10 +1,11 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../../../src/components/NotificationBell";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 export default function ProfileStackLayout() {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <Stack
@@ -18,9 +19,14 @@ export default function ProfileStackLayout() {
         name="index"
         options={{ title: t("Profile"), headerRight: () => <NotificationBell /> }}
       />
+      <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
       <Stack.Screen name="edit" options={{ title: t("Edit Profile") }} />
       <Stack.Screen name="settings" options={{ title: t("Settings") }} />
-      <Stack.Screen name="connections" options={{ title: t("Connections") }} />
+      <Stack.Screen name="activity-log" options={{ title: t("Activity Log") }} />
+      <Stack.Screen name="import" options={{ title: t("Import Data") }} />
+      <Stack.Screen name="about" options={{ title: t("About") }} />
+      <Stack.Screen name="privacy" options={{ title: t("Privacy Policy") }} />
+      <Stack.Screen name="terms" options={{ title: t("Terms of Service") }} />
     </Stack>
   );
 }

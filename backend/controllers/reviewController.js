@@ -175,8 +175,8 @@ export const addOrUpdateReview = asyncHandler(async (req, res) => {
   if (typeof text !== 'string' || text.trim().length === 0) {
     return sendError(res, 'Review text cannot be empty', 400);
   }
-  if (text.length > 5000) {
-    return sendError(res, 'Review text cannot exceed 5000 characters', 400);
+  if (text.length > 2000) {
+    return sendError(res, 'Review text cannot exceed 2000 characters', 400);
   }
 
   const existingReview = await Review.findOne({ user: userId, contentId });

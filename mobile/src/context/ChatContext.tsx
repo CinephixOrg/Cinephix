@@ -3,12 +3,13 @@ import { AppState, AppStateStatus } from "react-native";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { getConversations } from "../api/conversationService";
-import type { Conversation, Message, RoomType, RoomUpdatedPayload } from "../types";
+import type { Conversation, GroupConversationRow, Message, RoomType, RoomUpdatedPayload } from "../types";
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || "http://localhost:5000";
 
 interface ChatContextValue {
   conversations: Conversation[];
+  groupConversations: GroupConversationRow[];
   totalUnread: number;
   connected: boolean;
   refreshConversations: () => Promise<void>;
@@ -17,6 +18,7 @@ interface ChatContextValue {
   sendMessage: (roomType: RoomType, roomId: string, text: string, clientTempId: string) => void;
   onNewMessage: (roomId: string, handler: (msg: Message) => void) => () => void;
   markReadLocally: (conversationId: string) => void;
+  markGroupReadLocally: (groupId: string) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -24,6 +26,7 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [groupConversations, setGroupConversations] = useState<GroupConversationRow[]>([]);
   const [connected, setConnected] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
@@ -32,8 +35,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const refreshConversations = async () => {
     try {
-      const items = await getConversations();
-      setConversations(items);
+      const { dm, groups } = await getConversations();
+      setConversations(dm);
+      setGroupConversations(groups);
     } catch {
       // Swallow — matches NotificationContext's background-refresh handling.
     }
@@ -45,6 +49,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       socketRef.current = null;
       setConnected(false);
       setConversations([]);
+      setGroupConversations([]);
       return;
     }
 
@@ -66,10 +71,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on("conversation-updated", (payload: RoomUpdatedPayload) => {
       if ("groupId" in payload) {
-        // Group event. Community screens own their own group-list state
-        // (GET /api/groups, for browsing — separate from this DM inbox) and
-        // web never shows a group unread indicator anywhere — intentional
-        // no-op, not an oversight.
+        setGroupConversations((prev) => {
+          const idx = prev.findIndex((g) => g._id === payload.groupId);
+          if (idx === -1) {
+            // Brand-new group activity the client hasn't seen yet — refetch
+            // rather than synthesize a partial row (mirrors the DM branch).
+            refreshConversations();
+            return prev;
+          }
+          const isActive = activeRoomIdRef.current === payload.groupId;
+          const isOwnSend = payload.senderId === user._id;
+          const next = [...prev];
+          next[idx] = {
+            ...next[idx],
+            lastMessage: payload.lastMessage,
+            lastMessageAt: payload.lastMessageAt,
+            unreadCount: isActive || isOwnSend ? next[idx].unreadCount : next[idx].unreadCount + 1,
+          };
+          next.sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
+          return next;
+        });
         return;
       }
       setConversations((prev) => {
@@ -117,8 +138,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [user?._id]);
 
   const totalUnread = useMemo(
-    () => conversations.reduce((sum, c) => sum + c.unreadCount, 0),
-    [conversations]
+    () =>
+      conversations.reduce((sum, c) => sum + c.unreadCount, 0) +
+      groupConversations.reduce((sum, g) => sum + g.unreadCount, 0),
+    [conversations, groupConversations]
   );
 
   const joinRoom = (roomType: RoomType, roomId: string) => {
@@ -152,10 +175,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const markGroupReadLocally = (groupId: string) => {
+    setGroupConversations((prev) =>
+      prev.map((g) => (g._id === groupId ? { ...g, unreadCount: 0 } : g))
+    );
+  };
+
   return (
     <ChatContext.Provider
       value={{
         conversations,
+        groupConversations,
         totalUnread,
         connected,
         refreshConversations,
@@ -164,6 +194,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         sendMessage,
         onNewMessage,
         markReadLocally,
+        markGroupReadLocally,
       }}
     >
       {children}

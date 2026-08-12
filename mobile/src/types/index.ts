@@ -38,6 +38,36 @@ export interface Rating {
   value: number;
 }
 
+// Reviewer is populated with 'username profile_pic_url' only — never bio/email.
+export interface ReviewAuthor {
+  _id: string;
+  username: string;
+  profile_pic_url?: string;
+}
+
+export interface Review {
+  _id: string;
+  user: ReviewAuthor;
+  contentId: string;
+  contentType: ContentType;
+  text: string;
+  createdAt: string;
+  likeCount: number;
+  hasLiked: boolean;
+}
+
+// GET /reviews/popular only — adds a denormalized `content` block no other
+// review response has, so kept as its own type rather than Review & {...}.
+export interface PopularReview {
+  _id: string;
+  user: ReviewAuthor;
+  text: string;
+  createdAt: string;
+  likeCount: number;
+  hasLiked: boolean;
+  content: { id: string; title: string; poster_path?: string; type: ContentType };
+}
+
 export interface WatchlistItem {
   itemId: string;
   itemType: ContentType;
@@ -50,22 +80,61 @@ export interface Pagination {
   pages: number;
 }
 
-export interface UserProfile {
+export type FollowStatus = "self" | "following" | "requested" | "not-following";
+export type FollowActionType = "following" | "requested";
+
+interface PublicProfileBase {
   _id: string;
   username: string;
-  bio?: string;
   profile_pic_url?: string;
+  isRequested: boolean;
+}
+
+// GET /users/profile/:id's masked branch (private account you don't follow)
+// — every other field is absent from the response, not just empty.
+export interface PublicProfileMasked extends PublicProfileBase {
+  isAuthorized: false;
+  isPrivateMasked: true;
+  isPrivateAndHidden: true;
+  message: string;
+}
+
+export interface PublicProfileFull extends PublicProfileBase {
+  isAuthorized: true;
+  bio?: string;
   visibility?: "public" | "private";
-  isOAuthUser?: boolean;
-  createdAt: string;
   followers: string[];
   following: string[];
+  createdAt: string;
 }
+
+export type PublicProfile = PublicProfileFull | PublicProfileMasked;
+
+// Own-profile call sites only ever hit the full branch (you're always
+// authorized to view yourself).
+export type UserProfile = PublicProfileFull;
 
 export interface Connection {
   _id: string;
   username: string;
   profile_pic_url?: string;
+}
+
+export interface SuggestedUser {
+  _id: string;
+  username: string;
+  profile_pic_url?: string;
+  bio?: string;
+  mutualCount: number;
+}
+
+// GET /users/me/follow-requests populates '_id username profile_pic_url name
+// bio' but User has no `name` field, so only these four keys ever come back.
+export interface FollowRequestUser {
+  _id: string;
+  username: string;
+  profile_pic_url?: string;
+  bio?: string;
 }
 
 export type CineGraphStats = Record<string, number>;
@@ -75,6 +144,36 @@ export interface CineGraphData {
   seriesStats: CineGraphStats;
   isAuthorized: boolean;
 }
+
+// GET /users/favorites/:id populates only these fields — deliberately
+// narrower than Movie/Series (no overview/release_date/vote_average).
+export interface FavoriteMovie {
+  _id: string;
+  title: string;
+  poster_path?: string | null;
+}
+
+export interface FavoriteSeries {
+  _id: string;
+  name: string;
+  poster_path?: string | null;
+}
+
+export interface FavoritesMasked {
+  isAuthorized: false;
+  isPrivateMasked: true;
+  isPrivateAndHidden: true;
+  movies: [];
+  series: [];
+}
+
+export interface FavoritesFull {
+  isAuthorized: true;
+  movies: FavoriteMovie[];
+  series: FavoriteSeries[];
+}
+
+export type Favorites = FavoritesFull | FavoritesMasked;
 
 export interface CustomListItem {
   itemId: string;
@@ -105,6 +204,19 @@ export interface MatchResult {
   matchPercentage: number;
 }
 
+export interface MatchWithUserResult {
+  matchPercentage: number;
+  targetUser: MatchUser;
+  breakdown: {
+    collaborative: number;
+    contentBased: number;
+    social: number;
+    diversity: number;
+    bonus: number;
+  };
+  llmInput: unknown;
+}
+
 export interface MatchAnalysis {
   provider: "mock" | "groq" | "openrouter" | "openai";
   parsed: {
@@ -115,6 +227,16 @@ export interface MatchAnalysis {
     graph_ascii: string | string[];
   };
   raw: unknown;
+}
+
+export interface ProfileAnalysis {
+  nickname: string;
+  personalitySummary: string;
+  funFact: string;
+  recommendedConcept: string;
+  // Added client-side only when sharing, mirrors web's exact convention for
+  // letting a receiver distinguish this from a MatchAnalysis share.
+  type?: "profile";
 }
 
 export type NotificationType = "follow" | "message" | "follow_request" | "follow_accepted";
@@ -134,6 +256,38 @@ export interface Notification {
   createdAt: string;
 }
 
+export type ActivityLogActionType = "RATE" | "ADD_WATCHLIST" | "IMPORT_TVTIME" | "IMPORT_LETTERBOXD";
+
+export interface ActivityLogPayload {
+  addedWatchlistIds?: string[];
+  addedRatingIds?: string[];
+  updatedCineGraph?: boolean;
+}
+
+// GET /users/me/logs — hard-capped at 50, no pagination, includes
+// already-reverted rows (no server-side filter).
+export interface ActivityLog {
+  _id: string;
+  userId: string;
+  actionType: ActivityLogActionType;
+  details: string;
+  isReverted: boolean;
+  payload?: ActivityLogPayload;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ImportSource = "tvtime" | "letterboxd";
+
+// Models the backend's two SSE completion payloads exactly — importedEpisodes
+// is TV-Time-only, Letterboxd's completion event never includes the key.
+export interface ImportResult {
+  status: "completed" | "error";
+  importedMovies?: number;
+  importedEpisodes?: number;
+  message?: string;
+}
+
 export type RoomType = "dm" | "group";
 
 export type MessageType = "text" | "recommendation" | "analysis_share";
@@ -151,6 +305,8 @@ export interface Message {
   sender: MessageSender;
   text: string;
   type: MessageType;
+  contentId?: string;
+  contentType?: ContentType;
   contentData?: {
     title?: string;
     posterUrl?: string;
@@ -176,6 +332,24 @@ export interface Conversation {
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// A group row from the same GET /conversations response as Conversation
+// above — kept as a separate type (not unioned into Conversation) so every
+// existing DM-only consumer (RecipientPickerModal, [conversationId].tsx,
+// messages/new.tsx) needs zero changes; only messages/index.tsx and
+// ChatContext know about this shape.
+export interface GroupConversationRow {
+  _id: string;
+  type: "group";
+  slug: string;
+  name: string;
+  coverImage?: string;
+  memberCount: number;
+  lastMessage: string;
+  lastMessageAt: string | null;
+  lastMessageSenderId?: { _id: string; username: string };
+  unreadCount: number;
 }
 
 // GET /conversations/:id/messages uses a different pagination shape than
@@ -234,6 +408,37 @@ export interface GroupMember {
 export interface PopularThisWeekItem {
   content: { id: string; title: string; poster_path?: string; type: ContentType };
   addCount: number;
+}
+
+export type FeedActivityType = "rated" | "reviewed" | "watchlisted" | "followed";
+
+export interface FeedUserRef {
+  _id: string;
+  username: string;
+  profile_pic_url?: string;
+}
+
+export interface FeedActivityItem {
+  type: FeedActivityType;
+  user: FeedUserRef;
+  content?: PopularThisWeekItem["content"]; // absent only for "followed"
+  value?: number; // "rated" only, 1-10
+  excerpt?: string; // "reviewed" only
+  targetUser?: FeedUserRef; // "followed" only, absent if the target account was deleted
+  createdAt: string;
+}
+
+export interface FeedResult {
+  items: FeedActivityItem[];
+  page: number;
+  hasMore: boolean;
+}
+
+export interface TopPick {
+  content: PopularThisWeekItem["content"];
+  avgRating: number;
+  raterCount: number;
+  topRaters: FeedUserRef[]; // up to 3
 }
 
 // Raw movie/series doc fields spread directly by the backend — title (movies)

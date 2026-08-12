@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
-import { View, ActivityIndicator, Text, TextInput } from "react-native";
+import { View, ActivityIndicator } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,39 +13,52 @@ import {
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
 import { NotificationProvider } from "../src/context/NotificationContext";
 import { ChatProvider } from "../src/context/ChatContext";
+import { FollowGraphProvider } from "../src/context/FollowGraphContext";
+import { NetworkProvider } from "../src/context/NetworkContext";
+import { ToastProvider } from "../src/context/ToastContext";
+import { ThemeProvider, useTheme, resolveInitialTheme } from "../src/context/ThemeContext";
+import type { ThemeName } from "../src/theme/palettes";
+import { PALETTES, DEFAULT_THEME } from "../src/theme/palettes";
 import { initI18n } from "../src/i18n";
-import { colors } from "../src/theme/colors";
 import { fonts } from "../src/theme/typography";
+import OfflineBanner from "../src/components/OfflineBanner";
+import Toast from "../src/components/Toast";
 
-// Match the web app's DM Sans body font everywhere by default, so
-// individual screens don't need to set fontFamily themselves.
-const defaultTextProps = (Text as any).defaultProps || {};
-(Text as any).defaultProps = {
-  ...defaultTextProps,
-  style: [{ fontFamily: fonts.regular, color: colors.baseContent }, defaultTextProps.style],
-};
-const defaultInputProps = (TextInput as any).defaultProps || {};
-(TextInput as any).defaultProps = {
-  ...defaultInputProps,
-  style: [{ fontFamily: fonts.regular }, defaultInputProps.style],
-  placeholderTextColor: colors.placeholder,
+// Nothing is switchable yet at this point (fonts/i18n/theme aren't resolved),
+// so the pre-boot loading screen always renders in the default palette —
+// same reasoning as why it was never translated either.
+const bootColors = PALETTES[DEFAULT_THEME];
+const bootLoadingStyle = {
+  flex: 1,
+  alignItems: "center" as const,
+  justifyContent: "center" as const,
+  backgroundColor: bootColors.base100,
 };
 
 function RootNavigator() {
   const { t } = useTranslation();
   const { loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.base100,
+        }}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar style="light" />
+      <OfflineBanner />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -54,6 +68,7 @@ function RootNavigator() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="setup-profile" options={{ headerShown: false }} />
         <Stack.Screen
           name="notifications"
           options={{
@@ -65,19 +80,22 @@ function RootNavigator() {
             headerTintColor: colors.baseContent,
           }}
         />
+        <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="network"
+          options={{
+            headerShown: true,
+            title: t("Followers"),
+            headerStyle: { backgroundColor: colors.base200 },
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
       </Stack>
-    </>
+      <Toast />
+    </View>
   );
 }
-
-const styles = {
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    backgroundColor: colors.base100,
-  },
-};
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -86,26 +104,41 @@ export default function RootLayout() {
     DMSans_700Bold,
   });
   const [i18nReady, setI18nReady] = useState(false);
+  const [initialTheme, setInitialTheme] = useState<ThemeName | null>(null);
 
   useEffect(() => {
     initI18n().then(() => setI18nReady(true));
   }, []);
 
-  if (!fontsLoaded || !i18nReady) {
+  useEffect(() => {
+    resolveInitialTheme().then(setInitialTheme);
+  }, []);
+
+  if (!fontsLoaded || !i18nReady || !initialTheme) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={bootLoadingStyle}>
+        <ActivityIndicator size="large" color={bootColors.primary} />
       </View>
     );
   }
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <ChatProvider>
-          <RootNavigator />
-        </ChatProvider>
-      </NotificationProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <ThemeProvider initialTheme={initialTheme}>
+        <ToastProvider>
+          <NetworkProvider>
+            <AuthProvider>
+              <FollowGraphProvider>
+                <NotificationProvider>
+                  <ChatProvider>
+                    <RootNavigator />
+                  </ChatProvider>
+                </NotificationProvider>
+              </FollowGraphProvider>
+            </AuthProvider>
+          </NetworkProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

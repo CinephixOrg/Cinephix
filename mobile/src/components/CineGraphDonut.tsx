@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { CineGraphStats } from "../types";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -31,6 +31,33 @@ const RADIUS = (SIZE - STROKE_WIDTH_SELECTED) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export default function CineGraphDonut({ title, stats }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  section: { marginTop: 20, alignItems: "center", alignSelf: "stretch" },
+  title: { fontFamily: fonts.bold, fontSize: 16, color: colors.baseContent, marginBottom: 12 },
+  empty: { color: colors.placeholder, fontSize: 13 },
+  chartRow: { alignItems: "center", justifyContent: "center" },
+  centerLabel: {
+    position: "absolute",
+    textAlign: "center",
+    color: colors.baseContent,
+    fontFamily: fonts.bold,
+    fontSize: 13,
+  },
+  legend: { alignSelf: "stretch", marginTop: 16, gap: 4 },
+  legendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+  },
+  legendRowSelected: { backgroundColor: colors.base200 },
+  swatch: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { flex: 1, color: colors.baseContent, fontSize: 13 },
+  legendValue: { color: colors.placeholder, fontSize: 12 },
+}), [colors]);
   const { t } = useTranslation();
   const entries = Object.entries(stats);
   const total = entries.reduce((sum, [, count]) => sum + count, 0);
@@ -124,29 +151,3 @@ export default function CineGraphDonut({ title, stats }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  section: { marginTop: 20, alignItems: "center", alignSelf: "stretch" },
-  title: { fontFamily: fonts.bold, fontSize: 16, color: colors.baseContent, marginBottom: 12 },
-  empty: { color: colors.placeholder, fontSize: 13 },
-  chartRow: { alignItems: "center", justifyContent: "center" },
-  centerLabel: {
-    position: "absolute",
-    textAlign: "center",
-    color: colors.baseContent,
-    fontFamily: fonts.bold,
-    fontSize: 13,
-  },
-  legend: { alignSelf: "stretch", marginTop: 16, gap: 4 },
-  legendRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 6,
-  },
-  legendRowSelected: { backgroundColor: colors.base200 },
-  swatch: { width: 10, height: 10, borderRadius: 5 },
-  legendLabel: { flex: 1, color: colors.baseContent, fontSize: 13 },
-  legendValue: { color: colors.placeholder, fontSize: 12 },
-});

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
@@ -26,24 +26,66 @@ import { useChat } from "../../../src/context/ChatContext";
 import ChatRoom from "../../../src/components/ChatRoom";
 import { SkeletonGrid, SkeletonAvatarCell, SkeletonGroupDetailHeader } from "../../../src/components/Skeleton";
 import type { Group, GroupMember } from "../../../src/types";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
+import type { ColorPalette } from "../../../src/theme/palettes";
 import { fonts } from "../../../src/theme/typography";
 
 type Tab = "Chat" | "Members" | "About";
 
-const CATEGORY_COLOR: Record<string, string> = {
-  director: colors.primary,
-  genre: colors.secondary,
-  era: colors.accent,
-  style: colors.info,
-};
+function categoryColor(colors: ColorPalette): Record<string, string> {
+  return {
+    director: colors.primary,
+    genre: colors.secondary,
+    era: colors.accent,
+    style: colors.info,
+  };
+}
 
 export default function GroupDetailScreen() {
+  const { colors } = useTheme();
+  const CATEGORY_COLOR = useMemo(() => categoryColor(colors), [colors]);
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
+  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  badgeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.primaryContent, textTransform: "capitalize" },
+  actionButton: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6, minWidth: 70, alignItems: "center" },
+  joinButton: { backgroundColor: colors.primary },
+  joinButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 13 },
+  leaveButton: { borderWidth: 1, borderColor: colors.error },
+  leaveButtonText: { color: colors.error, fontFamily: fonts.bold, fontSize: 13 },
+  name: { fontFamily: fonts.bold, fontSize: 20, color: colors.baseContent, marginTop: 10 },
+  description: { fontSize: 14, color: colors.baseContent, marginTop: 6, lineHeight: 20 },
+  memberRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
+  memberCount: { fontSize: 12, color: colors.placeholder },
+  tabRow: { flexDirection: "row", padding: 12, gap: 8 },
+  tabButton: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: "center" },
+  tabButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  tabButtonText: { fontFamily: fonts.medium, color: colors.baseContent, fontSize: 13 },
+  tabButtonTextActive: { color: colors.primaryContent },
+  membersList: { padding: 12 },
+  memberCell: { width: "33.33%", alignItems: "center", padding: 10 },
+  memberCellSelf: { opacity: 0.7 },
+  memberAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.base200 },
+  memberAvatarFallback: { alignItems: "center", justifyContent: "center" },
+  memberAvatarFallbackText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
+  memberUsername: { fontSize: 12, color: colors.baseContent, marginTop: 6, maxWidth: 90 },
+  memberJoined: { fontSize: 10, color: colors.placeholder, marginTop: 2 },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+  aboutContainer: { padding: 16 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+  tagChip: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  tagText: { fontSize: 12, color: colors.baseContent },
+  createdAt: { fontSize: 12, color: colors.placeholder, marginTop: 16 },
+}), [colors]);
   const { t } = useTranslation();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const navigation = useNavigation();
+  const router = useRouter();
   const { user } = useAuth();
-  const { joinRoom, leaveRoom } = useChat();
+  const { joinRoom, leaveRoom, markGroupReadLocally } = useChat();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,6 +113,7 @@ export default function GroupDetailScreen() {
   useEffect(() => {
     if (tab !== "Chat" || !group?.isMember) return;
     joinRoom("group", group._id);
+    markGroupReadLocally(group._id);
     return () => leaveRoom("group", group._id);
   }, [tab, group?._id, group?.isMember]);
 
@@ -185,7 +228,11 @@ export default function GroupDetailScreen() {
             renderItem={({ item }) => {
               const isMe = item.user._id === user?._id;
               return (
-                <View style={[styles.memberCell, isMe && styles.memberCellSelf]}>
+                <Pressable
+                  style={[styles.memberCell, isMe && styles.memberCellSelf]}
+                  onPress={() => router.push(`/user/${item.user._id}`)}
+                  disabled={isMe}
+                >
                   {item.user.profile_pic_url ? (
                     <Image source={{ uri: item.user.profile_pic_url }} style={styles.memberAvatar} />
                   ) : (
@@ -203,7 +250,7 @@ export default function GroupDetailScreen() {
                     {t("Joined")}{" "}
                     {new Date(item.joinedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
                   </Text>
-                </View>
+                </Pressable>
               );
             }}
             ListEmptyComponent={<Text style={styles.empty}>{t("No members yet.")}</Text>}
@@ -236,39 +283,3 @@ export default function GroupDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
-  headerTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
-  badgeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.primaryContent, textTransform: "capitalize" },
-  actionButton: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6, minWidth: 70, alignItems: "center" },
-  joinButton: { backgroundColor: colors.primary },
-  joinButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 13 },
-  leaveButton: { borderWidth: 1, borderColor: colors.error },
-  leaveButtonText: { color: colors.error, fontFamily: fonts.bold, fontSize: 13 },
-  name: { fontFamily: fonts.bold, fontSize: 20, color: colors.baseContent, marginTop: 10 },
-  description: { fontSize: 14, color: colors.baseContent, marginTop: 6, lineHeight: 20 },
-  memberRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 },
-  memberCount: { fontSize: 12, color: colors.placeholder },
-  tabRow: { flexDirection: "row", padding: 12, gap: 8 },
-  tabButton: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: "center" },
-  tabButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  tabButtonText: { fontFamily: fonts.medium, color: colors.baseContent, fontSize: 13 },
-  tabButtonTextActive: { color: colors.primaryContent },
-  membersList: { padding: 12 },
-  memberCell: { width: "33.33%", alignItems: "center", padding: 10 },
-  memberCellSelf: { opacity: 0.7 },
-  memberAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.base200 },
-  memberAvatarFallback: { alignItems: "center", justifyContent: "center" },
-  memberAvatarFallbackText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
-  memberUsername: { fontSize: 12, color: colors.baseContent, marginTop: 6, maxWidth: 90 },
-  memberJoined: { fontSize: 10, color: colors.placeholder, marginTop: 2 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-  aboutContainer: { padding: 16 },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
-  tagChip: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  tagText: { fontSize: 12, color: colors.baseContent },
-  createdAt: { fontSize: 12, color: colors.placeholder, marginTop: 16 },
-});

@@ -28,3 +28,15 @@ export async function verifyEmail(email: string, code: string): Promise<User> {
   const res = await API.post(API_ROUTES.AUTH.VERIFY_EMAIL, { email, code });
   return res.data;
 }
+
+export async function forgotPassword(email: string): Promise<void> {
+  await API.post(API_ROUTES.AUTH.FORGOT_PASSWORD, { email });
+}
+
+export async function resetPassword(
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<void> {
+  await API.post(API_ROUTES.AUTH.RESET_PASSWORD, { email, code, newPassword });
+}
