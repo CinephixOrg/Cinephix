@@ -1,11 +1,29 @@
+import { useMemo } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNotifications } from "../context/NotificationContext";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 export default function NotificationBell() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  wrap: { marginRight: 12, padding: 4 },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    backgroundColor: colors.error,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: { fontSize: 10, fontFamily: fonts.bold, color: "#ffffff" },
+}), [colors]);
   const { unreadCount } = useNotifications();
   const router = useRouter();
 
@@ -29,19 +47,3 @@ export default function NotificationBell() {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginRight: 12, padding: 4 },
-  badge: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    paddingHorizontal: 3,
-    backgroundColor: colors.error,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: { fontSize: 10, fontFamily: fonts.bold, color: "#ffffff" },
-});

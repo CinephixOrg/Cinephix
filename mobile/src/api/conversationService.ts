@@ -1,12 +1,42 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Conversation, Message, MessagePagination } from "../types";
+import type { Conversation, ContentType, GroupConversationRow, Message, MessagePagination } from "../types";
 
-// GET /conversations returns BOTH dm and group rows merged — mobile has no
-// group chat support yet, filter here so nothing downstream ever sees one.
-export async function getConversations(): Promise<Conversation[]> {
+interface RecommendationPayload {
+  text: string;
+  type: "recommendation";
+  contentType: ContentType;
+  contentId: string;
+  contentData: {
+    title?: string;
+    posterUrl?: string;
+    genres?: string[];
+    releaseYear?: number;
+    overview?: string;
+    rating?: number;
+  };
+}
+
+interface AnalysisSharePayload {
+  text: string;
+  type: "analysis_share";
+  analysisData: unknown;
+}
+
+// GET /conversations returns BOTH dm and group rows merged — split by type
+// here rather than discarding groups, so the Messages inbox can show both
+// while every DM-only consumer (RecipientPickerModal, etc.) keeps reading
+// plain Conversation[] unaffected.
+export async function getConversations(): Promise<{
+  dm: Conversation[];
+  groups: GroupConversationRow[];
+}> {
   const res = await API.get(API_ROUTES.CONVERSATIONS.GET_ALL);
-  return (res.data as Conversation[]).filter((c) => c.type === "dm");
+  const all = res.data as Array<Conversation | GroupConversationRow>;
+  return {
+    dm: all.filter((c): c is Conversation => c.type === "dm"),
+    groups: all.filter((c): c is GroupConversationRow => c.type === "group"),
+  };
 }
 
 export async function getOrCreateConversation(participantId: string): Promise<Conversation> {
@@ -39,5 +69,16 @@ export async function sendMessageRest(conversationId: string, text: string): Pro
     text,
     type: "text",
   });
+  return res.data;
+}
+
+// Recommendation/analysis-share sends are one-off actions triggered outside
+// any open chat room (a gift-icon picker, AnalyzeModal's Share button) — REST
+// only, no socket path, matching how web itself sends both these types.
+export async function sendRichMessage(
+  conversationId: string,
+  payload: RecommendationPayload | AnalysisSharePayload
+): Promise<Message> {
+  const res = await API.post(API_ROUTES.CONVERSATIONS.SEND_MESSAGE(conversationId), payload);
   return res.data;
 }

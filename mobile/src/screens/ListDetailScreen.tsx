@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { getMovieById, getSeriesById } from "../api/contentService";
 import ContentCard from "../components/ContentCard";
 import { SkeletonBox, SkeletonGrid, SkeletonPosterCard } from "../components/Skeleton";
 import type { ContentType, CustomList, Movie, Series } from "../types";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface HydratedItem {
@@ -36,6 +36,76 @@ interface Props {
 }
 
 export default function ListDetailScreen({ basePath = "/lists" }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: { justifyContent: "space-between" },
+  header: { paddingVertical: 16 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  title: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badgePublic: { backgroundColor: colors.primary },
+  badgePrivate: { backgroundColor: colors.border },
+  badgeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.baseContent },
+  description: { color: colors.baseContent, fontSize: 14, marginTop: 8 },
+  count: { color: colors.placeholder, fontSize: 13, marginTop: 4 },
+  editButton: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 12,
+  },
+  editButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.base200,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: colors.baseContent,
+    marginBottom: 10,
+  },
+  descInput: { minHeight: 70, textAlignVertical: "top" },
+  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  switchLabel: { color: colors.baseContent, fontSize: 15 },
+  editButtonRow: { flexDirection: "row", gap: 10 },
+  cancelButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
+  saveButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
+  cardWrap: { width: "48%" },
+  removeButton: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+  errorText: { color: colors.error, marginTop: 8 },
+}), [colors]);
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
@@ -226,72 +296,3 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: { justifyContent: "space-between" },
-  header: { paddingVertical: 16 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  title: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-  badgePublic: { backgroundColor: colors.primary },
-  badgePrivate: { backgroundColor: colors.border },
-  badgeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.baseContent },
-  description: { color: colors.baseContent, fontSize: 14, marginTop: 8 },
-  count: { color: colors.placeholder, fontSize: 13, marginTop: 4 },
-  editButton: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginTop: 12,
-  },
-  editButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    color: colors.baseContent,
-    marginBottom: 10,
-  },
-  descInput: { minHeight: 70, textAlignVertical: "top" },
-  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  switchLabel: { color: colors.baseContent, fontSize: 15 },
-  editButtonRow: { flexDirection: "row", gap: 10 },
-  cancelButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  cancelButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
-  saveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
-  cardWrap: { width: "48%" },
-  removeButton: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-  errorText: { color: colors.error, marginTop: 8 },
-});

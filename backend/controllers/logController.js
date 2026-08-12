@@ -151,7 +151,7 @@ export const resetData = asyncHandler(async (req, res) => {
   await Rating.deleteMany({ user: userId });
 
   // Delete all Activity Logs
-  await ActivityLog.deleteMany({ user: userId });
+  await ActivityLog.deleteMany({ userId });
 
   sendSuccess(res, null, 'All data reset successfully');
 });

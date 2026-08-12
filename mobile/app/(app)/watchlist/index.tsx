@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View,
   FlatList,
@@ -15,7 +15,7 @@ import { getMovieById, getSeriesById } from "../../../src/api/contentService";
 import ContentCard from "../../../src/components/ContentCard";
 import { SkeletonGrid, SkeletonPosterCard } from "../../../src/components/Skeleton";
 import type { ContentType, Movie, Series } from "../../../src/types";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 
 interface HydratedItem {
   id: string;
@@ -24,6 +24,13 @@ interface HydratedItem {
 }
 
 export default function WatchlistScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
+  row: { justifyContent: "space-between" },
+  error: { color: colors.error, textAlign: "center", marginTop: 8 },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+}), [colors]);
   const { t } = useTranslation();
   const [items, setItems] = useState<HydratedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +50,7 @@ export default function WatchlistScreen() {
       setItems(hydrated);
       setError(null);
     } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to load watchlist."));
+      setError(e?.response?.data?.message || t("Failed to load watched list."));
     }
   }, []);
 
@@ -99,15 +106,9 @@ export default function WatchlistScreen() {
             basePath="/watchlist"
           />
         )}
-        ListEmptyComponent={<Text style={styles.empty}>{t("Your watchlist is empty.")}</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t("Your watched list is empty.")}</Text>}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  list: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1 },
-  row: { justifyContent: "space-between" },
-  error: { color: colors.error, textAlign: "center", marginTop: 8 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-});

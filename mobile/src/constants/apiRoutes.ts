@@ -4,6 +4,8 @@ export const API_ROUTES = {
     REGISTER: "/users/register",
     SEND_VERIFICATION: "/users/send-verification",
     VERIFY_EMAIL: "/users/verify-email",
+    FORGOT_PASSWORD: "/users/forgot-password",
+    RESET_PASSWORD: "/users/reset-password",
   },
   MOVIES: {
     GET_ALL: "/movies",
@@ -18,6 +20,15 @@ export const API_ROUTES = {
   RATINGS: {
     CREATE_OR_UPDATE: "/ratings",
     GET_MY_RATING: (contentId: string) => `/ratings/me/${contentId}`,
+    GET_ALL_FOR_CONTENT: (contentId: string) => `/ratings/content/${contentId}`,
+  },
+  REVIEWS: {
+    GET_POPULAR: "/reviews/popular",
+    GET_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}`,
+    GET_FRIENDS_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}/friends`,
+    CREATE_OR_UPDATE: "/reviews",
+    DELETE: (reviewId: string) => `/reviews/${reviewId}`,
+    TOGGLE_LIKE: (reviewId: string) => `/reviews/${reviewId}/like`,
   },
   WATCHLIST: {
     GET: "/users/me/watchlist",
@@ -25,9 +36,18 @@ export const API_ROUTES = {
     REMOVE: (itemId: string, itemType: string) =>
       `/users/me/watchlist/${itemId}?itemType=${itemType}`,
   },
+  TO_WATCH: {
+    GET: "/users/me/to-watch",
+    ADD: "/users/me/to-watch",
+    REMOVE: (itemId: string, itemType: string) =>
+      `/users/me/to-watch/${itemId}?itemType=${itemType}`,
+  },
   USERS: {
     GET_PROFILE: (id: string) => `/users/profile/${id}`,
+    GET_PROFILE_ANALYSIS: "/users/profile-analysis",
     GET_CINEGRAPH: (id: string) => `/users/cinegraph-data/${id}`,
+    GET_FAVORITES: (id: string) => `/users/favorites/${id}`,
+    UPDATE_FAVORITES: "/users/me/favorites",
     UPDATE_BIO: (id: string) => `/users/profile/${id}/bio`,
     UPLOAD_AVATAR: (id: string) => `/users/profile/${id}/upload-profile-pic`,
     UPDATE_PASSWORD: "/users/profile/password",
@@ -36,6 +56,23 @@ export const API_ROUTES = {
     GET_FOLLOWING: "/users/me/following",
     GET_FOLLOWERS: "/users/me/followers",
     SEARCH: "/users/search",
+    FOLLOW: "/users/follow",
+    UNFOLLOW: "/users/unfollow",
+    REMOVE_FOLLOWER: "/users/remove-follower",
+    ACCEPT_FOLLOW_REQUEST: (targetId: string) => `/users/${targetId}/follow-request/accept`,
+    REJECT_FOLLOW_REQUEST: (targetId: string) => `/users/${targetId}/follow-request/reject`,
+    GET_PENDING_REQUESTS: "/users/me/follow-requests",
+    GET_SENT_REQUESTS: "/users/me/sent-requests",
+    GET_SUGGESTIONS: "/users/me/suggestions",
+  },
+  ACTIVITY_LOG: {
+    GET_ALL: "/users/me/logs",
+    REVERT: "/users/me/logs/revert",
+    RESET_ALL_DATA: "/users/me/reset-data",
+  },
+  IMPORT: {
+    TVTIME: "/users/import-tvtime",
+    LETTERBOXD: "/users/import-letterboxd",
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
@@ -51,10 +88,13 @@ export const API_ROUTES = {
   FEED: {
     POPULAR_THIS_WEEK: "/feed/popular-this-week",
     RECOMMENDATIONS: "/feed/recommendations",
+    GET_FEED: "/feed",
+    GET_TOP_PICKS: "/feed/top-picks",
   },
   MATCH: {
     FIND: "/match",
     ANALYZE: (id: string) => `/match/${id}/analyze`,
+    WITH_USER: (id: string) => `/match/${id}`,
   },
   NOTIFICATIONS: {
     GET_ALL: "/notifications",
@@ -88,4 +128,5 @@ export const STORAGE_KEYS = {
   TOKEN: "cinephix_token",
   USER: "cinephix_user",
   LANGUAGE: "cinephix_language",
+  THEME: "cinephix_theme",
 };

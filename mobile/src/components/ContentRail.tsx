@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props<T> {
@@ -22,6 +23,22 @@ export default function ContentRail<T>({
   renderItem,
   emptyText,
 }: Props<T>) {
+  const { colors } = useTheme();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        // alignSelf:"stretch" matters when a parent uses alignItems:"center" (e.g.
+        // the Profile screens) — without it the rail would shrink-wrap instead of
+        // spanning full width. A no-op on parents that already stretch by default.
+        section: { marginBottom: 24, alignSelf: "stretch" },
+        title: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, paddingHorizontal: 16 },
+        subtitle: { fontSize: 12, color: colors.placeholder, marginTop: 2, paddingHorizontal: 16 },
+        railContent: { paddingHorizontal: 16, paddingTop: 12 },
+        empty: { color: colors.placeholder, fontSize: 13, paddingHorizontal: 16, marginTop: 12 },
+      }),
+    [colors]
+  );
+
   return (
     <View style={styles.section}>
       <Text style={styles.title}>{title}</Text>
@@ -41,11 +58,3 @@ export default function ContentRail<T>({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: { marginBottom: 24 },
-  title: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, paddingHorizontal: 16 },
-  subtitle: { fontSize: 12, color: colors.placeholder, marginTop: 2, paddingHorizontal: 16 },
-  railContent: { paddingHorizontal: 16, paddingTop: 12 },
-  empty: { color: colors.placeholder, fontSize: 13, paddingHorizontal: 16, marginTop: 12 },
-});

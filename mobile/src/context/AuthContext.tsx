@@ -7,11 +7,13 @@ import type { User } from "../types";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  needsProfileSetup: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   completeOAuthLogin: (user: User) => Promise<void>;
   updateUser: (fields: Partial<User>) => Promise<void>;
+  clearNeedsProfileSetup: () => void;
   logout: () => Promise<void>;
 }
 
@@ -26,6 +28,9 @@ async function persistUser(user: User) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Transient (not persisted) — only ever set true by a fresh verifyEmail,
+  // so a plain login or app relaunch never routes through setup-profile.
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -55,7 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const verifiedUser = await authService.verifyEmail(email, code);
     await persistUser(verifiedUser);
     setUser(verifiedUser);
+    setNeedsProfileSetup(true);
   };
+
+  const clearNeedsProfileSetup = () => setNeedsProfileSetup(false);
 
   // Used after the Google OAuth in-app-browser flow hands back a
   // { ...userFields, token } blob in the redirect URL, same shape as
@@ -82,7 +90,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, verifyEmail, completeOAuthLogin, updateUser, logout }}
+      value={{
+        user,
+        loading,
+        needsProfileSetup,
+        login,
+        register,
+        verifyEmail,
+        completeOAuthLogin,
+        updateUser,
+        clearNeedsProfileSetup,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

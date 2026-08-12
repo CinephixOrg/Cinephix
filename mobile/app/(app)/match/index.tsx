@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,12 +17,89 @@ import MatchCard from "../../../src/components/MatchCard";
 import AnalyzeModal from "../../../src/components/AnalyzeModal";
 import { SkeletonMatchResults } from "../../../src/components/Skeleton";
 import type { ContentType, MatchAnalysis, MatchResult } from "../../../src/types";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 type FilterMode = "general" | "specific";
 
 export default function MatchScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  list: { padding: 16, paddingBottom: 32 },
+  row: { justifyContent: "space-between" },
+  title: { fontFamily: fonts.bold, fontSize: 24, color: colors.baseContent },
+  subtitle: { color: colors.placeholder, fontSize: 13, marginTop: 4, marginBottom: 16 },
+  panel: {
+    backgroundColor: colors.base200,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  segmentedRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  segment: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  segmentActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  segmentText: { fontFamily: fonts.medium, color: colors.baseContent },
+  segmentTextActive: { color: colors.primaryContent },
+  radioRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
+  radioDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  radioDotActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+  radioLabel: { color: colors.baseContent, fontSize: 14 },
+  genreWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 4 },
+  genreChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  genreChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  genreChipText: { fontSize: 12, color: colors.baseContent },
+  genreChipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  switchLabel: { color: colors.baseContent, fontSize: 14 },
+  submitButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  submitButtonDisabled: { opacity: 0.5 },
+  submitButtonText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primaryContent },
+  sectionTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, marginBottom: 12 },
+  footerNote: { textAlign: "center", color: colors.placeholder, fontSize: 12, marginTop: 8 },
+  emptyState: { alignItems: "center", marginTop: 24 },
+  empty: { color: colors.placeholder, fontSize: 15, marginBottom: 16 },
+  resetButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  resetButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
+  error: { color: colors.error, fontSize: 13, marginTop: 8 },
+}), [colors]);
   const { t } = useTranslation();
   const [matchType, setMatchType] = useState<ContentType>("movie");
   const [filterMode, setFilterMode] = useState<FilterMode>("general");
@@ -38,6 +115,7 @@ export default function MatchScreen() {
 
   const [analyzeModalVisible, setAnalyzeModalVisible] = useState(false);
   const [analyzeData, setAnalyzeData] = useState<MatchAnalysis | null>(null);
+  const [analyzeTargetUserId, setAnalyzeTargetUserId] = useState<string | null>(null);
   const [analyzingUserId, setAnalyzingUserId] = useState<string | null>(null);
 
   const genreList = matchType === "movie" ? MOVIE_GENRES : SERIES_GENRES;
@@ -102,6 +180,7 @@ export default function MatchScreen() {
     try {
       const data = await analyzeMatchWithUser(targetUserId, matchType);
       setAnalyzeData(data);
+      setAnalyzeTargetUserId(targetUserId);
       setAnalyzeModalVisible(true);
     } catch (e: any) {
       Alert.alert("Error", e?.response?.data?.message || t("Failed to analyze match."));
@@ -248,84 +327,9 @@ export default function MatchScreen() {
         visible={analyzeModalVisible}
         onClose={() => setAnalyzeModalVisible(false)}
         data={analyzeData}
+        shareTargetUserId={analyzeTargetUserId ?? undefined}
       />
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  list: { padding: 16, paddingBottom: 32 },
-  row: { justifyContent: "space-between" },
-  title: { fontFamily: fonts.bold, fontSize: 24, color: colors.baseContent },
-  subtitle: { color: colors.placeholder, fontSize: 13, marginTop: 4, marginBottom: 16 },
-  panel: {
-    backgroundColor: colors.base200,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  segmentedRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  segment: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  segmentActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  segmentText: { fontFamily: fonts.medium, color: colors.baseContent },
-  segmentTextActive: { color: colors.primaryContent },
-  radioRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
-  radioDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  radioDotActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  radioLabel: { color: colors.baseContent, fontSize: 14 },
-  genreWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 4 },
-  genreChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  genreChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  genreChipText: { fontSize: 12, color: colors.baseContent },
-  genreChipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    marginTop: 8,
-  },
-  switchLabel: { color: colors.baseContent, fontSize: 14 },
-  submitButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primaryContent },
-  sectionTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, marginBottom: 12 },
-  footerNote: { textAlign: "center", color: colors.placeholder, fontSize: 12, marginTop: 8 },
-  emptyState: { alignItems: "center", marginTop: 24 },
-  empty: { color: colors.placeholder, fontSize: 15, marginBottom: 16 },
-  resetButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  resetButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
-  error: { color: colors.error, fontSize: 13, marginTop: 8 },
-});

@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { SkeletonRow } from "../src/components/Skeleton";
-import { Redirect, useFocusEffect } from "expo-router";
+import { Redirect, useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import i18n from "../src/i18n";
@@ -15,12 +15,9 @@ import {
   clearAllNotifications,
 } from "../src/api/notificationService";
 import type { Notification, NotificationType } from "../src/types";
-import { colors } from "../src/theme/colors";
+import { useTheme } from "../src/context/ThemeContext";
 import { fonts } from "../src/theme/typography";
 
-// Tap-to-navigate is intentionally NOT ported: web routes each type to a DM
-// screen, another user's profile, or follow-request management — none of
-// which exist on mobile yet. Tapping a row here only marks it read.
 function getNotificationMeta(type: NotificationType): { icon: string; text: string } {
   switch (type) {
     case "message":
@@ -37,7 +34,41 @@ function getNotificationMeta(type: NotificationType): { icon: string; text: stri
 }
 
 export default function NotificationsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  actionText: { color: colors.primary, fontFamily: fonts.medium, fontSize: 13 },
+  actionTextDanger: { color: colors.error, fontFamily: fonts.medium, fontSize: 13 },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  rowUnread: { backgroundColor: colors.base200 },
+  rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 12 },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.base200 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 13, color: colors.primary },
+  rowText: { flex: 1 },
+  senderRow: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent },
+  notifText: { fontSize: 13, color: colors.baseContent, marginTop: 2 },
+  timestamp: { fontSize: 11, color: colors.placeholder, marginTop: 2 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginLeft: 8 },
+  deleteButton: { padding: 12 },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+  error: { color: colors.error, textAlign: "center", marginBottom: 8, paddingHorizontal: 16 },
+}), [colors]);
   const { t } = useTranslation();
+  const router = useRouter();
   const { user } = useAuth();
   const { unreadCount, decrementUnreadCount, clearUnreadCount } = useNotifications();
 
@@ -85,6 +116,31 @@ export default function NotificationsScreen() {
     } catch {
       // Optimistic update already applied — a stale read-state on failure
       // is low-stakes and self-corrects next time this screen loads.
+    }
+  };
+
+  const handleTap = (item: Notification) => {
+    handleMarkRead(item);
+    switch (item.type) {
+      case "follow":
+      case "follow_accepted":
+        router.push(`/user/${item.sender._id}`);
+        break;
+      case "follow_request":
+        router.push("/network?tab=requests");
+        break;
+      case "message":
+        if (item.conversationId) {
+          router.push({
+            pathname: "/messages/[conversationId]",
+            params: {
+              conversationId: item.conversationId,
+              otherUsername: item.sender.username,
+              otherAvatar: item.sender.profile_pic_url || "",
+            },
+          });
+        }
+        break;
     }
   };
 
@@ -158,7 +214,7 @@ export default function NotificationsScreen() {
             const { icon, text } = getNotificationMeta(item.type);
             return (
               <View style={[styles.row, !item.read && styles.rowUnread]}>
-                <Pressable style={styles.rowMain} onPress={() => handleMarkRead(item)}>
+                <Pressable style={styles.rowMain} onPress={() => handleTap(item)}>
                   {item.sender.profile_pic_url ? (
                     <Image source={{ uri: item.sender.profile_pic_url }} style={styles.avatar} />
                   ) : (
@@ -206,35 +262,3 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  actionText: { color: colors.primary, fontFamily: fonts.medium, fontSize: 13 },
-  actionTextDanger: { color: colors.error, fontFamily: fonts.medium, fontSize: 13 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  rowUnread: { backgroundColor: colors.base200 },
-  rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 12 },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 13, color: colors.primary },
-  rowText: { flex: 1 },
-  senderRow: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent },
-  notifText: { fontSize: 13, color: colors.baseContent, marginTop: 2 },
-  timestamp: { fontSize: 11, color: colors.placeholder, marginTop: 2 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginLeft: 8 },
-  deleteButton: { padding: 12 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-  error: { color: colors.error, textAlign: "center", marginBottom: 8, paddingHorizontal: 16 },
-});

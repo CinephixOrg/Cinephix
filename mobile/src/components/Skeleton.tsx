@@ -1,6 +1,44 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { View, Animated, StyleSheet, ViewStyle } from "react-native";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
+import type { ColorPalette } from "../theme/palettes";
+
+// Shared by every Skeleton* component below (they're siblings, not nested,
+// so the style object can't just be built once inside SkeletonBox like the
+// migration script assumed — each component calls this hook itself).
+function useSkeletonStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => buildStyles(colors), [colors]);
+}
+
+function buildStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+    gridTight: { justifyContent: "flex-start" },
+    cell2: { width: "48%", marginBottom: 16 },
+    cell3: { width: "33.33%", alignItems: "center", padding: 10 },
+    poster: { aspectRatio: 2 / 3 },
+    groupCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 12, padding: 14 },
+    rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    rowCenter: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
+    avatarCell: { alignItems: "center" },
+    row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
+    activityLogRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
+    listRow: { backgroundColor: colors.base200, borderRadius: 10, padding: 14, marginBottom: 10 },
+    profileHeader: { alignItems: "center", padding: 20 },
+    groupDetailHeader: { padding: 16 },
+    chatBubbles: { padding: 16, gap: 10 },
+    bubbleRowOther: { alignItems: "flex-start" },
+    bubbleRowOwn: { alignItems: "flex-end" },
+    podiumRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 10, marginBottom: 20 },
+    podiumSlot: { alignItems: "center" },
+    matchCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 12, padding: 14, alignItems: "center" },
+    railSection: { marginBottom: 24 },
+    railRow: { flexDirection: "row", paddingHorizontal: 16 },
+    railCell: { width: 120, marginRight: 12 },
+    railPoster: { aspectRatio: 2 / 3 },
+  });
+}
 
 // Base pulsing placeholder box. RN has no CSS animate-pulse equivalent, so
 // this hand-rolls the same effect (opacity loop) via the built-in Animated
@@ -16,6 +54,7 @@ export function SkeletonBox({
   borderRadius?: number;
   style?: ViewStyle;
 }) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
@@ -52,6 +91,7 @@ export function SkeletonGrid({
   columns: 2 | 3;
   renderItem: (index: number) => React.ReactNode;
 }) {
+  const styles = useSkeletonStyles();
   return (
     <View style={[styles.grid, columns === 3 && styles.gridTight]}>
       {Array.from({ length: count }, (_, i) => (
@@ -64,6 +104,7 @@ export function SkeletonGrid({
 }
 
 export function SkeletonPosterCard() {
+  const styles = useSkeletonStyles();
   return (
     <View>
       <SkeletonBox width="100%" style={styles.poster} borderRadius={8} />
@@ -74,6 +115,7 @@ export function SkeletonPosterCard() {
 }
 
 export function SkeletonGroupCard() {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.groupCard}>
       <View style={styles.rowBetween}>
@@ -93,6 +135,7 @@ export function SkeletonGroupCard() {
 }
 
 export function SkeletonAvatarCell() {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.avatarCell}>
       <SkeletonBox width={52} height={52} borderRadius={26} />
@@ -105,6 +148,7 @@ export function SkeletonAvatarCell() {
 // Avatar + N configurable text lines — covers notifications, connections,
 // user-search results, and the messages inbox.
 export function SkeletonRow({ lines = 1 }: { lines?: 1 | 2 }) {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.row}>
       <SkeletonBox width={44} height={44} borderRadius={22} />
@@ -116,8 +160,25 @@ export function SkeletonRow({ lines = 1 }: { lines?: 1 | 2 }) {
   );
 }
 
+// Matches activity-log.tsx's row shape — checkbox + type icon + two text
+// lines, no avatar, so SkeletonRow's avatar-shaped circle doesn't fit here.
+export function SkeletonActivityLogRow() {
+  const styles = useSkeletonStyles();
+  return (
+    <View style={styles.activityLogRow}>
+      <SkeletonBox width={20} height={20} borderRadius={4} />
+      <SkeletonBox width={20} height={20} borderRadius={10} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <SkeletonBox width="55%" height={13} />
+        <SkeletonBox width="80%" height={11} />
+      </View>
+    </View>
+  );
+}
+
 // Matches lists/index.tsx's own row shape (no avatar — title+badge+desc+count).
 export function SkeletonListRow() {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.listRow}>
       <View style={styles.rowBetween}>
@@ -131,6 +192,7 @@ export function SkeletonListRow() {
 }
 
 export function SkeletonProfileHeader() {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.profileHeader}>
       <SkeletonBox width={96} height={96} borderRadius={48} />
@@ -161,6 +223,7 @@ export function SkeletonProfileHeader() {
 }
 
 export function SkeletonGroupDetailHeader() {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.groupDetailHeader}>
       <View style={styles.rowBetween}>
@@ -176,6 +239,7 @@ export function SkeletonGroupDetailHeader() {
 
 export function SkeletonChatBubbles() {
   const widths: Array<`${number}%`> = ["55%", "40%", "65%", "35%"];
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.chatBubbles}>
       {widths.map((w, i) => (
@@ -188,6 +252,7 @@ export function SkeletonChatBubbles() {
 }
 
 export function SkeletonRail() {
+  const styles = useSkeletonStyles();
   return (
     <View style={styles.railSection}>
       <SkeletonBox width={140} height={16} style={{ marginLeft: 16, marginBottom: 12 }} />
@@ -204,6 +269,7 @@ export function SkeletonRail() {
 }
 
 export function SkeletonMatchResults() {
+  const styles = useSkeletonStyles();
   return (
     <View>
       <View style={styles.podiumRow}>
@@ -235,28 +301,3 @@ export function SkeletonMatchResults() {
   );
 }
 
-const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  gridTight: { justifyContent: "flex-start" },
-  cell2: { width: "48%", marginBottom: 16 },
-  cell3: { width: "33.33%", alignItems: "center", padding: 10 },
-  poster: { aspectRatio: 2 / 3 },
-  groupCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 12, padding: 14 },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  rowCenter: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
-  avatarCell: { alignItems: "center" },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  listRow: { backgroundColor: colors.base200, borderRadius: 10, padding: 14, marginBottom: 10 },
-  profileHeader: { alignItems: "center", padding: 20 },
-  groupDetailHeader: { padding: 16 },
-  chatBubbles: { padding: 16, gap: 10 },
-  bubbleRowOther: { alignItems: "flex-start" },
-  bubbleRowOwn: { alignItems: "flex-end" },
-  podiumRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 10, marginBottom: 20 },
-  podiumSlot: { alignItems: "center" },
-  matchCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 12, padding: 14, alignItems: "center" },
-  railSection: { marginBottom: 24 },
-  railRow: { flexDirection: "row", paddingHorizontal: 16 },
-  railCell: { width: 120, marginRight: 12 },
-  railPoster: { aspectRatio: 2 / 3 },
-});

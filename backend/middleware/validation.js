@@ -217,7 +217,7 @@ export const validationSchemas = {
   createReview: {
     contentId: { required: true },
     contentType: { required: true, enum: ['movie', 'series'] },
-    text: { required: true, type: 'string', minLength: 1, maxLength: 5000 },
+    text: { required: true, type: 'string', minLength: 1, maxLength: 2000 },
   },
 
   // Watchlist

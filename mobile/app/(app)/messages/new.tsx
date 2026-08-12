@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -8,10 +8,21 @@ import { getOrCreateConversation } from "../../../src/api/conversationService";
 import { useChat } from "../../../src/context/ChatContext";
 import { SkeletonRow } from "../../../src/components/Skeleton";
 import type { UserSearchResult } from "../../../src/types";
-import { colors } from "../../../src/theme/colors";
+import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 export default function NewMessageScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.base100 },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.base200 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
+  username: { fontSize: 15, color: colors.baseContent },
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+}), [colors]);
   const { t } = useTranslation();
   const router = useRouter();
   const { refreshConversations } = useChat();
@@ -101,13 +112,3 @@ export default function NewMessageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
-  username: { fontSize: 15, color: colors.baseContent },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-});

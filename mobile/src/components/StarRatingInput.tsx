@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { View, Pressable, Text, StyleSheet } from "react-native";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
+import type { ColorPalette } from "../theme/palettes";
 
 // Matches frontend/src/components/StarRating.jsx: 5 stars displayed, but
 // backed by the same 1-10 integer scale the backend validates
@@ -15,6 +17,24 @@ interface Props {
 const STAR_COUNT = 5;
 const STAR_SIZE = 30;
 
+function buildStyles(colors: ColorPalette) {
+  return StyleSheet.create({
+    row: { flexDirection: "row", gap: 4 },
+    starWrap: { width: STAR_SIZE, height: STAR_SIZE },
+    star: { fontSize: STAR_SIZE, lineHeight: STAR_SIZE },
+    starEmpty: { color: colors.border },
+    starFilled: { color: colors.primary },
+    halfClip: { width: "50%", overflow: "hidden" },
+    tapRow: { flexDirection: "row" },
+    tapHalf: { flex: 1 },
+  });
+}
+
+function useStarStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => buildStyles(colors), [colors]);
+}
+
 function Star({
   index,
   value,
@@ -26,6 +46,7 @@ function Star({
   onChange: (value: number) => void;
   disabled?: boolean;
 }) {
+  const styles = useStarStyles();
   const leftValue = index * 2 + 1;
   const rightValue = index * 2 + 2;
   const fill = value >= rightValue ? "full" : value >= leftValue ? "half" : "empty";
@@ -61,6 +82,7 @@ function Star({
 }
 
 export default function StarRatingInput({ value, onChange, disabled }: Props) {
+  const styles = useStarStyles();
   return (
     <View style={styles.row}>
       {Array.from({ length: STAR_COUNT }, (_, i) => (
@@ -70,13 +92,3 @@ export default function StarRatingInput({ value, onChange, disabled }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 4 },
-  starWrap: { width: STAR_SIZE, height: STAR_SIZE },
-  star: { fontSize: STAR_SIZE, lineHeight: STAR_SIZE },
-  starEmpty: { color: colors.border },
-  starFilled: { color: colors.primary },
-  halfClip: { width: "50%", overflow: "hidden" },
-  tapRow: { flexDirection: "row" },
-  tapHalf: { flex: 1 },
-});

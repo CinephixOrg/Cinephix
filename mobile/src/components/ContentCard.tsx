@@ -1,8 +1,9 @@
+import { useMemo } from "react";
 import { View, Text, Image, Pressable, StyleSheet, ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import type { ContentType } from "../types";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
@@ -22,7 +23,7 @@ interface Props {
   // "/movies", "/lists") — content detail is duplicated into every tab's
   // own Stack (see (app)/_layout.tsx) so back navigation returns to the
   // right tab instead of bottom-tabs' default of jumping to the first one.
-  basePath: "/movies" | "/series" | "/watchlist" | "/lists" | "/home";
+  basePath: "/movies" | "/series" | "/watchlist" | "/to-watch" | "/lists" | "/home" | "/profile" | `/user/${string}`;
 }
 
 export default function ContentCard({
@@ -35,6 +36,20 @@ export default function ContentCard({
   style,
   basePath,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  card: { width: "48%", marginBottom: 16 },
+  poster: {
+    width: "100%",
+    aspectRatio: 2 / 3,
+    borderRadius: 8,
+    backgroundColor: colors.base200,
+  },
+  posterFallback: { alignItems: "center", justifyContent: "center" },
+  posterFallbackText: { color: colors.placeholder, fontSize: 12 },
+  title: { marginTop: 6, fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
+  meta: { color: colors.placeholder, fontSize: 12, marginTop: 2 },
+}), [colors]);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -61,16 +76,3 @@ export default function ContentCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: { width: "48%", marginBottom: 16 },
-  poster: {
-    width: "100%",
-    aspectRatio: 2 / 3,
-    borderRadius: 8,
-    backgroundColor: colors.base200,
-  },
-  posterFallback: { alignItems: "center", justifyContent: "center" },
-  posterFallbackText: { color: colors.placeholder, fontSize: 12 },
-  title: { marginTop: 6, fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
-  meta: { color: colors.placeholder, fontSize: 12, marginTop: 2 },
-});

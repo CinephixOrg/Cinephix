@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -13,6 +14,19 @@ interface Props {
 // value progress ring, unlike CineGraphDonut's multi-slice breakdown, so no
 // press interaction or legend here.
 export default function MatchPercentageRing({ percentage, size = 80, strokeWidth = 8 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+  labelContainer: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
+}), [colors]);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, percentage));
@@ -49,15 +63,3 @@ export default function MatchPercentageRing({ percentage, size = 80, strokeWidth
   );
 }
 
-const styles = StyleSheet.create({
-  labelContainer: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  label: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
-});

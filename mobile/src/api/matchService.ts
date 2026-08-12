@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, MatchAnalysis, MatchResult } from "../types";
+import type { ContentType, MatchAnalysis, MatchResult, MatchWithUserResult } from "../types";
 import type { ListResult } from "./contentService";
 
 export interface MatchFilters {
@@ -25,6 +25,14 @@ export async function findMatches(
     limit,
   });
   return { items: res.data, pagination: (res as any).pagination };
+}
+
+export async function getMatchWithUser(
+  targetUserId: string,
+  filters: MatchFilters
+): Promise<MatchWithUserResult> {
+  const res = await API.post(API_ROUTES.MATCH.WITH_USER(targetUserId), filters);
+  return res.data;
 }
 
 export async function analyzeMatchWithUser(

@@ -1,8 +1,10 @@
+import { useMemo } from "react";
 import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import type { MatchResult } from "../types";
 import MatchPercentageRing from "./MatchPercentageRing";
-import { colors } from "../theme/colors";
+import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -12,56 +14,9 @@ interface Props {
   analyzing?: boolean;
 }
 
-// Deliberately no "View Profile" action — mobile has no other-user-profile
-// screen yet (viewing another user's profile is out of scope for this pass,
-// deferred along with the rest of that feature).
 export default function MatchCard({ match, rank, onAnalyze, analyzing }: Props) {
-  const { t } = useTranslation();
-  const { user, matchPercentage } = match;
-
-  return (
-    <View style={styles.card}>
-      {rank && rank <= 3 && (
-        <View style={styles.rankBadge}>
-          <Text style={styles.rankBadgeText}>{rank === 1 ? "👑" : `#${rank}`}</Text>
-        </View>
-      )}
-
-      {user.profile_pic_url ? (
-        <Image source={{ uri: user.profile_pic_url }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, styles.avatarFallback]}>
-          <Text style={styles.avatarFallbackText}>{user.username.slice(0, 2).toUpperCase()}</Text>
-        </View>
-      )}
-
-      <Text style={styles.username} numberOfLines={1}>
-        {user.username}
-      </Text>
-      {user.bio ? (
-        <Text style={styles.bio} numberOfLines={2}>
-          {user.bio}
-        </Text>
-      ) : null}
-
-      <MatchPercentageRing percentage={matchPercentage} />
-
-      <Pressable
-        style={[styles.analyzeButton, analyzing && styles.analyzeButtonDisabled]}
-        onPress={() => onAnalyze(user._id)}
-        disabled={analyzing}
-      >
-        {analyzing ? (
-          <ActivityIndicator size="small" color={colors.primaryContent} />
-        ) : (
-          <Text style={styles.analyzeButtonText}>{t("Analyze")}</Text>
-        )}
-      </Pressable>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
   card: {
     width: "48%",
     backgroundColor: colors.base200,
@@ -107,4 +62,65 @@ const styles = StyleSheet.create({
   },
   analyzeButtonDisabled: { opacity: 0.6 },
   analyzeButtonText: { fontFamily: fonts.bold, fontSize: 13, color: colors.primaryContent },
-});
+  viewProfileButton: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: "stretch",
+    alignItems: "center",
+  },
+  viewProfileButtonText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent },
+}), [colors]);
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { user, matchPercentage } = match;
+
+  return (
+    <View style={styles.card}>
+      {rank && rank <= 3 && (
+        <View style={styles.rankBadge}>
+          <Text style={styles.rankBadgeText}>{rank === 1 ? "👑" : `#${rank}`}</Text>
+        </View>
+      )}
+
+      {user.profile_pic_url ? (
+        <Image source={{ uri: user.profile_pic_url }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarFallback]}>
+          <Text style={styles.avatarFallbackText}>{user.username.slice(0, 2).toUpperCase()}</Text>
+        </View>
+      )}
+
+      <Text style={styles.username} numberOfLines={1}>
+        {user.username}
+      </Text>
+      {user.bio ? (
+        <Text style={styles.bio} numberOfLines={2}>
+          {user.bio}
+        </Text>
+      ) : null}
+
+      <MatchPercentageRing percentage={matchPercentage} />
+
+      <Pressable style={styles.viewProfileButton} onPress={() => router.push(`/user/${user._id}`)}>
+        <Text style={styles.viewProfileButtonText}>{t("View Profile")}</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.analyzeButton, analyzing && styles.analyzeButtonDisabled]}
+        onPress={() => onAnalyze(user._id)}
+        disabled={analyzing}
+      >
+        {analyzing ? (
+          <ActivityIndicator size="small" color={colors.primaryContent} />
+        ) : (
+          <Text style={styles.analyzeButtonText}>{t("Analyze")}</Text>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
