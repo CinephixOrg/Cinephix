@@ -80,6 +80,18 @@ Also fixed: `AnalyzeModal.tsx`'s Share/Close buttons were in the opposite order 
 - Added `frontend/.env` and `mobile/.dev-logs/` to `.gitignore` (neither was ignored before; found while checking what to stage — not committing dev logs or a second `.env`).
 - **Did NOT stage `node_modules/`** despite `git status` showing hundreds of changed entries under it — the root `node_modules/` is not gitignored (only `backend/node_modules/` is) and appears to have been accidentally tracked at some point pre-dating this session (`node_modules/.package-lock.json` was already showing as modified at the very start of this session, before any work happened). Left those changes uncommitted/untouched rather than either committing repo bloat or trying to "fix" someone else's pre-existing tracking decision without being asked.
 
+## 9. Reverted the Social tab merge (§5) — collaborator conflict
+
+Turned out a friend/collaborator had already independently built her own version of the Community+Messages merge and was going to push it in a few days — pushing mine first would've caused a conflict neither version needed. Reverted §5 only:
+
+- Deleted `mobile/app/(app)/social/` entirely (`index.tsx`, `_layout.tsx`) and `mobile/src/components/social/` (`CommunityTab.tsx`, `MessagesTab.tsx`).
+- Recreated `mobile/app/(app)/community/{index,_layout}.tsx` and `mobile/app/(app)/messages/{index,_layout}.tsx` with their exact original (pre-merge) content — moved `[slug].tsx`, `[conversationId].tsx`, `new.tsx`, `recommend.tsx`, `content/[type]/[id].tsx` back from `social/` to their original `community/`/`messages/` locations (git detected these as renames, confirming the reconstruction matched byte-for-byte where it should).
+- Restored the separate `community`/`messages` bottom-tab entries in `(app)/_layout.tsx`.
+- Reverted the `/social/...` route-string references back to `/messages/...` in `notifications.tsx` and `RecommendationMessageCard.tsx`.
+- **Deliberately left `backend/scripts/seedGroups.js` as-is** (idempotent per-slug seeding + the 10 extra preset groups) — that's data/backend, not "the tab," and the idempotency fix is a genuine bug fix independent of which UI displays groups. CineMatch and the public-profile redesign (§6-7) were explicitly called out as good and were untouched.
+
+**Gotcha this surfaced**: `community/`, `messages/`, and several other files (`oauth-success.tsx`, `MyListsView.tsx`, `SettingsButton.tsx`) were never actually committed to git before this session's push — they'd existed only in the working tree since an earlier, pre-compaction part of this ongoing conversation. So there was no git history to `checkout` them back from; the revert had to reconstruct the original file contents from earlier in the conversation transcript instead of from git. If something like this needs reverting again and `git log` shows no prior commit for the file, don't assume `git checkout <ref> -- <path>` will work — check first (`git ls-tree -r --name-only <ref> | grep <path>`).
+
 ## Gotchas / things to remember next session
 
 1. **Expo Go on this project's SDK cannot run `react-native-reanimated` 4 / `react-native-worklets`.** Don't reintroduce them without first confirming the user wants a dev-client build (`expo-dev-client` + EAS). Gesture/animation work should default to `PanResponder` + core `Animated`.
@@ -89,3 +101,4 @@ Also fixed: `AnalyzeModal.tsx`'s Share/Close buttons were in the opposite order 
 5. `frontend/.env` and `mobile/.dev-logs/` are now gitignored — if either reappears in `git status`, something's overriding or the ignore rule needs revisiting.
 6. The web frontend (`frontend/`) still calls the legacy `POST /match` (`findMatches`) and `scoreHybridCandidate` — don't remove either while `frontend/` is still in use.
 7. `mds/PROJECT_MEMORY.md` (same folder as this file) has the general, not-session-specific project reference.
+8. **Community and Messages are two separate tabs again, not merged.** A collaborator is independently building her own Community+Messages merge to push separately in a few days. Don't redo the Social-tab merge (§5/§9 above) without checking whether her version has already landed.

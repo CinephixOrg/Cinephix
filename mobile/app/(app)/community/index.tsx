@@ -11,20 +11,17 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { getAllGroups, joinGroup, leaveGroup } from "../../api/groupService";
-import GroupCard from "../GroupCard";
-import { SkeletonGrid, SkeletonGroupCard } from "../Skeleton";
-import type { Group, GroupCategory } from "../../types";
-import { useTheme } from "../../context/ThemeContext";
-import { fonts } from "../../theme/typography";
+import { getAllGroups, joinGroup, leaveGroup } from "../../../src/api/groupService";
+import GroupCard from "../../../src/components/GroupCard";
+import { SkeletonGrid, SkeletonGroupCard } from "../../../src/components/Skeleton";
+import type { Group, GroupCategory } from "../../../src/types";
+import { useTheme } from "../../../src/context/ThemeContext";
+import { fonts } from "../../../src/theme/typography";
 
-// "joined" isn't a real GroupCategory (that enum is server-defined and
-// content-based) — it's a client-only filter over the same list, so it's
-// kept as a separate literal rather than folded into GroupCategory.
-type Category = "all" | "joined" | GroupCategory;
-const CATEGORIES: Category[] = ["all", "joined", "genre", "director", "era", "style"];
+type Category = "all" | GroupCategory;
+const CATEGORIES: Category[] = ["all", "genre", "director", "era", "style"];
 
-export default function CommunityTab() {
+export default function CommunityScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.base100 },
@@ -99,12 +96,7 @@ export default function CommunityTab() {
     }
   };
 
-  const filtered =
-    activeCategory === "all"
-      ? groups
-      : activeCategory === "joined"
-        ? groups.filter((g) => g.isMember)
-        : groups.filter((g) => g.category === activeCategory);
+  const filtered = activeCategory === "all" ? groups : groups.filter((g) => g.category === activeCategory);
 
   return (
     <View style={styles.container}>
@@ -116,7 +108,7 @@ export default function CommunityTab() {
             onPress={() => setActiveCategory(cat)}
           >
             <Text style={[styles.categoryChipText, activeCategory === cat && styles.categoryChipTextActive]}>
-              {cat === "joined" ? t("My Communities") : t(cat)}
+              {t(cat)}
             </Text>
           </Pressable>
         ))}
@@ -139,19 +131,13 @@ export default function CommunityTab() {
           renderItem={({ item }) => (
             <GroupCard
               group={item}
-              onPress={(slug) => router.push(`/social/${slug}`)}
+              onPress={(slug) => router.push(`/community/${slug}`)}
               onJoin={handleJoin}
               onLeave={handleLeave}
               loading={actionLoadingSlug === item.slug}
             />
           )}
-          ListEmptyComponent={
-            <Text style={styles.empty}>
-              {activeCategory === "joined"
-                ? t("You haven't joined any communities yet.")
-                : t("No groups in this category.")}
-            </Text>
-          }
+          ListEmptyComponent={<Text style={styles.empty}>{t("No groups in this category.")}</Text>}
         />
       )}
     </View>
