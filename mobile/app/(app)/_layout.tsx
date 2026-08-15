@@ -72,10 +72,14 @@ export default function AppLayout() {
         options={{ title: t("Cinematch"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
       />
       <Tabs.Screen
-        name="social"
+        name="community"
+        options={{ title: t("Community"), tabBarIcon: TabIcon("people", "people-outline") }}
+      />
+      <Tabs.Screen
+        name="messages"
         options={{
-          title: t("Social"),
-          tabBarIcon: TabIcon("people", "people-outline"),
+          title: t("Messages"),
+          tabBarIcon: TabIcon("chatbubble", "chatbubble-outline"),
           tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
         }}
       />
