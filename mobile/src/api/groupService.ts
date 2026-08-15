@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Group, GroupMember, Message, MessagePagination } from "../types";
+import type { Group, GroupMember, Message, MessagePagination, ProfileAnalysis } from "../types";
 
 export async function getAllGroups(): Promise<Group[]> {
   const res = await API.get(API_ROUTES.GROUPS.GET_ALL);
@@ -49,5 +49,16 @@ export async function getGroupMessages(
 // conversationService.sendMessageRest.
 export async function sendGroupMessageRest(slugOrId: string, text: string): Promise<Message> {
   const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(slugOrId), { text, type: "text" });
+  return res.data;
+}
+
+// One-off share into a group/community — same role as
+// conversationService.sendRichMessage but for the analysis-share flow's
+// group targets. No socket path, matching that function's reasoning.
+export async function sendGroupRichMessage(
+  slugOrId: string,
+  payload: { text: string; type: "analysis_share"; analysisData: ProfileAnalysis }
+): Promise<Message> {
+  const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(slugOrId), payload);
   return res.data;
 }

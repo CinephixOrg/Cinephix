@@ -57,6 +57,16 @@ const userSchema = new Schema({
     default: 'public'
   },
   // --- BİTİŞ ---
+
+  accountTier: {
+    type: String,
+    enum: ['free', 'pro', 'premium', 'dev'],
+    default: 'free'
+  },
+  tierUpdatedAt: {
+    type: Date,
+    default: Date.now
+  },
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
   toWatchList: { type: [WatchItemSchema], default: [] },
 

@@ -45,6 +45,7 @@ export const API_ROUTES = {
   USERS: {
     GET_PROFILE: (id: string) => `/users/profile/${id}`,
     GET_PROFILE_ANALYSIS: "/users/profile-analysis",
+    GET_PROFILE_ANALYSIS_HISTORY: "/users/profile-analysis/history",
     GET_CINEGRAPH: (id: string) => `/users/cinegraph-data/${id}`,
     GET_FAVORITES: (id: string) => `/users/favorites/${id}`,
     UPDATE_FAVORITES: "/users/me/favorites",
@@ -52,6 +53,7 @@ export const API_ROUTES = {
     UPLOAD_AVATAR: (id: string) => `/users/profile/${id}/upload-profile-pic`,
     UPDATE_PASSWORD: "/users/profile/password",
     UPDATE_VISIBILITY: "/users/me/visibility",
+    UPDATE_TIER: "/users/me/tier", // DEV-ONLY: simulates a tier purchase
     DELETE_ACCOUNT: "/users/profile",
     GET_FOLLOWING: "/users/me/following",
     GET_FOLLOWERS: "/users/me/followers",
@@ -95,6 +97,9 @@ export const API_ROUTES = {
     FIND: "/match",
     ANALYZE: (id: string) => `/match/${id}/analyze`,
     WITH_USER: (id: string) => `/match/${id}`,
+    SWIPE_QUEUE: "/match/swipe/queue",
+    SWIPE: "/match/swipe",
+    SWIPE_REJECTED: "/match/swipe/rejected",
   },
   NOTIFICATIONS: {
     GET_ALL: "/notifications",

@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   Pressable,
   Switch,
   Alert,
@@ -13,18 +14,25 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
 import {
   deleteAccount,
   getUserProfile,
+  setOwnAccountTier,
+  updateBio,
   updatePassword,
   updateVisibility,
+  uploadAvatar,
 } from "../../../src/api/userService";
 import { changeLanguage } from "../../../src/i18n";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { PALETTES, THEME_NAMES } from "../../../src/theme/palettes";
 import { fonts } from "../../../src/theme/typography";
+import type { AccountTier } from "../../../src/types";
+
+const TIER_OPTIONS: AccountTier[] = ["free", "pro", "premium", "dev"];
 
 // Native names — proper nouns, not translated (matches web's LanguageSwitcher.jsx).
 const LANGUAGES: { code: string; name: string }[] = [
@@ -62,6 +70,12 @@ export default function SettingsScreen() {
   },
   rowLabel: { fontSize: 15, color: colors.baseContent },
   rowValue: { fontSize: 15, color: colors.placeholder },
+  avatarWrap: { alignItems: "center", marginBottom: 8 },
+  avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.base200 },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallbackText: { color: colors.placeholder, fontSize: 12 },
+  changePhoto: { color: colors.secondary, fontFamily: fonts.medium, marginTop: 8 },
+  fieldLabel: { color: colors.placeholder, fontSize: 13, marginBottom: 6, marginTop: 12 },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -72,6 +86,7 @@ export default function SettingsScreen() {
     color: colors.baseContent,
     marginBottom: 10,
   },
+  bioInput: { minHeight: 90, textAlignVertical: "top" },
   button: {
     backgroundColor: colors.primary,
     borderRadius: 8,
@@ -127,11 +142,31 @@ export default function SettingsScreen() {
   themeBadgeText: { fontSize: 10, fontFamily: fonts.bold, color: colors.primaryContent },
   themeDots: { flexDirection: "row", gap: 6, marginTop: 8 },
   themeDot: { width: 12, height: 12, borderRadius: 6 },
+  tierOptionsRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  tierOption: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  tierOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  tierOptionText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent, textTransform: "capitalize" },
+  tierOptionTextActive: { color: colors.primaryContent },
 }), [colors]);
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { themeName, setTheme } = useTheme();
+
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [bio, setBio] = useState("");
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.profile_pic_url ?? null);
+  const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
   const [isPrivate, setIsPrivate] = useState(false);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
@@ -145,18 +180,70 @@ export default function SettingsScreen() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
+  const [tierBusy, setTierBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       try {
         const profile = await getUserProfile(user._id);
-        if (profile.isAuthorized) setIsPrivate(profile.visibility === "private");
+        if (profile.isAuthorized) {
+          setIsPrivate(profile.visibility === "private");
+          setBio(profile.bio ?? "");
+        }
+        setUsername(profile.username);
+        setAvatarUri(profile.profile_pic_url ?? null);
       } catch (e: any) {
         setError(e?.response?.data?.message || t("Failed to load settings."));
       }
     })();
   }, [user?._id]);
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setProfileError(t("Photo library permission is required to change your avatar."));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPickedImageUri(result.assets[0].uri);
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setProfileError(null);
+    setProfileMessage(null);
+    setProfileSaving(true);
+    try {
+      let newAvatarUrl: string | undefined;
+      if (pickedImageUri) {
+        const res = await uploadAvatar(user._id, pickedImageUri);
+        newAvatarUrl = res.profilePicUrl;
+      }
+
+      const updated = await updateBio(user._id, { bio, username });
+
+      await updateUser({
+        username: updated.username,
+        ...(newAvatarUrl ? { profile_pic_url: newAvatarUrl } : {}),
+      });
+
+      setPickedImageUri(null);
+      setProfileMessage(t("Profile updated."));
+    } catch (e: any) {
+      setProfileError(e?.response?.data?.message || t("Failed to save profile."));
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const togglePrivacy = async (value: boolean) => {
     setIsPrivate(value);
@@ -211,12 +298,59 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleSetTier = async (tier: AccountTier) => {
+    if (tier === (user?.accountTier ?? "free") || tierBusy) return;
+    setTierBusy(true);
+    try {
+      const newTier = await setOwnAccountTier(tier);
+      await updateUser({ accountTier: newTier });
+    } catch (e: any) {
+      setError(e?.response?.data?.message || t("Failed to update account tier."));
+    } finally {
+      setTierBusy(false);
+    }
+  };
+
   const currentLanguageName =
     LANGUAGES.find((l) => l.code === i18n.language)?.name ?? LANGUAGES[0].name;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {error && <Text style={styles.error}>{error}</Text>}
+
+      <Text style={styles.sectionTitle}>{t("Edit Profile")}</Text>
+      <Pressable onPress={pickImage} style={styles.avatarWrap}>
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarFallbackText}>{t("Add photo")}</Text>
+          </View>
+        )}
+        <Text style={styles.changePhoto}>{t("Change photo")}</Text>
+      </Pressable>
+
+      <Text style={styles.fieldLabel}>{t("Username")}</Text>
+      <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
+
+      <Text style={styles.fieldLabel}>{t("Bio")}</Text>
+      <TextInput
+        style={[styles.input, styles.bioInput]}
+        value={bio}
+        onChangeText={setBio}
+        multiline
+        placeholder={t("Tell people about yourself")}
+      />
+
+      {profileError && <Text style={styles.error}>{profileError}</Text>}
+      {profileMessage && <Text style={styles.success}>{profileMessage}</Text>}
+      <Pressable style={styles.button} onPress={handleSaveProfile} disabled={profileSaving || !username}>
+        {profileSaving ? (
+          <ActivityIndicator color={colors.primaryContent} />
+        ) : (
+          <Text style={styles.buttonText}>{t("Save")}</Text>
+        )}
+      </Pressable>
 
       <Text style={styles.sectionTitle}>{t("Privacy")}</Text>
       <View style={styles.row}>
@@ -315,6 +449,36 @@ export default function SettingsScreen() {
               <Text style={styles.buttonText}>{t("Update Password")}</Text>
             )}
           </Pressable>
+        </>
+      )}
+
+      {__DEV__ && (
+        <>
+          <Text style={styles.sectionTitle}>{t("Dev Tools")}</Text>
+          <Text style={styles.rowValue}>
+            {t("Simulate a purchase to test tier-gated features. No real billing yet.")}
+          </Text>
+          <View style={styles.tierOptionsRow}>
+            {TIER_OPTIONS.map((tier) => {
+              const isActive = (user?.accountTier ?? "free") === tier;
+              return (
+                <Pressable
+                  key={tier}
+                  style={[styles.tierOption, isActive && styles.tierOptionActive]}
+                  onPress={() => handleSetTier(tier)}
+                  disabled={tierBusy}
+                >
+                  {tierBusy && isActive ? (
+                    <ActivityIndicator color={colors.primaryContent} size="small" />
+                  ) : (
+                    <Text style={[styles.tierOptionText, isActive && styles.tierOptionTextActive]}>
+                      {tier}
+                    </Text>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
         </>
       )}
 

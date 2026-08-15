@@ -23,6 +23,8 @@ import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { validateEmail } from "../middleware/validation.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/emailService.js";
+import { getTierLimits } from "../config/tiers.js";
+import ProfileAnalysis from "../models/ProfileAnalysis.js";
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -142,6 +144,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     profile_pic_url: user.profile_pic_url || '',
     googleId: user.googleId || null,
     isOAuthUser: Boolean(user.googleId && !user.password),
+    accountTier: user.accountTier || 'free',
     token,
   }, 'Login successful', 200);
 });
@@ -646,6 +649,29 @@ export const updateVisibility = asyncHandler(async (req, res) => {
 
   const user = await User.findByIdAndUpdate(req.user.id, { visibility }, { new: true }).select('-password');
   sendSuccess(res, { visibility: user.visibility }, 'Visibility updated successfully');
+});
+
+// @desc    DEV-ONLY: change your own account tier to simulate a purchase.
+//          No real billing exists yet — remove/replace this once real IAP lands.
+// @route   PATCH /api/users/me/tier
+// @access  Private (disabled outside development)
+export const setOwnAccountTier = asyncHandler(async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return sendError(res, 'Not available', 404);
+  }
+
+  const { tier } = req.body;
+  if (!['free', 'pro', 'premium', 'dev'].includes(tier)) {
+    return sendError(res, 'Invalid tier', 400);
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { accountTier: tier, tierUpdatedAt: new Date() },
+    { new: true }
+  ).select('-password');
+
+  sendSuccess(res, { accountTier: user.accountTier }, 'Account tier updated');
 });
 
 // controllers/userController.js
@@ -1313,6 +1339,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     profile_pic_url: user.profile_pic_url,
     googleId: user.googleId || null,
     isOAuthUser: Boolean(user.googleId && !user.password),
+    accountTier: user.accountTier || 'free',
     token,
   }, 'Email verified successfully');
 });
@@ -1388,6 +1415,7 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     profile_pic_url: user.profile_pic_url || '',
     googleId: user.googleId || null,
     isOAuthUser: Boolean(user.googleId && !user.password),
+    accountTier: user.accountTier || 'free',
     token,
     isNewOAuthUser: req.authInfo?.isNewOAuthUser || false
   }));
@@ -1412,6 +1440,8 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
 // @access  Private
 export const getProfileAnalysis = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  const tier = req.user.accountTier || 'free';
+  const { analysisCooldownHours, analysisSchema } = getTierLimits(tier);
   const Movie = mongoose.model('Movie');
   const Series = mongoose.model('Series');
 
@@ -1422,6 +1452,18 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
 
   if (!user) {
     return sendError(res, "User not found", 404);
+  }
+
+  const lastAnalysis = await ProfileAnalysis.findOne({ user: userId }).sort({ createdAt: -1 }).lean();
+  if (lastAnalysis) {
+    const cooldownMs = analysisCooldownHours * 60 * 60 * 1000;
+    const elapsedMs = Date.now() - lastAnalysis.createdAt.getTime();
+    if (elapsedMs < cooldownMs) {
+      return sendError(res, "Analysis on cooldown", 429, {
+        retryAfterMs: cooldownMs - elapsedMs,
+        lastRunAt: lastAnalysis.createdAt
+      });
+    }
   }
 
   // 1. Movies Watched & Ratings
@@ -1518,9 +1560,17 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
   };
 
   const apiKey = process.env.GEMINI_API_KEY;
+  const systemInstructionText = buildAnalysisSystemInstruction(analysisSchema, lastAnalysis?.result);
+
+  let analysisResult = null;
+  let provider = null;
 
   if (apiKey) {
     try {
+      const analysisPrompt = lastAnalysis?.result
+        ? `Analyze the user profile metrics:\n${JSON.stringify(payload, null, 2)}\n\nTheir previous analysis result was:\n${JSON.stringify(lastAnalysis.result, null, 2)}`
+        : `Analyze the user profile metrics:\n${JSON.stringify(payload, null, 2)}`;
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
@@ -1533,7 +1583,7 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
               {
                 parts: [
                   {
-                    text: `Analyze the user profile metrics:\n${JSON.stringify(payload, null, 2)}`
+                    text: analysisPrompt
                   }
                 ]
               }
@@ -1541,7 +1591,7 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
             systemInstruction: {
               parts: [
                 {
-                  text: `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n  "nickname": "e.g., Sci-Fi Voyager, Elitist Couch Potato, Fast & Furious Enthusiast",\n  "personalitySummary": "A 2-3 sentence cinematic breakdown of their watch habits, rating styles, and social footprints.",\n  "funFact": "A humorous, data-driven joke based on their specific stats.",\n  "recommendedConcept": "A short sentence advising what vibe or category they should dive into next."\n}`
+                  text: systemInstructionText
                 }
               ]
             },
@@ -1556,8 +1606,8 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
         const resJson = await response.json();
         const text = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) {
-          const parsedAnalysis = JSON.parse(text);
-          return sendSuccess(res, parsedAnalysis, "Profile analysis generated successfully by Gemini");
+          analysisResult = JSON.parse(text);
+          provider = "gemini";
         }
       } else {
         console.error(`Gemini API returned status ${response.status}`);
@@ -1567,13 +1617,64 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
     }
   }
 
-  // Graceful Mock Fallback
-  const mockAnalysis = generateMockAnalysis(payload);
-  return sendSuccess(res, mockAnalysis, "Profile analysis generated successfully (Mock)");
+  if (!analysisResult) {
+    analysisResult = generateMockAnalysis(payload, analysisSchema, lastAnalysis?.result);
+    provider = "mock";
+  }
+
+  await ProfileAnalysis.create({
+    user: userId,
+    tier,
+    payload,
+    result: analysisResult,
+    provider
+  });
+
+  return sendSuccess(
+    res,
+    { ...analysisResult, tier },
+    provider === "gemini" ? "Profile analysis generated successfully by Gemini" : "Profile analysis generated successfully (Mock)"
+  );
 });
 
+// @desc    Get past Profile Analysis runs for the current user (Pro/Premium/Dev only)
+// @route   GET /api/users/profile-analysis/history
+// @access  Private
+export const getProfileAnalysisHistory = asyncHandler(async (req, res) => {
+  const { analysisHistory } = getTierLimits(req.user.accountTier);
+  if (!analysisHistory) {
+    return sendSuccess(res, [], "Profile analysis history is not available on your plan");
+  }
+
+  const history = await ProfileAnalysis.find({ user: req.user.id })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .select("tier result createdAt")
+    .lean();
+
+  return sendSuccess(res, history, "Profile analysis history fetched");
+});
+
+// Builds the Gemini system instruction, adding richer fields for Pro/Premium schemas
+const buildAnalysisSystemInstruction = (analysisSchema, lastResult) => {
+  const basicSchemaFields = `  "nickname": "e.g., Sci-Fi Voyager, Elitist Couch Potato, Fast & Furious Enthusiast",
+  "personalitySummary": "A 2-3 sentence cinematic breakdown of their watch habits, rating styles, and social footprints.",
+  "funFact": "A humorous, data-driven joke based on their specific stats.",
+  "recommendedConcept": "A short sentence advising what vibe or category they should dive into next."`;
+
+  if (analysisSchema !== "rich") {
+    return `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n${basicSchemaFields}\n}`;
+  }
+
+  const richSchemaFields = `${basicSchemaFields},
+  "genreBreakdown": [{"genre": "string", "percentage": number}],
+  "tasteCategory": "A short 2-4 word taste-personality label, e.g. 'Arthouse Purist', 'Blockbuster Loyalist'"${lastResult ? ',\n  "trendVsLastAnalysis": "A short sentence comparing their current stats/taste to their previous analysis."' : ""}`;
+
+  return `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n${richSchemaFields}\n}`;
+};
+
 // Helper for witty local mock analysis
-const generateMockAnalysis = (payload) => {
+const generateMockAnalysis = (payload, analysisSchema = "basic", lastResult = null) => {
   const movieCount = payload.movies.watchedCount || 0;
   const seriesCount = payload.series.watchedCount || 0;
   const totalCount = movieCount + seriesCount;
@@ -1605,7 +1706,25 @@ const generateMockAnalysis = (payload) => {
     recommendedConcept = "Stop reading reviews and hit play on the first item in your watchlist!";
   }
 
-  return { nickname, personalitySummary, funFact, recommendedConcept };
+  const basicResult = { nickname, personalitySummary, funFact, recommendedConcept };
+  if (analysisSchema !== "rich") {
+    return basicResult;
+  }
+
+  const genres = [...new Set([...(payload.movies.topGenres || []), ...(payload.series.topGenres || [])])].slice(0, 5);
+  const genreBreakdown = genres.length
+    ? genres.map((genre, i) => ({
+        genre,
+        percentage: i === genres.length - 1 ? 100 - Math.floor(100 / genres.length) * (genres.length - 1) : Math.floor(100 / genres.length)
+      }))
+    : [];
+
+  return {
+    ...basicResult,
+    genreBreakdown,
+    tasteCategory: genres[0] ? `${genres[0]} Devotee` : "Undiscovered Taste",
+    ...(lastResult && { trendVsLastAnalysis: "Your taste has stayed fairly consistent since your last analysis." })
+  };
 };
 
 // @desc    Import TV Time ZIP archive (movies.json & shows.json)

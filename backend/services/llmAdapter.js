@@ -16,12 +16,63 @@ import crypto from "crypto";
 const DEFAULT_MODEL = process.env.LLM_DEFAULT_MODEL || "gpt-3.5-turbo";
 const DEFAULT_OPENROUTER_MODEL = process.env.OPENROUTER_DEFAULT_MODEL || "qwen-7b";
 const DEFAULT_GROQ_MODEL = process.env.GROQ_DEFAULT_MODEL || "llama-3.1-8b-instant";
+// "latest" alias rather than a pinned version (e.g. gemini-2.5-flash) —
+// verified live against this project's key that a pinned 2.5-flash/
+// 2.5-flash-lite already 404s with "no longer available to new users" as of
+// this writing, while gemini-1.5-flash (used elsewhere for Profile
+// Analysis) is an even older generation. The alias tracks whatever Google
+// currently serves as its free-tier flash model instead of going stale.
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_DEFAULT_MODEL || "gemini-flash-latest";
 const CACHE_TTL_MS = 60 * 1000; // 60s
 const RATE_LIMIT_PER_MIN = parseInt(process.env.LLM_RATE_LIMIT_PER_MIN || "60", 10);
 
 const cache = new Map();
 let rateCounter = 0;
 let rateWindowStart = Date.now();
+
+// Deterministic mock copy per language. Only 'en'/'tr' are hand-written (tr
+// is the original hardcoded language); any other requested language falls
+// back to English rather than guessing at an unreviewed machine translation.
+const MOCK_STRINGS = {
+  en: {
+    topGenre: (g) => `Your strongest shared interest seems to be ${g}.`,
+    favoriteOverlap: (n) => `You have ${n} favorite titles in common, which is a great conversation starter.`,
+    socialOverlap: "There's overlap in your social circles too, which can make things feel more natural.",
+    limitedSignal: "Similarity signals are limited, but there are still common points worth exploring.",
+    strengthGenre: (g) => `Strong shared taste in ${g}`,
+    strengthFavorites: "Similar favorite content",
+    strengthSocial: "Overlap in social circle",
+    strengthGeneral: "General alignment in viewing habits",
+    weaknessFavorites: "Low number of shared favorites",
+    weaknessSocial: "Limited social circle overlap",
+    weaknessGeneral: "Some differences in genre preferences",
+    starterFavorite: "Ask what they thought of a shared favorite",
+    starterGenre: (g) => `Ask about their favorite ${g} pick`,
+    starterSocial: "Break the ice through mutual connections",
+    starterGeneral: "Ask what they've been watching lately",
+    summary: (score) => `Overall, there's promising compatibility between you (${score}%).`,
+  },
+  tr: {
+    topGenre: (g) => `Ortak en güçlü ilgi alanınız ${g} türü gibi görünüyor.`,
+    favoriteOverlap: (n) => `${n} ortak favori içeriğiniz var ve bu sohbeti başlatmak için güçlü bir nokta.`,
+    socialOverlap: "Sosyal ağda da bir kesişim var; bu da iletişimi daha doğal hale getirebilir.",
+    limitedSignal: "Benzerlik sinyalleri sınırlı olsa da, aranızda keşfedilebilecek ortak noktalar bulunuyor.",
+    strengthGenre: (g) => `${g} türünde güçlü ortak zevk`,
+    strengthFavorites: "Ortak favori içerik benzerliği",
+    strengthSocial: "Sosyal çevrede kesişim",
+    strengthGeneral: "Genel izleme eğilimlerinde uyum",
+    weaknessFavorites: "Ortak favori içerik sayısı düşük",
+    weaknessSocial: "Sosyal ağ kesişimi sınırlı",
+    weaknessGeneral: "Bazı tür tercihlerinde farklılıklar var",
+    starterFavorite: "Ortak favori içeriğiniz hakkında ne düşündüğünü sor",
+    starterGenre: (g) => `${g} türünde en sevdiği yapımı sor`,
+    starterSocial: "Ortak bağlantılardan sohbeti aç",
+    starterGeneral: "Bu aralar hangi tür yapımları izlediğini sor",
+    summary: (score) => `Genel olarak aranızda umut veren bir uyum görünüyor (%${score}).`,
+  },
+};
+
+const getMockStrings = (language) => MOCK_STRINGS[language] || MOCK_STRINGS.en;
 
 function hashKey(obj) {
   return crypto.createHash('sha256').update(JSON.stringify(obj)).digest('hex');
@@ -106,6 +157,41 @@ async function callOpenRouter({ messages, model = DEFAULT_OPENROUTER_MODEL, max_
   return { raw: json, content };
 }
 
+async function callGemini({ messages, model = DEFAULT_GEMINI_MODEL } = {}) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+  // Gemini has no single "messages" array like the OpenAI-shaped providers
+  // above — it splits system instructions from the user turn instead, so
+  // the shared { role, content } messages this module builds get folded
+  // into that shape here rather than changing every caller.
+  const systemMessage = messages.find((m) => m.role === 'system');
+  const userMessage = messages.find((m) => m.role === 'user');
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: userMessage?.content || '' }] }],
+    ...(systemMessage && { systemInstruction: { parts: [{ text: systemMessage.content }] } }),
+    generationConfig: { responseMimeType: 'application/json' },
+  });
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gemini error: ${res.status} ${text}`);
+  }
+
+  const json = await res.json();
+  const content = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  return { raw: json, content };
+}
+
 async function callGroq({ messages, model = DEFAULT_GROQ_MODEL, max_tokens = 300, temperature = 0.7, top_p = 1.0 } = {}) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error('GROQ_API_KEY not configured');
@@ -140,16 +226,32 @@ async function callGroq({ messages, model = DEFAULT_GROQ_MODEL, max_tokens = 300
  *  - promptTemplate: { instruction, required_output_keys }
  */
 export async function callLLM(payload = {}, options = {}) {
-  const { provider = 'openai', promptTemplate = {}, cacheKey = null } = options;
+  const { provider = 'openai', promptTemplate = {}, cacheKey = null, language = 'en' } = options;
 
   // simple rate-limiter
   if (!checkRateLimit()) {
     throw new Error('LLM rate limit exceeded');
   }
 
-  const key = cacheKey || hashKey({ provider, payload, promptTemplate });
+  const key = cacheKey || hashKey({ provider, payload, promptTemplate, language });
   const cached = getCached(key);
   if (cached) return { cached: true, ...cached };
+
+  if (provider === 'gemini') {
+    const system = promptTemplate.system || 'You are an assistant that analyzes user compatibility based on JSON input.';
+    const instruction = promptTemplate.instruction || '';
+
+    const messages = [
+      { role: 'system', content: system },
+      { role: 'user', content: instruction + "\n\n" + JSON.stringify(payload) },
+    ];
+
+    const resp = await callGemini({ messages, model: options.model });
+
+    const out = { provider: 'gemini', raw: resp.raw, text: resp.content };
+    setCached(key, out);
+    return out;
+  }
 
   if (provider === 'openai') {
     const system = promptTemplate.system || 'You are an assistant that analyzes user compatibility based on JSON input.';
@@ -201,6 +303,7 @@ export async function callLLM(payload = {}, options = {}) {
 
   if (provider === 'mock') {
     // deterministic mock response for safe testing
+    const strings = getMockStrings(language);
     const finalScore = payload.match && payload.match.final_score;
     const topGenre = payload.shared_genres && payload.shared_genres.top_shared_genre;
     const favoriteOverlap = payload.favorites_overlap && payload.favorites_overlap.intersection_count;
@@ -210,41 +313,41 @@ export async function callLLM(payload = {}, options = {}) {
 
     const analysisParts = [];
     if (topGenre) {
-      analysisParts.push(`Ortak en güçlü ilgi alanınız ${topGenre.genre} türü gibi görünüyor.`);
+      analysisParts.push(strings.topGenre(topGenre.genre));
     }
     if (favoriteOverlap) {
-      analysisParts.push(`${favoriteOverlap} ortak favori içeriğiniz var ve bu sohbeti başlatmak için güçlü bir nokta.`);
+      analysisParts.push(strings.favoriteOverlap(favoriteOverlap));
     }
     if (mutualFollowing || mutualFollowers) {
-      analysisParts.push(`Sosyal ağda da bir kesişim var; bu da iletişimi daha doğal hale getirebilir.`);
+      analysisParts.push(strings.socialOverlap);
     }
     if (!analysisParts.length) {
-      analysisParts.push('Benzerlik sinyalleri sınırlı olsa da, aranızda keşfedilebilecek ortak noktalar bulunuyor.');
+      analysisParts.push(strings.limitedSignal);
     }
 
     const strengths = [];
-    if (topGenre) strengths.push(`${topGenre.genre} türünde güçlü ortak zevk`);
-    if (favoriteOverlap) strengths.push('Ortak favori içerik benzerliği');
-    if (socialOverlapRate > 0.2) strengths.push('Sosyal çevrede kesişim');
-    if (!strengths.length) strengths.push('Genel izleme eğilimlerinde uyum');
+    if (topGenre) strengths.push(strings.strengthGenre(topGenre.genre));
+    if (favoriteOverlap) strengths.push(strings.strengthFavorites);
+    if (socialOverlapRate > 0.2) strengths.push(strings.strengthSocial);
+    if (!strengths.length) strengths.push(strings.strengthGeneral);
 
     const weaknesses = [];
-    if (!favoriteOverlap) weaknesses.push('Ortak favori içerik sayısı düşük');
-    if (socialOverlapRate < 0.2) weaknesses.push('Sosyal ağ kesişimi sınırlı');
-    if (!weaknesses.length) weaknesses.push('Bazı tür tercihlerinde farklılıklar var');
+    if (!favoriteOverlap) weaknesses.push(strings.weaknessFavorites);
+    if (socialOverlapRate < 0.2) weaknesses.push(strings.weaknessSocial);
+    if (!weaknesses.length) weaknesses.push(strings.weaknessGeneral);
 
     const conversationStarters = [];
-    if (favoriteOverlap) conversationStarters.push('Ortak favori içeriğiniz hakkında ne düşündüğünü sor');
-    if (topGenre) conversationStarters.push(`${topGenre.genre} türünde en sevdiği yapımı sor`);
-    if (mutualFollowing || mutualFollowers) conversationStarters.push('Ortak bağlantılardan sohbeti aç');
-    if (!conversationStarters.length) conversationStarters.push('Bu aralar hangi tür yapımları izlediğini sor');
+    if (favoriteOverlap) conversationStarters.push(strings.starterFavorite);
+    if (topGenre) conversationStarters.push(strings.starterGenre(topGenre.genre));
+    if (mutualFollowing || mutualFollowers) conversationStarters.push(strings.starterSocial);
+    if (!conversationStarters.length) conversationStarters.push(strings.starterGeneral);
 
     const vals = (payload.match && payload.match.graphData && payload.match.graphData.values) || [0,0,0,0,0];
     const labels = ["Collab","Content","Social","Diversity","Bonus"];
     const graph_ascii = labels.map((L,i)=> `${L}: ${'█'.repeat(Math.round((vals[i]||0)/10))} (${vals[i]||0})`).join(' | ');
 
     const parsed = {
-      analysis: `${analysisParts.join(' ')} Genel olarak aranızda umut veren bir uyum görünüyor (%${finalScore || 0}).`,
+      analysis: `${analysisParts.join(' ')} ${strings.summary(finalScore || 0)}`,
       strengths: strengths.slice(0,3),
       weaknesses: weaknesses.slice(0,3),
       conversation_starters: conversationStarters.slice(0,4),

@@ -40,9 +40,11 @@ import {
   getMyProfile,
   getSuggestedUsers,
   getProfileAnalysis,
+  getProfileAnalysisHistory,
   importTVTimeData,
   importLetterboxdData,
-  updateVisibility
+  updateVisibility,
+  setOwnAccountTier
 } from "../controllers/userController.js";
 import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -98,6 +100,7 @@ const googleAuthMiddleware = process.env.GOOGLE_CLIENT_ID
       passport.authenticate("google", {
         scope: ["profile", "email"],
         session: false,
+        prompt: "select_account",
         state:
           req.query.platform === "mobile" && req.query.redirectUri
             ? encodeMobileState(req.query.redirectUri)
@@ -121,6 +124,7 @@ router.post('/profile/:id/upload-profile-pic', authMiddleware, upload.single('pr
 router.get("/me", authMiddleware, getMyProfile);
 router.get("/me/suggestions", authMiddleware, getSuggestedUsers);
 router.get("/profile-analysis", authMiddleware, getProfileAnalysis);
+router.get("/profile-analysis/history", authMiddleware, getProfileAnalysisHistory);
 
 // Follow/unfollow operations
 router.post("/follow", authMiddleware, followUser); // Support body targetId
@@ -152,6 +156,7 @@ router.get("/favorites/:id", authMiddleware, getUserFavorites);
 
 router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchemas.updateProfile), updateUserBio);
 router.patch("/me/visibility", authMiddleware, updateVisibility);
+router.patch("/me/tier", authMiddleware, setOwnAccountTier); // DEV-ONLY: simulates a tier purchase, disabled in production
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);
 router.get("/cinegraph-data/:id", authMiddleware, getUserCineGraph);

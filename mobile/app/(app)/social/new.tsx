@@ -55,7 +55,7 @@ export default function NewMessageScreen() {
       const conv = await getOrCreateConversation(user._id);
       await refreshConversations();
       router.replace({
-        pathname: "/messages/[conversationId]",
+        pathname: "/social/[conversationId]",
         params: {
           conversationId: conv._id,
           otherUsername: user.username,

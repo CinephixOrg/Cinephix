@@ -1,5 +1,7 @@
 .venv/
 backend/.env
+frontend/.env
 backend/node_modules/
 backup/backend/node_modules/
 backup/frontend/cinephix/node_modules/
+mobile/.dev-logs/

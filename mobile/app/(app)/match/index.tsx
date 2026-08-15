@@ -1,335 +1,261 @@
-import { useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  Switch,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-} from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { findMatches, analyzeMatchWithUser } from "../../../src/api/matchService";
-import { MOVIE_GENRES, SERIES_GENRES } from "../../../src/constants/genreConstants";
-import MatchLeaderboard from "../../../src/components/MatchLeaderboard";
-import MatchCard from "../../../src/components/MatchCard";
-import AnalyzeModal from "../../../src/components/AnalyzeModal";
-import { SkeletonMatchResults } from "../../../src/components/Skeleton";
-import type { ContentType, MatchAnalysis, MatchResult } from "../../../src/types";
+import { useAuth } from "../../../src/context/AuthContext";
+import { useFollowGraph } from "../../../src/context/FollowGraphContext";
+import { getSwipeQueue, swipeMatch, type MatchFilters } from "../../../src/api/matchService";
+import SwipeCardStack, { type SwipeCardStackHandle } from "../../../src/components/match/SwipeCardStack";
+import MatchFiltersModal from "../../../src/components/match/MatchFiltersModal";
+import RejectedMatchesModal from "../../../src/components/match/RejectedMatchesModal";
+import type { SwipeCandidate, SwipeDecision } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
-type FilterMode = "general" | "specific";
+const DEFAULT_FILTERS: MatchFilters = { type: "movie", genres: [], useCount: true, useAvgRating: true };
 
 export default function MatchScreen() {
   const { colors } = useTheme();
-  const styles = useMemo(() => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  list: { padding: 16, paddingBottom: 32 },
-  row: { justifyContent: "space-between" },
-  title: { fontFamily: fonts.bold, fontSize: 24, color: colors.baseContent },
-  subtitle: { color: colors.placeholder, fontSize: 13, marginTop: 4, marginBottom: 16 },
-  panel: {
-    backgroundColor: colors.base200,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  segmentedRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  segment: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  segmentActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  segmentText: { fontFamily: fonts.medium, color: colors.baseContent },
-  segmentTextActive: { color: colors.primaryContent },
-  radioRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
-  radioDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  radioDotActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  radioLabel: { color: colors.baseContent, fontSize: 14 },
-  genreWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8, marginBottom: 4 },
-  genreChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  genreChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  genreChipText: { fontSize: 12, color: colors.baseContent },
-  genreChipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    marginTop: 8,
-  },
-  switchLabel: { color: colors.baseContent, fontSize: 14 },
-  submitButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primaryContent },
-  sectionTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, marginBottom: 12 },
-  footerNote: { textAlign: "center", color: colors.placeholder, fontSize: 12, marginTop: 8 },
-  emptyState: { alignItems: "center", marginTop: 24 },
-  empty: { color: colors.placeholder, fontSize: 15, marginBottom: 16 },
-  resetButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  resetButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
-  error: { color: colors.error, fontSize: 13, marginTop: 8 },
-}), [colors]);
   const { t } = useTranslation();
-  const [matchType, setMatchType] = useState<ContentType>("movie");
-  const [filterMode, setFilterMode] = useState<FilterMode>("general");
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [useCount, setUseCount] = useState(true);
-  const [useAvgRating, setUseAvgRating] = useState(true);
+  const { user } = useAuth();
+  const router = useRouter();
+  const followGraph = useFollowGraph();
+  const stackRef = useRef<SwipeCardStackHandle>(null);
 
-  const [matches, setMatches] = useState<MatchResult[]>([]);
-  const [totalMatches, setTotalMatches] = useState(0);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const tier = user?.accountTier ?? "free";
+  // Same tier boundary the rest of the app already uses for gated features
+  // (ProfileAnalysesTab, analysis history) — Free never sees the filter/
+  // rejected-list entry points; the server independently enforces both too.
+  const canUseMatchFilters = tier === "pro" || tier === "premium" || tier === "dev";
+  const canViewRejected = canUseMatchFilters;
+
+  const [filters, setFilters] = useState<MatchFilters>(DEFAULT_FILTERS);
+  const [candidates, setCandidates] = useState<SwipeCandidate[]>([]);
+  const [queueVersion, setQueueVersion] = useState(0);
+  const [topCandidate, setTopCandidate] = useState<SwipeCandidate | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [swipesPerDay, setSwipesPerDay] = useState<number | null>(null);
+  const [swipesUsedToday, setSwipesUsedToday] = useState(0);
+  const [filtersModalVisible, setFiltersModalVisible] = useState(false);
+  const [rejectedModalVisible, setRejectedModalVisible] = useState(false);
 
-  const [analyzeModalVisible, setAnalyzeModalVisible] = useState(false);
-  const [analyzeData, setAnalyzeData] = useState<MatchAnalysis | null>(null);
-  const [analyzeTargetUserId, setAnalyzeTargetUserId] = useState<string | null>(null);
-  const [analyzingUserId, setAnalyzingUserId] = useState<string | null>(null);
-
-  const genreList = matchType === "movie" ? MOVIE_GENRES : SERIES_GENRES;
-  const criteriaValid = useCount || useAvgRating;
-  const genresValid = filterMode === "general" || selectedGenres.length > 0;
-  const canSubmit = criteriaValid && genresValid && !loading;
-
-  const changeType = (type: ContentType) => {
-    setMatchType(type);
-    setSelectedGenres([]);
-    setMatches([]);
-    setHasSearched(false);
-    setError(null);
-  };
-
-  const changeFilterMode = (mode: FilterMode) => {
-    setFilterMode(mode);
-    setSelectedGenres([]);
-    setMatches([]);
-    setHasSearched(false);
-    setError(null);
-  };
-
-  const toggleGenre = (genre: string) => {
-    setSelectedGenres((prev) =>
-      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre]
-    );
-  };
-
-  const handleFindMatches = async () => {
+  const loadQueue = useCallback(async (nextFilters: MatchFilters) => {
     setLoading(true);
     setError(null);
     try {
-      const { items, pagination } = await findMatches(
-        {
-          type: matchType,
-          genres: filterMode === "specific" ? selectedGenres : [],
-          useCount,
-          useAvgRating,
-        },
-        1,
-        15
-      );
-      setMatches(items);
-      setTotalMatches(pagination?.total ?? items.length);
-      setHasSearched(true);
+      const result = await getSwipeQueue(nextFilters);
+      setCandidates(result.candidates);
+      setSwipesPerDay(result.swipesPerDay);
+      setSwipesUsedToday(result.swipesUsedToday);
+      setQueueVersion((v) => v + 1);
     } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to find matches."));
+      setError(e?.response?.data?.message || t("Failed to load matches."));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const handleReset = () => {
-    setMatches([]);
-    setHasSearched(false);
-    setError(null);
-  };
+  useEffect(() => {
+    loadQueue(DEFAULT_FILTERS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleAnalyze = async (targetUserId: string) => {
-    setAnalyzingUserId(targetUserId);
+  const limitReached = swipesPerDay !== null && swipesUsedToday >= swipesPerDay;
+
+  const handleSwipe = async (candidate: SwipeCandidate, decision: SwipeDecision) => {
     try {
-      const data = await analyzeMatchWithUser(targetUserId, matchType);
-      setAnalyzeData(data);
-      setAnalyzeTargetUserId(targetUserId);
-      setAnalyzeModalVisible(true);
+      const result = await swipeMatch(
+        candidate.user._id,
+        candidate.contentType,
+        decision,
+        candidate.matchPercentage
+      );
+      setSwipesUsedToday((prev) => Math.max(prev + 1, (swipesPerDay ?? 0) - result.swipesRemainingToday));
+      // A swipe-accept follows the target the exact same way the regular
+      // Follow button does, but goes through /match/swipe instead of
+      // /users/follow — the shared FollowGraphContext never heard about it,
+      // which is why the Following list kept showing a stale "Follow"
+      // button. Feed it the same way useFollowState's follow() does.
+      if (result.followType) {
+        followGraph.applyFollow(candidate.user._id, result.followType);
+      }
     } catch (e: any) {
-      Alert.alert("Error", e?.response?.data?.message || t("Failed to analyze match."));
-    } finally {
-      setAnalyzingUserId(null);
+      // Backend is the source of truth for the limit — if it says 429, trust
+      // that over our local optimistic count (another session may have used
+      // swipes concurrently). The card already animated away either way;
+      // this only affects whether further swipes are allowed.
+      if (e?.response?.status === 429 && swipesPerDay !== null) {
+        setSwipesUsedToday(swipesPerDay);
+      }
     }
   };
 
-  const header = (
-    <View>
-      <Text style={styles.title}>{t("Cinematch")}</Text>
-      <Text style={styles.subtitle}>
-        {t("Find users whose taste matches yours, based on ratings and genres.")}
-      </Text>
+  const handleEmpty = () => {
+    if (!limitReached) loadQueue(filters);
+  };
 
-      <View style={styles.panel}>
-        <View style={styles.segmentedRow}>
-          {(["movie", "series"] as ContentType[]).map((type) => (
-            <Pressable
-              key={type}
-              style={[styles.segment, matchType === type && styles.segmentActive]}
-              onPress={() => changeType(type)}
-            >
-              <Text
-                style={[styles.segmentText, matchType === type && styles.segmentTextActive]}
-              >
-                {type === "movie" ? t("Movies") : t("Series")}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+  const handleApplyFilters = (next: MatchFilters) => {
+    setFilters(next);
+    loadQueue(next);
+  };
 
-        <Pressable style={styles.radioRow} onPress={() => changeFilterMode("general")}>
-          <View style={[styles.radioDot, filterMode === "general" && styles.radioDotActive]} />
-          <Text style={styles.radioLabel}>{t("Match my entire CineGraph")}</Text>
-        </Pressable>
-        <Pressable style={styles.radioRow} onPress={() => changeFilterMode("specific")}>
-          <View style={[styles.radioDot, filterMode === "specific" && styles.radioDotActive]} />
-          <Text style={styles.radioLabel}>{t("Match specific genres")}</Text>
-        </Pressable>
-
-        {filterMode === "specific" && (
-          <View style={styles.genreWrap}>
-            {genreList.map((genre) => {
-              const active = selectedGenres.includes(genre);
-              return (
-                <Pressable
-                  key={genre}
-                  style={[styles.genreChip, active && styles.genreChipActive]}
-                  onPress={() => toggleGenre(genre)}
-                >
-                  <Text style={[styles.genreChipText, active && styles.genreChipTextActive]}>
-                    {genre}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        )}
-
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t("Watched Count")}</Text>
-          <Switch
-            value={useCount}
-            onValueChange={setUseCount}
-            trackColor={{ true: colors.primary, false: colors.border }}
-          />
-        </View>
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t("Average Rating")}</Text>
-          <Switch
-            value={useAvgRating}
-            onValueChange={setUseAvgRating}
-            trackColor={{ true: colors.primary, false: colors.border }}
-          />
-        </View>
-        {!criteriaValid && (
-          <Text style={styles.error}>{t("You must select at least one criterion.")}</Text>
-        )}
-
-        <Pressable
-          style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
-          onPress={handleFindMatches}
-          disabled={!canSubmit}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.primaryContent} />
-          ) : (
-            <Text style={styles.submitButtonText}>{t("🔍 Find Matches")}</Text>
-          )}
-        </Pressable>
-
-        {error && <Text style={styles.error}>{error}</Text>}
-      </View>
-
-      {loading && <SkeletonMatchResults />}
-
-      {!loading && matches.length > 0 && (
-        <>
-          <MatchLeaderboard matches={matches} />
-          <Text style={styles.sectionTitle}>{t("🎬 All Matches")}</Text>
-        </>
-      )}
-    </View>
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.base100 },
+        headerRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          paddingHorizontal: 20,
+          paddingTop: 12,
+        },
+        headerIcons: { flexDirection: "row", gap: 10 },
+        iconButton: {
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          backgroundColor: colors.base200,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        subtitle: { color: colors.placeholder, fontSize: 13, marginTop: 4, paddingHorizontal: 20 },
+        counterText: { color: colors.placeholder, fontSize: 12, paddingHorizontal: 20, marginTop: 10 },
+        stackArea: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
+        actionRow: {
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 24,
+          paddingVertical: 18,
+        },
+        actionButton: {
+          width: 58,
+          height: 58,
+          borderRadius: 29,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.base200,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+        profileButton: { width: 46, height: 46, borderRadius: 23 },
+        center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
+        centerText: { color: colors.placeholder, fontSize: 15, textAlign: "center", marginBottom: 16 },
+        primaryButton: { backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 12 },
+        primaryButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 14 },
+      }),
+    [colors]
   );
+
+  const showStack = !loading && !error && !limitReached;
 
   return (
-    <>
-      <FlatList
-        style={styles.container}
-        contentContainerStyle={styles.list}
-        data={loading ? [] : matches}
-        keyExtractor={(item) => item.user._id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        ListHeaderComponent={header}
-        renderItem={({ item, index }) => (
-          <MatchCard
-            match={item}
-            rank={index + 1}
-            onAnalyze={handleAnalyze}
-            analyzing={analyzingUserId === item.user._id}
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <View style={styles.headerIcons}>
+          {canViewRejected && (
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setRejectedModalVisible(true)}
+              accessibilityLabel={t("Rejected")}
+            >
+              <Ionicons name="archive-outline" size={19} color={colors.baseContent} />
+            </Pressable>
+          )}
+          {canUseMatchFilters && (
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => setFiltersModalVisible(true)}
+              accessibilityLabel={t("Filters")}
+            >
+              <Ionicons name="options-outline" size={20} color={colors.baseContent} />
+            </Pressable>
+          )}
+        </View>
+      </View>
+      <Text style={styles.subtitle}>{t("Swipe right to follow, left to pass.")}</Text>
+      {swipesPerDay !== null && (
+        <Text style={styles.counterText}>
+          {t("{{remaining}} of {{total}} swipes left today", {
+            remaining: Math.max(0, swipesPerDay - swipesUsedToday),
+            total: swipesPerDay,
+          })}
+        </Text>
+      )}
+
+      <View style={styles.stackArea}>
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.primary} size="large" />
+          </View>
+        ) : error ? (
+          <View style={styles.center}>
+            <Text style={styles.centerText}>{error}</Text>
+            <Pressable style={styles.primaryButton} onPress={() => loadQueue(filters)}>
+              <Text style={styles.primaryButtonText}>{t("Retry")}</Text>
+            </Pressable>
+          </View>
+        ) : limitReached ? (
+          <View style={styles.center}>
+            <Text style={styles.centerText}>
+              {t("You've used all your swipes for today. Come back tomorrow!")}
+            </Text>
+            {tier === "free" && (
+              <Pressable style={styles.primaryButton} onPress={() => router.push("/profile/settings")}>
+                <Text style={styles.primaryButtonText}>{t("Upgrade for more swipes")}</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          <SwipeCardStack
+            key={queueVersion}
+            ref={stackRef}
+            candidates={candidates}
+            onSwipe={handleSwipe}
+            onEmpty={handleEmpty}
+            onTopCandidateChange={setTopCandidate}
+            disabled={limitReached}
           />
         )}
-        ListFooterComponent={
-          !loading && matches.length > 15 ? (
-            <Text style={styles.footerNote}>
-              {t("Showing top 15 matches")} {totalMatches} {t("total")}
-            </Text>
-          ) : null
-        }
-        ListEmptyComponent={
-          !loading && hasSearched ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.empty}>{t("No matches found. Try adjusting your criteria.")}</Text>
-              <Pressable style={styles.resetButton} onPress={handleReset}>
-                <Text style={styles.resetButtonText}>{t("Back to Search")}</Text>
-              </Pressable>
-            </View>
-          ) : null
-        }
+      </View>
+
+      {showStack && candidates.length > 0 && (
+        <View style={styles.actionRow}>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => stackRef.current?.swipeLeft()}
+            accessibilityLabel={t("Pass")}
+          >
+            <Ionicons name="close" size={28} color={colors.error} />
+          </Pressable>
+          <Pressable
+            style={[styles.actionButton, styles.profileButton]}
+            onPress={() => topCandidate && router.push(`/user/${topCandidate.user._id}`)}
+            disabled={!topCandidate}
+            accessibilityLabel={t("View Profile")}
+          >
+            <Ionicons name="person-outline" size={20} color={colors.baseContent} />
+          </Pressable>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => stackRef.current?.swipeRight()}
+            accessibilityLabel={t("Follow")}
+          >
+            <Ionicons name="heart" size={26} color={colors.success} />
+          </Pressable>
+        </View>
+      )}
+
+      <MatchFiltersModal
+        visible={filtersModalVisible}
+        onClose={() => setFiltersModalVisible(false)}
+        filters={filters}
+        onApply={handleApplyFilters}
       />
-      <AnalyzeModal
-        visible={analyzeModalVisible}
-        onClose={() => setAnalyzeModalVisible(false)}
-        data={analyzeData}
-        shareTargetUserId={analyzeTargetUserId ?? undefined}
-      />
-    </>
+      <RejectedMatchesModal visible={rejectedModalVisible} onClose={() => setRejectedModalVisible(false)} />
+    </View>
   );
 }
-

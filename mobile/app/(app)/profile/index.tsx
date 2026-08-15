@@ -5,33 +5,38 @@ import {
   Image,
   ScrollView,
   Pressable,
-  ActivityIndicator,
   StyleSheet,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
-import { getCineGraph, getProfileAnalysis, getUserProfile } from "../../../src/api/userService";
+import { getCineGraph, getUserProfile } from "../../../src/api/userService";
 import { getFavorites } from "../../../src/api/favoriteService";
-import CineGraphDonut from "../../../src/components/CineGraphDonut";
-import ContentRail from "../../../src/components/ContentRail";
-import ContentCard from "../../../src/components/ContentCard";
+import MyListsView from "../../../src/components/MyListsView";
+import ProfileOverviewTab from "../../../src/components/profile/ProfileOverviewTab";
+import ProfileCinegraphsTab from "../../../src/components/profile/ProfileCinegraphsTab";
+import ProfileAnalysesTab from "../../../src/components/profile/ProfileAnalysesTab";
 import ProfileAnalysisModal from "../../../src/components/ProfileAnalysisModal";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
-import { useToast } from "../../../src/context/ToastContext";
 import type { CineGraphData, Favorites, ProfileAnalysis, UserProfile } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
+type ProfileTab = "profile" | "cinegraphs" | "lists" | "analyses";
+
+const TABS: { key: ProfileTab; label: string }[] = [
+  { key: "profile", label: "Profile" },
+  { key: "cinegraphs", label: "Cinegraphs" },
+  { key: "lists", label: "Lists" },
+  { key: "analyses", label: "Analyses" },
+];
+
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
-  container: {
-    padding: 20,
-    alignItems: "center",
-    backgroundColor: colors.base100,
-    flexGrow: 1,
-  },
+  screen: { flex: 1, backgroundColor: colors.base100 },
+  scrollContent: { flexGrow: 1 },
+  profileArea: { padding: 20, paddingBottom: 20, alignItems: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.base200 },
   avatarFallback: { alignItems: "center", justifyContent: "center" },
@@ -49,46 +54,46 @@ export default function ProfileScreen() {
     marginTop: 16,
     lineHeight: 20,
   },
-  buttonRow: { flexDirection: "row", gap: 12, marginTop: 20, alignSelf: "stretch" },
-  button: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buttonText: { fontFamily: fonts.bold, color: colors.primaryContent },
-  buttonSecondary: {
-    flex: 1,
+  tierBadge: {
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
+    borderColor: colors.primary,
   },
-  buttonSecondaryText: { fontFamily: fonts.medium, color: colors.baseContent },
-  analyzeButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
+  tierBadgeText: { fontFamily: fonts.medium, fontSize: 11, color: colors.primary },
+  // Letterboxd-style flat tabs — full width, no pill/button chrome, just an
+  // underline on the active tab sitting on top of the row's shared baseline.
+  tabRow: {
+    flexDirection: "row",
     alignSelf: "stretch",
-    marginTop: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  analyzeButtonText: { fontFamily: fonts.medium, color: colors.baseContent },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+    marginBottom: -StyleSheet.hairlineWidth,
+  },
+  tabButtonActive: { borderBottomColor: colors.primary },
+  tabButtonText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
+  tabButtonTextActive: { color: colors.baseContent, fontFamily: fonts.bold },
+  tabContent: { paddingTop: 20 },
   error: { color: colors.error, fontSize: 16 },
 }), [colors]);
   const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
-  const { showToast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [cineGraph, setCineGraph] = useState<CineGraphData | null>(null);
   const [favorites, setFavorites] = useState<Favorites | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   const [analysisData, setAnalysisData] = useState<ProfileAnalysis | null>(null);
   const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
 
@@ -126,22 +131,9 @@ export default function ProfileScreen() {
     }, [user?._id])
   );
 
-  const handleAnalyzeProfile = async () => {
-    setAnalyzing(true);
-    try {
-      const data = await getProfileAnalysis();
-      setAnalysisData(data);
-      setAnalysisModalVisible(true);
-    } catch (e: any) {
-      showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
   if (loading) {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.profileArea}>
         <SkeletonProfileHeader />
       </ScrollView>
     );
@@ -160,9 +152,29 @@ export default function ProfileScreen() {
     month: "long",
   });
 
-  return (
-    <>
-    <ScrollView contentContainerStyle={styles.container}>
+  const tabRow = (
+    <View style={styles.tabRow}>
+      {TABS.map((tabDef) => {
+        const isActive = activeTab === tabDef.key;
+        return (
+          <Pressable
+            key={tabDef.key}
+            style={[styles.tabButton, isActive && styles.tabButtonActive]}
+            onPress={() => setActiveTab(tabDef.key)}
+          >
+            <Text style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}>
+              {t(tabDef.label)}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  // Name, network stats, and bio are Profile-subtab-only — Cinegraphs, Lists,
+  // and Analyses show just the tab row plus their own content.
+  const profileArea = (
+    <View style={styles.profileArea}>
       {profile.profile_pic_url ? (
         <Image source={{ uri: profile.profile_pic_url }} style={styles.avatar} />
       ) : (
@@ -174,6 +186,11 @@ export default function ProfileScreen() {
       )}
 
       <Text style={styles.username}>{profile.username}</Text>
+      {profile.accountTier && profile.accountTier !== "free" && (
+        <View style={styles.tierBadge}>
+          <Text style={styles.tierBadgeText}>{profile.accountTier.toUpperCase()}</Text>
+        </View>
+      )}
       <Text style={styles.joined}>{t("Joined")} {joinedDate}</Text>
 
       <View style={styles.statsRow}>
@@ -194,62 +211,38 @@ export default function ProfileScreen() {
       </View>
 
       <Text style={styles.bio}>{profile.bio || t("No bio yet.")}</Text>
+    </View>
+  );
 
-      <View style={styles.buttonRow}>
-        <Pressable style={styles.button} onPress={() => router.push("/profile/edit")}>
-          <Text style={styles.buttonText}>{t("Edit Profile")}</Text>
-        </Pressable>
-        <Pressable style={styles.buttonSecondary} onPress={() => router.push("/profile/settings")}>
-          <Text style={styles.buttonSecondaryText}>{t("Settings")}</Text>
-        </Pressable>
-      </View>
-
-      <Pressable style={styles.analyzeButton} onPress={handleAnalyzeProfile} disabled={analyzing}>
-        {analyzing ? (
-          <ActivityIndicator color={colors.baseContent} />
-        ) : (
-          <Text style={styles.analyzeButtonText}>{t("Analyze Profile")}</Text>
-        )}
-      </Pressable>
-
-      {cineGraph && (
-        <>
-          <CineGraphDonut title={t("Watched Movie Genres")} stats={cineGraph.movieStats} />
-          <CineGraphDonut title={t("Watched Series Genres")} stats={cineGraph.seriesStats} />
-        </>
+  return (
+    <>
+      {activeTab === "lists" ? (
+        <MyListsView ListHeaderComponent={tabRow} />
+      ) : (
+        <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+          {tabRow}
+          {activeTab === "profile" && profileArea}
+          <View style={styles.tabContent}>
+            {activeTab === "profile" && <ProfileOverviewTab favorites={favorites} />}
+            {activeTab === "cinegraphs" && <ProfileCinegraphsTab cineGraph={cineGraph} />}
+            {activeTab === "analyses" && (
+              <ProfileAnalysesTab
+                onViewAnalysis={(data) => {
+                  setAnalysisData(data);
+                  setAnalysisModalVisible(true);
+                }}
+              />
+            )}
+          </View>
+        </ScrollView>
       )}
 
-      {favorites && (
-        <>
-          <ContentRail
-            title={t("Favorite Movies")}
-            data={favorites.movies}
-            keyExtractor={(m) => m._id}
-            emptyText={t("No favorite movies yet.")}
-            renderItem={(m) => (
-              <ContentCard id={m._id} type="movie" title={m.title} posterPath={m.poster_path} basePath="/profile" />
-            )}
-          />
-          <ContentRail
-            title={t("Favorite Series")}
-            data={favorites.series}
-            keyExtractor={(s) => s._id}
-            emptyText={t("No favorite series yet.")}
-            renderItem={(s) => (
-              <ContentCard id={s._id} type="series" title={s.name} posterPath={s.poster_path} basePath="/profile" />
-            )}
-          />
-        </>
-      )}
-    </ScrollView>
-
-    <ProfileAnalysisModal
-      visible={analysisModalVisible}
-      onClose={() => setAnalysisModalVisible(false)}
-      data={analysisData}
-      shareable
-    />
+      <ProfileAnalysisModal
+        visible={analysisModalVisible}
+        onClose={() => setAnalysisModalVisible(false)}
+        data={analysisData}
+        shareable
+      />
     </>
   );
 }
-
