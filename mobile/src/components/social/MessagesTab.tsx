@@ -2,15 +2,15 @@ import { View, Text, Image, FlatList, Pressable, RefreshControl, StyleSheet } fr
 import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useChat } from "../../../src/context/ChatContext";
-import { SkeletonRow } from "../../../src/components/Skeleton";
-import type { Conversation, GroupConversationRow } from "../../../src/types";
-import { useTheme } from "../../../src/context/ThemeContext";
-import { fonts } from "../../../src/theme/typography";
+import { useChat } from "../../context/ChatContext";
+import { SkeletonRow } from "../Skeleton";
+import type { Conversation, GroupConversationRow } from "../../types";
+import { useTheme } from "../../context/ThemeContext";
+import { fonts } from "../../theme/typography";
 
 type InboxItem = Conversation | GroupConversationRow;
 
-export default function MessagesScreen() {
+export default function MessagesTab() {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.base100 },
@@ -73,7 +73,7 @@ export default function MessagesScreen() {
   const renderItem = ({ item }: { item: InboxItem }) => {
     if (item.type === "group") {
       return (
-        <Pressable style={styles.row} onPress={() => router.push(`/community/${item.slug}`)}>
+        <Pressable style={styles.row} onPress={() => router.push(`/social/${item.slug}`)}>
           {item.coverImage ? (
             <Image source={{ uri: item.coverImage }} style={styles.avatar} />
           ) : (
@@ -106,7 +106,7 @@ export default function MessagesScreen() {
       );
     }
     return (
-      <Pressable style={styles.row} onPress={() => router.push(`/messages/${item._id}`)}>
+      <Pressable style={styles.row} onPress={() => router.push(`/social/${item._id}`)}>
         {item.otherUser.profile_pic_url ? (
           <Image source={{ uri: item.otherUser.profile_pic_url }} style={styles.avatar} />
         ) : (
@@ -166,7 +166,7 @@ export default function MessagesScreen() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.empty}>{t("No messages yet")}</Text>
-            <Pressable style={styles.newButton} onPress={() => router.push("/messages/new")}>
+            <Pressable style={styles.newButton} onPress={() => router.push("/social/new")}>
               <Text style={styles.newButtonText}>{t("New Message")}</Text>
             </Pressable>
           </View>
@@ -175,4 +175,3 @@ export default function MessagesScreen() {
     </View>
   );
 }
-

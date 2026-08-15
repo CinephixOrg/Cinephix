@@ -50,12 +50,16 @@ export const setupChat = (io) => {
 
     // ── Join a chat room ──────────────────────────────────────────────────
     socket.on("join-room", async ({ roomType, roomId }) => {
-      const authorized = await canAccessRoom(socket.user._id, roomType, roomId);
-      if (!authorized) {
-        socket.emit("error", { message: "Not authorized to join this room" });
-        return;
+      try {
+        const authorized = await canAccessRoom(socket.user._id, roomType, roomId);
+        if (!authorized) {
+          socket.emit("error", { message: "Not authorized to join this room" });
+          return;
+        }
+        socket.join(roomKey(roomType, roomId));
+      } catch {
+        socket.emit("error", { message: "Failed to join room" });
       }
-      socket.join(roomKey(roomType, roomId));
     });
 
     // ── Leave a chat room ─────────────────────────────────────────────────

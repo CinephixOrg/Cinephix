@@ -45,7 +45,7 @@ export default function RecommendationMessageCard({ message }: Props) {
     <Pressable
       style={styles.card}
       onPress={() =>
-        router.push(`/messages/content/${message.contentType}/${message.contentId}` as any)
+        router.push(`/social/content/${message.contentType}/${message.contentId}` as any)
       }
     >
       {posterUrl ? (

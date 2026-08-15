@@ -157,7 +157,7 @@ export const markGroupAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/groups/:slug/messages
 export const sendGroupMessage = asyncHandler(async (req, res) => {
-  const { text, type = "text", contentId, contentType, contentData } = req.body;
+  const { text, type = "text", contentId, contentType, contentData, analysisData } = req.body;
 
   // Validate message based on type
   if (type === "recommendation") {
@@ -165,6 +165,8 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
       return sendError(res, "Invalid message text", 400);
     if (!contentId || !contentType || !["movie", "series"].includes(contentType))
       return sendError(res, "Invalid recommendation data", 400);
+  } else if (type === "analysis_share") {
+    if (!analysisData) return sendError(res, "Missing analysis data", 400);
   } else {
     // text message
     if (!text?.trim() || text.length > 1000) {
@@ -213,6 +215,8 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
         rating: contentData.rating || null,
       };
     }
+  } else if (type === "analysis_share") {
+    messageData.analysisData = analysisData;
   }
 
   const message = await Message.create(messageData);
@@ -221,10 +225,44 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     .populate("sender", "username profile_pic_url")
     .lean();
 
+  // This REST path (used for one-off sends like recommendation/analysis-share
+  // that don't go through the socket) has no socket equivalent to update the
+  // group's inbox preview, unlike plain-text group messages — mirror
+  // chatSocket.js's group handling here so the sender's and members' inboxes
+  // don't go stale after a share.
+  const senderId = req.user._id.toString();
+  const memberIds = group.members
+    .map((m) => m.user.toString())
+    .filter((id) => id !== senderId);
+  const incrObj = {};
+  memberIds.forEach((memberId) => {
+    incrObj[`unreadCounts.${memberId}`] = 1;
+  });
+  const previewText = text.trim();
+  const lastMessageAt = new Date();
+  await Group.findByIdAndUpdate(group._id, {
+    lastMessage: previewText,
+    lastMessageAt,
+    lastMessageSenderId: senderId,
+    ...(Object.keys(incrObj).length > 0 && { $inc: incrObj }),
+  });
+
   // Broadcast to all connected room members in real-time
   const io = getIo();
   if (io) {
     io.to(roomKey("group", group._id.toString())).emit("new-message", populated);
+
+    const payload = {
+      roomType: "group",
+      groupId: group._id.toString(),
+      lastMessage: previewText,
+      lastMessageAt,
+      senderId,
+    };
+    memberIds.forEach((memberId) => {
+      io.to(`user:${memberId}`).emit("conversation-updated", payload);
+    });
+    io.to(`user:${senderId}`).emit("conversation-updated", payload);
   }
 
   sendSuccess(res, populated, "Message sent", 201);

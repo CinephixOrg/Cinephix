@@ -109,7 +109,7 @@ export default function RecommendScreen() {
     });
   };
 
-  const handleConfirmRecipients = async (userIds: string[]) => {
+  const handleConfirmRecipients = async (userIds: string[], _groupIds: string[]) => {
     if (!picked || !user) return;
     setSending(true);
     try {
