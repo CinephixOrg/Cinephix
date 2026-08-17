@@ -23,9 +23,10 @@ API.interceptors.request.use(async (req) => {
 API.interceptors.response.use(
   (res) => {
     if (res.data && res.data.pagination) {
-      const { data, pagination } = res.data;
+      const { data, pagination, success, message, ...rest } = res.data;
       res.data = data;
       (res as any).pagination = pagination;
+      Object.assign(res, rest);
       return res;
     }
     if (res.data && res.data.data !== undefined && res.data.success !== undefined) {

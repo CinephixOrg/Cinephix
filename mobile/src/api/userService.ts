@@ -1,12 +1,14 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
 import type {
+  AccountTier,
   CineGraphData,
   Connection,
   FollowActionType,
   FollowRequestUser,
   Pagination,
   ProfileAnalysis,
+  ProfileAnalysisHistoryEntry,
   PublicProfile,
   SuggestedUser,
   UserProfile,
@@ -30,6 +32,13 @@ export async function getUserProfile(id: string): Promise<PublicProfile> {
 // fallback) on every call, so this can take a few seconds.
 export async function getProfileAnalysis(): Promise<ProfileAnalysis> {
   const res = await API.get(API_ROUTES.USERS.GET_PROFILE_ANALYSIS);
+  return res.data;
+}
+
+// Pro/Premium/Dev only — the backend returns an empty array for Free rather
+// than an error, so this never needs its own tier check on the client.
+export async function getProfileAnalysisHistory(): Promise<ProfileAnalysisHistoryEntry[]> {
+  const res = await API.get(API_ROUTES.USERS.GET_PROFILE_ANALYSIS_HISTORY);
   return res.data;
 }
 
@@ -67,6 +76,13 @@ export async function updatePassword(oldPassword: string, newPassword: string): 
 
 export async function updateVisibility(visibility: "public" | "private"): Promise<void> {
   await API.patch(API_ROUTES.USERS.UPDATE_VISIBILITY, { visibility });
+}
+
+// DEV-ONLY: simulates a tier purchase by setting your own account tier
+// directly. The backend route 404s outside development.
+export async function setOwnAccountTier(tier: AccountTier): Promise<AccountTier> {
+  const res = await API.patch(API_ROUTES.USERS.UPDATE_TIER, { tier });
+  return res.data.accountTier;
 }
 
 export async function deleteAccount(): Promise<void> {

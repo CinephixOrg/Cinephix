@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, Modal, StyleSheet } from "react-nati
 import { useTranslation } from "react-i18next";
 import UserSharePickerModal from "./UserSharePickerModal";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
+import { sendGroupRichMessage } from "../api/groupService";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useToast } from "../context/ToastContext";
@@ -32,7 +33,6 @@ function buildStyles(colors: ColorPalette) {
       opacity: 0.75,
       fontSize: 11,
       fontFamily: fonts.bold,
-      textTransform: "uppercase",
       letterSpacing: 1,
     },
     nickname: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 22, marginTop: 4 },
@@ -44,10 +44,22 @@ function buildStyles(colors: ColorPalette) {
       fontSize: 12,
       color: colors.placeholder,
       marginBottom: 6,
-      textTransform: "uppercase",
     },
     funFactBox: { backgroundColor: colors.base300, borderRadius: 10, padding: 14 },
     funFactText: { color: colors.baseContent, fontSize: 13, lineHeight: 19, fontStyle: "italic" },
+    tasteChip: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.base300,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+    },
+    tasteChipText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 12 },
+    genreRow: { flexDirection: "row", alignItems: "center", marginBottom: 8, gap: 8 },
+    genreLabel: { color: colors.baseContent, fontSize: 12, width: 80 },
+    genreBarTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.base300, overflow: "hidden" },
+    genreBarFill: { height: "100%", borderRadius: 4, backgroundColor: colors.primary },
+    genrePercent: { color: colors.placeholder, fontSize: 11, width: 34, textAlign: "right" },
     buttonRow: { flexDirection: "row", gap: 8, padding: 20, paddingTop: 4 },
     closeButton: {
       flex: 1,
@@ -79,20 +91,28 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
   const [pickerVisible, setPickerVisible] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const handleConfirmRecipients = async (userIds: string[]) => {
+  const handleConfirmRecipients = async (userIds: string[], groupIds: string[]) => {
     if (!data || !user) return;
     setSending(true);
     try {
-      await Promise.all(
-        userIds.map(async (userId) => {
+      const text = t("{{user}} is sharing their profile analysis with you.", { user: user.username });
+      await Promise.all([
+        ...userIds.map(async (userId) => {
           const conv = await getOrCreateConversation(userId);
           await sendRichMessage(conv._id, {
-            text: t("{{user}} is sharing their profile analysis with you.", { user: user.username }),
+            text,
             type: "analysis_share",
             analysisData: { ...data, type: "profile" },
           });
-        })
-      );
+        }),
+        ...groupIds.map((groupId) =>
+          sendGroupRichMessage(groupId, {
+            text,
+            type: "analysis_share",
+            analysisData: { ...data, type: "profile" },
+          })
+        ),
+      ]);
       await refreshConversations();
       setPickerVisible(false);
     } catch {
@@ -107,7 +127,11 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
       <View style={styles.overlay}>
         <View style={styles.card}>
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>{t("AI Cinematic Persona")}</Text>
+            {/* .toUpperCase() (not textTransform: "uppercase") so casing is
+                JS-level and locale-invariant — RN's native uppercase
+                transform honors the device's OS locale, turning "i" into
+                "İ" on Turkish-locale devices regardless of app language. */}
+            <Text style={styles.eyebrow}>{t("AI Cinematic Persona").toUpperCase()}</Text>
             <Text style={styles.nickname}>{data?.nickname || t("Silent Observer")}</Text>
           </View>
 
@@ -115,17 +139,47 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
             {data ? (
               <>
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>🧠 {t("Profile Insights")}</Text>
+                  <Text style={styles.sectionTitle}>{`🧠 ${t("Profile Insights")}`.toUpperCase()}</Text>
                   <Text style={styles.paragraph}>{data.personalitySummary}</Text>
                 </View>
 
+                {data.tasteCategory && (
+                  <View style={styles.section}>
+                    <View style={styles.tasteChip}>
+                      <Text style={styles.tasteChipText}>{data.tasteCategory}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {data.genreBreakdown && data.genreBreakdown.length > 0 && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{`📊 ${t("Genre Breakdown")}`.toUpperCase()}</Text>
+                    {data.genreBreakdown.map((g) => (
+                      <View key={g.genre} style={styles.genreRow}>
+                        <Text style={styles.genreLabel} numberOfLines={1}>{g.genre}</Text>
+                        <View style={styles.genreBarTrack}>
+                          <View style={[styles.genreBarFill, { width: `${g.percentage}%` }]} />
+                        </View>
+                        <Text style={styles.genrePercent}>{g.percentage}%</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {data.trendVsLastAnalysis && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>{`📈 ${t("Since Last Time")}`.toUpperCase()}</Text>
+                    <Text style={styles.paragraph}>{data.trendVsLastAnalysis}</Text>
+                  </View>
+                )}
+
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>💡 {t("Recommended Vibe")}</Text>
+                  <Text style={styles.sectionTitle}>{`💡 ${t("Recommended Vibe")}`.toUpperCase()}</Text>
                   <Text style={styles.paragraph}>{data.recommendedConcept}</Text>
                 </View>
 
                 <View style={styles.funFactBox}>
-                  <Text style={styles.sectionTitle}>🍿 {t("Did You Know?")}</Text>
+                  <Text style={styles.sectionTitle}>{`🍿 ${t("Did You Know?")}`.toUpperCase()}</Text>
                   <Text style={styles.funFactText}>"{data.funFact}"</Text>
                 </View>
               </>
@@ -153,6 +207,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
         onClose={() => setPickerVisible(false)}
         sending={sending}
         onConfirm={handleConfirmRecipients}
+        allowGroups
       />
     </Modal>
   );

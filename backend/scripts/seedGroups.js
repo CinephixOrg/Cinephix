@@ -82,14 +82,108 @@ const PRESET_GROUPS = [
     category: "style",
     tags: ["animation", "ghibli", "pixar", "anime"],
   },
+  {
+    slug: "nolan-disciples",
+    name: "NolanDisciples",
+    description:
+      "For fans of Christopher Nolan's mind-bending timelines, practical effects, and blockbuster ambition.",
+    category: "director",
+    tags: ["christopher-nolan", "inception", "interstellar", "nonlinear-timelines"],
+  },
+  {
+    slug: "kubrick-circle",
+    name: "KubrickCircle",
+    description:
+      "Dissecting Stanley Kubrick's meticulous compositions, unsettling atmospheres, and singular vision.",
+    category: "director",
+    tags: ["stanley-kubrick", "the-shining", "2001-a-space-odyssey", "meticulous"],
+  },
+  {
+    slug: "documentary-devotees",
+    name: "DocumentaryDevotees",
+    description:
+      "For lovers of nonfiction storytelling — true crime, nature docs, biographical portraits, and everything real.",
+    category: "genre",
+    tags: ["documentary", "true-story", "nonfiction", "real-life"],
+  },
+  {
+    slug: "romance-watchers",
+    name: "RomanceWatchers",
+    description:
+      "Swooning over love stories big and small — rom-coms, period romances, and everything in between.",
+    category: "genre",
+    tags: ["romance", "rom-com", "love-story", "heartfelt"],
+  },
+  {
+    slug: "musical-mavens",
+    name: "MusicalMavens",
+    description:
+      "Song-and-dance devotees — Broadway adaptations, jukebox musicals, and every showstopping number.",
+    category: "genre",
+    tags: ["musical", "broadway", "singing", "dance"],
+  },
+  {
+    slug: "war-film-veterans",
+    name: "WarFilmVeterans",
+    description:
+      "Exploring cinema's most harrowing conflicts — historical epics, combat dramas, and stories of survival.",
+    category: "genre",
+    tags: ["war", "historical", "combat", "drama"],
+  },
+  {
+    slug: "new-wave-cinephiles",
+    name: "NewWaveCinephiles",
+    description:
+      "Revisiting the French New Wave and its rule-breaking contemporaries — jump cuts, handheld cameras, and rebellion.",
+    category: "era",
+    tags: ["french-new-wave", "1960s", "godard", "truffaut"],
+  },
+  {
+    slug: "silent-era-society",
+    name: "SilentEraSociety",
+    description:
+      "Honoring the pioneers of silent film — physical comedy, expressionist visuals, and storytelling without a word.",
+    category: "era",
+    tags: ["silent-film", "1920s", "chaplin", "keaton"],
+  },
+  {
+    slug: "noir-nightowls",
+    name: "NoirNightowls",
+    description:
+      "Smoky rooms, hard-boiled detectives, and moral ambiguity — for lovers of classic and neo film noir alike.",
+    category: "style",
+    tags: ["film-noir", "shadows", "detective", "moody"],
+  },
+  {
+    slug: "found-footage-fans",
+    name: "FoundFootageFans",
+    description:
+      "Handheld cameras and raw dread — celebrating found-footage horror, mockumentaries, and low-budget ingenuity.",
+    category: "style",
+    tags: ["found-footage", "mockumentary", "handheld", "low-budget"],
+  },
 ];
 
+// Upsert-by-slug rather than a one-time "insert if the collection is empty"
+// check — that original check meant adding new entries to PRESET_GROUPS
+// above would silently never reach an already-seeded database. This runs
+// safely on every server start: existing groups (and any member/message
+// data they've accumulated) are left untouched via $setOnInsert, only
+// genuinely new slugs get created.
 export const seedGroups = async () => {
   try {
-    const count = await Group.countDocuments({ isPreset: true });
-    if (count > 0) return;
-    await Group.insertMany(PRESET_GROUPS);
-    logger.info(`Seeded ${PRESET_GROUPS.length} preset community groups`);
+    let seededCount = 0;
+    for (const group of PRESET_GROUPS) {
+      const result = await Group.updateOne(
+        { slug: group.slug },
+        { $setOnInsert: { ...group, isPreset: true } },
+        { upsert: true }
+      );
+      if (result.upsertedCount) seededCount += 1;
+    }
+    if (seededCount > 0) {
+      logger.info(`Seeded ${seededCount} new preset community groups`);
+    }
   } catch (err) {
     logger.error("Failed to seed groups:", err.message);
   }

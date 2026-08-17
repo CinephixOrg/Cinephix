@@ -1,5 +1,7 @@
 export type ContentType = "movie" | "series";
 
+export type AccountTier = "free" | "pro" | "premium" | "dev";
+
 export interface User {
   _id: string;
   username: string;
@@ -7,6 +9,7 @@ export interface User {
   profile_pic_url?: string;
   googleId?: string | null;
   isOAuthUser?: boolean;
+  accountTier?: AccountTier;
   token: string;
 }
 
@@ -106,6 +109,7 @@ export interface PublicProfileFull extends PublicProfileBase {
   isAuthorized: true;
   bio?: string;
   visibility?: "public" | "private";
+  accountTier?: AccountTier;
   followers: string[];
   following: string[];
   createdAt: string;
@@ -221,9 +225,34 @@ export interface MatchUser {
   bio?: string;
 }
 
-export interface MatchResult {
+export type SwipeDecision = "accept" | "reject";
+
+// GET /match/swipe/queue row — same shape for the swipe-away-forever queue
+// and (via the same `user` field) the Rejected list below.
+export interface SwipeCandidate {
   user: MatchUser;
+  contentType: ContentType;
   matchPercentage: number;
+}
+
+export interface SwipeQueueResult {
+  candidates: SwipeCandidate[];
+  swipesPerDay: number;
+  swipesUsedToday: number;
+}
+
+export interface SwipeResult {
+  decision: SwipeDecision;
+  followType: "following" | "requested" | null;
+  swipesRemainingToday: number;
+}
+
+// GET /match/swipe/rejected row — Pro/Premium/Dev only.
+export interface RejectedMatchEntry {
+  user: MatchUser;
+  contentType: ContentType;
+  matchPercentage: number;
+  rejectedAt: string;
 }
 
 export interface MatchWithUserResult {
@@ -240,7 +269,18 @@ export interface MatchWithUserResult {
 }
 
 export interface MatchAnalysis {
-  provider: "mock" | "groq" | "openrouter" | "openai";
+  provider: "mock" | "gemini" | "groq" | "openrouter" | "openai";
+  // Absent on analyses shared before this field existed (old chat messages'
+  // stored analysisData) — callers must treat it as optional. Same number
+  // getMatchWithUser's matchPercentage would return for the same pair/filters.
+  matchPercentage?: number;
+  breakdown?: {
+    collaborative: number;
+    contentBased: number;
+    social: number;
+    diversity: number;
+    bonus: number;
+  };
   parsed: {
     analysis: string;
     strengths: string[];
@@ -256,9 +296,29 @@ export interface ProfileAnalysis {
   personalitySummary: string;
   funFact: string;
   recommendedConcept: string;
+  // Pro/Premium only — absent entirely on the Free (basic) schema.
+  genreBreakdown?: { genre: string; percentage: number }[];
+  tasteCategory?: string;
+  trendVsLastAnalysis?: string;
+  tier?: AccountTier;
   // Added client-side only when sharing, mirrors web's exact convention for
   // letting a receiver distinguish this from a MatchAnalysis share.
   type?: "profile";
+}
+
+// One saved row from GET /users/profile-analysis/history (Pro/Premium/Dev
+// only — Free always gets an empty array back).
+export interface ProfileAnalysisHistoryEntry {
+  _id: string;
+  tier: AccountTier;
+  result: ProfileAnalysis;
+  createdAt: string;
+}
+
+// Error body returned by GET /users/profile-analysis when on cooldown (HTTP 429).
+export interface ProfileAnalysisCooldownError {
+  retryAfterMs: number;
+  lastRunAt: string;
 }
 
 export type NotificationType = "follow" | "message" | "follow_request" | "follow_accepted";

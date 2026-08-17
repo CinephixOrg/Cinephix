@@ -19,7 +19,7 @@ export const sendError = (res, message = 'Error', statusCode = 400, errors = nul
   });
 };
 
-export const sendPaginated = (res, data = [], total = 0, page = 1, limit = 10, message = 'Success') => {
+export const sendPaginated = (res, data = [], total = 0, page = 1, limit = 10, message = 'Success', extra = null) => {
   res.status(200).json({
     success: true,
     message,
@@ -30,6 +30,7 @@ export const sendPaginated = (res, data = [], total = 0, page = 1, limit = 10, m
       limit,
       pages: Math.ceil(total / limit),
     },
+    ...(extra && extra),
   });
 };
 

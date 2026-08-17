@@ -1,6 +1,8 @@
+import { View } from "react-native";
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../../../src/components/NotificationBell";
+import SettingsButton from "../../../src/components/SettingsButton";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
@@ -17,10 +19,17 @@ export default function ProfileStackLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: t("Profile"), headerRight: () => <NotificationBell /> }}
+        options={{
+          title: t("Profile"),
+          headerRight: () => (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <NotificationBell />
+              <SettingsButton />
+            </View>
+          ),
+        }}
       />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
-      <Stack.Screen name="edit" options={{ title: t("Edit Profile") }} />
       <Stack.Screen name="settings" options={{ title: t("Settings") }} />
       <Stack.Screen name="activity-log" options={{ title: t("Activity Log") }} />
       <Stack.Screen name="import" options={{ title: t("Import Data") }} />
