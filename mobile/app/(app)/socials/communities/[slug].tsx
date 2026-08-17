@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../src/context/AuthContext";
+import { useAuth } from "../../../../src/context/AuthContext";
 import {
   getGroupBySlug,
   getGroupMembers,
@@ -21,14 +21,14 @@ import {
   leaveGroup,
   markGroupRead,
   sendGroupMessageRest,
-} from "../../../src/api/groupService";
-import { useChat } from "../../../src/context/ChatContext";
-import ChatRoom from "../../../src/components/ChatRoom";
-import { SkeletonGrid, SkeletonAvatarCell, SkeletonGroupDetailHeader } from "../../../src/components/Skeleton";
-import type { Group, GroupMember } from "../../../src/types";
-import { useTheme } from "../../../src/context/ThemeContext";
-import type { ColorPalette } from "../../../src/theme/palettes";
-import { fonts } from "../../../src/theme/typography";
+} from "../../../../src/api/groupService";
+import { useChat } from "../../../../src/context/ChatContext";
+import ChatRoom from "../../../../src/components/ChatRoom";
+import { SkeletonGrid, SkeletonAvatarCell, SkeletonGroupDetailHeader } from "../../../../src/components/Skeleton";
+import type { Group, GroupMember } from "../../../../src/types";
+import { useTheme } from "../../../../src/context/ThemeContext";
+import type { ColorPalette } from "../../../../src/theme/palettes";
+import { fonts } from "../../../../src/theme/typography";
 
 type Tab = "Chat" | "Members" | "About";
 
@@ -282,4 +282,3 @@ export default function GroupDetailScreen() {
     </View>
   );
 }
-

@@ -10,7 +10,7 @@ export default function AboutScreen() {
       StyleSheet.create({
         container: { padding: 20, backgroundColor: colors.base100, flexGrow: 1 },
         header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
-        logo: { width: 40, height: 40, borderRadius: 8 },
+        logo: { width: 36, height: 40, resizeMode: "contain" },
       }),
     [colors]
   );
@@ -18,7 +18,7 @@ export default function AboutScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Image source={require("../../../assets/icon.png")} style={styles.logo} />
+        <Image source={require("../../../assets/cinephix_logo.png")} style={styles.logo} />
         <LegalTitle>About Cinephix</LegalTitle>
       </View>
 

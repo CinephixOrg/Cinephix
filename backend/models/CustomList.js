@@ -17,6 +17,8 @@ const customListSchema = new Schema(
     description: { type: String, trim: true, maxlength: 300, default: "" },
     isPublic: { type: Boolean, default: false },
     items: { type: [listItemSchema], default: [] },
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    views: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

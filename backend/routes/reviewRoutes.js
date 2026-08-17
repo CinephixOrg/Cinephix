@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getContentReviews,
   getFriendsReviews,
+  getReviewsFromFriends,
   addOrUpdateReview,
   deleteMyReview,
   toggleReviewLike,
@@ -14,6 +15,9 @@ const router = express.Router();
 
 // GET popular reviews globally (homepage)
 router.get('/popular', authMiddleware, getPopularReviews);
+
+// GET global "reviews from people you follow" feed (Home page Reviews tab)
+router.get('/friends', authMiddleware, getReviewsFromFriends);
 
 // GET all reviews for content (optionalAuth: includes hasLiked when logged in)
 router.get('/content/:contentId', optionalAuth, getContentReviews);

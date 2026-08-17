@@ -132,7 +132,7 @@ export default function NotificationsScreen() {
       case "message":
         if (item.conversationId) {
           router.push({
-            pathname: "/messages/[conversationId]",
+            pathname: "/socials/messages/[conversationId]",
             params: {
               conversationId: item.conversationId,
               otherUsername: item.sender.username,

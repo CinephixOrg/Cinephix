@@ -2,14 +2,14 @@ import { useState, useMemo } from "react";
 import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import SearchBar from "../../../src/components/SearchBar";
-import { searchUsers } from "../../../src/api/userService";
-import { getOrCreateConversation } from "../../../src/api/conversationService";
-import { useChat } from "../../../src/context/ChatContext";
-import { SkeletonRow } from "../../../src/components/Skeleton";
-import type { UserSearchResult } from "../../../src/types";
-import { useTheme } from "../../../src/context/ThemeContext";
-import { fonts } from "../../../src/theme/typography";
+import SearchBar from "../../../../src/components/SearchBar";
+import { searchUsers } from "../../../../src/api/userService";
+import { getOrCreateConversation } from "../../../../src/api/conversationService";
+import { useChat } from "../../../../src/context/ChatContext";
+import { SkeletonRow } from "../../../../src/components/Skeleton";
+import type { UserSearchResult } from "../../../../src/types";
+import { useTheme } from "../../../../src/context/ThemeContext";
+import { fonts } from "../../../../src/theme/typography";
 
 export default function NewMessageScreen() {
   const { colors } = useTheme();
@@ -55,7 +55,7 @@ export default function NewMessageScreen() {
       const conv = await getOrCreateConversation(user._id);
       await refreshConversations();
       router.replace({
-        pathname: "/messages/[conversationId]",
+        pathname: "/socials/messages/[conversationId]",
         params: {
           conversationId: conv._id,
           otherUsername: user.username,
@@ -111,4 +111,3 @@ export default function NewMessageScreen() {
     </View>
   );
 }
-

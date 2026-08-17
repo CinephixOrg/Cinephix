@@ -20,10 +20,10 @@ interface Props {
   // lists/[id].tsx, which needs its own wrapper for a remove-item button).
   style?: ViewStyle;
   // Which tab's own nested content/[type]/[id] route to push to (e.g.
-  // "/movies", "/lists") — content detail is duplicated into every tab's
+  // "/watchlist", "/lists") — content detail is duplicated into every tab's
   // own Stack (see (app)/_layout.tsx) so back navigation returns to the
   // right tab instead of bottom-tabs' default of jumping to the first one.
-  basePath: "/movies" | "/series" | "/watchlist" | "/to-watch" | "/lists" | "/home" | "/profile" | `/user/${string}`;
+  basePath: "/watchlist" | "/to-watch" | "/lists" | "/home" | "/profile" | `/user/${string}`;
 }
 
 export default function ContentCard({

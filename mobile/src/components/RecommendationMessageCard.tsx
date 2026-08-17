@@ -5,36 +5,43 @@ import type { Message } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
-const POSTER_BASE = "https://image.tmdb.org/t/p/w154";
+const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
+const CARD_WIDTH = 180;
 
 interface Props {
   message: Message;
+  isOwn: boolean;
 }
 
 // Rendered inside a chat bubble in place of plain text — tap navigates to
-// Content Detail via Messages' own thin route
-// (app/(app)/messages/content/[type]/[id].tsx), matching the per-tab
+// Content Detail via Socials' own thin route
+// (app/(app)/socials/content/[type]/[id].tsx), matching the per-tab
 // duplicate-route convention every other tab already follows.
-export default function RecommendationMessageCard({ message }: Props) {
+//
+// Poster fills the card width top-to-bottom (a real poster, not a small
+// thumbnail) with the message's own sentence ("X recommends you Y") below it
+// — previously that sentence was stored on the message but never rendered
+// anywhere, so the card alone (small thumbnail + bare title) didn't read as
+// a recommendation at all. Colors mirror the same own/other bubble
+// convention every other message type in this chat uses.
+export default function RecommendationMessageCard({ message, isOwn }: Props) {
   const { colors } = useTheme();
   const router = useRouter();
   const styles = useMemo(
     () =>
       StyleSheet.create({
         card: {
-          flexDirection: "row",
-          gap: 8,
-          backgroundColor: colors.base100,
-          borderRadius: 10,
-          padding: 8,
-          maxWidth: 220,
+          width: CARD_WIDTH,
+          borderRadius: 14,
+          overflow: "hidden",
+          backgroundColor: isOwn ? colors.primary : colors.base200,
+          ...(isOwn ? { borderBottomRightRadius: 4 } : { borderBottomLeftRadius: 4 }),
         },
-        poster: { width: 44, height: 64, borderRadius: 6, backgroundColor: colors.base200 },
-        info: { flex: 1, justifyContent: "center" },
-        title: { fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
-        year: { fontSize: 11, color: colors.placeholder, marginTop: 2 },
+        poster: { width: CARD_WIDTH, aspectRatio: 2 / 3, backgroundColor: colors.base300 },
+        textWrap: { paddingHorizontal: 10, paddingVertical: 8 },
+        text: { fontSize: 13, lineHeight: 18, color: isOwn ? colors.primaryContent : colors.baseContent },
       }),
-    [colors]
+    [colors, isOwn]
   );
 
   if (!message.contentId || !message.contentType) return null;
@@ -44,9 +51,7 @@ export default function RecommendationMessageCard({ message }: Props) {
   return (
     <Pressable
       style={styles.card}
-      onPress={() =>
-        router.push(`/messages/content/${message.contentType}/${message.contentId}` as any)
-      }
+      onPress={() => router.push(`/socials/content/${message.contentType}/${message.contentId}` as any)}
     >
       {posterUrl ? (
         <Image
@@ -56,13 +61,8 @@ export default function RecommendationMessageCard({ message }: Props) {
       ) : (
         <View style={styles.poster} />
       )}
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
-          {message.contentData?.title || "?"}
-        </Text>
-        {message.contentData?.releaseYear ? (
-          <Text style={styles.year}>{message.contentData.releaseYear}</Text>
-        ) : null}
+      <View style={styles.textWrap}>
+        <Text style={styles.text}>{message.text}</Text>
       </View>
     </Pressable>
   );

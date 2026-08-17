@@ -1,10 +1,9 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import NotificationBell from "../../../src/components/NotificationBell";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
-export default function CommunityStackLayout() {
+export default function SearchStackLayout() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   return (
@@ -15,11 +14,12 @@ export default function CommunityStackLayout() {
         headerTintColor: colors.baseContent,
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{ title: t("Community"), headerRight: () => <NotificationBell /> }}
-      />
-      <Stack.Screen name="[slug]" options={{ title: "" }} />
+      {/* No header at all on the index screen — the page starts directly
+          with the search box, no title/notification bell taking up space
+          above it. */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
+      <Stack.Screen name="lists/[id]" options={{ title: t("List") }} />
     </Stack>
   );
 }

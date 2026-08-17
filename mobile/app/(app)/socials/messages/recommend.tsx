@@ -2,18 +2,19 @@ import { useEffect, useState, useMemo } from "react";
 import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import SearchBar from "../../../src/components/SearchBar";
-import ContentFilterPanel from "../../../src/components/ContentFilterPanel";
-import UserSharePickerModal from "../../../src/components/UserSharePickerModal";
-import { getMovies, getSeries, type ContentFilters } from "../../../src/api/contentService";
-import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../../../src/constants/contentGenreIds";
-import { getOrCreateConversation, sendRichMessage } from "../../../src/api/conversationService";
-import { useAuth } from "../../../src/context/AuthContext";
-import { useChat } from "../../../src/context/ChatContext";
-import { useToast } from "../../../src/context/ToastContext";
-import type { ContentType, Movie, Series } from "../../../src/types";
-import { useTheme } from "../../../src/context/ThemeContext";
-import { fonts } from "../../../src/theme/typography";
+import SearchBar from "../../../../src/components/SearchBar";
+import ContentFilterPanel from "../../../../src/components/ContentFilterPanel";
+import UserSharePickerModal from "../../../../src/components/UserSharePickerModal";
+import { getMovies, getSeries, type ContentFilters } from "../../../../src/api/contentService";
+import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../../../../src/constants/contentGenreIds";
+import { getOrCreateConversation, sendRichMessage } from "../../../../src/api/conversationService";
+import { sendGroupRichMessage } from "../../../../src/api/groupService";
+import { useAuth } from "../../../../src/context/AuthContext";
+import { useChat } from "../../../../src/context/ChatContext";
+import { useToast } from "../../../../src/context/ToastContext";
+import type { ContentType, Movie, Series } from "../../../../src/types";
+import { useTheme } from "../../../../src/context/ThemeContext";
+import { fonts } from "../../../../src/theme/typography";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w154";
 
@@ -41,7 +42,6 @@ export default function RecommendScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
-  const [hasPoster, setHasPoster] = useState<"" | "yes" | "no">("");
   const [results, setResults] = useState<(Movie | Series)[]>([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -71,7 +71,7 @@ export default function RecommendScreen() {
     }
     let cancelled = false;
     setSearching(true);
-    const filters: ContentFilters = { years: selectedYears, genres: selectedGenres, hasPoster: hasPoster || undefined };
+    const filters: ContentFilters = { years: selectedYears, genres: selectedGenres };
     (async () => {
       try {
         const { items } =
@@ -91,7 +91,7 @@ export default function RecommendScreen() {
     return () => {
       cancelled = true;
     };
-  }, [query, contentType, selectedYears, selectedGenres, hasPoster]);
+  }, [query, contentType, selectedYears, selectedGenres]);
 
   const handlePick = (item: Movie | Series) => {
     const isMovie = "title" in item;
@@ -109,7 +109,7 @@ export default function RecommendScreen() {
     });
   };
 
-  const handleConfirmRecipients = async (userIds: string[]) => {
+  const handleConfirmRecipients = async (userIds: string[], groupIds: string[]) => {
     if (!picked || !user) return;
     setSending(true);
     try {
@@ -118,25 +118,35 @@ export default function RecommendScreen() {
         title: picked.title,
         type: t(picked.contentType === "movie" ? "movie_acc" : "series_acc"),
       });
-      await Promise.all(
-        userIds.map(async (userId) => {
+      const contentData = {
+        title: picked.title,
+        posterUrl: picked.posterUrl,
+        genres: picked.genres,
+        releaseYear: picked.releaseYear,
+        overview: picked.overview,
+        rating: picked.rating,
+      };
+      await Promise.all([
+        ...userIds.map(async (userId) => {
           const conv = await getOrCreateConversation(userId);
           await sendRichMessage(conv._id, {
             text,
             type: "recommendation",
             contentType: picked.contentType,
             contentId: picked.contentId,
-            contentData: {
-              title: picked.title,
-              posterUrl: picked.posterUrl,
-              genres: picked.genres,
-              releaseYear: picked.releaseYear,
-              overview: picked.overview,
-              rating: picked.rating,
-            },
+            contentData,
           });
-        })
-      );
+        }),
+        ...groupIds.map((groupId) =>
+          sendGroupRichMessage(groupId, {
+            text,
+            type: "recommendation",
+            contentType: picked.contentType,
+            contentId: picked.contentId,
+            contentData,
+          })
+        ),
+      ]);
       await refreshConversations();
       router.back();
     } catch {
@@ -151,28 +161,16 @@ export default function RecommendScreen() {
     () =>
       StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.base100 },
-        radioRow: { flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingTop: 12 },
-        radioButton: {
-          flex: 1,
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: 8,
-          paddingVertical: 10,
-          alignItems: "center",
+        tabBar: {
+          flexDirection: "row",
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.base300,
         },
-        radioButtonActive: { borderColor: colors.primary, backgroundColor: colors.base200 },
-        radioButtonText: { color: colors.baseContent, fontFamily: fonts.medium, fontSize: 13 },
-        filterToggle: {
-          alignSelf: "flex-start",
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: 8,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          marginHorizontal: 16,
-          marginBottom: 12,
-        },
-        filterToggleText: { fontFamily: fonts.medium, color: colors.baseContent, fontSize: 13 },
+        tabButton: { flex: 1, alignItems: "center", paddingVertical: 12 },
+        tabButtonActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },
+        tabText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
+        tabTextActive: { color: colors.primary, fontFamily: fonts.bold },
         list: { paddingHorizontal: 16, paddingBottom: 100 },
         row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
         rowActive: { backgroundColor: colors.base200, borderRadius: 8 },
@@ -205,26 +203,26 @@ export default function RecommendScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.radioRow}>
+      <View style={styles.tabBar}>
         <Pressable
-          style={[styles.radioButton, contentType === "movie" && styles.radioButtonActive]}
+          style={[styles.tabButton, contentType === "movie" && styles.tabButtonActive]}
           onPress={() => changeType("movie")}
         >
-          <Text style={styles.radioButtonText}>{t("Movies")}</Text>
+          <Text style={[styles.tabText, contentType === "movie" && styles.tabTextActive]}>{t("Movies")}</Text>
         </Pressable>
         <Pressable
-          style={[styles.radioButton, contentType === "series" && styles.radioButtonActive]}
+          style={[styles.tabButton, contentType === "series" && styles.tabButtonActive]}
           onPress={() => changeType("series")}
         >
-          <Text style={styles.radioButtonText}>{t("Series")}</Text>
+          <Text style={[styles.tabText, contentType === "series" && styles.tabTextActive]}>{t("Series")}</Text>
         </Pressable>
       </View>
 
-      <SearchBar placeholder={t("Search movies...")} onChangeQuery={setQuery} />
-
-      <Pressable style={styles.filterToggle} onPress={() => setShowFilters((v) => !v)}>
-        <Text style={styles.filterToggleText}>{t("⚙️ Filters")}</Text>
-      </Pressable>
+      <SearchBar
+        placeholder={t("Search movies...")}
+        onChangeQuery={setQuery}
+        onFilterPress={() => setShowFilters((v) => !v)}
+      />
 
       {searching ? (
         <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
@@ -241,8 +239,6 @@ export default function RecommendScreen() {
                 onToggleYear={toggleYear}
                 selectedGenres={selectedGenres}
                 onToggleGenre={toggleGenre}
-                hasPoster={hasPoster}
-                onChangeHasPoster={setHasPoster}
               />
             ) : null
           }
@@ -293,6 +289,7 @@ export default function RecommendScreen() {
         onClose={() => setPickerVisible(false)}
         sending={sending}
         onConfirm={handleConfirmRecipients}
+        allowGroups
       />
     </View>
   );

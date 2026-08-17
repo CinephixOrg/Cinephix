@@ -19,6 +19,7 @@ export const getFeed = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
+  const contentType = ["movie", "series"].includes(req.query.contentType) ? req.query.contentType : null;
 
   const currentUser = await User.findById(userId).select("following").lean();
   const followingIds = currentUser?.following || [];
@@ -30,23 +31,34 @@ export const getFeed = asyncHandler(async (req, res) => {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  const ratingQuery = { user: { $in: followingIds }, createdAt: { $gte: sevenDaysAgo } };
+  const reviewQuery = { user: { $in: followingIds }, createdAt: { $gte: sevenDaysAgo } };
+  if (contentType) {
+    ratingQuery.contentType = contentType;
+    reviewQuery.contentType = contentType;
+  }
+
   const [ratings, reviews, followNotifs, followedUsers] = await Promise.all([
-    Rating.find({ user: { $in: followingIds }, createdAt: { $gte: sevenDaysAgo } })
+    Rating.find(ratingQuery)
       .sort({ createdAt: -1 })
       .limit(ITEMS_PER_SOURCE)
       .populate("user", "username profile_pic_url")
       .lean(),
-    Review.find({ user: { $in: followingIds }, createdAt: { $gte: sevenDaysAgo } })
+    Review.find(reviewQuery)
       .sort({ createdAt: -1 })
       .limit(ITEMS_PER_SOURCE)
       .populate("user", "username profile_pic_url")
       .lean(),
-    Notification.find({ sender: { $in: followingIds }, type: "follow", createdAt: { $gte: sevenDaysAgo } })
-      .sort({ createdAt: -1 })
-      .limit(ITEMS_PER_SOURCE)
-      .populate("sender", "username profile_pic_url")
-      .populate("user", "username profile_pic_url")
-      .lean(),
+    // Follow events aren't content-specific, so a type-scoped feed excludes
+    // them entirely rather than returning events with no movie/series.
+    contentType
+      ? []
+      : Notification.find({ sender: { $in: followingIds }, type: "follow", createdAt: { $gte: sevenDaysAgo } })
+          .sort({ createdAt: -1 })
+          .limit(ITEMS_PER_SOURCE)
+          .populate("sender", "username profile_pic_url")
+          .populate("user", "username profile_pic_url")
+          .lean(),
     User.find({ _id: { $in: followingIds } })
       .select("username profile_pic_url watchlist")
       .lean(),
@@ -55,7 +67,12 @@ export const getFeed = asyncHandler(async (req, res) => {
   // Flatten watchlist additions into activity events
   const watchlistEvents = followedUsers.flatMap((u) =>
     (u.watchlist || [])
-      .filter((item) => item.addedAt && new Date(item.addedAt) >= sevenDaysAgo)
+      .filter(
+        (item) =>
+          item.addedAt &&
+          new Date(item.addedAt) >= sevenDaysAgo &&
+          (!contentType || item.itemType === contentType)
+      )
       .map((item) => ({
         type: "watchlisted",
         user: { _id: u._id, username: u.username, profile_pic_url: u.profile_pic_url },
@@ -229,63 +246,75 @@ export const getTopPicks = asyncHandler(async (req, res) => {
 //   1. Score each genre: count × avgRating → take top 5
 //   2. Find unwatched content in those genres sorted by vote_average
 //   3. Fall back to globally popular content if CineGraph is empty
-export const getPopularThisWeek = asyncHandler(async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+// Shared by getPopularThisWeek and getPopularWithFriends — both rank
+// watchlist/toWatchList adds within a time window, optionally scoped to a
+// specific set of owning users, and attach up to 3 adder identities per item.
+async function getPopularAdds({ matchUsers, type, limit, sinceDate }) {
+  const buildPipeline = (field) => {
+    const pipeline = [];
+    if (matchUsers) pipeline.push({ $match: { _id: { $in: matchUsers } } });
+    pipeline.push({ $unwind: `$${field}` });
+    const dateMatch = { [`${field}.addedAt`]: { $gte: sinceDate } };
+    const match = type ? { ...dateMatch, [`${field}.itemType`]: type } : dateMatch;
+    pipeline.push({ $match: match });
+    pipeline.push({
+      $group: {
+        _id: { itemId: `$${field}.itemId`, itemType: `$${field}.itemType` },
+        count: { $sum: 1 },
+        adderIds: { $push: "$_id" },
+      },
+    });
+    return pipeline;
+  };
 
   const [watchlistStats, toWatchStats] = await Promise.all([
-    User.aggregate([
-      { $unwind: "$watchlist" },
-      { $match: { "watchlist.addedAt": { $gte: oneWeekAgo } } },
-      {
-        $group: {
-          _id: { itemId: "$watchlist.itemId", itemType: "$watchlist.itemType" },
-          count: { $sum: 1 },
-        },
-      },
-    ]),
-    User.aggregate([
-      { $unwind: "$toWatchList" },
-      { $match: { "toWatchList.addedAt": { $gte: oneWeekAgo } } },
-      {
-        $group: {
-          _id: { itemId: "$toWatchList.itemId", itemType: "$toWatchList.itemType" },
-          count: { $sum: 1 },
-        },
-      },
-    ]),
+    User.aggregate(buildPipeline("watchlist")),
+    User.aggregate(buildPipeline("toWatchList")),
   ]);
 
-  // Merge counts from both lists
   const countMap = {};
   for (const stat of [...watchlistStats, ...toWatchStats]) {
     const key = `${stat._id.itemType}:${stat._id.itemId}`;
     if (!countMap[key]) {
-      countMap[key] = { itemId: stat._id.itemId.toString(), itemType: stat._id.itemType, count: 0 };
+      countMap[key] = {
+        itemId: stat._id.itemId.toString(),
+        itemType: stat._id.itemType,
+        count: 0,
+        adderIds: [],
+      };
     }
     countMap[key].count += stat.count;
+    countMap[key].adderIds.push(...stat.adderIds);
   }
 
   const sorted = Object.values(countMap)
     .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
+    .slice(0, limit)
+    .map((c) => {
+      // A user can have the same item in both `watchlist` and `toWatchList`
+      // at once, so adderIds (merged from both pipelines above) can contain
+      // the same user twice — dedupe before taking the top 3 for display.
+      const uniqueAdderIds = [...new Map(c.adderIds.map((id) => [id.toString(), id])).values()];
+      return { ...c, adderIds: uniqueAdderIds.slice(0, 3) };
+    });
 
-  if (sorted.length === 0) {
-    return sendSuccess(res, [], "No popular content this week");
-  }
+  if (sorted.length === 0) return [];
 
   const movieIds = sorted.filter((c) => c.itemType === "movie").map((c) => c.itemId);
   const seriesIds = sorted.filter((c) => c.itemType === "series").map((c) => c.itemId);
+  const allAdderIds = [...new Set(sorted.flatMap((c) => c.adderIds.map((id) => id.toString())))];
 
-  const [movies, seriesList] = await Promise.all([
+  const [movies, seriesList, adders] = await Promise.all([
     movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
     seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
+    allAdderIds.length ? User.find({ _id: { $in: allAdderIds } }).select("username profile_pic_url").lean() : [],
   ]);
 
   const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
   const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+  const adderMap = Object.fromEntries(adders.map((u) => [u._id.toString(), u]));
 
-  const result = sorted.reduce((acc, c) => {
+  return sorted.reduce((acc, c) => {
     const item = c.itemType === "movie" ? movieMap[c.itemId] : seriesMap[c.itemId];
     if (!item) return acc;
     acc.push({
@@ -296,11 +325,36 @@ export const getPopularThisWeek = asyncHandler(async (req, res) => {
         type: c.itemType,
       },
       addCount: c.count,
+      topAdders: c.adderIds.map((id) => adderMap[id.toString()]).filter(Boolean),
     });
     return acc;
   }, []);
+}
 
+export const getPopularThisWeek = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const result = await getPopularAdds({ matchUsers: null, type, limit, sinceDate: oneWeekAgo });
   sendSuccess(res, result, "Popular this week fetched");
+});
+
+export const getPopularWithFriends = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const currentUser = await User.findById(userId).select("following").lean();
+  const followingIds = currentUser?.following || [];
+
+  if (followingIds.length === 0) {
+    return sendSuccess(res, [], "No popular-with-friends content this week");
+  }
+
+  const result = await getPopularAdds({ matchUsers: followingIds, type, limit, sinceDate: oneWeekAgo });
+  sendSuccess(res, result, "Popular with friends fetched");
 });
 
 export const getRecommendations = asyncHandler(async (req, res) => {

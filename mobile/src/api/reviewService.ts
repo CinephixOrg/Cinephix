@@ -20,8 +20,16 @@ export async function getFriendsReviews(contentId: string): Promise<Review[]> {
   return res.data;
 }
 
-export async function getPopularReviews(limit = 10): Promise<PopularReview[]> {
-  const res = await API.get(API_ROUTES.REVIEWS.GET_POPULAR, { params: { limit } });
+export async function getPopularReviews(limit = 10, type?: ContentType, q?: string): Promise<PopularReview[]> {
+  const res = await API.get(API_ROUTES.REVIEWS.GET_POPULAR, { params: { limit, type, q } });
+  return res.data;
+}
+
+// Global "reviews from people you follow" feed (Home page Reviews tab) —
+// distinct from getFriendsReviews above, which is scoped to one piece of
+// content on the Content Detail page.
+export async function getReviewsFromFriends(limit = 10, type?: ContentType): Promise<PopularReview[]> {
+  const res = await API.get(API_ROUTES.REVIEWS.GET_FRIENDS_FEED, { params: { limit, type } });
   return res.data;
 }
 

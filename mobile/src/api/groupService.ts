@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Group, GroupMember, Message, MessagePagination } from "../types";
+import type { ContentType, Group, GroupMember, Message, MessagePagination } from "../types";
 
 export async function getAllGroups(): Promise<Group[]> {
   const res = await API.get(API_ROUTES.GROUPS.GET_ALL);
@@ -49,5 +49,29 @@ export async function getGroupMessages(
 // conversationService.sendMessageRest.
 export async function sendGroupMessageRest(slugOrId: string, text: string): Promise<Message> {
   const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(slugOrId), { text, type: "text" });
+  return res.data;
+}
+
+// Mirrors conversationService.sendRichMessage's recommendation shape — the
+// backend's sendGroupMessage handler supports type:"recommendation" the same
+// way the DM one does (no analysis_share support for groups, unlike DMs).
+export async function sendGroupRichMessage(
+  groupId: string,
+  payload: {
+    text: string;
+    type: "recommendation";
+    contentType: ContentType;
+    contentId: string;
+    contentData: {
+      title?: string;
+      posterUrl?: string;
+      genres?: string[];
+      releaseYear?: number;
+      overview?: string;
+      rating?: number;
+    };
+  }
+): Promise<Message> {
+  const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(groupId), payload);
   return res.data;
 }

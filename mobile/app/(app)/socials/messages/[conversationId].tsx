@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, Text, StyleSheet } from "react-native";
 import { useLocalSearchParams, useNavigation, useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { useChat } from "../../../src/context/ChatContext";
-import { getMessages, markConversationRead, sendMessageRest } from "../../../src/api/conversationService";
-import ChatRoom from "../../../src/components/ChatRoom";
-import { useTheme } from "../../../src/context/ThemeContext";
-import { fonts } from "../../../src/theme/typography";
+import { useChat } from "../../../../src/context/ChatContext";
+import { getMessages, markConversationRead, sendMessageRest } from "../../../../src/api/conversationService";
+import ChatRoom from "../../../../src/components/ChatRoom";
+import { useTheme } from "../../../../src/context/ThemeContext";
+import { fonts } from "../../../../src/theme/typography";
 
 export default function ConversationScreen() {
   const { conversationId, otherUsername } = useLocalSearchParams<{

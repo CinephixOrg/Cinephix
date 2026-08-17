@@ -54,10 +54,12 @@ export interface Review {
   createdAt: string;
   likeCount: number;
   hasLiked: boolean;
+  rating: number | null; // 1-10, joined server-side from the Rating collection
 }
 
 // GET /reviews/popular only — adds a denormalized `content` block no other
 // review response has, so kept as its own type rather than Review & {...}.
+// Used by both GET /reviews/popular and GET /reviews/friends — same shape.
 export interface PopularReview {
   _id: string;
   user: ReviewAuthor;
@@ -65,6 +67,7 @@ export interface PopularReview {
   createdAt: string;
   likeCount: number;
   hasLiked: boolean;
+  rating: number | null; // 1-10, joined server-side from the Rating collection
   content: { id: string; title: string; poster_path?: string; type: ContentType };
 }
 
@@ -188,8 +191,27 @@ export interface CustomList {
   description: string;
   isPublic: boolean;
   items: CustomListItem[];
+  likeCount: number;
+  views?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// GET /lists/:id (unlike /me, POST /, PATCH /:id) populates owner —
+// modeled as its own type rather than widening CustomList.owner for
+// every other call site, where it's genuinely just a plain id string.
+export interface CustomListDetail extends Omit<CustomList, "owner"> {
+  owner: { _id: string; username: string; profile_pic_url?: string };
+}
+
+// Lightweight, bulk-hydrated {title, poster_path} for the first 5 items of
+// a list — returned by /discover and /popular for the Home-tab preview
+// cards, not the full per-item content shape ContentCard needs.
+export interface ListPreviewItem {
+  itemId: string;
+  itemType: ContentType;
+  title: string;
+  poster_path?: string;
 }
 
 export interface MatchUser {
@@ -408,6 +430,7 @@ export interface GroupMember {
 export interface PopularThisWeekItem {
   content: { id: string; title: string; poster_path?: string; type: ContentType };
   addCount: number;
+  topAdders?: FeedUserRef[]; // up to 3, present on popular-this-week/popular-with-friends
 }
 
 export type FeedActivityType = "rated" | "reviewed" | "watchlisted" | "followed";
@@ -434,27 +457,6 @@ export interface FeedResult {
   hasMore: boolean;
 }
 
-export interface TopPick {
-  content: PopularThisWeekItem["content"];
-  avgRating: number;
-  raterCount: number;
-  topRaters: FeedUserRef[]; // up to 3
-}
-
-// Raw movie/series doc fields spread directly by the backend — title (movies)
-// OR name (series), not normalized like PopularThisWeekItem.content.title.
-export interface RecommendationItem {
-  _id: string;
-  title?: string;
-  name?: string;
-  poster_path?: string | null;
-  vote_average?: number;
-  release_date?: string;
-  first_air_date?: string;
-  genre_ids?: number[];
-  contentType: ContentType;
-}
-
 // Distinct from CustomList: owner is populated ({_id,username,profile_pic_url}),
 // not the plain string CustomList.owner is typed as, plus fromFollowing.
 export interface DiscoverListItem {
@@ -464,7 +466,11 @@ export interface DiscoverListItem {
   description: string;
   isPublic: boolean;
   items: CustomListItem[];
+  previewItems: ListPreviewItem[];
+  likeCount: number;
   createdAt: string;
   updatedAt: string;
-  fromFollowing: boolean;
+  // Only present on /discover results — /popular reuses this same shape
+  // without a following-relationship concept.
+  fromFollowing?: boolean;
 }

@@ -24,6 +24,7 @@ export const API_ROUTES = {
   },
   REVIEWS: {
     GET_POPULAR: "/reviews/popular",
+    GET_FRIENDS_FEED: "/reviews/friends",
     GET_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}`,
     GET_FRIENDS_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}/friends`,
     CREATE_OR_UPDATE: "/reviews",
@@ -74,6 +75,10 @@ export const API_ROUTES = {
     TVTIME: "/users/import-tvtime",
     LETTERBOXD: "/users/import-letterboxd",
   },
+  CONTENT: {
+    GET_STATS: (type: string, id: string) => `/content/${type}/${id}/stats`,
+    GET_WATCHED_BY_FRIENDS: (type: string, id: string) => `/content/${type}/${id}/watched-by-friends`,
+  },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
     CREATE: "/lists",
@@ -84,12 +89,13 @@ export const API_ROUTES = {
     REMOVE_ITEM: (id: string, itemId: string, itemType: string) =>
       `/lists/${id}/items/${itemId}?itemType=${itemType}`,
     DISCOVER: "/lists/discover",
+    POPULAR: "/lists/popular",
+    TOGGLE_LIKE: (id: string) => `/lists/${id}/like`,
   },
   FEED: {
     POPULAR_THIS_WEEK: "/feed/popular-this-week",
-    RECOMMENDATIONS: "/feed/recommendations",
+    POPULAR_WITH_FRIENDS: "/feed/popular-with-friends",
     GET_FEED: "/feed",
-    GET_TOP_PICKS: "/feed/top-picks",
   },
   MATCH: {
     FIND: "/match",

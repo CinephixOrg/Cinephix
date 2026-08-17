@@ -1,9 +1,59 @@
+import mongoose from "mongoose";
 import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
 import User from "../models/User.js";
 
 const router = express.Router();
+
+const getMovie = () => mongoose.connection.model("Movie");
+const getSeries = () => mongoose.connection.model("Series");
+
+// User text going into a $regex must be escaped first — an unescaped
+// string lets a caller inject regex metacharacters (at best a crash, at
+// worst a ReDoS-shaped query).
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Attaches previewItems (title+poster for the first 5 items of each list,
+// bulk-hydrated the same way feedController.js/reviewController.js resolve
+// content) and likeCount — used by both /discover and /popular, which return
+// otherwise-differently-sourced list arrays in the same enriched shape.
+async function hydratePreviewItems(lists) {
+  const previewSlices = lists.map((l) => l.items.slice(0, 5));
+  const movieIds = new Set();
+  const seriesIds = new Set();
+  for (const slice of previewSlices) {
+    for (const item of slice) {
+      if (item.itemType === "movie") movieIds.add(item.itemId.toString());
+      else seriesIds.add(item.itemId.toString());
+    }
+  }
+
+  const [movies, seriesList] = await Promise.all([
+    movieIds.size ? getMovie().find({ _id: { $in: [...movieIds] } }).select("_id title name poster_path").lean() : [],
+    seriesIds.size ? getSeries().find({ _id: { $in: [...seriesIds] } }).select("_id title name poster_path").lean() : [],
+  ]);
+
+  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
+  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+
+  return lists.map((l, i) => ({
+    ...l,
+    likeCount: (l.likes || []).length,
+    previewItems: previewSlices[i]
+      .map((item) => {
+        const doc = item.itemType === "movie" ? movieMap[item.itemId.toString()] : seriesMap[item.itemId.toString()];
+        if (!doc) return null;
+        return {
+          itemId: item.itemId.toString(),
+          itemType: item.itemType,
+          title: doc.title || doc.name,
+          poster_path: doc.poster_path,
+        };
+      })
+      .filter(Boolean),
+  }));
+}
 
 // ── GET /api/lists/discover ── public list discovery (followed users first, then community)
 router.get("/discover", authMiddleware, async (req, res) => {
@@ -48,7 +98,38 @@ router.get("/discover", authMiddleware, async (req, res) => {
         fromFollowing: followingIds.some((id) => id.toString() === l.owner._id.toString()),
       }));
 
-    return res.json({ lists });
+    return res.json({ lists: await hydratePreviewItems(lists) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── GET /api/lists/popular ── globally most-liked public lists
+router.get("/popular", authMiddleware, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const q = req.query.q?.trim();
+
+    const lists = await CustomList.aggregate([
+      { $match: { isPublic: true } },
+      ...(q ? [{ $match: { name: { $regex: escapeRegex(q), $options: "i" } } }] : []),
+      { $addFields: { likeCount: { $size: { $ifNull: ["$likes", []] } } } },
+      { $sort: { likeCount: -1, updatedAt: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [{ $project: { username: 1, profile_pic_url: 1 } }],
+        },
+      },
+      { $unwind: "$owner" },
+    ]);
+
+    return res.json({ lists: await hydratePreviewItems(lists) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
@@ -95,7 +176,16 @@ router.get("/:id", optionalAuth, async (req, res) => {
       return res.status(403).json({ message: "This list is private" });
     }
 
-    return res.json({ list, isOwner: !!isOwner });
+    // Views exclude the owner browsing their own list.
+    if (!isOwner) {
+      await CustomList.updateOne({ _id: list._id }, { $inc: { views: 1 } });
+      list.views = (list.views || 0) + 1;
+    }
+
+    const likes = list.likes || [];
+    const hasLiked = req.user ? likes.some((id) => id.toString() === req.user._id.toString()) : false;
+
+    return res.json({ list: { ...list, likeCount: likes.length }, isOwner: !!isOwner, hasLiked });
   } catch {
     return res.status(500).json({ message: "Server error" });
   }
@@ -133,6 +223,27 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 
     await list.deleteOne();
     return res.json({ message: "List deleted" });
+  } catch {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── POST /api/lists/:id/like ── toggle like, mirrors reviewController.js's toggleReviewLike
+router.post("/:id/like", authMiddleware, async (req, res) => {
+  try {
+    const list = await CustomList.findById(req.params.id);
+    if (!list) return res.status(404).json({ message: "List not found" });
+
+    const userId = req.user._id;
+    const alreadyLiked = list.likes.some((id) => id.toString() === userId.toString());
+    if (alreadyLiked) {
+      list.likes.pull(userId);
+    } else {
+      list.likes.push(userId);
+    }
+    await list.save();
+
+    return res.json({ likeCount: list.likes.length, hasLiked: !alreadyLiked });
   } catch {
     return res.status(500).json({ message: "Server error" });
   }

@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, CustomList, DiscoverListItem } from "../types";
+import type { ContentType, CustomList, CustomListDetail, DiscoverListItem } from "../types";
 
 // Reads res.data.lists / res.data.list directly rather than relying on the
 // generic envelope-unwrap — works the same whether or not this endpoint
@@ -21,9 +21,11 @@ export async function createList(fields: {
   return res.data.list;
 }
 
-export async function getListById(id: string): Promise<{ list: CustomList; isOwner: boolean }> {
+export async function getListById(
+  id: string
+): Promise<{ list: CustomListDetail; isOwner: boolean; hasLiked: boolean }> {
   const res = await API.get(API_ROUTES.LISTS.GET_BY_ID(id));
-  return { list: res.data.list, isOwner: res.data.isOwner };
+  return { list: res.data.list, isOwner: res.data.isOwner, hasLiked: res.data.hasLiked };
 }
 
 export async function updateList(
@@ -59,4 +61,14 @@ export async function removeItem(
 export async function discoverLists(limit = 20): Promise<DiscoverListItem[]> {
   const res = await API.get(API_ROUTES.LISTS.DISCOVER, { params: { limit } });
   return res.data.lists;
+}
+
+export async function getPopularLists(limit = 20, q?: string): Promise<DiscoverListItem[]> {
+  const res = await API.get(API_ROUTES.LISTS.POPULAR, { params: { limit, q } });
+  return res.data.lists;
+}
+
+export async function toggleListLike(id: string): Promise<{ likeCount: number; hasLiked: boolean }> {
+  const res = await API.post(API_ROUTES.LISTS.TOGGLE_LIKE(id));
+  return res.data;
 }

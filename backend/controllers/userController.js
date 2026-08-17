@@ -501,20 +501,29 @@ export const searchUsers = asyncHandler(async (req, res) => {
   const query = req.query.query;
   const { page = 1, limit = 20 } = req.query;
 
-  if (!query) {
-    return sendError(res, 'Search query is required', 400);
-  }
-
-  const skip = (parseInt(page) - 1) * parseInt(limit);
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+  const selfId = new mongoose.Types.ObjectId(req.user.id);
+
+  // No query — browse mode: a random default set instead of erroring, so a
+  // "search users" UI has something to show before anyone's typed anything.
+  // Not paginated (a fresh random sample each call is the point).
+  if (!query) {
+    const users = await User.aggregate([
+      { $match: { _id: { $ne: selfId } } },
+      { $sample: { size: limitNum } },
+      { $project: { _id: 1, username: 1, profile_pic_url: 1 } },
+    ]);
+    return sendPaginated(res, users, users.length, 1, limitNum, 'Users found');
+  }
 
   // 🔹 Optimize: Use aggregation with $facet to get count + data in ONE query
   const pipeline = [
     {
       $match: {
         username: { $regex: query, $options: 'i' },
-        _id: { $ne: new mongoose.Types.ObjectId(req.user.id) }
+        _id: { $ne: selfId }
       }
     },
     {

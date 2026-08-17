@@ -221,10 +221,41 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     .populate("sender", "username profile_pic_url")
     .lean();
 
+  // Update group preview + increment unread for all members except sender —
+  // mirrors the socket "send-message" handler's group branch
+  // (sockets/chatSocket.js), which this REST route is a fallback for. This
+  // was previously missing here (unlike the DM REST controller, which always
+  // had it), so a recommendation/rich message sent via this route never
+  // surfaced in anyone's inbox until their next unrelated group activity.
+  const senderId = req.user._id.toString();
+  const memberIds = group.members.map((m) => m.user.toString()).filter((id) => id !== senderId);
+  const incrObj = {};
+  memberIds.forEach((memberId) => {
+    incrObj[`unreadCounts.${memberId}`] = 1;
+  });
+  await Group.findByIdAndUpdate(group._id, {
+    lastMessage: text.trim(),
+    lastMessageAt: new Date(),
+    lastMessageSenderId: senderId,
+    ...(Object.keys(incrObj).length > 0 && { $inc: incrObj }),
+  });
+
   // Broadcast to all connected room members in real-time
   const io = getIo();
   if (io) {
     io.to(roomKey("group", group._id.toString())).emit("new-message", populated);
+
+    const conversationPayload = {
+      roomType: "group",
+      groupId: group._id,
+      lastMessage: text.trim(),
+      lastMessageAt: new Date(),
+      senderId,
+    };
+    memberIds.forEach((memberId) => {
+      io.to(`user:${memberId}`).emit("conversation-updated", conversationPayload);
+    });
+    io.to(`user:${senderId}`).emit("conversation-updated", conversationPayload);
   }
 
   sendSuccess(res, populated, "Message sent", 201);

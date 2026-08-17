@@ -17,36 +17,39 @@ interface Props {
 export default function ReviewComposer({ contentId, contentType, myReview, onSaved, onDeleted }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
-  card: { backgroundColor: colors.base200, borderRadius: 12, padding: 14 },
+  card: {},
   input: {
     minHeight: 70,
     textAlignVertical: "top",
     fontSize: 14,
     color: colors.baseContent,
+    backgroundColor: colors.base300,
+    borderRadius: 8,
+    padding: 10,
   },
   error: { color: colors.error, fontSize: 12, marginTop: 6 },
-  buttonRow: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 10 },
+  buttonRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8, marginTop: 10 },
   deleteButton: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     alignItems: "center",
     justifyContent: "center",
   },
-  deleteButtonText: { color: colors.error, fontFamily: fonts.medium, fontSize: 13 },
+  deleteButtonText: { color: colors.placeholder, fontFamily: fonts.medium, fontSize: 12 },
   saveButton: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    borderRadius: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 72,
+    minWidth: 60,
   },
   saveButtonDisabled: { opacity: 0.5 },
-  saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 13 },
+  saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 12 },
 }), [colors]);
   const { t } = useTranslation();
   const [text, setText] = useState(myReview?.text ?? "");
