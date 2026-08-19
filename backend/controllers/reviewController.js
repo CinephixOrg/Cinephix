@@ -1,6 +1,7 @@
 // backend/controllers/reviewController.js
 import mongoose from "mongoose";
 import Review from '../models/Review.js';
+import Rating from '../models/Rating.js';
 import User from '../models/User.js';
 
 import { asyncHandler } from "../middleware/errorHandler.js";
@@ -8,6 +9,24 @@ import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
 const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// getContentReviews/getFriendsReviews both operate on one fixed contentId,
+// so a bulk map-based join is simpler than getPopularReviews' per-document
+// $lookup aggregation (which needs the $lookup because contentId varies
+// per row there).
+const attachRatings = async (reviews, contentId) => {
+  if (reviews.length === 0) return reviews;
+  // review.user can be null if the populated user account was since
+  // deleted, leaving an orphaned review — skip those rather than crashing.
+  const userIds = reviews.filter((r) => r.user).map((r) => r.user._id);
+  const ratings = userIds.length
+    ? await Rating.find({ contentId, user: { $in: userIds } }).select('user value').lean()
+    : [];
+  const ratingMap = Object.fromEntries(ratings.map((r) => [r.user.toString(), r.value]));
+  return reviews.map((r) => ({ ...r, rating: r.user ? ratingMap[r.user._id.toString()] ?? null : null }));
+};
 
 const withLikeMeta = (reviews, userId) =>
   reviews.map((r) => {
@@ -46,7 +65,7 @@ export const getContentReviews = asyncHandler(async (req, res) => {
   }
 
   const total = await Review.countDocuments({ contentId });
-  const result = withLikeMeta(reviews, userId);
+  const result = withLikeMeta(await attachRatings(reviews, contentId), userId);
 
   sendPaginated(res, result, total, parseInt(page), parseInt(limit), 'Reviews fetched');
 });
@@ -71,7 +90,7 @@ export const getFriendsReviews = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .lean();
 
-  sendSuccess(res, withLikeMeta(reviews, userId), "Friends reviews fetched");
+  sendSuccess(res, withLikeMeta(await attachRatings(reviews, contentId), userId), "Friends reviews fetched");
 });
 
 /**
@@ -88,8 +107,10 @@ export const toggleReviewLike = asyncHandler(async (req, res) => {
   const alreadyLiked = review.likes.some((id) => id.toString() === userId.toString());
   if (alreadyLiked) {
     review.likes.pull(userId);
+    review.likeEvents = review.likeEvents.filter((e) => e.user.toString() !== userId.toString());
   } else {
     review.likes.push(userId);
+    review.likeEvents.push({ user: userId, likedAt: new Date() });
   }
   await review.save();
 
@@ -104,8 +125,28 @@ export const toggleReviewLike = asyncHandler(async (req, res) => {
 export const getPopularReviews = asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 10, 30);
   const userId = req.user._id.toString();
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+  const q = req.query.q?.trim();
+
+  // Review.contentId points at a separate movies/series collection, so it
+  // can't be $lookup'd within this aggregation the way `user`/`ratings` are
+  // above — same two-step bulk map-join style already used elsewhere in
+  // this file (attachRatings, getReviewsFromFriends): resolve matching
+  // content IDs first, then filter reviews by contentId.
+  let contentIdFilter = null;
+  if (q) {
+    const regex = { $regex: escapeRegex(q), $options: "i" };
+    const [matchedMovies, matchedSeries] = await Promise.all([
+      type === "series" ? [] : getMovie().find({ title: regex }).select("_id").limit(200).lean(),
+      type === "movie" ? [] : getSeries().find({ name: regex }).select("_id").limit(200).lean(),
+    ]);
+    contentIdFilter = [...matchedMovies, ...matchedSeries].map((d) => d._id.toString());
+    if (contentIdFilter.length === 0) return sendSuccess(res, [], "No popular reviews yet");
+  }
 
   const reviews = await Review.aggregate([
+    ...(type ? [{ $match: { contentType: type } }] : []),
+    ...(contentIdFilter ? [{ $match: { contentId: { $in: contentIdFilter } } }] : []),
     { $addFields: { likeCount: { $size: { $ifNull: ["$likes", []] } } } },
     { $sort: { likeCount: -1, createdAt: -1 } },
     { $limit: limit },
@@ -119,6 +160,18 @@ export const getPopularReviews = asyncHandler(async (req, res) => {
       },
     },
     { $unwind: "$user" },
+    {
+      $lookup: {
+        from: "ratings",
+        let: { reviewUser: "$user._id", reviewContentId: "$contentId" },
+        pipeline: [
+          { $match: { $expr: { $and: [{ $eq: ["$user", "$$reviewUser"] }, { $eq: ["$contentId", "$$reviewContentId"] }] } } },
+          { $project: { value: 1 } },
+        ],
+        as: "ratingDoc",
+      },
+    },
+    { $addFields: { rating: { $ifNull: [{ $arrayElemAt: ["$ratingDoc.value", 0] }, null] } } },
   ]);
 
   if (reviews.length === 0) return sendSuccess(res, [], "No popular reviews yet");
@@ -145,6 +198,7 @@ export const getPopularReviews = asyncHandler(async (req, res) => {
       createdAt: r.createdAt,
       likeCount: r.likeCount,
       hasLiked: r.likes?.some((id) => id.toString() === userId),
+      rating: r.rating ?? null,
       content: {
         id: r.contentId,
         title: item.title || item.name,
@@ -156,6 +210,78 @@ export const getPopularReviews = asyncHandler(async (req, res) => {
   }, []);
 
   sendSuccess(res, result, "Popular reviews fetched");
+});
+
+/**
+ * @route  GET /api/reviews/friends
+ * @access Private
+ * Global "reviews from people you follow" feed (most recent), for the
+ * Home page's Reviews tab — distinct from getFriendsReviews above, which is
+ * scoped to a single piece of content on the Content Detail page.
+ */
+export const getReviewsFromFriends = asyncHandler(async (req, res) => {
+  const userId = req.user._id.toString();
+  const limit = Math.min(parseInt(req.query.limit) || 10, 30);
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+
+  const currentUser = await User.findById(userId).select("following").lean();
+  const followingIds = currentUser?.following || [];
+
+  if (followingIds.length === 0) {
+    return sendSuccess(res, [], "No friends reviews yet");
+  }
+
+  const query = { user: { $in: followingIds } };
+  if (type) query.contentType = type;
+
+  let reviews = await Review.find(query)
+    .populate("user", "username profile_pic_url")
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  if (reviews.length === 0) return sendSuccess(res, [], "No friends reviews yet");
+
+  const movieIds = reviews.filter((r) => r.contentType === "movie").map((r) => r.contentId);
+  const seriesIds = reviews.filter((r) => r.contentType === "series").map((r) => r.contentId);
+  const reviewUserIds = reviews.map((r) => r.user._id);
+
+  const [movies, seriesList, ratings] = await Promise.all([
+    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
+    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
+    Rating.find({ user: { $in: reviewUserIds }, contentId: { $in: [...movieIds, ...seriesIds] } })
+      .select("user contentId value")
+      .lean(),
+  ]);
+
+  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
+  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+  const ratingMap = Object.fromEntries(
+    ratings.map((r) => [`${r.user.toString()}:${r.contentId}`, r.value])
+  );
+
+  const result = reviews.reduce((acc, r) => {
+    const item = r.contentType === "movie" ? movieMap[r.contentId] : seriesMap[r.contentId];
+    if (!item) return acc;
+    acc.push({
+      _id: r._id,
+      user: r.user,
+      text: r.text,
+      createdAt: r.createdAt,
+      likeCount: r.likes?.length || 0,
+      hasLiked: r.likes?.some((id) => id.toString() === userId),
+      rating: ratingMap[`${r.user._id.toString()}:${r.contentId}`] ?? null,
+      content: {
+        id: r.contentId,
+        title: item.title || item.name,
+        poster_path: item.poster_path,
+        type: r.contentType,
+      },
+    });
+    return acc;
+  }, []);
+
+  sendSuccess(res, result, "Friends reviews fetched");
 });
 
 /**

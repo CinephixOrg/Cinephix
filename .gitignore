@@ -1,6 +1,7 @@
 .venv/
 backend/.env
 frontend/.env
+node_modules/
 backend/node_modules/
 backup/backend/node_modules/
 backup/frontend/cinephix/node_modules/

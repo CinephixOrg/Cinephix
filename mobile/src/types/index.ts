@@ -57,10 +57,12 @@ export interface Review {
   createdAt: string;
   likeCount: number;
   hasLiked: boolean;
+  rating: number | null; // 1-10, joined server-side from the Rating collection
 }
 
 // GET /reviews/popular only — adds a denormalized `content` block no other
 // review response has, so kept as its own type rather than Review & {...}.
+// Used by both GET /reviews/popular and GET /reviews/friends — same shape.
 export interface PopularReview {
   _id: string;
   user: ReviewAuthor;
@@ -68,6 +70,7 @@ export interface PopularReview {
   createdAt: string;
   likeCount: number;
   hasLiked: boolean;
+  rating: number | null; // 1-10, joined server-side from the Rating collection
   content: { id: string; title: string; poster_path?: string; type: ContentType };
 }
 
@@ -142,10 +145,29 @@ export interface FollowRequestUser {
 }
 
 export type CineGraphStats = Record<string, number>;
+// genre -> average rating (raw 1-10 scale, matches Rating.value), null if unrated
+export type CineGraphRatings = Record<string, number | null>;
 
 export interface CineGraphData {
   movieStats: CineGraphStats;
   seriesStats: CineGraphStats;
+  movieGenreRatings: CineGraphRatings;
+  seriesGenreRatings: CineGraphRatings;
+  isAuthorized: boolean;
+}
+
+export interface GenreDetailItem {
+  contentId: string;
+  title: string;
+  posterPath: string | null;
+  year: string | null;
+  rating: number | null; // raw 1-10, null if unrated
+}
+
+export interface GenreDetailData {
+  items: GenreDetailItem[];
+  avgRating: number | null; // raw 1-10
+  count: number;
   isAuthorized: boolean;
 }
 
@@ -192,8 +214,31 @@ export interface CustomList {
   description: string;
   isPublic: boolean;
   items: CustomListItem[];
+  // Only hydrated by GET /lists/me (mirrors /discover, /popular) — absent
+  // (not just empty) from the create/update/detail responses.
+  previewItems?: ListPreviewItem[];
+  likeCount: number;
+  order: number;
+  views?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// GET /lists/:id (unlike /me, POST /, PATCH /:id) populates owner —
+// modeled as its own type rather than widening CustomList.owner for
+// every other call site, where it's genuinely just a plain id string.
+export interface CustomListDetail extends Omit<CustomList, "owner"> {
+  owner: { _id: string; username: string; profile_pic_url?: string };
+}
+
+// Lightweight, bulk-hydrated {title, poster_path} for the first 5 items of
+// a list — returned by /discover and /popular for the Home-tab preview
+// cards, not the full per-item content shape ContentCard needs.
+export interface ListPreviewItem {
+  itemId: string;
+  itemType: ContentType;
+  title: string;
+  poster_path?: string;
 }
 
 export interface MatchUser {
@@ -468,6 +513,7 @@ export interface GroupMember {
 export interface PopularThisWeekItem {
   content: { id: string; title: string; poster_path?: string; type: ContentType };
   addCount: number;
+  topAdders?: FeedUserRef[]; // up to 3, present on popular-this-week/popular-with-friends
 }
 
 export type FeedActivityType = "rated" | "reviewed" | "watchlisted" | "followed";
@@ -494,25 +540,66 @@ export interface FeedResult {
   hasMore: boolean;
 }
 
-export interface TopPick {
-  content: PopularThisWeekItem["content"];
-  avgRating: number;
-  raterCount: number;
-  topRaters: FeedUserRef[]; // up to 3
+// The caller's own activity (ratings, reviews, review likes, watchlist/
+// to-watch adds, list creation, group joins) — distinct from FeedActivityItem,
+// which is always someone else's (network) activity. No `user` field here:
+// the actor is always "you".
+export type PersonalActivityType =
+  | "rated"
+  | "reviewed"
+  | "review_liked"
+  | "watchlist_added"
+  | "towatch_added"
+  | "list_created"
+  | "group_joined";
+
+export interface PersonalActivityItem {
+  type: PersonalActivityType;
+  createdAt: string;
+  content?: PopularThisWeekItem["content"]; // rated/reviewed/review_liked/watchlist_added/towatch_added
+  value?: number; // "rated" only, 1-10
+  excerpt?: string; // "reviewed"/"review_liked" only
+  listId?: string; // "list_created" only
+  listName?: string; // "list_created" only
+  groupSlug?: string; // "group_joined" only
+  groupName?: string; // "group_joined" only
+  groupCoverImage?: string; // "group_joined" only
 }
 
-// Raw movie/series doc fields spread directly by the backend — title (movies)
-// OR name (series), not normalized like PopularThisWeekItem.content.title.
-export interface RecommendationItem {
+export interface PersonalActivityResult {
+  items: PersonalActivityItem[];
+  page: number;
+  hasMore: boolean;
+}
+
+// Medya (social sharing feed) — a Share is always a snapshot of an
+// analysis/review/recommendation at the moment it was posted, never a live
+// reference (mirrors how chat's analysis_share/recommendation messages
+// already snapshot instead of referencing).
+export type ShareType = "analysis" | "review" | "recommendation";
+
+export interface Share {
   _id: string;
-  title?: string;
-  name?: string;
-  poster_path?: string | null;
-  vote_average?: number;
-  release_date?: string;
-  first_air_date?: string;
-  genre_ids?: number[];
-  contentType: ContentType;
+  user: FeedUserRef;
+  type: ShareType;
+  analysisData?: any; // "analysis" only — same shape ProfileAnalysisModal already renders
+  reviewText?: string; // "review" only
+  reviewRating?: number | null; // "review" only, 1-10
+  note?: string; // "recommendation" only, optional caption
+  contentId?: string; // "review" | "recommendation"
+  contentType?: ContentType; // "review" | "recommendation"
+  contentData?: { title: string; posterUrl: string | null; releaseYear?: number }; // "review" | "recommendation"
+  likeCount: number;
+  liked: boolean;
+  viewCount: number;
+  topViewers: FeedUserRef[];
+  createdAt: string;
+}
+
+export interface ShareFeedResult {
+  items: Share[];
+  page: number;
+  hasMore: boolean;
 }
 
 // Distinct from CustomList: owner is populated ({_id,username,profile_pic_url}),
@@ -524,7 +611,11 @@ export interface DiscoverListItem {
   description: string;
   isPublic: boolean;
   items: CustomListItem[];
+  previewItems: ListPreviewItem[];
+  likeCount: number;
   createdAt: string;
   updatedAt: string;
-  fromFollowing: boolean;
+  // Only present on /discover results — /popular reuses this same shape
+  // without a following-relationship concept.
+  fromFollowing?: boolean;
 }

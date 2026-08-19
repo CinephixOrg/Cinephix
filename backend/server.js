@@ -52,10 +52,12 @@ import matchRoute from "./routes/matchRoute.js";
 import userWatchlistRoute from "./routes/userWatchlistRoute.js";
 import userToWatchListRoute from "./routes/userToWatchListRoute.js";
 import customListRoute from "./routes/customListRoute.js";
+import contentStatsRoute from "./routes/contentStatsRoute.js";
 import feedRoute from "./routes/feedRoute.js";
 import groupRoute from "./routes/groupRoute.js";
 import conversationRoute from "./routes/conversationRoute.js";
 import notificationRoute from "./routes/notificationRoute.js";
+import shareRoute from "./routes/shareRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -64,6 +66,7 @@ app.use("/api/users", userRoute);
 app.use("/api/users/me", userWatchlistRoute);
 app.use("/api/users/me", userToWatchListRoute);
 app.use("/api/lists", customListRoute);
+app.use("/api/content", contentStatsRoute);
 app.use("/api/ratings", ratingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/match", matchRoute);
@@ -71,6 +74,7 @@ app.use("/api/feed", feedRoute);
 app.use("/api/groups", groupRoute);
 app.use("/api/conversations", conversationRoute);
 app.use("/api/notifications", notificationRoute);
+app.use("/api/shares", shareRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);

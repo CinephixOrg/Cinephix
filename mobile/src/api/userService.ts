@@ -4,8 +4,10 @@ import type {
   AccountTier,
   CineGraphData,
   Connection,
+  FeedUserRef,
   FollowActionType,
   FollowRequestUser,
+  GenreDetailData,
   Pagination,
   ProfileAnalysis,
   ProfileAnalysisHistoryEntry,
@@ -44,6 +46,15 @@ export async function getProfileAnalysisHistory(): Promise<ProfileAnalysisHistor
 
 export async function getCineGraph(id: string): Promise<CineGraphData> {
   const res = await API.get(API_ROUTES.USERS.GET_CINEGRAPH(id));
+  return res.data;
+}
+
+export async function getGenreDetail(
+  id: string,
+  type: "movie" | "series",
+  genre: string
+): Promise<GenreDetailData> {
+  const res = await API.get(API_ROUTES.USERS.GET_GENRE_DETAIL(id, type, genre));
   return res.data;
 }
 
@@ -159,5 +170,12 @@ export async function getSentRequests(): Promise<string[]> {
 
 export async function getSuggestions(limit = 5): Promise<SuggestedUser[]> {
   const res = await API.get(API_ROUTES.USERS.GET_SUGGESTIONS, { params: { limit } });
+  return res.data;
+}
+
+// Currently-connected (Socket.io) users from the caller's own `following`
+// list — backed by an in-memory presence map, not a persisted field.
+export async function getOnlineFriends(): Promise<FeedUserRef[]> {
+  const res = await API.get(API_ROUTES.USERS.GET_ONLINE_FRIENDS);
   return res.data;
 }

@@ -9,15 +9,18 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
-import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getListById, removeItem, updateList } from "../api/listService";
+import { getListById, removeItem, toggleListLike, updateList } from "../api/listService";
 import { getMovieById, getSeriesById } from "../api/contentService";
-import ContentCard from "../components/ContentCard";
+import MiniContentCard from "../components/MiniContentCard";
+import UserAvatar from "../components/UserAvatar";
+import { useToast } from "../context/ToastContext";
 import { SkeletonBox, SkeletonGrid, SkeletonPosterCard } from "../components/Skeleton";
-import type { ContentType, CustomList, Movie, Series } from "../types";
+import type { ContentType, CustomListDetail, Movie, Series } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
@@ -27,12 +30,18 @@ interface HydratedItem {
   content: Movie | Series;
 }
 
+type ItemTypeFilter = "all" | ContentType;
+
+const GRID_COLUMNS = 6;
+const GRID_GAP = 4;
+const GRID_PADDING = 16; // matches styles.list's paddingHorizontal
+
 interface Props {
   // Which tab's own nested Stack this screen is being rendered inside of —
-  // forwarded to the item grid's ContentCard so its own content-detail
+  // forwarded to the item grid's MiniContentCard so its own content-detail
   // navigation stays within that same Stack (see ContentCard's basePath
   // comment). Defaults to "/lists" since that's this screen's original home.
-  basePath?: "/lists" | "/home";
+  basePath?: "/lists" | "/home" | "/search";
 }
 
 export default function ListDetailScreen({ basePath = "/lists" }: Props) {
@@ -40,16 +49,16 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const styles = useMemo(() => StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: { justifyContent: "space-between" },
-  header: { paddingVertical: 16 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  header: { paddingTop: 16 },
+  ownerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ownerName: { fontSize: 13, color: colors.placeholder, fontFamily: fonts.medium },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 },
   title: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   badgePublic: { backgroundColor: colors.primary },
   badgePrivate: { backgroundColor: colors.border },
   badgeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.baseContent },
-  description: { color: colors.baseContent, fontSize: 14, marginTop: 8 },
-  count: { color: colors.placeholder, fontSize: 13, marginTop: 4 },
+  description: { color: colors.baseContent, fontSize: 14, marginTop: 8, lineHeight: 20 },
   editButton: {
     alignSelf: "flex-start",
     borderWidth: 1,
@@ -60,6 +69,10 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     marginTop: 12,
   },
   editButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
+  statsRow: { flexDirection: "row", alignItems: "center", gap: 18, marginTop: 12 },
+  statItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  statText: { fontSize: 13, color: colors.placeholder },
+  statTextActive: { color: colors.primary, fontFamily: fonts.medium },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -91,30 +104,39 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     alignItems: "center",
   },
   saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
-  cardWrap: { width: "48%" },
-  removeButton: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
+  // Same underline style as the outer Films/Series/Reviews/Lists tab bar
+  // and the Reviews tab's inner Movie/Series sub-tab.
+  tabBar: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginTop: 16,
+    marginBottom: 8,
   },
+  tabButton: { flex: 1, alignItems: "center", paddingVertical: 10 },
+  tabButtonActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },
+  tabText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
+  tabTextActive: { color: colors.primary, fontFamily: fonts.bold },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
   errorText: { color: colors.error, marginTop: 8 },
 }), [colors]);
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const navigation = useNavigation();
+  const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = (screenWidth - GRID_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
-  const [list, setList] = useState<CustomList | null>(null);
+  const [list, setList] = useState<CustomListDetail | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [items, setItems] = useState<HydratedItem[]>([]);
+  const [itemTypeFilter, setItemTypeFilter] = useState<ItemTypeFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [likeCount, setLikeCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const { showToast } = useToast();
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
@@ -124,13 +146,14 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
 
   const load = useCallback(async () => {
     try {
-      const { list: fetchedList, isOwner: owner } = await getListById(id);
+      const { list: fetchedList, isOwner: owner, hasLiked: liked } = await getListById(id);
       setList(fetchedList);
       setIsOwner(owner);
       setName(fetchedList.name);
       setDescription(fetchedList.description);
       setIsPublic(fetchedList.isPublic);
-      navigation.setOptions({ title: fetchedList.name });
+      setLikeCount(fetchedList.likeCount);
+      setHasLiked(liked);
 
       const hydrated = await Promise.all(
         fetchedList.items.map(async (it) => {
@@ -161,8 +184,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
         description: description.trim(),
         isPublic,
       });
-      setList(updated);
-      navigation.setOptions({ title: updated.name });
+      setList((prev) => (prev ? { ...prev, ...updated, owner: prev.owner } : prev));
       setEditing(false);
     } catch (e: any) {
       setError(e?.response?.data?.message || t("Failed to update list."));
@@ -171,10 +193,30 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     }
   };
 
+  const handleLike = async () => {
+    if (liking) return;
+    const prevLiked = hasLiked;
+    const prevCount = likeCount;
+    setHasLiked(!prevLiked);
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
+    setLiking(true);
+    try {
+      const result = await toggleListLike(id);
+      setHasLiked(result.hasLiked);
+      setLikeCount(result.likeCount);
+    } catch {
+      setHasLiked(prevLiked);
+      setLikeCount(prevCount);
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setLiking(false);
+    }
+  };
+
   const handleRemoveItem = async (itemId: string, itemType: ContentType) => {
     try {
       const updated = await removeItem(id, itemId, itemType);
-      setList(updated);
+      setList((prev) => (prev ? { ...prev, ...updated, owner: prev.owner } : prev));
       setItems((prev) => prev.filter((it) => it.id !== itemId));
     } catch (e: any) {
       setError(e?.response?.data?.message || t("Failed to remove item."));
@@ -204,13 +246,14 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
 
   if (!list) return null;
 
+  const filteredItems = items.filter((it) => itemTypeFilter === "all" || it.type === itemTypeFilter);
+
   return (
     <FlatList
       style={{ backgroundColor: colors.base100 }}
-      data={items}
+      data={filteredItems}
       keyExtractor={(item) => `${item.type}-${item.id}`}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
+      numColumns={GRID_COLUMNS}
       contentContainerStyle={styles.list}
       ListHeaderComponent={
         <View style={styles.header}>
@@ -247,14 +290,45 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
             </>
           ) : (
             <>
+              <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
+                <UserAvatar
+                  userId={list.owner._id}
+                  username={list.owner.username}
+                  profilePicUrl={list.owner.profile_pic_url}
+                  size={28}
+                  disabled
+                />
+                <Text style={styles.ownerName}>{list.owner.username}</Text>
+              </Pressable>
+
               <View style={styles.titleRow}>
                 <Text style={styles.title}>{list.name}</Text>
                 <View style={[styles.badge, list.isPublic ? styles.badgePublic : styles.badgePrivate]}>
                   <Text style={styles.badgeText}>{list.isPublic ? t("Public") : t("Private")}</Text>
                 </View>
               </View>
+
               {list.description ? <Text style={styles.description}>{list.description}</Text> : null}
-              <Text style={styles.count}>{t("item_count", { count: items.length })}</Text>
+
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Ionicons name="film-outline" size={15} color={colors.placeholder} />
+                  <Text style={styles.statText}>{t("item_count", { count: items.length })}</Text>
+                </View>
+                <Pressable style={styles.statItem} onPress={handleLike} disabled={liking} hitSlop={8}>
+                  <Ionicons
+                    name={hasLiked ? "heart" : "heart-outline"}
+                    size={15}
+                    color={hasLiked ? colors.primary : colors.placeholder}
+                  />
+                  <Text style={[styles.statText, hasLiked && styles.statTextActive]}>{likeCount}</Text>
+                </Pressable>
+                <View style={styles.statItem}>
+                  <Ionicons name="eye-outline" size={15} color={colors.placeholder} />
+                  <Text style={styles.statText}>{t("view_count", { count: list.views ?? 0 })}</Text>
+                </View>
+              </View>
+
               {isOwner && (
                 <Pressable style={styles.editButton} onPress={() => setEditing(true)}>
                   <Text style={styles.editButtonText}>{t("Edit")}</Text>
@@ -262,37 +336,39 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
               )}
             </>
           )}
+
           {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <View style={styles.tabBar}>
+            {(["all", "movie", "series"] as ItemTypeFilter[]).map((filter) => (
+              <Pressable
+                key={filter}
+                style={[styles.tabButton, itemTypeFilter === filter && styles.tabButtonActive]}
+                onPress={() => setItemTypeFilter(filter)}
+              >
+                <Text style={[styles.tabText, itemTypeFilter === filter && styles.tabTextActive]}>
+                  {filter === "all" ? t("All") : filter === "movie" ? t("Movies") : t("Series")}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       }
-      renderItem={({ item }) => (
-        <View style={styles.cardWrap}>
-          <ContentCard
-            id={item.id}
-            type={item.type}
-            title={item.type === "movie" ? (item.content as Movie).title : (item.content as Series).name}
-            posterPath={item.content.poster_path}
-            year={(item.type === "movie"
-              ? (item.content as Movie).release_date
-              : (item.content as Series).first_air_date
-            )?.slice(0, 4)}
-            voteAverage={item.content.vote_average}
-            style={{ width: "100%" }}
-            basePath={basePath}
-          />
-          {isOwner && (
-            <Pressable
-              style={styles.removeButton}
-              onPress={() => handleRemoveItem(item.id, item.type)}
-              hitSlop={8}
-            >
-              <Ionicons name="close" size={16} color="#fff" />
-            </Pressable>
-          )}
-        </View>
+      renderItem={({ item, index }) => (
+        <MiniContentCard
+          id={item.id}
+          type={item.type}
+          posterPath={item.content.poster_path}
+          basePath={basePath}
+          onRemove={isOwner ? () => handleRemoveItem(item.id, item.type) : undefined}
+          style={{
+            width: cardWidth,
+            marginBottom: GRID_GAP,
+            marginRight: (index + 1) % GRID_COLUMNS === 0 ? 0 : GRID_GAP,
+          }}
+        />
       )}
       ListEmptyComponent={<Text style={styles.empty}>{t("No items in this list yet.")}</Text>}
     />
   );
 }
-

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import StarRatingDisplay from "./StarRatingDisplay";
 import type { FeedActivityItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import type { ColorPalette } from "../theme/palettes";
@@ -43,6 +44,7 @@ function buildStyles(colors: ColorPalette) {
     sentence: { color: colors.baseContent, fontSize: 13, lineHeight: 18 },
     link: { color: colors.baseContent, fontFamily: fonts.medium },
     excerpt: { color: colors.placeholder, fontSize: 12, fontStyle: "italic", marginTop: 4 },
+    ratingRow: { marginTop: 4 },
     timestamp: { color: colors.placeholder, fontSize: 11, marginTop: 4 },
     poster: { width: 32, height: 46, borderRadius: 4, backgroundColor: colors.base200 },
   });
@@ -90,7 +92,7 @@ export default function FeedItemRow({ item }: Props) {
         <Text style={styles.sentence}>
           {item.type === "rated" && (
             <>
-              <UserSpan user={item.user} /> {t("rated")} <ContentSpan /> {`★ ${item.value}/10`}
+              <UserSpan user={item.user} /> {t("rated")} <ContentSpan />
             </>
           )}
           {item.type === "reviewed" && (
@@ -100,7 +102,7 @@ export default function FeedItemRow({ item }: Props) {
           )}
           {item.type === "watchlisted" && (
             <>
-              <UserSpan user={item.user} /> {t("added")} <ContentSpan /> {t("to their watchlist")}
+              <UserSpan user={item.user} /> {t("added")} <ContentSpan /> {t("to their watched list")}
             </>
           )}
           {item.type === "followed" && (
@@ -110,6 +112,12 @@ export default function FeedItemRow({ item }: Props) {
             </>
           )}
         </Text>
+
+        {item.type === "rated" && (
+          <View style={styles.ratingRow}>
+            <StarRatingDisplay value={item.value} size={12} />
+          </View>
+        )}
 
         {item.type === "reviewed" && item.excerpt ? (
           <Text style={styles.excerpt} numberOfLines={2}>

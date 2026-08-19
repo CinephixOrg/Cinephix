@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { GenreOption } from "../constants/contentGenreIds";
 import { useTheme } from "../context/ThemeContext";
@@ -11,21 +11,28 @@ interface Props {
   onToggleYear: (year: string) => void;
   selectedGenres: number[];
   onToggleGenre: (id: number) => void;
-  hasPoster: "" | "yes" | "no";
-  onChangeHasPoster: (v: "" | "yes" | "no") => void;
 }
+
+// Tall enough for 3 full rows plus a sliver of a 4th — that partial row is
+// a deliberate scroll affordance (you can see there's more, no icon/hint
+// text needed) rather than an exact "3 rows and stop" cut.
+const BOX_HEIGHT = 132;
+const YEAR_BOX_WIDTH = 92;
+const CHAR_WIDTH_ESTIMATE = 7; // rough px/char at this row's fontSize, for sizing the genre box
 
 // Shared by Movies and Series screens — same filter UI rendered twice for
 // the same reason (near-identical browse screens), unlike Cinematch's two
 // distinct call sites which each got their own trimmed filter panel.
+// Years/Genres are two small elevated "card" lists, sized to their own
+// content (Years just wide enough for "YYYY", Genres wide enough for its
+// single longest option) rather than stretched half-and-half — each a
+// short peek-height box you drag inside to reveal the rest.
 export default function ContentFilterPanel({
   genreOptions,
   selectedYears,
   onToggleYear,
   selectedGenres,
   onToggleGenre,
-  hasPoster,
-  onChangeHasPoster,
 }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -37,37 +44,32 @@ export default function ContentFilterPanel({
       marginHorizontal: 16,
       marginBottom: 16,
     },
+    columnsRow: { flexDirection: "row", gap: 20, justifyContent: "center" },
     label: {
       fontFamily: fonts.bold,
-      fontSize: 13,
-      color: colors.baseContent,
+      fontSize: 11,
+      color: colors.placeholder,
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
       marginBottom: 8,
-      marginTop: 8,
     },
-    labelFirst: { marginTop: 0 },
-    chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 16,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+    box: {
+      height: BOX_HEIGHT,
+      borderRadius: 14,
+      backgroundColor: colors.base100,
+      overflow: "hidden",
+      shadowColor: "#000",
+      shadowOpacity: 0.18,
+      shadowRadius: 5,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
     },
-    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    chipText: { fontSize: 12, color: colors.baseContent },
-    chipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
-    segmentedRow: { flexDirection: "row", gap: 8 },
-    segment: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: 8,
-      alignItems: "center",
-    },
-    segmentActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    segmentText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent },
-    segmentTextActive: { color: colors.primaryContent },
+    row: { paddingVertical: 10, alignItems: "center", justifyContent: "center" },
+    rowText: { fontSize: 14, color: colors.baseContent },
+    divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginHorizontal: 14 },
+    badge: { backgroundColor: colors.primary, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4 },
+    badgeText: { fontSize: 14, color: colors.primaryContent, fontFamily: fonts.bold },
   }), [colors]);
 
   const years = useMemo(() => {
@@ -75,57 +77,59 @@ export default function ContentFilterPanel({
     return Array.from({ length: now - 1900 + 1 }, (_, i) => String(now - i));
   }, []);
 
+  const genreBoxWidth = useMemo(() => {
+    const longest = genreOptions.reduce((max, g) => Math.max(max, g.name.length), 0);
+    return Math.min(220, Math.max(92, longest * CHAR_WIDTH_ESTIMATE + 36));
+  }, [genreOptions]);
+
   return (
     <View style={styles.panel}>
-      <Text style={[styles.label, styles.labelFirst]}>{t("Years")}</Text>
-      <View style={styles.chipWrap}>
-        {years.map((year) => {
-          const active = selectedYears.includes(year);
-          return (
-            <Pressable
-              key={year}
-              style={[styles.chip, active && styles.chipActive]}
-              onPress={() => onToggleYear(year)}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{year}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <View style={styles.columnsRow}>
+        <View style={{ width: YEAR_BOX_WIDTH }}>
+          <Text style={styles.label}>{t("Years")}</Text>
+          <ScrollView style={styles.box} nestedScrollEnabled>
+            {years.map((year, i) => {
+              const active = selectedYears.includes(year);
+              return (
+                <View key={year}>
+                  <Pressable style={styles.row} onPress={() => onToggleYear(year)}>
+                    {active ? (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{year}</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.rowText}>{year}</Text>
+                    )}
+                  </Pressable>
+                  {i < years.length - 1 && <View style={styles.divider} />}
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-      <Text style={styles.label}>{t("Genres")}</Text>
-      <View style={styles.chipWrap}>
-        {genreOptions.map((genre) => {
-          const active = selectedGenres.includes(genre.id);
-          return (
-            <Pressable
-              key={genre.id}
-              style={[styles.chip, active && styles.chipActive]}
-              onPress={() => onToggleGenre(genre.id)}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{genre.name}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Text style={styles.label}>{t("Has Poster?")}</Text>
-      <View style={styles.segmentedRow}>
-        {([
-          { value: "" as const, label: t("All") },
-          { value: "yes" as const, label: t("Yes") },
-          { value: "no" as const, label: t("No") },
-        ]).map((opt) => (
-          <Pressable
-            key={opt.value}
-            style={[styles.segment, hasPoster === opt.value && styles.segmentActive]}
-            onPress={() => onChangeHasPoster(opt.value)}
-          >
-            <Text style={[styles.segmentText, hasPoster === opt.value && styles.segmentTextActive]}>
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
+        <View style={{ width: genreBoxWidth }}>
+          <Text style={styles.label}>{t("Genres")}</Text>
+          <ScrollView style={styles.box} nestedScrollEnabled>
+            {genreOptions.map((genre, i) => {
+              const active = selectedGenres.includes(genre.id);
+              return (
+                <View key={genre.id}>
+                  <Pressable style={styles.row} onPress={() => onToggleGenre(genre.id)}>
+                    {active ? (
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{genre.name}</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.rowText}>{genre.name}</Text>
+                    )}
+                  </Pressable>
+                  {i < genreOptions.length - 1 && <View style={styles.divider} />}
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
       </View>
     </View>
   );

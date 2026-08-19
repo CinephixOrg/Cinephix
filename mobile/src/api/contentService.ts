@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Movie, Series, Pagination } from "../types";
+import type { ContentType, Movie, Series, Pagination } from "../types";
 
 export interface ListResult<T> {
   items: T[];
@@ -63,4 +63,28 @@ export async function getSeries(
 export async function getSeriesById(id: string): Promise<Series> {
   const res = await API.get(API_ROUTES.SERIES.GET_BY_ID(id));
   return res.data;
+}
+
+export interface ContentStats {
+  reviewCount: number;
+  watchedCount: number;
+  favoriteCount: number;
+  listCount: number;
+}
+
+export async function getContentStats(type: ContentType, id: string): Promise<ContentStats> {
+  const res = await API.get(API_ROUTES.CONTENT.GET_STATS(type, id));
+  return res.data;
+}
+
+export interface WatchedByFriend {
+  _id: string;
+  username: string;
+  profile_pic_url?: string;
+  rating: number | null;
+}
+
+export async function getWatchedByFriends(type: ContentType, id: string): Promise<WatchedByFriend[]> {
+  const res = await API.get(API_ROUTES.CONTENT.GET_WATCHED_BY_FRIENDS(type, id));
+  return res.data.users;
 }

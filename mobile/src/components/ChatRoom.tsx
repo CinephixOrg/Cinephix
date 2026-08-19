@@ -234,7 +234,7 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
                 <View style={styles.bubbleColumn}>
                   {!isOwn && <Text style={styles.senderName}>{item.sender.username}</Text>}
                   {item.type === "recommendation" ? (
-                    <RecommendationMessageCard message={item} />
+                    <RecommendationMessageCard message={item} isOwn={isOwn} />
                   ) : item.type === "analysis_share" ? (
                     <Pressable
                       style={[

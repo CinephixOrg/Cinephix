@@ -21,9 +21,11 @@ export const API_ROUTES = {
     CREATE_OR_UPDATE: "/ratings",
     GET_MY_RATING: (contentId: string) => `/ratings/me/${contentId}`,
     GET_ALL_FOR_CONTENT: (contentId: string) => `/ratings/content/${contentId}`,
+    GET_USER_RATINGS: (userId: string) => `/users/ratings/${userId}`,
   },
   REVIEWS: {
     GET_POPULAR: "/reviews/popular",
+    GET_FRIENDS_FEED: "/reviews/friends",
     GET_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}`,
     GET_FRIENDS_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}/friends`,
     CREATE_OR_UPDATE: "/reviews",
@@ -47,6 +49,8 @@ export const API_ROUTES = {
     GET_PROFILE_ANALYSIS: "/users/profile-analysis",
     GET_PROFILE_ANALYSIS_HISTORY: "/users/profile-analysis/history",
     GET_CINEGRAPH: (id: string) => `/users/cinegraph-data/${id}`,
+    GET_GENRE_DETAIL: (id: string, type: "movie" | "series", genre: string) =>
+      `/users/${id}/genre-detail?type=${type}&genre=${encodeURIComponent(genre)}`,
     GET_FAVORITES: (id: string) => `/users/favorites/${id}`,
     UPDATE_FAVORITES: "/users/me/favorites",
     UPDATE_BIO: (id: string) => `/users/profile/${id}/bio`,
@@ -66,18 +70,35 @@ export const API_ROUTES = {
     GET_PENDING_REQUESTS: "/users/me/follow-requests",
     GET_SENT_REQUESTS: "/users/me/sent-requests",
     GET_SUGGESTIONS: "/users/me/suggestions",
+    GET_ONLINE_FRIENDS: "/users/online",
   },
   ACTIVITY_LOG: {
     GET_ALL: "/users/me/logs",
     REVERT: "/users/me/logs/revert",
     RESET_ALL_DATA: "/users/me/reset-data",
   },
+  MY_ACTIVITY: {
+    GET: "/users/me/activity",
+  },
+  SHARES: {
+    CREATE: "/shares",
+    GET_FEED: "/shares/feed",
+    LIKE: (id: string) => `/shares/${id}/like`,
+    VIEW: (id: string) => `/shares/${id}/view`,
+    GET_USER_SHARES: (userId: string) => `/shares/user/${userId}`,
+    DELETE: (id: string) => `/shares/${id}`,
+  },
   IMPORT: {
     TVTIME: "/users/import-tvtime",
     LETTERBOXD: "/users/import-letterboxd",
   },
+  CONTENT: {
+    GET_STATS: (type: string, id: string) => `/content/${type}/${id}/stats`,
+    GET_WATCHED_BY_FRIENDS: (type: string, id: string) => `/content/${type}/${id}/watched-by-friends`,
+  },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
+    REORDER: "/lists/me/reorder",
     CREATE: "/lists",
     GET_BY_ID: (id: string) => `/lists/${id}`,
     UPDATE: (id: string) => `/lists/${id}`,
@@ -86,12 +107,13 @@ export const API_ROUTES = {
     REMOVE_ITEM: (id: string, itemId: string, itemType: string) =>
       `/lists/${id}/items/${itemId}?itemType=${itemType}`,
     DISCOVER: "/lists/discover",
+    POPULAR: "/lists/popular",
+    TOGGLE_LIKE: (id: string) => `/lists/${id}/like`,
   },
   FEED: {
     POPULAR_THIS_WEEK: "/feed/popular-this-week",
-    RECOMMENDATIONS: "/feed/recommendations",
+    POPULAR_WITH_FRIENDS: "/feed/popular-with-friends",
     GET_FEED: "/feed",
-    GET_TOP_PICKS: "/feed/top-picks",
   },
   MATCH: {
     FIND: "/match",

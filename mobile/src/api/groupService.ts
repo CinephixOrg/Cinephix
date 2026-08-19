@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Group, GroupMember, Message, MessagePagination, ProfileAnalysis } from "../types";
+import type { ContentType, Group, GroupMember, Message, MessagePagination, ProfileAnalysis } from "../types";
 
 export async function getAllGroups(): Promise<Group[]> {
   const res = await API.get(API_ROUTES.GROUPS.GET_ALL);
@@ -52,13 +52,30 @@ export async function sendGroupMessageRest(slugOrId: string, text: string): Prom
   return res.data;
 }
 
-// One-off share into a group/community — same role as
-// conversationService.sendRichMessage but for the analysis-share flow's
-// group targets. No socket path, matching that function's reasoning.
+// Mirrors conversationService.sendRichMessage's union shape — the backend's
+// sendGroupMessage handler supports both type:"recommendation" and
+// type:"analysis_share" the same way the DM one does. No socket path,
+// matching sendRichMessage's own reasoning (one-off sends outside any open
+// chat room).
 export async function sendGroupRichMessage(
-  slugOrId: string,
-  payload: { text: string; type: "analysis_share"; analysisData: ProfileAnalysis }
+  groupId: string,
+  payload:
+    | {
+        text: string;
+        type: "recommendation";
+        contentType: ContentType;
+        contentId: string;
+        contentData: {
+          title?: string;
+          posterUrl?: string;
+          genres?: string[];
+          releaseYear?: number;
+          overview?: string;
+          rating?: number;
+        };
+      }
+    | { text: string; type: "analysis_share"; analysisData: ProfileAnalysis }
 ): Promise<Message> {
-  const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(slugOrId), payload);
+  const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(groupId), payload);
   return res.data;
 }

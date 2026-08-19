@@ -25,7 +25,7 @@ export default function AppLayout() {
     return <Redirect href="/login" />;
   }
 
-  // Every tab is its own nested Stack (movies/_layout.tsx, series/_layout.tsx,
+  // Every tab is its own nested Stack (search/_layout.tsx,
   // watchlist/_layout.tsx, lists/_layout.tsx, profile/_layout.tsx), each
   // containing its own copy of the content-detail route. This is what makes
   // back navigation (hardware, gesture, and each Stack's own header arrow)
@@ -45,41 +45,45 @@ export default function AppLayout() {
     >
       <Tabs.Screen
         name="home"
-        options={{ title: t("Home"), tabBarIcon: TabIcon("home", "home-outline") }}
+        options={{ title: t("Medya"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
       />
       <Tabs.Screen
-        name="movies"
-        options={{ title: t("Movies"), tabBarIcon: TabIcon("film", "film-outline") }}
-      />
-      <Tabs.Screen
-        name="series"
-        options={{ title: t("Series"), tabBarIcon: TabIcon("tv", "tv-outline") }}
+        name="search"
+        options={{ title: t("Search"), tabBarIcon: TabIcon("search", "search-outline") }}
       />
       <Tabs.Screen
         name="watchlist"
-        options={{ title: t("Watched List"), tabBarIcon: TabIcon("bookmark", "bookmark-outline") }}
+        options={{
+          title: t("Watched List"),
+          tabBarIcon: TabIcon("bookmark", "bookmark-outline"),
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="to-watch"
-        options={{ title: t("Watchlist"), tabBarIcon: TabIcon("time", "time-outline") }}
+        options={{
+          title: t("Watchlist"),
+          tabBarIcon: TabIcon("time", "time-outline"),
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="lists"
-        options={{ title: t("Lists"), tabBarIcon: TabIcon("list", "list-outline") }}
+        options={{
+          title: t("Lists"),
+          tabBarIcon: TabIcon("list", "list-outline"),
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="match"
         options={{ title: t("Cinematch"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
       />
       <Tabs.Screen
-        name="community"
-        options={{ title: t("Community"), tabBarIcon: TabIcon("people", "people-outline") }}
-      />
-      <Tabs.Screen
-        name="messages"
+        name="socials"
         options={{
-          title: t("Messages"),
-          tabBarIcon: TabIcon("chatbubble", "chatbubble-outline"),
+          title: t("Socials"),
+          tabBarIcon: TabIcon("people", "people-outline"),
           tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
         }}
       />

@@ -1,12 +1,15 @@
+import "react-native-gesture-handler";
 import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import {
   useFonts,
   DMSans_400Regular,
+  DMSans_400Regular_Italic,
   DMSans_500Medium,
   DMSans_700Bold,
 } from "@expo-google-fonts/dm-sans";
@@ -100,6 +103,7 @@ function RootNavigator() {
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
+    DMSans_400Regular_Italic,
     DMSans_500Medium,
     DMSans_700Bold,
   });
@@ -123,22 +127,24 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider initialTheme={initialTheme}>
-        <ToastProvider>
-          <NetworkProvider>
-            <AuthProvider>
-              <FollowGraphProvider>
-                <NotificationProvider>
-                  <ChatProvider>
-                    <RootNavigator />
-                  </ChatProvider>
-                </NotificationProvider>
-              </FollowGraphProvider>
-            </AuthProvider>
-          </NetworkProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider initialTheme={initialTheme}>
+          <ToastProvider>
+            <NetworkProvider>
+              <AuthProvider>
+                <FollowGraphProvider>
+                  <NotificationProvider>
+                    <ChatProvider>
+                      <RootNavigator />
+                    </ChatProvider>
+                  </NotificationProvider>
+                </FollowGraphProvider>
+              </AuthProvider>
+            </NetworkProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

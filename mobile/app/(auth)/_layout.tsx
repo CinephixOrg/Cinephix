@@ -10,7 +10,7 @@ export default function AuthLayout() {
     return <Redirect href="/setup-profile" />;
   }
   if (user) {
-    return <Redirect href="/movies" />;
+    return <Redirect href="/home" />;
   }
 
   return (

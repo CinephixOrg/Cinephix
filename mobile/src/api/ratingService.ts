@@ -16,6 +16,17 @@ export async function getAllRatingsForContent(contentId: string): Promise<number
   return res.data;
 }
 
+// Bulk fetch of every rating this user has ever given — used to annotate
+// the Watched List grid with each item's personal rating for the
+// Rated/Not Rated/Highest/Lowest Rating filters, distinct from
+// getAllRatingsForContent's per-content "everyone's ratings" shape.
+export async function getUserRatings(
+  userId: string
+): Promise<{ contentId: string; contentType: ContentType; value: number; createdAt: string }[]> {
+  const res = await API.get(API_ROUTES.RATINGS.GET_USER_RATINGS(userId));
+  return res.data;
+}
+
 export async function rateContent(
   contentId: string,
   contentType: ContentType,

@@ -1,21 +1,20 @@
 import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
 import UserAvatar from "./UserAvatar";
+import StarRatingDisplay from "./StarRatingDisplay";
 import { toggleReviewLike } from "../api/reviewService";
 import type { Review } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
+import { useTranslation } from "react-i18next";
 import { fonts } from "../theme/typography";
 
 interface Props {
   review: Review;
-  currentUserId?: string;
-  onDelete?: (reviewId: string) => void;
 }
 
-export default function ReviewCard({ review, currentUserId, onDelete }: Props) {
+export default function ReviewCard({ review }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   card: { backgroundColor: colors.base200, borderRadius: 12, padding: 14, marginBottom: 10 },
@@ -24,19 +23,15 @@ export default function ReviewCard({ review, currentUserId, onDelete }: Props) {
   username: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent },
   timestamp: { fontSize: 11, color: colors.placeholder, marginTop: 1 },
   text: { fontSize: 14, color: colors.baseContent, marginTop: 10, lineHeight: 20 },
-  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
   likeButton: { flexDirection: "row", alignItems: "center", gap: 6 },
   likeCount: { fontSize: 13, color: colors.placeholder },
   likeCountActive: { color: colors.primary, fontFamily: fonts.medium },
-  deleteText: { fontSize: 13, color: colors.error, fontFamily: fonts.medium },
 }), [colors]);
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [hasLiked, setHasLiked] = useState(review.hasLiked);
   const [likeCount, setLikeCount] = useState(review.likeCount);
   const [liking, setLiking] = useState(false);
-
-  const isOwn = !!currentUserId && review.user._id === currentUserId;
 
   const handleLike = async () => {
     if (liking) return;
@@ -73,11 +68,7 @@ export default function ReviewCard({ review, currentUserId, onDelete }: Props) {
             })}
           </Text>
         </View>
-      </View>
-
-      <Text style={styles.text}>{review.text}</Text>
-
-      <View style={styles.footer}>
+        {review.rating != null && <StarRatingDisplay value={review.rating} size={13} />}
         <Pressable style={styles.likeButton} onPress={handleLike} disabled={liking} hitSlop={8}>
           <Ionicons
             name={hasLiked ? "heart" : "heart-outline"}
@@ -86,13 +77,9 @@ export default function ReviewCard({ review, currentUserId, onDelete }: Props) {
           />
           <Text style={[styles.likeCount, hasLiked && styles.likeCountActive]}>{likeCount}</Text>
         </Pressable>
-        {isOwn && onDelete && (
-          <Pressable onPress={() => onDelete(review._id)} hitSlop={8}>
-            <Text style={styles.deleteText}>{t("Delete")}</Text>
-          </Pressable>
-        )}
       </View>
+
+      <Text style={styles.text}>{review.text}</Text>
     </View>
   );
 }
-

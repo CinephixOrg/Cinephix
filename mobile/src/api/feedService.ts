@@ -1,27 +1,18 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { FeedResult, PopularThisWeekItem, RecommendationItem, TopPick } from "../types";
+import type { ContentType, FeedResult, PopularThisWeekItem } from "../types";
 
-export async function getPopularThisWeek(limit = 20): Promise<PopularThisWeekItem[]> {
-  const res = await API.get(API_ROUTES.FEED.POPULAR_THIS_WEEK, { params: { limit } });
+export async function getPopularThisWeek(limit = 20, type?: ContentType): Promise<PopularThisWeekItem[]> {
+  const res = await API.get(API_ROUTES.FEED.POPULAR_THIS_WEEK, { params: { limit, type } });
   return res.data;
 }
 
-export async function getRecommendations(limit = 20): Promise<{
-  recommendations: RecommendationItem[];
-  topGenreIds: number[];
-  hasPersonalization: boolean;
-}> {
-  const res = await API.get(API_ROUTES.FEED.RECOMMENDATIONS, { params: { limit } });
+export async function getPopularWithFriends(limit = 20, type?: ContentType): Promise<PopularThisWeekItem[]> {
+  const res = await API.get(API_ROUTES.FEED.POPULAR_WITH_FRIENDS, { params: { limit, type } });
   return res.data;
 }
 
-export async function getFeed(page = 1, limit = 20): Promise<FeedResult> {
-  const res = await API.get(API_ROUTES.FEED.GET_FEED, { params: { page, limit } });
-  return res.data;
-}
-
-export async function getTopPicks(limit = 10): Promise<TopPick[]> {
-  const res = await API.get(API_ROUTES.FEED.GET_TOP_PICKS, { params: { limit } });
+export async function getFeed(page = 1, limit = 20, contentType?: ContentType): Promise<FeedResult> {
+  const res = await API.get(API_ROUTES.FEED.GET_FEED, { params: { page, limit, contentType } });
   return res.data;
 }

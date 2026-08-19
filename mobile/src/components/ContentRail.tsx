@@ -10,7 +10,7 @@ interface Props<T> {
   subtitle?: string;
   data: T[];
   keyExtractor: (item: T) => string;
-  renderItem: (item: T) => React.ReactNode;
+  renderItem: (item: T, index: number) => React.ReactNode;
   emptyText: string;
   // Optional trailing link next to the title (e.g. "See all" pointing at the
   // full screen this rail is a preview of).
@@ -104,7 +104,7 @@ export default function ContentRail<T>({
             data={data}
             keyExtractor={keyExtractor}
             contentContainerStyle={styles.railContent}
-            renderItem={({ item }) => <>{renderItem(item)}</>}
+            renderItem={({ item, index }) => <>{renderItem(item, index)}</>}
           />
         )}
       </View>

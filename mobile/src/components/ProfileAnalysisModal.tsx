@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, Modal, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import UserSharePickerModal from "./UserSharePickerModal";
+import ShareOptionsMenu from "./ShareOptionsMenu";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
 import { sendGroupRichMessage } from "../api/groupService";
+import { createShare } from "../api/shareService";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useToast } from "../context/ToastContext";
@@ -88,8 +90,24 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
   const { refreshConversations } = useChat();
   const { showToast } = useToast();
   const styles = useMemo(() => buildStyles(colors), [colors]);
+  const [optionsVisible, setOptionsVisible] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sharingToMedia, setSharingToMedia] = useState(false);
+
+  const handleShareToMedia = async () => {
+    if (!data) return;
+    setSharingToMedia(true);
+    try {
+      await createShare({ type: "analysis", analysisData: data });
+      setOptionsVisible(false);
+      showToast(t("Shared to Medya"));
+    } catch {
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setSharingToMedia(false);
+    }
+  };
 
   const handleConfirmRecipients = async (userIds: string[], groupIds: string[]) => {
     if (!data || !user) return;
@@ -190,7 +208,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
 
           <View style={styles.buttonRow}>
             {shareable && data && (
-              <Pressable style={styles.shareButton} onPress={() => setPickerVisible(true)}>
+              <Pressable style={styles.shareButton} onPress={() => setOptionsVisible(true)}>
                 <Text style={styles.shareButtonText}>{t("Share")}</Text>
               </Pressable>
             )}
@@ -201,13 +219,24 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
         </View>
       </View>
 
+      <ShareOptionsMenu
+        visible={optionsVisible}
+        onClose={() => setOptionsVisible(false)}
+        onSendToPeople={() => {
+          setOptionsVisible(false);
+          setPickerVisible(true);
+        }}
+        onShareToMedia={handleShareToMedia}
+        sharing={sharingToMedia}
+      />
+
       <UserSharePickerModal
         visible={pickerVisible}
         title={t("Share")}
         onClose={() => setPickerVisible(false)}
         sending={sending}
         onConfirm={handleConfirmRecipients}
-        showGroups
+        allowGroups
       />
     </Modal>
   );

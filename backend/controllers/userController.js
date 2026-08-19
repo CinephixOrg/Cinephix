@@ -25,6 +25,7 @@ import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/emailService.js";
 import { getTierLimits } from "../config/tiers.js";
 import ProfileAnalysis from "../models/ProfileAnalysis.js";
+import { getOnlineUserIds } from "../services/presenceService.js";
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -504,20 +505,29 @@ export const searchUsers = asyncHandler(async (req, res) => {
   const query = req.query.query;
   const { page = 1, limit = 20 } = req.query;
 
-  if (!query) {
-    return sendError(res, 'Search query is required', 400);
-  }
-
-  const skip = (parseInt(page) - 1) * parseInt(limit);
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+  const selfId = new mongoose.Types.ObjectId(req.user.id);
+
+  // No query — browse mode: a random default set instead of erroring, so a
+  // "search users" UI has something to show before anyone's typed anything.
+  // Not paginated (a fresh random sample each call is the point).
+  if (!query) {
+    const users = await User.aggregate([
+      { $match: { _id: { $ne: selfId } } },
+      { $sample: { size: limitNum } },
+      { $project: { _id: 1, username: 1, profile_pic_url: 1 } },
+    ]);
+    return sendPaginated(res, users, users.length, 1, limitNum, 'Users found');
+  }
 
   // 🔹 Optimize: Use aggregation with $facet to get count + data in ONE query
   const pipeline = [
     {
       $match: {
         username: { $regex: query, $options: 'i' },
-        _id: { $ne: new mongoose.Types.ObjectId(req.user.id) }
+        _id: { $ne: selfId }
       }
     },
     {
@@ -867,20 +877,22 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(targetUserId).select('watchlist visibility followers').lean();
-  
+
   if (!user) {
-      return sendSuccess(res, { movieStats: {}, seriesStats: {} }, 'CineGraph fetched', 200);
+      return sendSuccess(res, { movieStats: {}, seriesStats: {}, movieGenreRatings: {}, seriesGenreRatings: {} }, 'CineGraph fetched', 200);
   }
 
   const currentUserId = req.user ? req.user.id.toString() : null;
-  
+
   if (!isAuthorizedToView(currentUserId, user)) {
     const movieCount = user.watchlist?.filter(item => item.itemType === 'movie').length || 0;
     const seriesCount = user.watchlist?.filter(item => item.itemType === 'series').length || 0;
-    
-    return sendSuccess(res, { 
-      movieStats: {}, 
-      seriesStats: {}, 
+
+    return sendSuccess(res, {
+      movieStats: {},
+      seriesStats: {},
+      movieGenreRatings: {},
+      seriesGenreRatings: {},
       isPrivateMasked: true,
       isPrivateAndHidden: true,
       isAuthorized: false,
@@ -888,9 +900,9 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
       totalSeries: seriesCount
     }, 'CineGraph fetched (masked)', 200);
   }
-  
+
   if (!user.watchlist || user.watchlist.length === 0) {
-    return sendSuccess(res, { movieStats: {}, seriesStats: {}, isAuthorized: true }, 'CineGraph fetched', 200);
+    return sendSuccess(res, { movieStats: {}, seriesStats: {}, movieGenreRatings: {}, seriesGenreRatings: {}, isAuthorized: true }, 'CineGraph fetched', 200);
   }
 
   const watchlist = user.watchlist;
@@ -901,30 +913,165 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
   const movies = await Movie.find({ '_id': { $in: movieIds } }).select('genre_ids').lean();
   const series = await Series.find({ '_id': { $in: seriesIds } }).select('genre_ids').lean();
 
+  // Rating.contentId is a plain String, not an ObjectId ref — coerce before matching.
+  const ratings = await Rating.find({
+    user: targetUserId,
+    contentId: { $in: [...movieIds, ...seriesIds].map((id) => id.toString()) },
+  }).select('contentId contentType value').lean();
+  const ratingByContentId = new Map(ratings.map((r) => [r.contentId, r.value]));
+
   const movieGenreCounts = {};
   const seriesGenreCounts = {};
+  const movieGenreRatingSums = {};
+  const seriesGenreRatingSums = {};
 
   for (const movie of movies) {
     if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+      const ratingValue = ratingByContentId.get(movie._id.toString());
       for (const genreId of movie.genre_ids) {
         const genreName = MOVIE_GENRE_MAP[genreId];
         if (genreName) {
            movieGenreCounts[genreName] = (movieGenreCounts[genreName] || 0) + 1;
+           if (ratingValue != null) {
+             const node = movieGenreRatingSums[genreName] || { sum: 0, n: 0 };
+             node.sum += ratingValue;
+             node.n += 1;
+             movieGenreRatingSums[genreName] = node;
+           }
         }
       }
     }
   }
-  
+
   for (const show of series) {
     if (show.genre_ids && Array.isArray(show.genre_ids)) {
+      const ratingValue = ratingByContentId.get(show._id.toString());
       for (const genreId of show.genre_ids) {
         const genreName = SERIES_GENRE_MAP[genreId];
-        if (genreName) seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
+        if (genreName) {
+          seriesGenreCounts[genreName] = (seriesGenreCounts[genreName] || 0) + 1;
+          if (ratingValue != null) {
+            const node = seriesGenreRatingSums[genreName] || { sum: 0, n: 0 };
+            node.sum += ratingValue;
+            node.n += 1;
+            seriesGenreRatingSums[genreName] = node;
+          }
+        }
       }
     }
   }
 
-  sendSuccess(res, { movieStats: movieGenreCounts, seriesStats: seriesGenreCounts, isAuthorized: true }, 'CineGraph fetched', 200);
+  // avgRating stays on Rating.value's raw 1-10 scale — mobile's
+  // StarRatingDisplay/RatingDistributionChart already divide by 2 themselves
+  // at the display layer, not the data layer.
+  const movieGenreRatings = {};
+  for (const genreName of Object.keys(movieGenreCounts)) {
+    const node = movieGenreRatingSums[genreName];
+    movieGenreRatings[genreName] = node ? Number((node.sum / node.n).toFixed(1)) : null;
+  }
+  const seriesGenreRatings = {};
+  for (const genreName of Object.keys(seriesGenreCounts)) {
+    const node = seriesGenreRatingSums[genreName];
+    seriesGenreRatings[genreName] = node ? Number((node.sum / node.n).toFixed(1)) : null;
+  }
+
+  sendSuccess(res, {
+    movieStats: movieGenreCounts,
+    seriesStats: seriesGenreCounts,
+    movieGenreRatings,
+    seriesGenreRatings,
+    isAuthorized: true,
+  }, 'CineGraph fetched', 200);
+});
+
+/**
+ * @desc   Every watched item in one genre for a user, with the user's own
+ *         rating per item and the genre's average. Recomputed fresh from
+ *         Rating + Movie/Series.genre_ids at read time — deliberately NOT
+ *         read from User.movieCineGraph/seriesCineGraph, which has known
+ *         drift bugs from the TV Time/Letterboxd import and log-revert
+ *         paths (out of scope to fix here).
+ * @route  GET /api/users/:id/genre-detail?type=movie|series&genre=<name>
+ * @access Private
+ */
+export const getUserGenreDetail = asyncHandler(async (req, res) => {
+  const Movie = mongoose.model('Movie');
+  const Series = mongoose.model('Series');
+
+  let targetUserId = req.params.id;
+  if (targetUserId === 'me' || !targetUserId) {
+    targetUserId = req.user.id;
+  }
+
+  const { type, genre } = req.query;
+  if (type !== 'movie' && type !== 'series') {
+    return sendError(res, 'type must be "movie" or "series"', 400);
+  }
+  if (!genre) {
+    return sendError(res, 'genre query param is required', 400);
+  }
+
+  const user = await User.findById(targetUserId).select('watchlist visibility followers').lean();
+  if (!user) return sendError(res, 'User not found', 404);
+
+  const currentUserId = req.user ? req.user.id.toString() : null;
+  if (!isAuthorizedToView(currentUserId, user)) {
+    return sendSuccess(res, { items: [], avgRating: null, count: 0, isAuthorized: false }, 'Genre detail fetched (masked)', 200);
+  }
+
+  const genreMap = type === 'movie' ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
+  const targetGenreIds = Object.keys(genreMap)
+    .filter((id) => genreMap[id] === genre)
+    .map(Number);
+  if (targetGenreIds.length === 0) {
+    return sendError(res, 'Unknown genre', 400);
+  }
+
+  const itemIds = (user.watchlist || [])
+    .filter((item) => item.itemType === type)
+    .map((item) => item.itemId);
+
+  const Model = type === 'movie' ? Movie : Series;
+  const titleField = type === 'movie' ? 'title' : 'name';
+  const dateField = type === 'movie' ? 'release_date' : 'first_air_date';
+
+  const docs = await Model.find({ _id: { $in: itemIds } })
+    .select(`genre_ids ${titleField} poster_path ${dateField}`)
+    .lean();
+
+  const matched = docs.filter(
+    (d) => Array.isArray(d.genre_ids) && d.genre_ids.some((gid) => targetGenreIds.includes(gid))
+  );
+
+  const matchedIds = matched.map((d) => d._id.toString());
+  const ratings = await Rating.find({
+    user: targetUserId,
+    contentType: type,
+    contentId: { $in: matchedIds },
+  }).select('contentId value').lean();
+  const ratingByContentId = new Map(ratings.map((r) => [r.contentId, r.value]));
+
+  const items = matched.map((d) => ({
+    contentId: d._id.toString(),
+    title: d[titleField],
+    posterPath: d.poster_path || null,
+    year: d[dateField] ? d[dateField].substring(0, 4) : null,
+    rating: ratingByContentId.get(d._id.toString()) ?? null,
+  }));
+
+  items.sort((a, b) => {
+    if (a.rating == null && b.rating == null) return 0;
+    if (a.rating == null) return 1;
+    if (b.rating == null) return -1;
+    return b.rating - a.rating;
+  });
+
+  const ratedValues = items.map((i) => i.rating).filter((v) => v != null);
+  const avgRating = ratedValues.length
+    ? Number((ratedValues.reduce((a, b) => a + b, 0) / ratedValues.length).toFixed(1))
+    : null;
+
+  sendSuccess(res, { items, avgRating, count: items.length, isAuthorized: true }, 'Genre detail fetched', 200);
 });
 
 // controllers/userController.js
@@ -1287,6 +1434,26 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
 
   sendSuccess(res, result, 'Suggestions fetched');
 });
+
+// @desc    Which of the people I follow are currently connected (Medya's
+//          online-friends bar) — backed by presenceService's in-memory
+//          socket refcount, not a persisted field.
+// @route   GET /api/users/online
+export const getOnlineFriends = asyncHandler(async (req, res) => {
+  const currentUser = await User.findById(req.user.id).select('following').lean();
+  const followingIds = new Set((currentUser?.following || []).map((id) => id.toString()));
+
+  const onlineIds = getOnlineUserIds().filter((id) => followingIds.has(id));
+  if (onlineIds.length === 0) {
+    return sendSuccess(res, [], 'Online friends fetched');
+  }
+
+  const users = await User.find({ _id: { $in: onlineIds } })
+    .select('username profile_pic_url')
+    .lean();
+  sendSuccess(res, users, 'Online friends fetched');
+});
+
 // @desc    Resend / send email verification code
 // @route   POST /api/users/send-verification
 export const sendEmailVerificationCode = asyncHandler(async (req, res) => {

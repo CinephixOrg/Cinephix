@@ -82,7 +82,7 @@ export default function SetupProfileScreen() {
 
   const goToApp = () => {
     clearNeedsProfileSetup();
-    router.replace("/movies");
+    router.replace("/home");
   };
 
   const handleFinish = async () => {

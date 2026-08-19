@@ -55,7 +55,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const socket = io(SOCKET_URL, {
       auth: { token: user.token },
-      transports: ["websocket"],
     });
     socketRef.current = socket;
 
@@ -66,7 +65,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     socket.on("disconnect", () => setConnected(false));
     socket.on("connect_error", (err) => {
       setConnected(false);
-      console.error("Chat socket connect_error:", err.message);
+      console.error("Chat socket connect_error:", err?.message);
     });
 
     socket.on("conversation-updated", (payload: RoomUpdatedPayload) => {
