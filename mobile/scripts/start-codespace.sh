@@ -51,6 +51,31 @@ if [ -n "${CODESPACES:-}" ] && [ -n "${CODESPACE_NAME:-}" ] && command -v gh >/d
     echo "EXPO_PUBLIC_API_BASE_URL=${BACKEND_PUBLIC_URL}/api"
     echo "EXPO_PUBLIC_SOCKET_URL=${BACKEND_PUBLIC_URL}"
   } > "$MOBILE_DIR/.env"
+
+  # `gh codespace ports visibility` can silently no-op (rate limit, timing,
+  # a transient API hiccup) — verify externally rather than trusting it, so
+  # a broken tunnel fails loudly here instead of surfacing later as a
+  # confusing "connect_error: server error" / non-JSON response deep inside
+  # the app on a phone with no visibility into what actually went wrong.
+  echo -n "Verifying backend port is actually public"
+  PORT_PUBLIC=0
+  for _ in $(seq 1 8); do
+    if [ "$(curl -s -o /dev/null -w '%{http_code}' "$BACKEND_PUBLIC_URL/api/health")" = "200" ]; then
+      PORT_PUBLIC=1
+      echo " confirmed."
+      break
+    fi
+    echo -n "."
+    gh codespace ports visibility 5000:public -c "$CODESPACE_NAME" >/dev/null 2>&1 || true
+    sleep 1
+  done
+  if [ "$PORT_PUBLIC" = "0" ]; then
+    echo ""
+    echo "!! WARNING: backend port 5000 is still not publicly reachable"
+    echo "!! ($BACKEND_PUBLIC_URL/api/health did not return 200)."
+    echo "!! The app will fail to reach the backend from Expo Go until this"
+    echo "!! is fixed — try: gh codespace ports visibility 5000:public -c $CODESPACE_NAME"
+  fi
 fi
 
 echo "== Starting ngrok agent =="

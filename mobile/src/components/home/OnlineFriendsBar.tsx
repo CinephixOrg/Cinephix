@@ -24,7 +24,11 @@ export default function OnlineFriendsBar() {
     let cancelled = false;
     getOnlineFriends()
       .then((res) => {
-        if (!cancelled) setFriends(res);
+        // A misconfigured tunnel/proxy (e.g. a Codespaces port that isn't
+        // public yet) can return an HTML/error body with a 200 status
+        // instead of rejecting — guard against a non-array response so a
+        // transient network hiccup can't crash the whole feed's render.
+        if (!cancelled) setFriends(Array.isArray(res) ? res : []);
       })
       .catch(() => {})
       .finally(() => {
