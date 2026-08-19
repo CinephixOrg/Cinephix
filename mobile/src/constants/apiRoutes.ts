@@ -21,6 +21,7 @@ export const API_ROUTES = {
     CREATE_OR_UPDATE: "/ratings",
     GET_MY_RATING: (contentId: string) => `/ratings/me/${contentId}`,
     GET_ALL_FOR_CONTENT: (contentId: string) => `/ratings/content/${contentId}`,
+    GET_USER_RATINGS: (userId: string) => `/users/ratings/${userId}`,
   },
   REVIEWS: {
     GET_POPULAR: "/reviews/popular",
@@ -48,6 +49,8 @@ export const API_ROUTES = {
     GET_PROFILE_ANALYSIS: "/users/profile-analysis",
     GET_PROFILE_ANALYSIS_HISTORY: "/users/profile-analysis/history",
     GET_CINEGRAPH: (id: string) => `/users/cinegraph-data/${id}`,
+    GET_GENRE_DETAIL: (id: string, type: "movie" | "series", genre: string) =>
+      `/users/${id}/genre-detail?type=${type}&genre=${encodeURIComponent(genre)}`,
     GET_FAVORITES: (id: string) => `/users/favorites/${id}`,
     UPDATE_FAVORITES: "/users/me/favorites",
     UPDATE_BIO: (id: string) => `/users/profile/${id}/bio`,
@@ -67,11 +70,23 @@ export const API_ROUTES = {
     GET_PENDING_REQUESTS: "/users/me/follow-requests",
     GET_SENT_REQUESTS: "/users/me/sent-requests",
     GET_SUGGESTIONS: "/users/me/suggestions",
+    GET_ONLINE_FRIENDS: "/users/online",
   },
   ACTIVITY_LOG: {
     GET_ALL: "/users/me/logs",
     REVERT: "/users/me/logs/revert",
     RESET_ALL_DATA: "/users/me/reset-data",
+  },
+  MY_ACTIVITY: {
+    GET: "/users/me/activity",
+  },
+  SHARES: {
+    CREATE: "/shares",
+    GET_FEED: "/shares/feed",
+    LIKE: (id: string) => `/shares/${id}/like`,
+    VIEW: (id: string) => `/shares/${id}/view`,
+    GET_USER_SHARES: (userId: string) => `/shares/user/${userId}`,
+    DELETE: (id: string) => `/shares/${id}`,
   },
   IMPORT: {
     TVTIME: "/users/import-tvtime",
@@ -83,6 +98,7 @@ export const API_ROUTES = {
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
+    REORDER: "/lists/me/reorder",
     CREATE: "/lists",
     GET_BY_ID: (id: string) => `/lists/${id}`,
     UPDATE: (id: string) => `/lists/${id}`,

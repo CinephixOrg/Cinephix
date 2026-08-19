@@ -16,7 +16,7 @@ interface Props {
   // design); Search's Films/Series grid passes it since browsing by title
   // matters more there than in an already-curated list.
   title?: string;
-  basePath: "/lists" | "/home" | "/search";
+  basePath: "/lists" | "/home" | "/search" | "/profile" | "/watchlist" | "/to-watch";
   onRemove?: () => void;
   // Explicit pixel width + spacing from the grid (fixed values computed by
   // the caller from screen width) rather than a percentage — keeps the gap

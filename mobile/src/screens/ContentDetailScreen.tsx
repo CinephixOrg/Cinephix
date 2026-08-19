@@ -35,6 +35,11 @@ import ReviewComposer from "../components/ReviewComposer";
 import ReviewCard from "../components/ReviewCard";
 import FavoritesModal from "../components/FavoritesModal";
 import UserAvatar from "../components/UserAvatar";
+import ShareOptionsMenu from "../components/ShareOptionsMenu";
+import UserSharePickerModal from "../components/UserSharePickerModal";
+import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
+import { sendGroupRichMessage } from "../api/groupService";
+import { createShare } from "../api/shareService";
 import { useMyReview } from "../hooks/useMyReview";
 import type { ContentType, CustomList, Movie, Review, Series } from "../types";
 import { useTheme } from "../context/ThemeContext";
@@ -64,11 +69,28 @@ export default function ContentDetailScreen() {
     backgroundColor: colors.base100,
   },
   topRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
+  posterWrap: { width: "38%", position: "relative" },
   posterSmall: {
-    width: "38%",
+    width: "100%",
     aspectRatio: 2 / 3,
     borderRadius: 12,
     backgroundColor: colors.base200,
+  },
+  // Circular, half-overlapping the poster's own bottom edge — the button's
+  // own vertical center sits exactly on the poster's bottom border.
+  giftButton: {
+    position: "absolute",
+    bottom: -18,
+    left: "50%",
+    marginLeft: -18,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.base100,
   },
   topRightCol: { flex: 1 },
   titleRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 6, marginBottom: 6 },
@@ -215,6 +237,11 @@ export default function ContentDetailScreen() {
   const [posterHeight, setPosterHeight] = useState(0);
   const [titleRowHeight, setTitleRowHeight] = useState(0);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+
+  const [giftMenuVisible, setGiftMenuVisible] = useState(false);
+  const [recommendPickerVisible, setRecommendPickerVisible] = useState(false);
+  const [sendingRecommendation, setSendingRecommendation] = useState(false);
+  const [sharingRecommendation, setSharingRecommendation] = useState(false);
 
   const { myReview, setMyReview } = useMyReview(id, user?._id);
   const [activeReviewTab, setActiveReviewTab] = useState<ReviewTab>("friends");
@@ -557,18 +584,78 @@ export default function ContentDetailScreen() {
       ? Math.max(1, Math.floor((posterHeight - titleRowHeight) / OVERVIEW_LINE_HEIGHT))
       : undefined;
 
+  // Shortcut recommend flow — skips socials/messages/recommend.tsx's search
+  // step entirely since we're already viewing the content to recommend.
+  const handleSendRecommendation = async (userIds: string[], groupIds: string[]) => {
+    if (!user) return;
+    setSendingRecommendation(true);
+    try {
+      const text = t("User recommends you", {
+        user: user.username,
+        title,
+        type: t(type === "movie" ? "movie_acc" : "series_acc"),
+      });
+      const contentData = {
+        title,
+        posterUrl: posterPath ?? undefined,
+        genres: [] as string[],
+        releaseYear: releaseDate ? Number(releaseDate.slice(0, 4)) : undefined,
+        overview,
+        rating: content?.vote_average,
+      };
+      await Promise.all([
+        ...userIds.map(async (uid) => {
+          const conv = await getOrCreateConversation(uid);
+          await sendRichMessage(conv._id, { text, type: "recommendation", contentId: id, contentType: type, contentData });
+        }),
+        ...groupIds.map((gid) =>
+          sendGroupRichMessage(gid, { text, type: "recommendation", contentId: id, contentType: type, contentData })
+        ),
+      ]);
+      setRecommendPickerVisible(false);
+      showToast(t("Recommendation sent"));
+    } catch {
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setSendingRecommendation(false);
+    }
+  };
+
+  const handleShareRecommendationToMedia = async () => {
+    setSharingRecommendation(true);
+    try {
+      await createShare({ type: "recommendation", contentId: id, contentType: type });
+      setGiftMenuVisible(false);
+      showToast(t("Shared to Medya"));
+    } catch {
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setSharingRecommendation(false);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
-        {posterPath ? (
-          <Image
-            source={{ uri: `${POSTER_BASE}${posterPath}` }}
-            style={styles.posterSmall}
-            onLayout={(e) => setPosterHeight(e.nativeEvent.layout.height)}
-          />
-        ) : (
-          <View style={styles.posterSmall} onLayout={(e) => setPosterHeight(e.nativeEvent.layout.height)} />
-        )}
+        <View style={styles.posterWrap}>
+          {posterPath ? (
+            <Image
+              source={{ uri: `${POSTER_BASE}${posterPath}` }}
+              style={styles.posterSmall}
+              onLayout={(e) => setPosterHeight(e.nativeEvent.layout.height)}
+            />
+          ) : (
+            <View style={styles.posterSmall} onLayout={(e) => setPosterHeight(e.nativeEvent.layout.height)} />
+          )}
+          <Pressable
+            style={styles.giftButton}
+            onPress={() => setGiftMenuVisible(true)}
+            accessibilityLabel={t("Recommend")}
+            hitSlop={6}
+          >
+            <Ionicons name="gift-outline" size={18} color={colors.primaryContent} />
+          </Pressable>
+        </View>
         <View style={styles.topRightCol}>
           <View style={styles.titleRow} onLayout={(e) => setTitleRowHeight(e.nativeEvent.layout.height)}>
             <Text style={styles.title}>{title}</Text>
@@ -843,6 +930,26 @@ export default function ContentDetailScreen() {
           onSaved={setIsFavorite}
         />
       )}
+
+      <ShareOptionsMenu
+        visible={giftMenuVisible}
+        onClose={() => setGiftMenuVisible(false)}
+        onSendToPeople={() => {
+          setGiftMenuVisible(false);
+          setRecommendPickerVisible(true);
+        }}
+        onShareToMedia={handleShareRecommendationToMedia}
+        sharing={sharingRecommendation}
+      />
+
+      <UserSharePickerModal
+        visible={recommendPickerVisible}
+        title={t("Recommend Movie/Series")}
+        onClose={() => setRecommendPickerVisible(false)}
+        sending={sendingRecommendation}
+        onConfirm={handleSendRecommendation}
+        allowGroups
+      />
     </ScrollView>
   );
 }

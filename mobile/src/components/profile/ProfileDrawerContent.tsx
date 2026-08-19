@@ -1,0 +1,81 @@
+import { useMemo } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useNotifications } from "../../context/NotificationContext";
+import { useTheme } from "../../context/ThemeContext";
+import { fonts } from "../../theme/typography";
+
+interface Props {
+  onNavigate: () => void;
+}
+
+type MenuItem = {
+  key: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+};
+
+const ITEMS: MenuItem[] = [
+  { key: "activity", label: "Activity", icon: "pulse-outline", route: "/profile/activity" },
+  { key: "watched", label: "Watched List", icon: "checkmark-done-outline", route: "/watchlist" },
+  { key: "lists", label: "Lists", icon: "list-outline", route: "/lists" },
+  { key: "watchlist", label: "Watchlist", icon: "bookmark-outline", route: "/to-watch" },
+  { key: "notifications", label: "Notifications", icon: "notifications-outline", route: "/notifications" },
+  { key: "settings", label: "Settings", icon: "settings-outline", route: "/profile/settings" },
+];
+
+// The items displaced from Profile's outer tab bar / category icons /
+// header icons — a pure relocation, none of the destination screens change.
+export default function ProfileDrawerContent({ onNavigate }: Props) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { unreadCount } = useNotifications();
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.base200 },
+        row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 16 },
+        label: { fontFamily: fonts.medium, fontSize: 15, color: colors.baseContent, flex: 1 },
+        badge: {
+          minWidth: 18,
+          height: 18,
+          borderRadius: 9,
+          paddingHorizontal: 4,
+          backgroundColor: colors.error,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        badgeText: { fontSize: 10, fontFamily: fonts.bold, color: "#ffffff" },
+      }),
+    [colors]
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {ITEMS.map((item) => (
+        <Pressable
+          key={item.key}
+          style={styles.row}
+          onPress={() => {
+            onNavigate();
+            router.push(item.route as any);
+          }}
+        >
+          <Ionicons name={item.icon} size={20} color={colors.baseContent} />
+          <Text style={styles.label}>{t(item.label)}</Text>
+          {item.key === "notifications" && unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+            </View>
+          )}
+        </Pressable>
+      ))}
+    </SafeAreaView>
+  );
+}

@@ -32,6 +32,13 @@ const reviewSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
   }],
+  // Additive alongside `likes` — every existing consumer of likes/likeCount/
+  // hasLiked keeps working unchanged. Only the personal-activity feature
+  // reads this, for per-like timestamps `likes` alone can't provide.
+  likeEvents: [{
+    user: { type: Schema.Types.ObjectId, ref: 'User' },
+    likedAt: { type: Date, default: Date.now },
+  }],
 }, { timestamps: true }); // Auto-adds createdAt and updatedAt fields
 
 // ===== DATABASE INDEXES (Issue #13) =====

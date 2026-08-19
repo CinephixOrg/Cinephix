@@ -1,6 +1,6 @@
 import { useCallback, useState, useMemo } from "react";
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
-import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
@@ -11,8 +11,8 @@ import FollowButton from "../../../src/components/FollowButton";
 import MatchPercentageRing from "../../../src/components/MatchPercentageRing";
 import AnalyzeModal from "../../../src/components/AnalyzeModal";
 import MatchFiltersModal from "../../../src/components/match/MatchFiltersModal";
-import PublicProfileOverviewTab from "../../../src/components/profile/PublicProfileOverviewTab";
-import ProfileCinegraphsTab from "../../../src/components/profile/ProfileCinegraphsTab";
+import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
+import PublicProfileCategoryTabs from "../../../src/components/profile/PublicProfileCategoryTabs";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import type {
   CineGraphData,
@@ -25,13 +25,6 @@ import type {
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
-type PublicProfileTab = "profile" | "cinegraphs";
-
-const TABS: { key: PublicProfileTab; label: string }[] = [
-  { key: "profile", label: "Profile" },
-  { key: "cinegraphs", label: "Cinegraphs" },
-];
-
 export default function PublicProfileScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
@@ -43,48 +36,15 @@ export default function PublicProfileScreen() {
     backgroundColor: colors.base100,
     flexGrow: 1,
   },
-  profileArea: { padding: 20, paddingBottom: 20, alignItems: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.base200 },
   avatarFallback: { alignItems: "center", justifyContent: "center" },
   avatarFallbackText: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
   username: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent, marginTop: 12 },
-  joined: { color: colors.placeholder, fontSize: 13, marginTop: 2 },
   lockRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
   lockText: { color: colors.placeholder, fontSize: 14, textAlign: "center" },
-  statsRow: { flexDirection: "row", gap: 32, marginTop: 16 },
-  stat: { alignItems: "center" },
-  statValue: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent },
-  statLabel: { color: colors.placeholder, fontSize: 12 },
-  bio: {
-    color: colors.baseContent,
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 16,
-    lineHeight: 20,
-  },
   followButton: { marginTop: 20, alignSelf: "stretch" },
   error: { color: colors.error, fontSize: 16 },
-  // Letterboxd-style flat tabs — matches (app)/profile/index.tsx exactly, so
-  // your own profile and anyone else's feel like the same component family.
-  tabRow: {
-    flexDirection: "row",
-    alignSelf: "stretch",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-    marginBottom: -StyleSheet.hairlineWidth,
-  },
-  tabButtonActive: { borderBottomColor: colors.primary },
-  tabButtonText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
-  tabButtonTextActive: { color: colors.baseContent, fontFamily: fonts.bold },
-  tabContent: { paddingTop: 20 },
   // The Filters button used to sit beside Cinematch as an equal-weight
   // button (plus a whole expandable inline panel below) — now it's a small
   // icon attached to the Cinematch action instead of competing with it, and
@@ -136,7 +96,6 @@ export default function PublicProfileScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const router = useRouter();
   const navigation = useNavigation();
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -144,7 +103,6 @@ export default function PublicProfileScreen() {
   const [favorites, setFavorites] = useState<Favorites | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<PublicProfileTab>("profile");
 
   const [filters, setFilters] = useState<MatchFilters>({
     type: "movie",
@@ -251,8 +209,9 @@ export default function PublicProfileScreen() {
       ? "requested"
       : "not-following";
 
-  // A private account you don't follow has nothing to show in any tab — the
-  // masked branch stays a single simple view, same as before tabs existed.
+  // A private account you don't follow has nothing to show — this stays a
+  // single simple centered view, distinct from the full Instagram-style
+  // layout below (no bio/stats/categories to show either way).
   if (!profile.isAuthorized) {
     return (
       <ScrollView contentContainerStyle={styles.container}>
@@ -273,132 +232,66 @@ export default function PublicProfileScreen() {
     );
   }
 
-  const tabRow = (
-    <View style={styles.tabRow}>
-      {TABS.map((tabDef) => {
-        const isActive = activeTab === tabDef.key;
-        return (
-          <Pressable
-            key={tabDef.key}
-            style={[styles.tabButton, isActive && styles.tabButtonActive]}
-            onPress={() => setActiveTab(tabDef.key)}
-          >
-            <Text style={[styles.tabButtonText, isActive && styles.tabButtonTextActive]}>
-              {t(tabDef.label)}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-
-  // Name, network stats, bio, Follow button, and the CineMatch panel are
-  // Profile-subtab-only, mirroring the exact same rule already applied to
-  // your own profile (name/network/bio only on its Profile subtab).
-  const profileArea = (
-    <View style={styles.profileArea}>
-      {profile.profile_pic_url ? (
-        <Image source={{ uri: profile.profile_pic_url }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, styles.avatarFallback]}>
-          <Text style={styles.avatarFallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
-        </View>
-      )}
-
-      <Text style={styles.username}>{profile.username}</Text>
-      <Text style={styles.joined}>
-        {t("Joined")}{" "}
-        {new Date(profile.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "long" })}
-      </Text>
-
-      <View style={styles.statsRow}>
-        <Pressable
-          style={styles.stat}
-          onPress={() =>
-            router.push({
-              pathname: "/network",
-              params: { userId: id, username: profile.username, tab: "followers" },
-            })
-          }
-        >
-          <Text style={styles.statValue}>{profile.followers.length}</Text>
-          <Text style={styles.statLabel}>{t("Followers")}</Text>
-        </Pressable>
-        <Pressable
-          style={styles.stat}
-          onPress={() =>
-            router.push({
-              pathname: "/network",
-              params: { userId: id, username: profile.username, tab: "following" },
-            })
-          }
-        >
-          <Text style={styles.statValue}>{profile.following.length}</Text>
-          <Text style={styles.statLabel}>{t("Following")}</Text>
-        </Pressable>
-      </View>
-
-      {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
-
-      <FollowButton targetUserId={id} initialStatus={initialStatus} style={styles.followButton} />
-
-      <View style={styles.matchButtonRow}>
-        <Pressable style={styles.matchCinematchButton} onPress={handleCinematch} disabled={matchLoading}>
-          {matchLoading ? (
-            <ActivityIndicator color={colors.primaryContent} size="small" />
-          ) : (
-            <Text style={styles.matchCinematchButtonText}>{t("🎬 Cinematch")}</Text>
-          )}
-        </Pressable>
-        <Pressable
-          style={styles.matchFilterIconButton}
-          onPress={() => setFiltersModalVisible(true)}
-          accessibilityLabel={t("Filters")}
-        >
-          <Ionicons name="options-outline" size={19} color={colors.baseContent} />
-        </Pressable>
-      </View>
-
-      {matchResult && (
-        <View style={styles.matchResultCard}>
-          <MatchPercentageRing percentage={matchResult.matchPercentage} size={84} strokeWidth={8} />
-          <Text style={styles.matchResultScore}>
-            {t("{{percent}}% Match", { percent: matchResult.matchPercentage })}
-          </Text>
-          <Text style={styles.matchResultSubtext}>{t("Based on your CineGraphs and taste overlap")}</Text>
-          <Pressable style={styles.matchAnalyzeButton} onPress={handleAnalyze} disabled={analyzing}>
-            {analyzing ? (
-              <ActivityIndicator color={colors.primaryContent} size="small" />
-            ) : (
-              <>
-                <Ionicons name="sparkles" size={16} color={colors.primaryContent} />
-                <Text style={styles.matchAnalyzeButtonText}>{t("Analyze Compatibility")}</Text>
-              </>
-            )}
-          </Pressable>
-        </View>
-      )}
-
-      {matchError && <Text style={styles.error}>{matchError}</Text>}
-
-      <MatchFiltersModal
-        visible={filtersModalVisible}
-        onClose={() => setFiltersModalVisible(false)}
-        filters={filters}
-        onApply={setFilters}
-      />
-    </View>
-  );
-
   return (
     <>
       <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
-        {tabRow}
-        {activeTab === "profile" && profileArea}
-        <View style={styles.tabContent}>
-          {activeTab === "profile" && <PublicProfileOverviewTab favorites={favorites} userId={id} />}
-          {activeTab === "cinegraphs" && <ProfileCinegraphsTab cineGraph={cineGraph} />}
-        </View>
+        <ProfileHeaderInstagram
+          profile={profile}
+          targetUserId={id}
+          actionsSlot={
+            <>
+              <FollowButton targetUserId={id} initialStatus={initialStatus} style={styles.followButton} />
+
+              <View style={styles.matchButtonRow}>
+                <Pressable style={styles.matchCinematchButton} onPress={handleCinematch} disabled={matchLoading}>
+                  {matchLoading ? (
+                    <ActivityIndicator color={colors.primaryContent} size="small" />
+                  ) : (
+                    <Text style={styles.matchCinematchButtonText}>{t("🎬 Cinematch")}</Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  style={styles.matchFilterIconButton}
+                  onPress={() => setFiltersModalVisible(true)}
+                  accessibilityLabel={t("Filters")}
+                >
+                  <Ionicons name="options-outline" size={19} color={colors.baseContent} />
+                </Pressable>
+              </View>
+
+              {matchResult && (
+                <View style={styles.matchResultCard}>
+                  <MatchPercentageRing percentage={matchResult.matchPercentage} size={84} strokeWidth={8} />
+                  <Text style={styles.matchResultScore}>
+                    {t("{{percent}}% Match", { percent: matchResult.matchPercentage })}
+                  </Text>
+                  <Text style={styles.matchResultSubtext}>{t("Based on your CineGraphs and taste overlap")}</Text>
+                  <Pressable style={styles.matchAnalyzeButton} onPress={handleAnalyze} disabled={analyzing}>
+                    {analyzing ? (
+                      <ActivityIndicator color={colors.primaryContent} size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="sparkles" size={16} color={colors.primaryContent} />
+                        <Text style={styles.matchAnalyzeButtonText}>{t("Analyze Compatibility")}</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              )}
+
+              {matchError && <Text style={styles.error}>{matchError}</Text>}
+
+              <MatchFiltersModal
+                visible={filtersModalVisible}
+                onClose={() => setFiltersModalVisible(false)}
+                filters={filters}
+                onApply={setFilters}
+              />
+            </>
+          }
+        />
+
+        <PublicProfileCategoryTabs favorites={favorites} cineGraph={cineGraph} userId={id} />
       </ScrollView>
 
       <AnalyzeModal

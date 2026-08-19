@@ -1,0 +1,21 @@
+import express from "express";
+import {
+  createShare,
+  getShareFeed,
+  toggleShareLike,
+  registerShareView,
+  getUserShares,
+  deleteShare,
+} from "../controllers/shareController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+
+const router = express.Router();
+
+router.get("/feed", authMiddleware, getShareFeed);
+router.get("/user/:userId", authMiddleware, getUserShares);
+router.post("/", authMiddleware, createShare);
+router.post("/:id/like", authMiddleware, toggleShareLike);
+router.post("/:id/view", authMiddleware, registerShareView);
+router.delete("/:id", authMiddleware, deleteShare);
+
+export default router;

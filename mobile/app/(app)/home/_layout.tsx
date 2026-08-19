@@ -1,4 +1,4 @@
-import { View, Image, Text, StyleSheet } from "react-native";
+import { Image, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../../../src/components/NotificationBell";
@@ -6,24 +6,13 @@ import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
 const styles = StyleSheet.create({
-  wordmark: { flexDirection: "row", alignItems: "center", gap: 2 },
-  // Real brand mark (cinephix_logo.png — a solid "C" glyph, transparent
-  // background), not assets/icon.png, which is still the unmodified Expo
-  // template icon and was never actually customized for this app.
-  logo: { width: 24, height: 27, resizeMode: "contain" },
+  // Just the "C" glyph now, no wordmark text next to it — the old
+  // logo+"inephix" title took up real horizontal room for what the user
+  // felt was a header that was too visually heavy; the icon alone in the
+  // corner reads as a brand mark without competing with the notification
+  // bell for space.
+  logo: { width: 22, height: 25, resizeMode: "contain", marginLeft: 12 },
 });
-
-// The logo stands in for the "C" of "Cinephix" — not translated, a brand
-// wordmark like the plain-string title it replaces.
-function HomeHeaderTitle() {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.wordmark}>
-      <Image source={require("../../../assets/cinephix_logo.png")} style={styles.logo} />
-      <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent }}>inephix</Text>
-    </View>
-  );
-}
 
 export default function HomeStackLayout() {
   const { colors } = useTheme();
@@ -39,7 +28,15 @@ export default function HomeStackLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ headerTitle: () => <HomeHeaderTitle />, headerRight: () => <NotificationBell /> }}
+        options={{
+          // headerTitle is overridden dynamically by index.tsx itself (the
+          // Paylaşımlar/Keşfet switcher, which needs the screen's own
+          // outerTab state) via navigation.setOptions() — same pattern
+          // Profile's drawer hamburger button already uses. No static
+          // title here.
+          headerLeft: () => <Image source={require("../../../assets/cinephix_logo.png")} style={styles.logo} />,
+          headerRight: () => <NotificationBell />,
+        }}
       />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
       <Stack.Screen name="lists/[id]" options={{ title: t("List") }} />

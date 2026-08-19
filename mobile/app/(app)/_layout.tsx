@@ -45,7 +45,7 @@ export default function AppLayout() {
     >
       <Tabs.Screen
         name="home"
-        options={{ title: t("Home"), tabBarIcon: TabIcon("home", "home-outline") }}
+        options={{ title: t("Medya"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
       />
       <Tabs.Screen
         name="search"
@@ -53,15 +53,27 @@ export default function AppLayout() {
       />
       <Tabs.Screen
         name="watchlist"
-        options={{ title: t("Watched List"), tabBarIcon: TabIcon("bookmark", "bookmark-outline") }}
+        options={{
+          title: t("Watched List"),
+          tabBarIcon: TabIcon("bookmark", "bookmark-outline"),
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="to-watch"
-        options={{ title: t("Watchlist"), tabBarIcon: TabIcon("time", "time-outline") }}
+        options={{
+          title: t("Watchlist"),
+          tabBarIcon: TabIcon("time", "time-outline"),
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="lists"
-        options={{ title: t("Lists"), tabBarIcon: TabIcon("list", "list-outline") }}
+        options={{
+          title: t("Lists"),
+          tabBarIcon: TabIcon("list", "list-outline"),
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="match"

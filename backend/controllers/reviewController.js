@@ -107,8 +107,10 @@ export const toggleReviewLike = asyncHandler(async (req, res) => {
   const alreadyLiked = review.likes.some((id) => id.toString() === userId.toString());
   if (alreadyLiked) {
     review.likes.pull(userId);
+    review.likeEvents = review.likeEvents.filter((e) => e.user.toString() !== userId.toString());
   } else {
     review.likes.push(userId);
+    review.likeEvents.push({ user: userId, likedAt: new Date() });
   }
   await review.save();
 

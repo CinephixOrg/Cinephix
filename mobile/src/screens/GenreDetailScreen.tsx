@@ -1,0 +1,143 @@
+import { useCallback, useMemo, useState } from "react";
+import { View, Text, Image, FlatList, Pressable, StyleSheet } from "react-native";
+import { useLocalSearchParams, useNavigation, useRouter, useFocusEffect } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { getGenreDetail } from "../api/userService";
+import StarRatingDisplay from "../components/StarRatingDisplay";
+import { SkeletonRow } from "../components/Skeleton";
+import type { GenreDetailData } from "../types";
+import { useTheme } from "../context/ThemeContext";
+import { fonts } from "../theme/typography";
+
+const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
+
+export default function GenreDetailScreen() {
+  const { type, genre } = useLocalSearchParams<{ type: "movie" | "series"; genre: string }>();
+  const navigation = useNavigation();
+  const router = useRouter();
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: colors.base100 },
+        statRow: { flexDirection: "row", gap: 10, padding: 16 },
+        statCard: {
+          flex: 1,
+          backgroundColor: colors.base200,
+          borderRadius: 12,
+          padding: 14,
+          alignItems: "flex-start",
+        },
+        statLabel: { fontSize: 11, color: colors.placeholder, marginBottom: 6 },
+        statValueRow: { flexDirection: "row", alignItems: "baseline", gap: 4 },
+        statValue: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent },
+        statUnit: { fontSize: 12, color: colors.placeholder },
+        starsRow: { marginTop: 6 },
+        list: { paddingHorizontal: 16, paddingBottom: 24 },
+        row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 },
+        poster: { width: 40, height: 58, borderRadius: 6, backgroundColor: colors.base200 },
+        rowInfo: { flex: 1 },
+        rowTitle: { fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
+        rowYear: { fontSize: 12, color: colors.placeholder, marginTop: 2 },
+        unrated: { fontSize: 12, color: colors.placeholder, fontStyle: "italic" },
+        empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
+      }),
+    [colors]
+  );
+
+  const [data, setData] = useState<GenreDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({ title: genre });
+      let cancelled = false;
+      setLoading(true);
+      getGenreDetail("me", type, genre)
+        .then((res) => {
+          if (!cancelled) setData(res);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [type, genre])
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.list}>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <SkeletonRow key={i} lines={2} />
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  const avgStars = data?.avgRating != null ? data.avgRating : null;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.statRow}>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>{t("Watched")}</Text>
+          <View style={styles.statValueRow}>
+            <Text style={styles.statValue}>{data?.count ?? 0}</Text>
+            <Text style={styles.statUnit}>{type === "movie" ? t("Movies") : t("Series")}</Text>
+          </View>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>{t("Average Rating")}</Text>
+          {avgStars != null ? (
+            <>
+              <View style={styles.statValueRow}>
+                <Text style={styles.statValue}>{(avgStars / 2).toFixed(1)}</Text>
+                <Text style={styles.statUnit}>/ 5</Text>
+              </View>
+              <View style={styles.starsRow}>
+                <StarRatingDisplay value={avgStars} size={14} />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.statValue}>—</Text>
+          )}
+        </View>
+      </View>
+
+      <FlatList
+        data={data?.items ?? []}
+        keyExtractor={(item) => item.contentId}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.row}
+            onPress={() => router.push(`/profile/content/${type}/${item.contentId}` as any)}
+          >
+            {item.posterPath ? (
+              <Image source={{ uri: `${POSTER_BASE}${item.posterPath}` }} style={styles.poster} />
+            ) : (
+              <View style={styles.poster} />
+            )}
+            <View style={styles.rowInfo}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+              {item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null}
+            </View>
+            {item.rating != null ? (
+              <StarRatingDisplay value={item.rating} size={13} />
+            ) : (
+              <Text style={styles.unrated}>{t("Not rated")}</Text>
+            )}
+          </Pressable>
+        )}
+        ListEmptyComponent={<Text style={styles.empty}>{t("No results found.")}</Text>}
+      />
+    </View>
+  );
+}

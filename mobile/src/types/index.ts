@@ -145,10 +145,29 @@ export interface FollowRequestUser {
 }
 
 export type CineGraphStats = Record<string, number>;
+// genre -> average rating (raw 1-10 scale, matches Rating.value), null if unrated
+export type CineGraphRatings = Record<string, number | null>;
 
 export interface CineGraphData {
   movieStats: CineGraphStats;
   seriesStats: CineGraphStats;
+  movieGenreRatings: CineGraphRatings;
+  seriesGenreRatings: CineGraphRatings;
+  isAuthorized: boolean;
+}
+
+export interface GenreDetailItem {
+  contentId: string;
+  title: string;
+  posterPath: string | null;
+  year: string | null;
+  rating: number | null; // raw 1-10, null if unrated
+}
+
+export interface GenreDetailData {
+  items: GenreDetailItem[];
+  avgRating: number | null; // raw 1-10
+  count: number;
   isAuthorized: boolean;
 }
 
@@ -195,7 +214,11 @@ export interface CustomList {
   description: string;
   isPublic: boolean;
   items: CustomListItem[];
+  // Only hydrated by GET /lists/me (mirrors /discover, /popular) — absent
+  // (not just empty) from the create/update/detail responses.
+  previewItems?: ListPreviewItem[];
   likeCount: number;
+  order: number;
   views?: number;
   createdAt: string;
   updatedAt: string;
@@ -513,6 +536,68 @@ export interface FeedActivityItem {
 
 export interface FeedResult {
   items: FeedActivityItem[];
+  page: number;
+  hasMore: boolean;
+}
+
+// The caller's own activity (ratings, reviews, review likes, watchlist/
+// to-watch adds, list creation, group joins) — distinct from FeedActivityItem,
+// which is always someone else's (network) activity. No `user` field here:
+// the actor is always "you".
+export type PersonalActivityType =
+  | "rated"
+  | "reviewed"
+  | "review_liked"
+  | "watchlist_added"
+  | "towatch_added"
+  | "list_created"
+  | "group_joined";
+
+export interface PersonalActivityItem {
+  type: PersonalActivityType;
+  createdAt: string;
+  content?: PopularThisWeekItem["content"]; // rated/reviewed/review_liked/watchlist_added/towatch_added
+  value?: number; // "rated" only, 1-10
+  excerpt?: string; // "reviewed"/"review_liked" only
+  listId?: string; // "list_created" only
+  listName?: string; // "list_created" only
+  groupSlug?: string; // "group_joined" only
+  groupName?: string; // "group_joined" only
+  groupCoverImage?: string; // "group_joined" only
+}
+
+export interface PersonalActivityResult {
+  items: PersonalActivityItem[];
+  page: number;
+  hasMore: boolean;
+}
+
+// Medya (social sharing feed) — a Share is always a snapshot of an
+// analysis/review/recommendation at the moment it was posted, never a live
+// reference (mirrors how chat's analysis_share/recommendation messages
+// already snapshot instead of referencing).
+export type ShareType = "analysis" | "review" | "recommendation";
+
+export interface Share {
+  _id: string;
+  user: FeedUserRef;
+  type: ShareType;
+  analysisData?: any; // "analysis" only — same shape ProfileAnalysisModal already renders
+  reviewText?: string; // "review" only
+  reviewRating?: number | null; // "review" only, 1-10
+  note?: string; // "recommendation" only, optional caption
+  contentId?: string; // "review" | "recommendation"
+  contentType?: ContentType; // "review" | "recommendation"
+  contentData?: { title: string; posterUrl: string | null; releaseYear?: number }; // "review" | "recommendation"
+  likeCount: number;
+  liked: boolean;
+  viewCount: number;
+  topViewers: FeedUserRef[];
+  createdAt: string;
+}
+
+export interface ShareFeedResult {
+  items: Share[];
   page: number;
   hasMore: boolean;
 }

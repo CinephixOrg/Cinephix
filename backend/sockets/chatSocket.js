@@ -5,6 +5,7 @@ import Group from "../models/Group.js";
 import Conversation from "../models/Conversation.js";
 import Notification from "../models/Notification.js";
 import { setIo } from "../services/socketService.js";
+import { markOnline, markOffline } from "../services/presenceService.js";
 
 /**
  * Generic socket handler for all chat rooms.
@@ -47,6 +48,11 @@ export const setupChat = (io) => {
   io.on("connection", (socket) => {
     // Auto-join the user's personal inbox room so they receive DM notifications
     socket.join(`user:${socket.user._id}`);
+
+    markOnline(socket.user._id.toString());
+    socket.on("disconnect", () => {
+      markOffline(socket.user._id.toString());
+    });
 
     // ── Join a chat room ──────────────────────────────────────────────────
     socket.on("join-room", async ({ roomType, roomId }) => {

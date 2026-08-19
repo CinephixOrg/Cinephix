@@ -40,6 +40,10 @@ export async function deleteList(id: string): Promise<void> {
   await API.delete(API_ROUTES.LISTS.DELETE(id));
 }
 
+export async function reorderLists(orderedIds: string[]): Promise<void> {
+  await API.patch(API_ROUTES.LISTS.REORDER, { orderedIds });
+}
+
 export async function addItem(
   id: string,
   itemId: string,

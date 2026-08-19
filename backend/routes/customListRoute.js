@@ -136,12 +136,65 @@ router.get("/popular", authMiddleware, async (req, res) => {
   }
 });
 
+// Assigns a stable order to any of this owner's lists still at the schema
+// default (i.e. created before the `order` field existed). The query below
+// already sorts order desc/createdAt desc, so among the ones needing
+// backfill the newest comes first — preserving each user's pre-existing
+// "newest first" view with no visible jump the first time this runs.
+async function backfillOrder(lists) {
+  const needsBackfill = lists.filter((l) => !l.order);
+  if (!needsBackfill.length) return lists;
+
+  const ops = needsBackfill.map((l, i) => ({
+    updateOne: { filter: { _id: l._id }, update: { $set: { order: needsBackfill.length - i } } },
+  }));
+  await CustomList.bulkWrite(ops);
+  needsBackfill.forEach((l, i) => {
+    l.order = needsBackfill.length - i;
+  });
+  return lists.sort((a, b) => b.order - a.order);
+}
+
 // ── GET /api/lists/me ── my lists
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const lists = await CustomList.find({ owner: req.user._id }).sort({ createdAt: -1 }).lean();
-    return res.json({ lists });
-  } catch {
+    let lists = await CustomList.find({ owner: req.user._id }).sort({ order: -1, createdAt: -1 }).lean();
+    lists = await backfillOrder(lists);
+    return res.json({ lists: await hydratePreviewItems(lists) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── PATCH /api/lists/me/reorder ── persist a manual drag-reorder of the
+// caller's own lists. Body: { orderedIds: string[] } — the full set of this
+// user's list ids, front-to-back as the UI now shows them.
+router.patch("/me/reorder", authMiddleware, async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds) || !orderedIds.length) {
+      return res.status(400).json({ message: "orderedIds is required" });
+    }
+
+    const owned = await CustomList.find({ owner: req.user._id, _id: { $in: orderedIds } })
+      .select("_id")
+      .lean();
+    const ownedIds = new Set(owned.map((l) => l._id.toString()));
+    // Reject rather than partially reorder — a size/membership mismatch
+    // means a stale client array or a list that isn't this user's own.
+    if (ownedIds.size !== orderedIds.length || !orderedIds.every((id) => ownedIds.has(id))) {
+      return res.status(400).json({ message: "Invalid list ids" });
+    }
+
+    const n = orderedIds.length;
+    const ops = orderedIds.map((id, i) => ({
+      updateOne: { filter: { _id: id }, update: { $set: { order: n - i } } },
+    }));
+    await CustomList.bulkWrite(ops);
+    return res.json({ message: "Order updated" });
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 });
@@ -152,11 +205,18 @@ router.post("/", authMiddleware, async (req, res) => {
     const { name, description, isPublic } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: "Name is required" });
 
+    const maxOrderDoc = await CustomList.findOne({ owner: req.user._id })
+      .sort({ order: -1 })
+      .select("order")
+      .lean();
+    const order = (maxOrderDoc?.order || 0) + 1;
+
     const list = await CustomList.create({
       owner: req.user._id,
       name: name.trim(),
       description: description?.trim() || "",
       isPublic: !!isPublic,
+      order,
     });
 
     return res.status(201).json({ list });

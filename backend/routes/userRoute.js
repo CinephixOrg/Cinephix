@@ -31,6 +31,7 @@ import {
   updateUserBio,
   getUserRatings,
   getUserCineGraph,
+  getUserGenreDetail,
   findMatches,
   updatePassword,
   deleteAccount,
@@ -39,6 +40,7 @@ import {
   uploadProfilePic,
   getMyProfile,
   getSuggestedUsers,
+  getOnlineFriends,
   getProfileAnalysis,
   getProfileAnalysisHistory,
   importTVTimeData,
@@ -47,6 +49,7 @@ import {
   setOwnAccountTier
 } from "../controllers/userController.js";
 import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
+import { getMyActivity } from "../controllers/activityController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
 import { authRateLimiter } from "../middleware/rateLimiter.js";
@@ -123,6 +126,7 @@ router.get("/auth/google/callback", googleCallbackMiddleware, googleAuthCallback
 router.post('/profile/:id/upload-profile-pic', authMiddleware, upload.single('profilePic'), uploadProfilePic);
 router.get("/me", authMiddleware, getMyProfile);
 router.get("/me/suggestions", authMiddleware, getSuggestedUsers);
+router.get("/online", authMiddleware, getOnlineFriends);
 router.get("/profile-analysis", authMiddleware, getProfileAnalysis);
 router.get("/profile-analysis/history", authMiddleware, getProfileAnalysisHistory);
 
@@ -160,6 +164,7 @@ router.patch("/me/tier", authMiddleware, setOwnAccountTier); // DEV-ONLY: simula
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);
 router.get("/cinegraph-data/:id", authMiddleware, getUserCineGraph);
+router.get("/:id/genre-detail", authMiddleware, getUserGenreDetail);
 
 // Matching
 router.post("/matches", authMiddleware, validateRequest(validationSchemas.findMatches), findMatches);
@@ -169,6 +174,7 @@ router.post("/import-tvtime", authMiddleware, upload.single("zipFile"), importTV
 router.post("/import-letterboxd", authMiddleware, upload.single("zipFile"), importLetterboxdData);
 
 // Logs & Reset
+router.get("/me/activity", authMiddleware, getMyActivity);
 router.get("/me/logs", authMiddleware, getLogs);
 router.post("/me/logs/revert", authMiddleware, revertLogs);
 router.post("/me/reset-data", authMiddleware, resetData);
