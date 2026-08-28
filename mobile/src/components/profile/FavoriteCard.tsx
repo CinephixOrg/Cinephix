@@ -1,0 +1,105 @@
+import { useMemo } from "react";
+import { View, Text, Image, Pressable, StyleSheet, ViewStyle } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import StarRatingDisplay from "../StarRatingDisplay";
+import type { ContentType } from "../../types";
+import { useTheme } from "../../context/ThemeContext";
+
+const POSTER_BASE = "https://image.tmdb.org/t/p/w342";
+
+interface Props {
+  id: string;
+  type: ContentType;
+  posterPath?: string | null;
+  rating?: number | null;
+  style?: ViewStyle;
+  basePath: "/profile" | `/user/${string}`;
+  // When true, the poster is no longer tappable-to-navigate — it's covered
+  // by a translucent red remove overlay with a centered X instead. Only
+  // ever true on the owner's own profile (edit mode toggled by the rail's
+  // pencil icon).
+  editing?: boolean;
+  onRemove?: () => void;
+}
+
+// Favorites-rail counterpart to ContentCard — shows the profile owner's own
+// rating for the item instead of its title (favorites are a curated pick,
+// not a browsing list, so "what did I rate this" is the more useful line
+// under the poster than the title, which the poster art already conveys),
+// and knows how to render as a removable tile in edit mode.
+export default function FavoriteCard({ id, type, posterPath, rating, style, basePath, editing, onRemove }: Props) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  const router = useRouter();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        card: { width: "48%", marginBottom: 16 },
+        poster: {
+          width: "100%",
+          aspectRatio: 2 / 3,
+          borderRadius: 8,
+          backgroundColor: colors.base200,
+        },
+        posterFallback: { alignItems: "center", justifyContent: "center" },
+        posterFallbackText: { color: colors.placeholder, fontSize: 12 },
+        removeOverlay: {
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderRadius: 8,
+          backgroundColor: "rgba(220,38,38,0.45)",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        removeButton: {
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          backgroundColor: "rgba(0,0,0,0.35)",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        ratingRow: { marginTop: 6, minHeight: 16 },
+        unrated: { fontSize: 12, color: colors.placeholder, fontStyle: "italic" },
+      }),
+    [colors]
+  );
+
+  return (
+    <View style={[styles.card, style]}>
+      <Pressable
+        disabled={editing}
+        onPress={() => router.push(`${basePath}/content/${type}/${id}` as any)}
+      >
+        {posterPath ? (
+          <Image source={{ uri: `${POSTER_BASE}${posterPath}` }} style={styles.poster} />
+        ) : (
+          <View style={[styles.poster, styles.posterFallback]}>
+            <Text style={styles.posterFallbackText}>{t("No image")}</Text>
+          </View>
+        )}
+
+        {editing && (
+          <View style={styles.removeOverlay}>
+            <Pressable style={styles.removeButton} onPress={onRemove} hitSlop={8} accessibilityLabel={t("Remove")}>
+              <Ionicons name="close" size={20} color="#fff" />
+            </Pressable>
+          </View>
+        )}
+      </Pressable>
+
+      <View style={styles.ratingRow}>
+        {rating != null ? (
+          <StarRatingDisplay value={rating} size={13} />
+        ) : (
+          <Text style={styles.unrated}>{t("Not rated")}</Text>
+        )}
+      </View>
+    </View>
+  );
+}

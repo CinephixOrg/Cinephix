@@ -125,6 +125,7 @@ export interface Connection {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  accountTier?: AccountTier;
 }
 
 export interface SuggestedUser {
@@ -133,6 +134,7 @@ export interface SuggestedUser {
   profile_pic_url?: string;
   bio?: string;
   mutualCount: number;
+  accountTier?: AccountTier;
 }
 
 // GET /users/me/follow-requests populates '_id username profile_pic_url name
@@ -142,6 +144,7 @@ export interface FollowRequestUser {
   username: string;
   profile_pic_url?: string;
   bio?: string;
+  accountTier?: AccountTier;
 }
 
 export type CineGraphStats = Record<string, number>;
@@ -173,16 +176,20 @@ export interface GenreDetailData {
 
 // GET /users/favorites/:id populates only these fields — deliberately
 // narrower than Movie/Series (no overview/release_date/vote_average).
+// rating is the profile owner's own 1-10 Rating value for that item, if any
+// (null when they favorited something they haven't rated).
 export interface FavoriteMovie {
   _id: string;
   title: string;
   poster_path?: string | null;
+  rating?: number | null;
 }
 
 export interface FavoriteSeries {
   _id: string;
   name: string;
   poster_path?: string | null;
+  rating?: number | null;
 }
 
 export interface FavoritesMasked {
@@ -401,6 +408,7 @@ export interface MessageSender {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  accountTier?: AccountTier;
 }
 
 export interface Message {
@@ -470,6 +478,7 @@ export interface UserSearchResult {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  accountTier?: AccountTier;
 }
 
 export interface ConversationUpdatedPayload {
@@ -522,6 +531,7 @@ export interface FeedUserRef {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  accountTier?: AccountTier;
 }
 
 export interface FeedActivityItem {

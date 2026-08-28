@@ -231,20 +231,33 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
   const [selected, setSelected] = useState<string | null>(null);
 
   const [chipSizes, setChipSizes] = useState<Record<string, { width: number; height: number }>>({});
-  // Rounded to whole px on purpose: RN's layout engine can report
-  // sub-pixel-different widths for the *same* text across renders (yoga
-  // rounding jitter), and since `chips` below sorts candidates by width,
-  // that jitter could flip the sort order between two very-close-width
-  // genres, moving both — which re-triggers onLayout on both, feeding right
-  // back into the same jitter. Rounding collapses that noise to a stable
-  // value so two genres with genuinely-equal widths stay equal across
-  // renders instead of oscillating.
+  // Measured once per genre, then frozen — never overwritten again after
+  // that first successful layout. This is what the previous "round to whole
+  // px" version of this function was trying to achieve, and mostly did, but
+  // not always: RN's text layout can report a ±1px oscillating width for
+  // the exact same string across otherwise-identical renders (sub-pixel
+  // font-hinting noise), which rounding alone doesn't fully absorb when a
+  // genre's true width sits right at a rounding boundary. The real trigger
+  // is `forceTick` above — it re-renders this entire component on every
+  // frame of ANY genre's rotation animation (selecting/deselecting one
+  // genre spends ~30 frames re-rendering *all* chips), and re-rendering was
+  // enough on some devices to re-fire onLayout even without a real size
+  // change. Committing every new value fed that noise straight back into
+  // `chips`' position math (a chip's radius depends on its own width), so a
+  // chip nowhere near the selection could start visibly nudging back and
+  // forth on its own — reported as "Comedy/Western/News jitter while just
+  // sitting there." Freezing after the first commit makes chipSizes
+  // write-once, which makes that feedback loop structurally impossible
+  // instead of just less likely — later onLayout events for an
+  // already-measured genre are simply ignored. Safe to trust permanently:
+  // the map itself resets on remount (switching the movie/series subtab
+  // unmounts this component entirely), so a genre is never measured against
+  // a stale size left over from a previous dataset.
   const handleChipLayout = (genre: string, width: number, height: number) => {
-    const w = Math.round(width);
-    const h = Math.round(height);
-    setChipSizes((prev) =>
-      prev[genre]?.width === w && prev[genre]?.height === h ? prev : { ...prev, [genre]: { width: w, height: h } }
-    );
+    setChipSizes((prev) => {
+      if (prev[genre]) return prev;
+      return { ...prev, [genre]: { width: Math.round(width), height: Math.round(height) } };
+    });
   };
 
   const slices = useMemo(() => {

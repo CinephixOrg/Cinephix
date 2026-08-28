@@ -37,9 +37,14 @@ export default function GenreDetailScreen() {
         list: { paddingHorizontal: 16, paddingBottom: 24 },
         row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 },
         poster: { width: 40, height: 58, borderRadius: 6, backgroundColor: colors.base200 },
-        rowInfo: { flex: 1 },
+        // minWidth: 0 overrides Yoga's default content-based minimum size —
+        // without it, a long unbroken title can force this flex:1 column
+        // wider than the space actually available, pushing the rating slot
+        // past the row's right edge instead of letting the title truncate.
+        rowInfo: { flex: 1, minWidth: 0 },
         rowTitle: { fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
         rowYear: { fontSize: 12, color: colors.placeholder, marginTop: 2 },
+        ratingSlot: { flexShrink: 0 },
         unrated: { fontSize: 12, color: colors.placeholder, fontStyle: "italic" },
         empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
       }),
@@ -129,11 +134,13 @@ export default function GenreDetailScreen() {
               </Text>
               {item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null}
             </View>
-            {item.rating != null ? (
-              <StarRatingDisplay value={item.rating} size={13} />
-            ) : (
-              <Text style={styles.unrated}>{t("Not rated")}</Text>
-            )}
+            <View style={styles.ratingSlot}>
+              {item.rating != null ? (
+                <StarRatingDisplay value={item.rating} size={13} />
+              ) : (
+                <Text style={styles.unrated}>{t("Not rated")}</Text>
+              )}
+            </View>
           </Pressable>
         )}
         ListEmptyComponent={<Text style={styles.empty}>{t("No results found.")}</Text>}

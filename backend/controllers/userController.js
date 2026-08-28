@@ -384,7 +384,7 @@ export const getPendingRequests = asyncHandler(async (req, res) => {
   const loggedInUserId = req.user.id;
 
   const requests = await FollowRequest.find({ targetId: loggedInUserId, status: 'pending' })
-    .populate('requesterId', '_id username profile_pic_url name bio')
+    .populate('requesterId', '_id username profile_pic_url name bio accountTier')
     .sort({ createdAt: -1 })
     .lean();
 
@@ -448,7 +448,7 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
     const user = await User.findById(targetUserId)
         .populate({
             path: 'following',
-            select: '_id username profile_pic_url',
+            select: '_id username profile_pic_url accountTier',
             options: {
                 skip: skip,
                 limit: parseInt(limit)
@@ -485,7 +485,7 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
     const user = await User.findById(targetUserId)
         .populate({
             path: 'followers',
-            select: '_id username profile_pic_url',
+            select: '_id username profile_pic_url accountTier',
             options: {
                 skip: skip,
                 limit: parseInt(limit)
@@ -517,7 +517,7 @@ export const searchUsers = asyncHandler(async (req, res) => {
     const users = await User.aggregate([
       { $match: { _id: { $ne: selfId } } },
       { $sample: { size: limitNum } },
-      { $project: { _id: 1, username: 1, profile_pic_url: 1 } },
+      { $project: { _id: 1, username: 1, profile_pic_url: 1, accountTier: 1 } },
     ]);
     return sendPaginated(res, users, users.length, 1, limitNum, 'Users found');
   }
@@ -534,7 +534,8 @@ export const searchUsers = asyncHandler(async (req, res) => {
       $project: {
         _id: 1,
         username: 1,
-        profile_pic_url: 1
+        profile_pic_url: 1,
+        accountTier: 1
       }
     },
     {
@@ -724,19 +725,20 @@ export const getUserFavorites = asyncHandler(async (req, res) => {
     }, 'User favorites fetched (masked)');
   }
 
-  if (!isAuthorizedToView(currentUserId, user)) {
-    return sendSuccess(res, {
-      movies: [],
-      series: [],
-      isPrivateMasked: true,
-      isPrivateAndHidden: true,
-      isAuthorized: false
-    }, 'User favorites fetched (masked)');
-  }
-  
+  // The rating shown under each favorite is always the profile owner's own
+  // rating (req.params.id), not the viewer's — matches getUserGenreDetail's
+  // Rating lookup pattern (same model, same contentId/contentType shape).
+  const movies = user.favoriteMovies || [];
+  const series = user.favoriteSeries || [];
+  const favoriteIds = [...movies, ...series].map((f) => f._id.toString());
+  const ratings = favoriteIds.length
+    ? await Rating.find({ user: req.params.id, contentId: { $in: favoriteIds } }).select('contentId value').lean()
+    : [];
+  const ratingByContentId = new Map(ratings.map((r) => [r.contentId, r.value]));
+
   sendSuccess(res, {
-    movies: user.favoriteMovies || [],
-    series: user.favoriteSeries || [],
+    movies: movies.map((m) => ({ ...m, rating: ratingByContentId.get(m._id.toString()) ?? null })),
+    series: series.map((s) => ({ ...s, rating: ratingByContentId.get(s._id.toString()) ?? null })),
     isAuthorized: true
   }, 'User favorites fetched', 200);
 });
@@ -1425,7 +1427,7 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
   }
 
   const candidates = await User.find({ _id: { $in: candidateIds } })
-    .select('username profile_pic_url bio')
+    .select('username profile_pic_url bio accountTier')
     .lean();
 
   const result = candidates
@@ -1807,19 +1809,31 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
 // @desc    Get past Profile Analysis runs for the current user (Pro/Premium/Dev only)
 // @route   GET /api/users/profile-analysis/history
 // @access  Private
+const ANALYSIS_HISTORY_PAGE_SIZES = [5, 10, 25];
+
 export const getProfileAnalysisHistory = asyncHandler(async (req, res) => {
+  const limit = ANALYSIS_HISTORY_PAGE_SIZES.includes(parseInt(req.query.limit))
+    ? parseInt(req.query.limit)
+    : 10;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+
   const { analysisHistory } = getTierLimits(req.user.accountTier);
   if (!analysisHistory) {
-    return sendSuccess(res, [], "Profile analysis history is not available on your plan");
+    return sendPaginated(res, [], 0, page, limit, "Profile analysis history is not available on your plan");
   }
 
-  const history = await ProfileAnalysis.find({ user: req.user.id })
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .select("tier result createdAt")
-    .lean();
+  const query = { user: req.user.id };
+  const [history, total] = await Promise.all([
+    ProfileAnalysis.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .select("tier result createdAt")
+      .lean(),
+    ProfileAnalysis.countDocuments(query),
+  ]);
 
-  return sendSuccess(res, history, "Profile analysis history fetched");
+  return sendPaginated(res, history, total, page, limit, "Profile analysis history fetched");
 });
 
 // Builds the Gemini system instruction, adding richer fields for Pro/Premium schemas

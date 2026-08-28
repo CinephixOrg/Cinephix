@@ -5,7 +5,6 @@ import {
   TextInput,
   Image,
   Pressable,
-  Switch,
   Alert,
   ActivityIndicator,
   ScrollView,
@@ -23,7 +22,6 @@ import {
   setOwnAccountTier,
   updateBio,
   updatePassword,
-  updateVisibility,
   uploadAvatar,
 } from "../../../src/api/userService";
 import { changeLanguage } from "../../../src/i18n";
@@ -168,9 +166,6 @@ export default function SettingsScreen() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [visibilityBusy, setVisibilityBusy] = useState(false);
-
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -188,7 +183,6 @@ export default function SettingsScreen() {
       try {
         const profile = await getUserProfile(user._id);
         if (profile.isAuthorized) {
-          setIsPrivate(profile.visibility === "private");
           setBio(profile.bio ?? "");
         }
         setUsername(profile.username);
@@ -242,19 +236,6 @@ export default function SettingsScreen() {
       setProfileError(e?.response?.data?.message || t("Failed to save profile."));
     } finally {
       setProfileSaving(false);
-    }
-  };
-
-  const togglePrivacy = async (value: boolean) => {
-    setIsPrivate(value);
-    setVisibilityBusy(true);
-    try {
-      await updateVisibility(value ? "private" : "public");
-    } catch (e: any) {
-      setIsPrivate(!value);
-      setError(e?.response?.data?.message || t("Failed to update privacy."));
-    } finally {
-      setVisibilityBusy(false);
     }
   };
 
@@ -351,17 +332,6 @@ export default function SettingsScreen() {
           <Text style={styles.buttonText}>{t("Save")}</Text>
         )}
       </Pressable>
-
-      <Text style={styles.sectionTitle}>{t("Privacy")}</Text>
-      <View style={styles.row}>
-        <Text style={styles.rowLabel}>{t("Private account")}</Text>
-        <Switch
-          value={isPrivate}
-          onValueChange={togglePrivacy}
-          disabled={visibilityBusy}
-          trackColor={{ true: colors.primary, false: colors.border }}
-        />
-      </View>
 
       <Text style={styles.sectionTitle}>{t("Language")}</Text>
       <Pressable style={styles.row} onPress={() => setLanguagePickerVisible(true)}>

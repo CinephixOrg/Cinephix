@@ -25,7 +25,10 @@ import {
 import { useChat } from "../../../../src/context/ChatContext";
 import ChatRoom from "../../../../src/components/ChatRoom";
 import { SkeletonGrid, SkeletonAvatarCell, SkeletonGroupDetailHeader } from "../../../../src/components/Skeleton";
+import TierAvatarFrame from "../../../../src/components/TierAvatarFrame";
 import type { Group, GroupMember } from "../../../../src/types";
+
+const MEMBER_AVATAR_SIZE = 52;
 import { useTheme } from "../../../../src/context/ThemeContext";
 import type { ColorPalette } from "../../../../src/theme/palettes";
 import { fonts } from "../../../../src/theme/typography";
@@ -68,8 +71,7 @@ export default function GroupDetailScreen() {
   membersList: { padding: 12 },
   memberCell: { width: "33.33%", alignItems: "center", padding: 10 },
   memberCellSelf: { opacity: 0.7 },
-  memberAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.base200 },
-  memberAvatarFallback: { alignItems: "center", justifyContent: "center" },
+  memberAvatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
   memberAvatarFallbackText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
   memberUsername: { fontSize: 12, color: colors.baseContent, marginTop: 6, maxWidth: 90 },
   memberJoined: { fontSize: 10, color: colors.placeholder, marginTop: 2 },
@@ -233,15 +235,27 @@ export default function GroupDetailScreen() {
                   onPress={() => router.push(`/user/${item.user._id}`)}
                   disabled={isMe}
                 >
-                  {item.user.profile_pic_url ? (
-                    <Image source={{ uri: item.user.profile_pic_url }} style={styles.memberAvatar} />
-                  ) : (
-                    <View style={[styles.memberAvatar, styles.memberAvatarFallback]}>
-                      <Text style={styles.memberAvatarFallbackText}>
-                        {item.user.username.slice(0, 2).toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
+                  <TierAvatarFrame tier={item.user.accountTier} size={MEMBER_AVATAR_SIZE}>
+                    {(innerSize) =>
+                      item.user.profile_pic_url ? (
+                        <Image
+                          source={{ uri: item.user.profile_pic_url }}
+                          style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            styles.memberAvatarFallback,
+                            { width: innerSize, height: innerSize, borderRadius: innerSize / 2 },
+                          ]}
+                        >
+                          <Text style={styles.memberAvatarFallbackText}>
+                            {item.user.username.slice(0, 2).toUpperCase()}
+                          </Text>
+                        </View>
+                      )
+                    }
+                  </TierAvatarFrame>
                   <Text style={styles.memberUsername} numberOfLines={1}>
                     {item.user.username}
                     {isMe ? ` ${t("(you)")}` : ""}

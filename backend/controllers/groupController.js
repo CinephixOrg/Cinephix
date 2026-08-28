@@ -84,7 +84,7 @@ export const leaveGroup = asyncHandler(async (req, res) => {
 // GET /api/groups/:slug/members
 export const getGroupMembers = asyncHandler(async (req, res) => {
   const group = await Group.findOne({ slug: req.params.slug })
-    .populate("members.user", "username profile_pic_url")
+    .populate("members.user", "username profile_pic_url accountTier")
     .lean();
   if (!group) return sendError(res, "Group not found", 404);
 
@@ -117,7 +117,7 @@ export const getGroupMessages = asyncHandler(async (req, res) => {
   if (before) query.createdAt = { $lt: before };
 
   const messages = await Message.find(query)
-    .populate("sender", "username profile_pic_url")
+    .populate("sender", "username profile_pic_url accountTier")
     .sort({ createdAt: -1 })
     .limit(limit + 1)
     .lean();
@@ -222,7 +222,7 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
   const message = await Message.create(messageData);
 
   const populated = await Message.findById(message._id)
-    .populate("sender", "username profile_pic_url")
+    .populate("sender", "username profile_pic_url accountTier")
     .lean();
 
   // This REST path (used for one-off sends like recommendation/analysis-share

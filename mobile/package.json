@@ -12,6 +12,7 @@
     "expo-document-picker": "~57.0.1",
     "expo-font": "~57.0.1",
     "expo-image-picker": "~17.0.9",
+    "expo-linear-gradient": "~57.0.1",
     "expo-linking": "~57.0.5",
     "expo-localization": "^57.0.1",
     "expo-router": "^57.0.13",

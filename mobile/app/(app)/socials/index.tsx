@@ -1,34 +1,27 @@
-import { useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View, StyleSheet } from "react-native";
+import { useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import MessagesSection from "../../../src/components/socials/MessagesSection";
 import CommunitiesSection from "../../../src/components/socials/CommunitiesSection";
+import CapsuleTabSwitcher from "../../../src/components/CapsuleTabSwitcher";
 import { useTheme } from "../../../src/context/ThemeContext";
-import { fonts } from "../../../src/theme/typography";
 
 type MainTab = "messages" | "communities";
 
 // Same lazy-mount-once-then-display:none shell as home/index.tsx and
-// search/index.tsx. The header is static (just NotificationBell, see
-// socials/_layout.tsx) — Messages' gift/new-message actions live inside
-// MessagesSection itself now, not the header.
+// search/index.tsx. The Messages/Community toggle lives in the header
+// itself now (via navigation.setOptions, same as Home's Paylaşımlar/Keşfet
+// switcher) instead of a row inside the body — same component, styling,
+// slide transition, *and* placement, not a lookalike re-implementation.
 export default function SocialsScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const navigation = useNavigation();
   const styles = useMemo(
     () =>
       StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.base100 },
-        tabBar: {
-          flexDirection: "row",
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          backgroundColor: colors.base300,
-        },
-        tabButton: { flex: 1, alignItems: "center", paddingVertical: 12 },
-        tabButtonActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },
-        tabText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
-        tabTextActive: { color: colors.primary, fontFamily: fonts.bold },
         hidden: { display: "none" },
       }),
     [colors]
@@ -42,25 +35,23 @@ export default function SocialsScreen() {
     setVisitedTabs((prev) => (prev.has(tab) ? prev : new Set(prev).add(tab)));
   };
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <CapsuleTabSwitcher
+          activeKey={mainTab}
+          onChange={switchTab}
+          options={[
+            { key: "messages", label: t("Messages"), icon: "chatbubble-outline" },
+            { key: "communities", label: t("Community"), icon: "people-outline" },
+          ]}
+        />
+      ),
+    });
+  }, [navigation, mainTab, t]);
+
   return (
     <View style={styles.container}>
-      <View style={styles.tabBar}>
-        <Pressable
-          style={[styles.tabButton, mainTab === "messages" && styles.tabButtonActive]}
-          onPress={() => switchTab("messages")}
-        >
-          <Text style={[styles.tabText, mainTab === "messages" && styles.tabTextActive]}>{t("Messages")}</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tabButton, mainTab === "communities" && styles.tabButtonActive]}
-          onPress={() => switchTab("communities")}
-        >
-          <Text style={[styles.tabText, mainTab === "communities" && styles.tabTextActive]}>
-            {t("Community")}
-          </Text>
-        </Pressable>
-      </View>
-
       <View style={[{ flex: 1 }, mainTab !== "messages" && styles.hidden]}>
         {visitedTabs.has("messages") && <MessagesSection />}
       </View>

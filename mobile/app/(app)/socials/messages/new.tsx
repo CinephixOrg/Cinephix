@@ -7,9 +7,12 @@ import { searchUsers } from "../../../../src/api/userService";
 import { getOrCreateConversation } from "../../../../src/api/conversationService";
 import { useChat } from "../../../../src/context/ChatContext";
 import { SkeletonRow } from "../../../../src/components/Skeleton";
+import TierAvatarFrame from "../../../../src/components/TierAvatarFrame";
 import type { UserSearchResult } from "../../../../src/types";
 import { useTheme } from "../../../../src/context/ThemeContext";
 import { fonts } from "../../../../src/theme/typography";
+
+const AVATAR_SIZE = 44;
 
 export default function NewMessageScreen() {
   const { colors } = useTheme();
@@ -17,8 +20,7 @@ export default function NewMessageScreen() {
   container: { flex: 1, backgroundColor: colors.base100 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
   avatarFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
   username: { fontSize: 15, color: colors.baseContent },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
@@ -88,15 +90,22 @@ export default function NewMessageScreen() {
               onPress={() => handleSelect(item)}
               disabled={startingId !== null}
             >
-              {item.profile_pic_url ? (
-                <Image source={{ uri: item.profile_pic_url }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarFallbackText}>
-                    {item.username.slice(0, 2).toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
+                {(innerSize) =>
+                  item.profile_pic_url ? (
+                    <Image
+                      source={{ uri: item.profile_pic_url }}
+                      style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                    />
+                  ) : (
+                    <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                      <Text style={styles.avatarFallbackText}>
+                        {item.username.slice(0, 2).toUpperCase()}
+                      </Text>
+                    </View>
+                  )
+                }
+              </TierAvatarFrame>
               <Text style={styles.username}>{item.username}</Text>
               {startingId === item._id && (
                 <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: "auto" }} />

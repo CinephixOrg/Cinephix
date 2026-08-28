@@ -20,12 +20,10 @@ function buildStyles(colors: ColorPalette) {
     poster: { aspectRatio: 2 / 3 },
     groupCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 12, padding: 14 },
     rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    rowCenter: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
     avatarCell: { alignItems: "center" },
     row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
     activityLogRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
     listRow: { backgroundColor: colors.base200, borderRadius: 10, padding: 14, marginBottom: 10 },
-    profileHeader: { alignItems: "center", padding: 20 },
     groupDetailHeader: { padding: 16 },
     chatBubbles: { padding: 16, gap: 10 },
     bubbleRowOther: { alignItems: "flex-start" },
@@ -191,33 +189,60 @@ export function SkeletonListRow() {
   );
 }
 
-export function SkeletonProfileHeader() {
-  const styles = useSkeletonStyles();
+// Mirrors ProfileHeaderInstagram + ProfileCategoryTabs/PublicProfileCategoryTabs
+// shape-for-shape (avatar size, stat count, tier-badge pill, hairline-bordered
+// icon row) rather than a generic centered-avatar placeholder — so there's
+// close to zero visual jump once the real header swaps in, and so it reads as
+// "this exact screen loading" instead of a stock spinner. `statCount` is 3 on
+// both your own profile and someone else's (Shares/Followers/Following);
+// `tabCount` is 4 on your own (+ Analyses) vs. 3 on someone else's.
+export function SkeletonProfileHeader({
+  statCount = 3,
+  tabCount = 4,
+}: {
+  statCount?: number;
+  tabCount?: number;
+}) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.profileHeader}>
-      <SkeletonBox width={96} height={96} borderRadius={48} />
-      <SkeletonBox width={140} height={20} style={{ marginTop: 12 }} />
-      <SkeletonBox width={100} height={12} style={{ marginTop: 8 }} />
-      <View style={[styles.rowCenter, { gap: 32, marginTop: 16 }]}>
-        <SkeletonBox width={40} height={30} />
-        <SkeletonBox width={40} height={30} />
-      </View>
-      <SkeletonBox width="80%" height={12} style={{ marginTop: 16 }} />
-      <SkeletonBox width="60%" height={12} style={{ marginTop: 6 }} />
-      <View style={[styles.rowCenter, { gap: 12, marginTop: 20, alignSelf: "stretch" }]}>
-        <SkeletonBox width="48%" height={40} borderRadius={8} />
-        <SkeletonBox width="48%" height={40} borderRadius={8} />
-      </View>
-      {[0, 1].map((i) => (
-        <View key={i} style={[styles.rowCenter, { gap: 20, marginTop: 24 }]}>
-          <SkeletonBox width={130} height={130} borderRadius={65} />
-          <View style={{ gap: 8 }}>
-            <SkeletonBox width={100} height={10} />
-            <SkeletonBox width={90} height={10} />
-            <SkeletonBox width={110} height={10} />
+    <View style={{ paddingHorizontal: 20, paddingTop: 20, alignSelf: "stretch" }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
+        <SkeletonBox width={84} height={84} borderRadius={42} />
+        <View style={{ flex: 1 }}>
+          <SkeletonBox width={120} height={18} />
+          <View style={{ flexDirection: "row", gap: 28, marginTop: 10 }}>
+            {Array.from({ length: statCount }, (_, i) => (
+              <View key={i} style={{ alignItems: "center", gap: 4 }}>
+                <SkeletonBox width={22} height={18} />
+                <SkeletonBox width={44} height={10} />
+              </View>
+            ))}
           </View>
         </View>
-      ))}
+      </View>
+
+      <SkeletonBox width="90%" height={14} style={{ marginTop: 14 }} />
+      <SkeletonBox width="55%" height={14} style={{ marginTop: 6 }} />
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
+        <SkeletonBox width={64} height={20} borderRadius={12} />
+        <SkeletonBox width={110} height={13} />
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.border,
+          marginTop: 16,
+        }}
+      >
+        {Array.from({ length: tabCount }, (_, i) => (
+          <View key={i} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
+            <SkeletonBox width={24} height={24} borderRadius={12} />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }

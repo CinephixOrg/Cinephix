@@ -17,7 +17,12 @@ const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 interface Props {
   share: Share;
   onToggleLike: () => void;
-  basePath: "/home" | "/profile";
+  basePath: "/home" | "/profile" | `/user/${string}`;
+  // Opt-in — ShareCard is shared with Home's SharesFeedSection/KesfetSection
+  // (out of scope for the tiered-frame feature), so only Profile-tab callers
+  // (ProfileSharingsTab) pass this. Home never does, so its feed renders
+  // exactly as before.
+  showTierFrame?: boolean;
 }
 
 export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: string) => string) {
@@ -28,6 +33,12 @@ export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: strin
       return { icon: "pencil" as const, label: t("Review"), color: colors.info };
     case "recommendation":
       return { icon: "gift" as const, label: t("Recommendation"), color: colors.warning };
+    // Share["type"] is a compile-time guarantee only — a doc with a bad/
+    // missing type field (legacy data, a partially-migrated record) would
+    // otherwise fall through to `undefined` here and crash every reader
+    // (ShareCard, ShareGridTile) on `meta.color`/`meta.icon`/`meta.label`.
+    default:
+      return { icon: "help-circle" as const, label: t("Share"), color: colors.placeholder };
   }
 }
 
@@ -63,7 +74,7 @@ function renderCaptionWithLinks(text: string, links: { text: string; style: any;
 // poster (the only element on the card that touches the true screen edge —
 // everything else keeps the card's normal inset), then the same like/view
 // footer, then a promotional "so-and-so recommends it" line last.
-export default function ShareCard({ share, onToggleLike, basePath }: Props) {
+export default function ShareCard({ share, onToggleLike, basePath, showTierFrame }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -220,7 +231,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     return (
       <View style={styles.card}>
         <View style={styles.headerRow}>
-          <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} />
+          <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} tier={showTierFrame ? share.user.accountTier : undefined} />
           <View style={styles.headerTextCol}>
             <Text style={styles.username}>{share.user.username}</Text>
             <View style={[styles.typeChip, { backgroundColor: meta.color }]}>
@@ -253,7 +264,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} />
+        <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} tier={showTierFrame ? share.user.accountTier : undefined} />
         <View style={styles.headerTextCol}>
           <Text style={styles.username}>{share.user.username}</Text>
           <View style={[styles.typeChip, { backgroundColor: meta.color }]}>
