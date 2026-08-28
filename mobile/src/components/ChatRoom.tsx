@@ -15,7 +15,10 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { SkeletonChatBubbles } from "./Skeleton";
+import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
+
+const AVATAR_SIZE = 28;
 import AnalyzeModal from "./AnalyzeModal";
 import ProfileAnalysisModal from "./ProfileAnalysisModal";
 import type { MatchAnalysis, Message, MessagePagination, ProfileAnalysis, RoomType } from "../types";
@@ -51,8 +54,7 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
   messageRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginBottom: 4 },
   messageRowOwn: { justifyContent: "flex-end" },
   messageRowOther: { justifyContent: "flex-start" },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
   avatarFallbackText: { fontFamily: fonts.bold, fontSize: 10, color: colors.primary },
   bubbleColumn: { maxWidth: "75%" },
   senderName: { fontSize: 11, color: colors.placeholder, marginBottom: 2, marginLeft: 4 },
@@ -221,15 +223,22 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
             return (
               <View style={[styles.messageRow, isOwn ? styles.messageRowOwn : styles.messageRowOther]}>
                 {!isOwn && (
-                  item.sender.profile_pic_url ? (
-                    <Image source={{ uri: item.sender.profile_pic_url }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatar, styles.avatarFallback]}>
-                      <Text style={styles.avatarFallbackText}>
-                        {item.sender.username.slice(0, 2).toUpperCase()}
-                      </Text>
-                    </View>
-                  )
+                  <TierAvatarFrame tier={item.sender.accountTier} size={AVATAR_SIZE}>
+                    {(innerSize) =>
+                      item.sender.profile_pic_url ? (
+                        <Image
+                          source={{ uri: item.sender.profile_pic_url }}
+                          style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                        />
+                      ) : (
+                        <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                          <Text style={styles.avatarFallbackText}>
+                            {item.sender.username.slice(0, 2).toUpperCase()}
+                          </Text>
+                        </View>
+                      )
+                    }
+                  </TierAvatarFrame>
                 )}
                 <View style={styles.bubbleColumn}>
                   {!isOwn && <Text style={styles.senderName}>{item.sender.username}</Text>}

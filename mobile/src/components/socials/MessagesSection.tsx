@@ -5,9 +5,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../../context/ChatContext";
 import { SkeletonRow } from "../Skeleton";
+import TierAvatarFrame from "../TierAvatarFrame";
 import type { Conversation, GroupConversationRow } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+
+const AVATAR_SIZE = 48;
 
 type InboxItem = Conversation | GroupConversationRow;
 
@@ -17,14 +20,13 @@ export default function MessagesSection() {
   container: { flex: 1, backgroundColor: colors.base100 },
   actionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  actionRowTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
   actionButtons: { flexDirection: "row", alignItems: "center" },
   actionButton: { marginLeft: 16, padding: 4 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
@@ -120,15 +122,27 @@ export default function MessagesSection() {
     }
     return (
       <Pressable style={styles.row} onPress={() => router.push(`/socials/messages/${item._id}`)}>
-        {item.otherUser.profile_pic_url ? (
-          <Image source={{ uri: item.otherUser.profile_pic_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarFallbackText}>
-              {item.otherUser.username.slice(0, 2).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <TierAvatarFrame tier={item.otherUser.accountTier} size={AVATAR_SIZE}>
+          {(innerSize) =>
+            item.otherUser.profile_pic_url ? (
+              <Image
+                source={{ uri: item.otherUser.profile_pic_url }}
+                style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.avatarFallback,
+                  { backgroundColor: colors.base200, width: innerSize, height: innerSize, borderRadius: innerSize / 2 },
+                ]}
+              >
+                <Text style={styles.avatarFallbackText}>
+                  {item.otherUser.username.slice(0, 2).toUpperCase()}
+                </Text>
+              </View>
+            )
+          }
+        </TierAvatarFrame>
         <View style={styles.rowText}>
           <Text style={styles.username}>{item.otherUser.username}</Text>
           <Text style={styles.lastMessage} numberOfLines={1}>
@@ -156,7 +170,6 @@ export default function MessagesSection() {
 
   const actionRow = (
     <View style={styles.actionRow}>
-      <Text style={styles.actionRowTitle}>{t("Network")}</Text>
       <View style={styles.actionButtons}>
         <Pressable onPress={() => router.push("/socials/messages/recommend")} hitSlop={8} style={styles.actionButton}>
           <Ionicons name="gift-outline" size={22} color={colors.baseContent} />

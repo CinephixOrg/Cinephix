@@ -15,7 +15,7 @@ export const getConversations = asyncHandler(async (req, res) => {
 
   // Get all 1-on-1 DM conversations
   const conversations = await Conversation.find({ participants: userId })
-    .populate("participants", "username profile_pic_url")
+    .populate("participants", "username profile_pic_url accountTier")
     .sort({ lastMessageAt: -1 })
     .lean();
 
@@ -69,7 +69,7 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
   // Find existing conversation between the two users (order-independent)
   let conversation = await Conversation.findOne({
     participants: { $all: [userId, participantId], $size: 2 },
-  }).populate("participants", "username profile_pic_url");
+  }).populate("participants", "username profile_pic_url accountTier");
 
   if (!conversation) {
     // Sort IDs for a consistent order in the document
@@ -80,7 +80,7 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
     });
     conversation = await Conversation.findById(conversation._id).populate(
       "participants",
-      "username profile_pic_url"
+      "username profile_pic_url accountTier"
     );
   }
 
@@ -122,7 +122,7 @@ export const getMessages = asyncHandler(async (req, res) => {
     if (before) query.createdAt = { $lt: before };
 
     const messages = await Message.find(query)
-      .populate("sender", "username profile_pic_url")
+      .populate("sender", "username profile_pic_url accountTier")
       .sort({ createdAt: -1 })
       .limit(limit + 1)
       .lean();
@@ -162,7 +162,7 @@ export const getMessages = asyncHandler(async (req, res) => {
     if (before) query.createdAt = { $lt: before };
 
     const messages = await Message.find(query)
-      .populate("sender", "username profile_pic_url")
+      .populate("sender", "username profile_pic_url accountTier")
       .sort({ createdAt: -1 })
       .limit(limit + 1)
       .lean();
@@ -256,7 +256,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
   const message = await Message.create(messageData);
 
   const populated = await Message.findById(message._id)
-    .populate("sender", "username profile_pic_url")
+    .populate("sender", "username profile_pic_url accountTier")
     .lean();
 
   // Update conversation preview + unread count for the other participant

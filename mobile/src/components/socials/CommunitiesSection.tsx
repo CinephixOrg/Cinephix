@@ -1,62 +1,43 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  ScrollView,
-  RefreshControl,
-  Alert,
-  StyleSheet,
-} from "react-native";
+import { View, Text, FlatList, Pressable, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getAllGroups, joinGroup, leaveGroup } from "../../api/groupService";
 import GroupCard from "../GroupCard";
 import { SkeletonGrid, SkeletonGroupCard } from "../Skeleton";
-import type { Group, GroupCategory } from "../../types";
+import CommunityFiltersModal, { type CommunityFilters } from "./CommunityFiltersModal";
+import type { Group } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts } from "../../theme/typography";
 
-type Category = "all" | GroupCategory;
-const CATEGORIES: Category[] = ["all", "genre", "director", "era", "style"];
-type InnerTab = "all" | "mine";
+const DEFAULT_FILTERS: CommunityFilters = { innerTab: "all", category: "all" };
 
 export default function CommunitiesSection() {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.base100 },
-  filterRow: {
+  // Same plain-icon actionButton look as MessagesSection's recommend/new-
+  // message buttons (no border, no pill, no label) — was a bordered pill
+  // with a text label before, which was the odd one out visually.
+  filterTriggerRow: {
     flexDirection: "row",
+    justifyContent: "flex-end",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  segmented: {
-    flexDirection: "row",
-    backgroundColor: colors.base200,
-    borderRadius: 20,
-    padding: 3,
+  filterButton: { padding: 4 },
+  filterDot: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.primary,
   },
-  segmentButton: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 17 },
-  segmentButtonActive: { backgroundColor: colors.primary },
-  segmentText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
-  segmentTextActive: { color: colors.primaryContent, fontFamily: fonts.bold },
-  divider: { width: StyleSheet.hairlineWidth, height: 22, backgroundColor: colors.border, marginHorizontal: 12 },
-  categoryScroll: { flex: 1 },
-  categoryChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginRight: 8,
-  },
-  categoryChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  categoryChipText: { fontSize: 13, color: colors.baseContent, textTransform: "capitalize" },
-  categoryChipTextActive: { color: colors.primaryContent, fontFamily: fonts.medium },
   list: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
   row: { justifyContent: "space-between" },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
@@ -66,9 +47,11 @@ export default function CommunitiesSection() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [innerTab, setInnerTab] = useState<InnerTab>("all");
-  const [activeCategory, setActiveCategory] = useState<Category>("all");
+  const [filters, setFilters] = useState<CommunityFilters>(DEFAULT_FILTERS);
+  const [filtersModalVisible, setFiltersModalVisible] = useState(false);
   const [actionLoadingSlug, setActionLoadingSlug] = useState<string | null>(null);
+  const { innerTab, category: activeCategory } = filters;
+  const hasActiveFilters = innerTab !== "all" || activeCategory !== "all";
 
   const load = useCallback(async () => {
     try {
@@ -123,37 +106,11 @@ export default function CommunitiesSection() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterRow}>
-        <View style={styles.segmented}>
-          <Pressable
-            style={[styles.segmentButton, innerTab === "all" && styles.segmentButtonActive]}
-            onPress={() => setInnerTab("all")}
-          >
-            <Text style={[styles.segmentText, innerTab === "all" && styles.segmentTextActive]}>{t("All")}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.segmentButton, innerTab === "mine" && styles.segmentButtonActive]}
-            onPress={() => setInnerTab("mine")}
-          >
-            <Text style={[styles.segmentText, innerTab === "mine" && styles.segmentTextActive]}>{t("Mine")}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.divider} />
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat}
-              style={[styles.categoryChip, activeCategory === cat && styles.categoryChipActive]}
-              onPress={() => setActiveCategory(cat)}
-            >
-              <Text style={[styles.categoryChipText, activeCategory === cat && styles.categoryChipTextActive]}>
-                {t(cat)}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+      <View style={styles.filterTriggerRow}>
+        <Pressable onPress={() => setFiltersModalVisible(true)} hitSlop={8} style={styles.filterButton}>
+          <Ionicons name="options-outline" size={22} color={colors.baseContent} />
+          {hasActiveFilters && <View style={styles.filterDot} />}
+        </Pressable>
       </View>
 
       {loading ? (
@@ -186,6 +143,13 @@ export default function CommunitiesSection() {
           }
         />
       )}
+
+      <CommunityFiltersModal
+        visible={filtersModalVisible}
+        onClose={() => setFiltersModalVisible(false)}
+        filters={filters}
+        onApply={setFilters}
+      />
     </View>
   );
 }

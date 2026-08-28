@@ -13,11 +13,18 @@ export default function SocialsStackLayout() {
         headerStyle: { backgroundColor: colors.base200 },
         headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
         headerTintColor: colors.baseContent,
+        headerTitleAlign: "center",
       }}
     >
       <Stack.Screen
         name="index"
-        options={{ title: t("Socials"), headerRight: () => <NotificationBell /> }}
+        options={{
+          // headerTitle is overridden dynamically by index.tsx itself (the
+          // Messages/Community switcher, which needs the screen's own
+          // mainTab state) via navigation.setOptions() — same pattern
+          // Home's Paylaşımlar/Keşfet switcher uses. No static title here.
+          headerRight: () => <NotificationBell />,
+        }}
       />
       <Stack.Screen name="messages/new" options={{ title: t("New Message"), presentation: "modal" }} />
       <Stack.Screen

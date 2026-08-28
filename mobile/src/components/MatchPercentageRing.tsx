@@ -8,12 +8,26 @@ interface Props {
   percentage: number;
   size?: number;
   strokeWidth?: number;
+  // Override the default theme-derived colors — used when the ring sits on
+  // top of a colored/gradient card instead of the plain screen background
+  // (e.g. CineGraphCompatibilityCard), where colors.border/primary/baseContent
+  // wouldn't read correctly against it.
+  trackColor?: string;
+  fillColor?: string;
+  textColor?: string;
 }
 
 // Mirrors web's DaisyUI `radial-progress` CSS meter on MatchCard — a single-
 // value progress ring, unlike CineGraphDonut's multi-slice breakdown, so no
 // press interaction or legend here.
-export default function MatchPercentageRing({ percentage, size = 80, strokeWidth = 8 }: Props) {
+export default function MatchPercentageRing({
+  percentage,
+  size = 80,
+  strokeWidth = 8,
+  trackColor,
+  fillColor,
+  textColor,
+}: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   labelContainer: {
@@ -25,8 +39,8 @@ export default function MatchPercentageRing({ percentage, size = 80, strokeWidth
     alignItems: "center",
     justifyContent: "center",
   },
-  label: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
-}), [colors]);
+  label: { fontFamily: fonts.bold, fontSize: 15, color: textColor ?? colors.baseContent },
+}), [colors, textColor]);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, percentage));
@@ -40,7 +54,7 @@ export default function MatchPercentageRing({ percentage, size = 80, strokeWidth
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={colors.border}
+            stroke={trackColor ?? colors.border}
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -48,7 +62,7 @@ export default function MatchPercentageRing({ percentage, size = 80, strokeWidth
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={colors.primary}
+            stroke={fillColor ?? colors.primary}
             strokeWidth={strokeWidth}
             strokeDasharray={`${filled} ${circumference - filled}`}
             strokeLinecap="round"

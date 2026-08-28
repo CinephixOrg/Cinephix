@@ -5,6 +5,9 @@ import { useTranslation } from "react-i18next";
 import type { UserProfile } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import TierAvatarFrame from "../TierAvatarFrame";
+
+const AVATAR_SIZE = 84;
 
 interface Props {
   profile: UserProfile;
@@ -12,9 +15,9 @@ interface Props {
   // Followers/Following stats need to route to that user's network, not
   // "your own" (own-profile omits this and gets the simple self-scoped push).
   targetUserId?: string;
-  // Rendered as the last element (below the tier badge/joined-date row) —
-  // e.g. Public Profile's Follow button + Cinematch panel, positioned
-  // directly above whatever category-tab row the caller renders next.
+  // Rendered as the last element (below the bio, if any) — e.g. Public
+  // Profile's Follow button + Cinematch panel, positioned directly above
+  // whatever category-tab row the caller renders next.
   actionsSlot?: ReactElement | null;
   // Own-profile only — Instagram-style 3rd stat (Posts/Followers/Following).
   // Not interactive (no dedicated "all shares" screen to route to beyond
@@ -43,47 +46,45 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        container: { paddingHorizontal: 20, paddingTop: 20 },
+        // paddingBottom is explicit (rather than relying on the last piece
+        // of content's own margin) so the gap down to whatever the caller
+        // renders next (actionsSlot, or the category tabs directly) stays
+        // constant whether or not a bio is present — previously the
+        // always-present "Joined {date}" line did this job implicitly.
+        container: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
         headerRow: { flexDirection: "row", alignItems: "flex-start", gap: 16 },
-        avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.base200 },
-        avatarFallback: { alignItems: "center", justifyContent: "center" },
+        avatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
         avatarFallbackText: { fontFamily: fonts.bold, fontSize: 24, color: colors.primary },
         rightCol: { flex: 1, justifyContent: "flex-start" },
         username: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent },
-        statsRow: { flexDirection: "row", gap: 28, marginTop: 10 },
+        // A bit wider than before — three tight stat columns read as
+        // asymmetric/cramped next to the avatar's own generous spacing.
+        statsRow: { flexDirection: "row", gap: 34, marginTop: 10 },
         stat: { alignItems: "center" },
         statValue: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent },
         statLabel: { color: colors.placeholder, fontSize: 12 },
         bio: { color: colors.baseContent, fontSize: 14, lineHeight: 20, marginTop: 14 },
-        metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
-        tierBadge: {
-          paddingHorizontal: 10,
-          paddingVertical: 3,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: colors.primary,
-        },
-        tierBadgeText: { fontFamily: fonts.medium, fontSize: 11, color: colors.primary },
-        joined: { color: colors.placeholder, fontSize: 13 },
       }),
     [colors]
   );
 
-  const joinedDate = new Date(profile.createdAt).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-  });
-
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        {profile.profile_pic_url ? (
-          <Image source={{ uri: profile.profile_pic_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarFallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
-          </View>
-        )}
+        <TierAvatarFrame tier={profile.accountTier} size={AVATAR_SIZE}>
+          {(innerSize) =>
+            profile.profile_pic_url ? (
+              <Image
+                source={{ uri: profile.profile_pic_url }}
+                style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+              />
+            ) : (
+              <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                <Text style={styles.avatarFallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
+              </View>
+            )
+          }
+        </TierAvatarFrame>
 
         <View style={styles.rightCol}>
           <Text style={styles.username}>{profile.username}</Text>
@@ -106,18 +107,7 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
         </View>
       </View>
 
-      <Text style={styles.bio}>{profile.bio || t("No bio yet.")}</Text>
-
-      <View style={styles.metaRow}>
-        {profile.accountTier && profile.accountTier !== "free" && (
-          <View style={styles.tierBadge}>
-            <Text style={styles.tierBadgeText}>{profile.accountTier.toUpperCase()}</Text>
-          </View>
-        )}
-        <Text style={styles.joined}>
-          {t("Joined")} {joinedDate}
-        </Text>
-      </View>
+      {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
       {actionsSlot}
     </View>

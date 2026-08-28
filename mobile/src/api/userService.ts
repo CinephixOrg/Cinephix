@@ -37,11 +37,15 @@ export async function getProfileAnalysis(): Promise<ProfileAnalysis> {
   return res.data;
 }
 
-// Pro/Premium/Dev only — the backend returns an empty array for Free rather
+// Pro/Premium/Dev only — the backend returns an empty page for Free rather
 // than an error, so this never needs its own tier check on the client.
-export async function getProfileAnalysisHistory(): Promise<ProfileAnalysisHistoryEntry[]> {
-  const res = await API.get(API_ROUTES.USERS.GET_PROFILE_ANALYSIS_HISTORY);
-  return res.data;
+export async function getProfileAnalysisHistory(
+  page = 1,
+  limit = 10
+): Promise<{ items: ProfileAnalysisHistoryEntry[]; pagination: Pagination }> {
+  const res = await API.get(API_ROUTES.USERS.GET_PROFILE_ANALYSIS_HISTORY, { params: { page, limit } });
+  const pagination = (res as any).pagination as Pagination;
+  return { items: res.data, pagination };
 }
 
 export async function getCineGraph(id: string): Promise<CineGraphData> {

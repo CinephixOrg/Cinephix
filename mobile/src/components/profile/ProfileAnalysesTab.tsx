@@ -6,6 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { getProfileAnalysis, getProfileAnalysisHistory } from "../../api/userService";
 import AnalysisHistoryCard from "./AnalysisHistoryCard";
+import PaginationControls from "../PaginationControls";
+import PageSizeDropdown from "../PageSizeDropdown";
 import type { ProfileAnalysis, ProfileAnalysisHistoryEntry } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
@@ -58,7 +60,13 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
         analyzeButtonText: { fontFamily: fonts.medium, color: colors.baseContent },
         hint: { color: colors.placeholder, fontSize: 12, textAlign: "center", marginTop: 10 },
         historySection: { marginTop: 28 },
-        historyTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent, marginBottom: 12 },
+        historyHeaderRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        },
+        historyTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
         historyEmpty: { color: colors.placeholder, fontSize: 13, textAlign: "center", marginTop: 8 },
       }),
     [colors]
@@ -72,17 +80,36 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
   const [, forceTick] = useState(0);
   const [history, setHistory] = useState<ProfileAnalysisHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const loadHistory = async () => {
+  const loadHistory = async (pageNum: number, size: number) => {
     setHistoryLoading(true);
     try {
-      const entries = await getProfileAnalysisHistory();
-      setHistory(entries);
+      const { items, pagination } = await getProfileAnalysisHistory(pageNum, size);
+      setHistory(items);
+      setTotalPages(Math.max(1, pagination.pages));
     } catch {
       // Best-effort — the analyze flow itself doesn't depend on this.
     } finally {
       setHistoryLoading(false);
     }
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    loadHistory(nextPage, pageSize);
+  };
+
+  // A page-size change invalidates the current page's meaning (e.g. page 3
+  // of 5-per-page isn't page 3 of 10-per-page) — always snap back to page 1
+  // rather than trying to preserve scroll position across the resize.
+  const handlePageSizeChange = (size: number) => {
+    if (size === pageSize) return;
+    setPageSize(size);
+    setPage(1);
+    loadHistory(1, size);
   };
 
   useEffect(() => {
@@ -105,7 +132,7 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
   }, [tier]);
 
   useEffect(() => {
-    if (hasAccess) loadHistory();
+    if (hasAccess) loadHistory(1, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAccess]);
 
@@ -121,7 +148,11 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
     try {
       const data = await getProfileAnalysis();
       onViewAnalysis(data);
-      loadHistory();
+      // A fresh analysis always lands at the top of the newest page — reset
+      // to page 1 so it's actually visible instead of possibly landing
+      // wherever the user happened to be paged to.
+      setPage(1);
+      loadHistory(1, pageSize);
     } catch (e: any) {
       const retryAfterMs = e?.response?.data?.errors?.retryAfterMs;
       if (e?.response?.status === 429 && retryAfterMs) {
@@ -174,15 +205,21 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
       </Text>
 
       <View style={styles.historySection}>
-        <Text style={styles.historyTitle}>{t("Your Analyses")}</Text>
+        <View style={styles.historyHeaderRow}>
+          <Text style={styles.historyTitle}>{t("Your Analyses")}</Text>
+          <PageSizeDropdown value={pageSize} onChange={handlePageSizeChange} />
+        </View>
         {historyLoading ? (
           <ActivityIndicator color={colors.primary} />
         ) : history.length === 0 ? (
           <Text style={styles.historyEmpty}>{t("Your past analyses will show up here.")}</Text>
         ) : (
-          history.map((entry) => (
-            <AnalysisHistoryCard key={entry._id} entry={entry} onPress={() => onViewAnalysis(entry.result)} />
-          ))
+          <>
+            {history.map((entry) => (
+              <AnalysisHistoryCard key={entry._id} entry={entry} onPress={() => onViewAnalysis(entry.result)} />
+            ))}
+            <PaginationControls page={page} pages={totalPages} onPageChange={handlePageChange} />
+          </>
         )}
       </View>
     </View>

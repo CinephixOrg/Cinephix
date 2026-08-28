@@ -190,7 +190,10 @@ export const getUserShares = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("user", "username profile_pic_url")
+      // accountTier included here only (not getShareFeed's populate above,
+      // which also backs Home's SharesFeedSection/KesfetSection) — the
+      // tiered avatar frame is Profile-tab-only for now.
+      .populate("user", "username profile_pic_url accountTier")
       .populate("views", "username profile_pic_url")
       .lean(),
     Share.countDocuments(query),

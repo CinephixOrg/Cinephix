@@ -17,6 +17,7 @@ import { AuthProvider, useAuth } from "../src/context/AuthContext";
 import { NotificationProvider } from "../src/context/NotificationContext";
 import { ChatProvider } from "../src/context/ChatContext";
 import { FollowGraphProvider } from "../src/context/FollowGraphContext";
+import { ProfileProvider } from "../src/context/ProfileContext";
 import { NetworkProvider } from "../src/context/NetworkContext";
 import { ToastProvider } from "../src/context/ToastContext";
 import { ThemeProvider, useTheme, resolveInitialTheme } from "../src/context/ThemeContext";
@@ -134,11 +135,13 @@ export default function RootLayout() {
             <NetworkProvider>
               <AuthProvider>
                 <FollowGraphProvider>
-                  <NotificationProvider>
-                    <ChatProvider>
-                      <RootNavigator />
-                    </ChatProvider>
-                  </NotificationProvider>
+                  <ProfileProvider>
+                    <NotificationProvider>
+                      <ChatProvider>
+                        <RootNavigator />
+                      </ChatProvider>
+                    </NotificationProvider>
+                  </ProfileProvider>
                 </FollowGraphProvider>
               </AuthProvider>
             </NetworkProvider>

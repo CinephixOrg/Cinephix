@@ -13,8 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getMovies, getSeries } from "../../api/contentService";
-import { updateFavorites } from "../../api/favoriteService";
-import type { ContentType, FavoriteMovie, FavoriteSeries } from "../../types";
+import type { ContentType } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
@@ -30,15 +29,18 @@ export interface FavoritePickItem {
 interface Props {
   visible: boolean;
   type: ContentType;
-  favorites: (FavoriteMovie | FavoriteSeries)[];
+  // Already-favorited ids for this type — filtered out of search results so
+  // there's no way to "add" something already in the list.
+  excludeIds: string[];
   onClose: () => void;
-  onSaved: (type: ContentType, items: FavoritePickItem[]) => void;
+  onAdd: (item: FavoritePickItem) => void;
 }
 
-// NOTE: exact visual layout is a placeholder pending the reference design —
-// functionally complete (search, add/remove, save) but not yet pixel-matched
-// to any provided mockup.
-export default function EditFavoritesModal({ visible, type, favorites, onClose, onSaved }: Props) {
+// Opened by tapping an empty slot (EmptyFavoriteSlot) while a favorites rail
+// is in edit mode — pure search-and-tap-to-add, single item at a time, no
+// separate Save step. Removal is handled inline on the card itself
+// (FavoriteCard's edit-mode overlay), so this modal only ever adds.
+export default function AddFavoriteModal({ visible, type, excludeIds, onClose, onAdd }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const styles = useMemo(
@@ -66,13 +68,6 @@ export default function EditFavoritesModal({ visible, type, favorites, onClose, 
           backgroundColor: colors.base200,
         },
         searchInput: { flex: 1, color: colors.baseContent, fontSize: 15 },
-        sectionLabel: {
-          fontFamily: fonts.medium,
-          fontSize: 12,
-          color: colors.placeholder,
-          paddingHorizontal: 16,
-          marginBottom: 8,
-        },
         list: { paddingHorizontal: 16, paddingBottom: 24 },
         row: {
           flexDirection: "row",
@@ -83,43 +78,34 @@ export default function EditFavoritesModal({ visible, type, favorites, onClose, 
         poster: { width: 40, height: 58, borderRadius: 4, backgroundColor: colors.base200 },
         rowLabel: { flex: 1, color: colors.baseContent, fontSize: 14, fontFamily: fonts.medium },
         empty: { color: colors.placeholder, fontSize: 13, textAlign: "center", marginTop: 24 },
-        saveButton: {
-          margin: 16,
-          backgroundColor: colors.primary,
-          borderRadius: 8,
-          paddingVertical: 14,
-          alignItems: "center",
-        },
-        saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 15 },
       }),
     [colors]
   );
 
-  const toPickItem = (f: FavoriteMovie | FavoriteSeries): FavoritePickItem =>
-    type === "movie"
-      ? { _id: f._id, label: (f as FavoriteMovie).title, poster_path: f.poster_path }
-      : { _id: f._id, label: (f as FavoriteSeries).name, poster_path: f.poster_path };
-
-  const [selected, setSelected] = useState<FavoritePickItem[]>([]);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<FavoritePickItem[]>([]);
+  const [rawResults, setRawResults] = useState<FavoritePickItem[]>([]);
   const [searching, setSearching] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      setSelected(favorites.map(toPickItem));
       setQuery("");
-      setResults([]);
+      setRawResults([]);
     }
-    // Re-seed only when the modal opens (or target type changes) — not on
-    // every `favorites` prop change, so mid-edit selections aren't clobbered.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, type]);
+  }, [visible]);
 
+  // Deliberately depends only on [query, type] — NOT excludeIds. The
+  // caller passes excludeIds as a freshly-computed array on every one of
+  // its own re-renders (unmemoized), so including it here re-ran this
+  // effect constantly: every unrelated parent re-render restarted the
+  // debounce timer and flipped `searching` back to true, swapping the
+  // FlatList out for a spinner mid-tap — a tap that happened to land
+  // during that flicker was silently swallowed, which is exactly what
+  // "have to tap twice" looks like. Excluding already-favorited items is
+  // now a cheap derived filter below instead, so it can never affect
+  // whether a network request fires or the list remounts.
   useEffect(() => {
     if (!query.trim()) {
-      setResults([]);
+      setRawResults([]);
       setSearching(false);
       return;
     }
@@ -134,9 +120,9 @@ export default function EditFavoritesModal({ visible, type, favorites, onClose, 
             ? { _id: entry._id, label: entry.title, poster_path: entry.poster_path }
             : { _id: entry._id, label: entry.name, poster_path: entry.poster_path }
         );
-        setResults(items);
+        setRawResults(items);
       } catch {
-        if (!cancelled) setResults([]);
+        if (!cancelled) setRawResults([]);
       } finally {
         if (!cancelled) setSearching(false);
       }
@@ -147,29 +133,12 @@ export default function EditFavoritesModal({ visible, type, favorites, onClose, 
     };
   }, [query, type]);
 
-  const isSelected = (id: string) => selected.some((s) => s._id === id);
+  const results = useMemo(
+    () => rawResults.filter((item) => !excludeIds.includes(item._id)),
+    [rawResults, excludeIds]
+  );
 
-  const toggle = (item: FavoritePickItem) => {
-    setSelected((prev) => (isSelected(item._id) ? prev.filter((s) => s._id !== item._id) : [...prev, item]));
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await updateFavorites(type, selected.map((s) => s._id));
-      onSaved(type, selected);
-      onClose();
-    } catch {
-      // Best-effort — leave the modal open/editable on failure rather than
-      // silently discarding the user's selection.
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const title = type === "movie" ? t("Edit Favorite Movies") : t("Edit Favorite Series");
-  const isSearching = query.trim().length > 0;
-  const list = isSearching ? results : selected;
+  const title = type === "movie" ? t("Favorite Movies") : t("Favorite Series");
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -190,57 +159,39 @@ export default function EditFavoritesModal({ visible, type, favorites, onClose, 
             placeholder={type === "movie" ? t("Search movies") : t("Search series")}
             placeholderTextColor={colors.placeholder}
             autoCapitalize="none"
+            autoFocus
           />
         </View>
-
-        {!isSearching && (
-          <Text style={styles.sectionLabel}>
-            {`${t("Your favorites")} (${selected.length})`.toUpperCase()}
-          </Text>
-        )}
 
         {searching ? (
           <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary} />
         ) : (
           <FlatList
-            data={list}
+            data={results}
             keyExtractor={(item) => item._id}
             contentContainerStyle={styles.list}
-            ListEmptyComponent={
-              <Text style={styles.empty}>
-                {isSearching ? t("No results found.") : t("You haven't added any favorites yet.")}
-              </Text>
-            }
-            renderItem={({ item }) => {
-              const active = isSelected(item._id);
-              return (
-                <Pressable style={styles.row} onPress={() => toggle(item)}>
-                  {item.poster_path ? (
-                    <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={styles.poster} />
-                  ) : (
-                    <View style={styles.poster} />
-                  )}
-                  <Text style={styles.rowLabel} numberOfLines={2}>
-                    {item.label}
-                  </Text>
-                  <Ionicons
-                    name={active ? "checkmark-circle" : "add-circle-outline"}
-                    size={24}
-                    color={active ? colors.primary : colors.placeholder}
-                  />
-                </Pressable>
-              );
-            }}
+            ListEmptyComponent={query.trim() ? <Text style={styles.empty}>{t("No results found.")}</Text> : null}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.row}
+                onPress={() => {
+                  onAdd(item);
+                  onClose();
+                }}
+              >
+                {item.poster_path ? (
+                  <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={styles.poster} />
+                ) : (
+                  <View style={styles.poster} />
+                )}
+                <Text style={styles.rowLabel} numberOfLines={2}>
+                  {item.label}
+                </Text>
+                <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+              </Pressable>
+            )}
           />
         )}
-
-        <Pressable style={styles.saveButton} onPress={handleSave} disabled={saving}>
-          {saving ? (
-            <ActivityIndicator color={colors.primaryContent} />
-          ) : (
-            <Text style={styles.saveButtonText}>{t("Save")}</Text>
-          )}
-        </Pressable>
       </View>
     </Modal>
   );

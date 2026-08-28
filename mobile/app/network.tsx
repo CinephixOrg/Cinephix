@@ -15,6 +15,7 @@ import { useAuth } from "../src/context/AuthContext";
 import FollowButton from "../src/components/FollowButton";
 import ContentRail from "../src/components/ContentRail";
 import SuggestedUserCard from "../src/components/SuggestedUserCard";
+import TierAvatarFrame from "../src/components/TierAvatarFrame";
 import { SkeletonRow } from "../src/components/Skeleton";
 import type { Connection, FollowRequestUser, SuggestedUser } from "../src/types";
 import { useTheme } from "../src/context/ThemeContext";
@@ -22,27 +23,34 @@ import { useToast } from "../src/context/ToastContext";
 import { fonts } from "../src/theme/typography";
 
 type Tab = "followers" | "following" | "requests";
+const AVATAR_SIZE = 44;
+// Suggested Users is hidden per product request, not removed — the fetch
+// (getSuggestions) and its state below are untouched, only the JSX render
+// is gated, so flipping this back to true is the entire reintegration.
+const SHOW_SUGGESTED_USERS = false;
 
 export default function NetworkScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.base100 },
-  tabRow: { flexDirection: "row", padding: 16, gap: 8 },
+  // Flat, equal-width, edge-to-edge tabs directly under the header — a
+  // thin divider under the whole row, with the active tab's own bottom
+  // border overlapping it in the primary color. Same shape Instagram uses
+  // for this exact screen, replacing the old filled-pill buttons.
+  tabRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.border },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
     alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
   },
-  tabButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  tabButtonText: { fontFamily: fonts.medium, color: colors.baseContent },
-  tabButtonTextActive: { color: colors.primaryContent },
+  tabButtonActive: { borderBottomColor: colors.primary },
+  tabButtonText: { fontFamily: fonts.medium, fontSize: 14, color: colors.placeholder },
+  tabButtonTextActive: { color: colors.baseContent, fontFamily: fonts.bold },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
   avatarFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
   rowText: { flex: 1 },
   username: { fontSize: 15, color: colors.baseContent, fontFamily: fonts.medium },
@@ -82,11 +90,35 @@ export default function NetworkScreen() {
 
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
 
+  // Counts for both tab labels ("3 Followers" / "24 Following") — fetched
+  // independently of which list is actually loaded/active (limit:1, only
+  // pagination.total is read) so both numbers are correct immediately
+  // rather than only appearing once that tab has been visited.
+  const [followersCount, setFollowersCount] = useState<number | null>(null);
+  const [followingCount, setFollowingCount] = useState<number | null>(null);
+
+  // The page title used to just repeat whatever tab was active
+  // ("Followers"/"Following"), which is redundant now that the subtabs
+  // already say that — shows the profile's own username instead.
   useEffect(() => {
-    navigation.setOptions({
-      title: tab === "followers" ? t("Followers") : tab === "following" ? t("Following") : t("Requests"),
-    });
-  }, [tab]);
+    navigation.setOptions({ title: params.username || (isOwn ? user?.username : "") || "" });
+  }, [navigation, params.username, isOwn, user?.username]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!targetId) return;
+      getFollowers(1, 1, params.userId)
+        .then(({ pagination }) => {
+          if (pagination) setFollowersCount(pagination.total);
+        })
+        .catch(() => {});
+      getFollowing(1, 1, params.userId)
+        .then(({ pagination }) => {
+          if (pagination) setFollowingCount(pagination.total);
+        })
+        .catch(() => {});
+    }, [targetId, params.userId])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -140,10 +172,12 @@ export default function NetworkScreen() {
 
   const handleRemove = async (followerId: string) => {
     setItems((prev) => prev.filter((it) => it._id !== followerId));
+    setFollowersCount((prev) => (prev != null ? prev - 1 : prev));
     try {
       await removeFollower(followerId);
     } catch {
       load(1, tab, false);
+      setFollowersCount((prev) => (prev != null ? prev + 1 : prev));
       showToast(t("Something went wrong. Please try again."));
     }
   };
@@ -178,23 +212,13 @@ export default function NetworkScreen() {
 
   return (
     <View style={styles.container}>
-      {isOwn && (
-        <ContentRail
-          title={t("Suggested Users")}
-          data={suggestions}
-          keyExtractor={(item) => item._id}
-          emptyText={t("No suggestions yet.")}
-          renderItem={(item) => <SuggestedUserCard user={item} />}
-        />
-      )}
-
       <View style={styles.tabRow}>
         <Pressable
           style={[styles.tabButton, tab === "followers" && styles.tabButtonActive]}
           onPress={() => setTab("followers")}
         >
           <Text style={[styles.tabButtonText, tab === "followers" && styles.tabButtonTextActive]}>
-            {t("Followers")}
+            {followersCount != null ? t("{{count}} Followers", { count: followersCount }) : t("Followers")}
           </Text>
         </Pressable>
         <Pressable
@@ -202,7 +226,7 @@ export default function NetworkScreen() {
           onPress={() => setTab("following")}
         >
           <Text style={[styles.tabButtonText, tab === "following" && styles.tabButtonTextActive]}>
-            {t("Following")}
+            {followingCount != null ? t("{{count}} Following", { count: followingCount }) : t("Following")}
           </Text>
         </Pressable>
         {showRequestsTab && (
@@ -217,22 +241,40 @@ export default function NetworkScreen() {
         )}
       </View>
 
+      {SHOW_SUGGESTED_USERS && isOwn && (
+        <ContentRail
+          title={t("Suggested Users")}
+          data={suggestions}
+          keyExtractor={(item) => item._id}
+          emptyText={t("No suggestions yet.")}
+          renderItem={(item) => <SuggestedUserCard user={item} />}
+        />
+      )}
+
       {error && <Text style={styles.error}>{error}</Text>}
 
       {tab === "requests" ? (
         <FlatList
+          style={{ flex: 1 }}
           data={pendingRequests}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={styles.row}>
-              {item.profile_pic_url ? (
-                <Image source={{ uri: item.profile_pic_url }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
-                </View>
-              )}
+              <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
+                {(innerSize) =>
+                  item.profile_pic_url ? (
+                    <Image
+                      source={{ uri: item.profile_pic_url }}
+                      style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                    />
+                  ) : (
+                    <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                      <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
+                    </View>
+                  )
+                }
+              </TierAvatarFrame>
               <Pressable style={styles.rowText} onPress={() => router.push(`/user/${item._id}`)}>
                 <Text style={styles.username}>{item.username}</Text>
                 {item.bio ? (
@@ -265,22 +307,45 @@ export default function NetworkScreen() {
         </View>
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={items}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={styles.row}>
-              {item.profile_pic_url ? (
-                <Image source={{ uri: item.profile_pic_url }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
-                </View>
-              )}
+              <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
+                {(innerSize) =>
+                  item.profile_pic_url ? (
+                    <Image
+                      source={{ uri: item.profile_pic_url }}
+                      style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                    />
+                  ) : (
+                    <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                      <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
+                    </View>
+                  )
+                }
+              </TierAvatarFrame>
               <Pressable style={styles.rowText} onPress={() => router.push(`/user/${item._id}`)}>
                 <Text style={styles.username}>{item.username}</Text>
               </Pressable>
-              <FollowButton targetUserId={item._id} size="small" style={styles.followButtonSmall} />
+              <FollowButton
+                targetUserId={item._id}
+                size="small"
+                style={styles.followButtonSmall}
+                onStatusChange={(status) => {
+                  // This button always reflects *your own* following
+                  // relationship with the row's user — true in both the
+                  // Followers and Following tabs — so a transition here
+                  // always adjusts followingCount, never followersCount.
+                  if (status === "not-following") {
+                    setFollowingCount((prev) => (prev != null ? prev - 1 : prev));
+                  } else if (status === "following") {
+                    setFollowingCount((prev) => (prev != null ? prev + 1 : prev));
+                  }
+                }}
+              />
               {tab === "followers" && isOwn && (
                 <Pressable onPress={() => handleRemove(item._id)} hitSlop={8} style={styles.removeButton}>
                   <Text style={styles.removeButtonText}>{t("Remove")}</Text>
