@@ -17,6 +17,7 @@ import { useChat } from "../context/ChatContext";
 import { SkeletonChatBubbles } from "./Skeleton";
 import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
+import SyncShareMessageCard from "./SyncShareMessageCard";
 
 const AVATAR_SIZE = 28;
 import AnalyzeModal from "./AnalyzeModal";
@@ -244,28 +245,29 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
                   {!isOwn && <Text style={styles.senderName}>{item.sender.username}</Text>}
                   {item.type === "recommendation" ? (
                     <RecommendationMessageCard message={item} isOwn={isOwn} />
-                  ) : item.type === "analysis_share" ? (
+                  ) : item.type === "analysis_share" && (item.analysisData as any)?.type === "profile" ? (
+                    // Profile-analysis shares (CineGraphCompatibilityCard's
+                    // own, unrelated feature) keep the original plain bubble
+                    // — only the Sync/Cinematch variant below gets the
+                    // richer deck-preview treatment.
                     <Pressable
                       style={[
                         styles.bubble,
                         isOwn ? styles.bubbleOwn : styles.bubbleOther,
                         item.status === "pending" && styles.bubblePending,
                       ]}
-                      onPress={() => {
-                        const isProfile = (item.analysisData as any)?.type === "profile";
-                        if (isProfile) {
-                          setViewingProfileAnalysis((item.analysisData as ProfileAnalysis) ?? null);
-                        } else {
-                          setViewingAnalysis((item.analysisData as MatchAnalysis) ?? null);
-                        }
-                      }}
+                      onPress={() => setViewingProfileAnalysis((item.analysisData as ProfileAnalysis) ?? null)}
                     >
                       <Text style={isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther}>
-                        {(item.analysisData as any)?.type === "profile"
-                          ? t("📊 Shared their profile analysis")
-                          : t("📊 Shared a CineMatch analysis")}
+                        {t("📊 Shared their profile analysis")}
                       </Text>
                     </Pressable>
+                  ) : item.type === "analysis_share" ? (
+                    <SyncShareMessageCard
+                      message={item}
+                      isOwn={isOwn}
+                      onPress={() => setViewingAnalysis((item.analysisData as MatchAnalysis) ?? null)}
+                    />
                   ) : (
                     <View
                       style={[

@@ -3,6 +3,7 @@ import {
   getContentReviews,
   getFriendsReviews,
   getReviewsFromFriends,
+  getReviewsFeed,
   addOrUpdateReview,
   deleteMyReview,
   toggleReviewLike,
@@ -18,6 +19,12 @@ router.get('/popular', authMiddleware, getPopularReviews);
 
 // GET global "reviews from people you follow" feed (Home page Reviews tab)
 router.get('/friends', authMiddleware, getReviewsFromFriends);
+
+// GET Discover's paginated Reviews tab feed (friends' reviews first, then
+// popular, one merged sort — replaces the old client-side merge of the
+// two calls above for that specific screen; both calls stay in place for
+// their other existing callers).
+router.get('/feed', authMiddleware, getReviewsFeed);
 
 // GET all reviews for content (optionalAuth: includes hasLiked when logged in)
 router.get('/content/:contentId', optionalAuth, getContentReviews);

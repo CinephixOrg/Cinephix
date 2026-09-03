@@ -1,5 +1,10 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, FlatList, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+// From react-native-gesture-handler, not react-native — this rail's own
+// horizontal scroll nests inside Discover's outer horizontal page-switcher
+// (home/index.tsx); it needs gesture-handler's pan resolution to keep
+// working, see that file's comment for why.
+import { FlatList } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../context/ThemeContext";

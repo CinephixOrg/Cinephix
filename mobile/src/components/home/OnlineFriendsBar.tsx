@@ -7,7 +7,7 @@ import type { FeedUserRef } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
-const AVATAR_SIZE = 56;
+const AVATAR_SIZE = 46;
 
 // Instagram-stories-bar-style row at the very top of Paylaşımlar — only
 // people you follow who currently have a live socket connection. Polled on

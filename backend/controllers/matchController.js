@@ -1,23 +1,23 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
-import MatchDecision from "../models/MatchDecision.js";
-import Notification from "../models/Notification.js";
-import FollowRequest from "../models/FollowRequest.js";
+import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
-// NEW: Hybrid approach services
-import { calculateFavoriteOverlap } from "../services/contentBasedService.js";
-import { calculateSocialScore } from "../services/socialScoreService.js";
-import { calculateDiversityScore, calculateWatchActivityScore } from "../services/diversityScoreService.js";
-import { calculateTrendingAlignment, calculateActivityRecency } from "../services/bonusMetricsService.js";
+// The "hybrid approach" services (contentBasedService.js, socialScoreService.js,
+// diversityScoreService.js, bonusMetricsService.js) used to be imported here but
+// never actually called — computeMatchBreakdown below now has its own in-memory
+// equivalents (see calculateDiversityScoreInMemory / calculateTrendingAlignmentInMemory
+// / etc.) that operate on data this file already has loaded, instead of each doing
+// its own redundant User.findById per candidate. The service files themselves are
+// untouched — backend/scripts/test_hybrid_matching.js still imports them directly.
 import { formatForLLM } from "../services/llmFormatterService.js";
 import { sanitizeForLLM } from "../services/llmSanitizerService.js";
 import { callLLM } from "../services/llmAdapter.js";
-import { getTierLimits, REJECT_COOLDOWN_DAYS, DEFAULT_MATCH_FILTERS } from "../config/tiers.js";
+import { getTierLimits, DEFAULT_MATCH_FILTERS } from "../config/tiers.js";
 
 // Mirrors mobile's supported UI languages (mobile/src/locales/index.ts) — the
 // analyze-match LLM response should come back in whatever language the
@@ -95,7 +95,10 @@ const CANONICAL_STRINGS = {
     noFavoriteOverlap: 'Your shared favorites are limited, but there are still points worth exploring.',
     socialOverlap: 'The overlap in your social circles can also help things feel more natural.',
     noSocialOverlap: 'Social circle overlap is limited, but you can still build a warm connection through shared interests.',
-    summary: (score) => `Overall, there's promising compatibility between you (${score}%).`,
+    // Deliberately no percentage here — the score is already shown
+    // separately (MatchTierRow's ring), repeating it in the narrative read
+    // as redundant.
+    summary: () => `Overall, there's promising compatibility between you.`,
     strengthGenre: (g) => `Strong shared taste in ${g}`,
     strengthGenreGeneric: 'Strong shared interests',
     strengthFavorites: 'Similar favorite content',
@@ -110,6 +113,8 @@ const CANONICAL_STRINGS = {
     starterSocial: 'Break the ice through mutual connections',
     starterGeneral: "Ask what they've been watching lately",
     couldNotGenerate: 'Compatibility analysis could not be generated.',
+    matchTitle: (g) => `${g} Movie Buddies`,
+    matchTitleGeneric: 'Cinematic Match',
   },
   tr: {
     topGenre: (g) => `Senin için en güçlü ortak nokta ${g} türü gibi görünüyor.`,
@@ -118,7 +123,7 @@ const CANONICAL_STRINGS = {
     noFavoriteOverlap: 'Ortak favori içerik sayınız sınırlı ama konuşmayı başlatacak noktalar yine de var.',
     socialOverlap: 'Sosyal ağdaki kesişim de iletişimi daha doğal hale getirebilir.',
     noSocialOverlap: 'Sosyal ağ kesişimi sınırlı olsa da, ilgi alanlarınız üzerinden sıcak bir bağ kurulabilir.',
-    summary: (score) => `Genel olarak umut veren bir uyum görünüyor (%${score}).`,
+    summary: () => `Genel olarak umut veren bir uyum görünüyor.`,
     strengthGenre: (g) => `${g} türünde güçlü ortak zevk`,
     strengthGenreGeneric: 'Güçlü ortak ilgi alanları',
     strengthFavorites: 'Ortak favori içerik benzerliği',
@@ -133,6 +138,8 @@ const CANONICAL_STRINGS = {
     starterSocial: 'Ortak bağlantılardan sohbeti aç',
     starterGeneral: 'Bu aralar hangi tür yapımları izlediğini sor',
     couldNotGenerate: 'Uyumluluk analizi üretilemedi.',
+    matchTitle: (g) => `${g} Film Dostları`,
+    matchTitleGeneric: 'Sinematik Eşleşme',
   },
 };
 
@@ -180,35 +187,56 @@ const buildCanonicalAnalysis = (payload = {}, language = 'en') => {
     ? graphLabels.map((label, index) => `${label}: ${'█'.repeat(Math.max(1, Math.round((graphValues[index] || 0) / 10)))} (${graphValues[index] || 0})`).join(' | ')
     : '';
 
-  return { analysis, strengths, weaknesses, conversation_starters, graph_ascii };
+  // Safety-net fallback only — the LLM's own creative title (e.g. "Horror
+  // Cinephile Duo") is what actually ships whenever a real provider responds
+  // validly. Mirrors the exact `${favGenre} Cinephile` idiom Profile
+  // Analysis's own mock generator already uses (userController.js), rather
+  // than inventing a separate score-tier system.
+  const match_title = topGenre ? strings.matchTitle(topGenre) : strings.matchTitleGeneric;
+
+  return { analysis, strengths, weaknesses, conversation_starters, graph_ascii, match_title };
 };
+
+// Fixes the handful of malformed-JSON mistakes an LLM actually makes in
+// practice (smart quotes it picked up from somewhere, a trailing comma
+// before a closing brace/bracket) — not a full JSON5 parser, just enough to
+// turn "so close it should have worked" into a real parse instead of
+// falling all the way through to the raw-text fallback below, which is
+// what let literal JSON syntax leak into the displayed analysis text.
+const repairJsonText = (text) =>
+  text
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/,(\s*[}\]])/g, "$1");
 
 const extractJsonFromLLMText = (text) => {
   if (!text || typeof text !== "string") return null;
 
+  const tryParse = (candidate) => {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      try {
+        return JSON.parse(repairJsonText(candidate));
+      } catch {
+        return null;
+      }
+    }
+  };
+
   const fenced = text.match(/```json\s*([\s\S]*?)\s*```/i);
   if (fenced?.[1]) {
-    try {
-      return JSON.parse(fenced[1]);
-    } catch {
-      // continue
-    }
+    const parsed = tryParse(fenced[1]);
+    if (parsed) return parsed;
   }
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    // continue
-  }
+  const whole = tryParse(text);
+  if (whole) return whole;
 
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start !== -1 && end !== -1 && end > start) {
-    try {
-      return JSON.parse(text.slice(start, end + 1));
-    } catch {
-      return null;
-    }
+    return tryParse(text.slice(start, end + 1));
   }
 
   return null;
@@ -225,10 +253,21 @@ const normalizeLLMAnalysis = (obj, payload = {}, fallbackText = "", language = '
     : (obj || {});
 
   let analysis = source.analysis || fallbackText || canonical.analysis || strings.couldNotGenerate;
-  const strengths = Array.isArray(source.strengths) && source.strengths.length ? source.strengths : canonical.strengths;
-  const weaknesses = Array.isArray(source.weaknesses) && source.weaknesses.length ? source.weaknesses : canonical.weaknesses;
+  // Caps a single item's length rather than falling back to the canonical
+  // list wholesale (unlike the whole-analysis/match_title guards below) —
+  // one overly chatty strength shouldn't discard three other genuinely
+  // good ones; the client's own AnimatedInsightList further clips with
+  // numberOfLines as a last line of defense regardless.
+  const truncateItem = (s, max) => (typeof s === "string" && s.length > max ? `${s.slice(0, max - 1).trim()}…` : s);
+  const ITEM_MAX_CHARS = 110;
+  const strengths = Array.isArray(source.strengths) && source.strengths.length
+    ? source.strengths.map((s) => truncateItem(s, ITEM_MAX_CHARS))
+    : canonical.strengths;
+  const weaknesses = Array.isArray(source.weaknesses) && source.weaknesses.length
+    ? source.weaknesses.map((s) => truncateItem(s, ITEM_MAX_CHARS))
+    : canonical.weaknesses;
   const conversation_starters = Array.isArray(source.conversation_starters) && source.conversation_starters.length
-    ? source.conversation_starters
+    ? source.conversation_starters.map((s) => truncateItem(s, ITEM_MAX_CHARS))
     : canonical.conversation_starters;
 
   let graph_ascii = source.graph_ascii || "";
@@ -251,6 +290,18 @@ const normalizeLLMAnalysis = (obj, payload = {}, fallbackText = "", language = '
     analysis = canonical.analysis;
   }
 
+  // Real, live-reported bug: when every JSON.parse attempt in
+  // extractJsonFromLLMText fails, the call site's own fallback is
+  // `{ analysis: llmResp.text }` — the ENTIRE raw LLM response, verbatim,
+  // including whatever JSON-ish punctuation it still contains (a stray
+  // `{`, a field name like `analyses:`, etc.), none of which the markdown
+  // cleanup above strips. A genuine prose analysis should never contain a
+  // literal curly brace at all, so this is a safe, simple tell that raw/
+  // malformed JSON leaked through undetected by the keyword check above.
+  if (/[{}]/.test(analysis)) {
+    analysis = canonical.analysis;
+  }
+
   // Guards against a known leaked-boilerplate pattern from the original
   // Turkish-only prompt — only meaningful when replying in Turkish, since
   // these exact words would never appear in another language's output.
@@ -267,12 +318,24 @@ const normalizeLLMAnalysis = (obj, payload = {}, fallbackText = "", language = '
     analysis = canonical.analysis;
   }
 
+  let match_title = String(source.match_title || canonical.match_title).trim();
+  // Same "too long/garbled -> fall back to canonical" guard as analysis
+  // above, scaled down for a short title instead of a paragraph — plus the
+  // same curly-brace leak check, in case a totally-failed parse ever left
+  // match_title pointing at raw JSON text too (source.analysis is the only
+  // field extractJsonFromLLMText's own fallback object populates today, so
+  // this is defensive rather than a reproduced bug, but cheap to guard).
+  if (!match_title || match_title.length > 60 || /[{}]/.test(match_title)) {
+    match_title = canonical.match_title;
+  }
+
   return {
     analysis,
     strengths,
     weaknesses,
     conversation_starters,
     graph_ascii,
+    match_title,
   };
 };
 
@@ -545,32 +608,25 @@ export const findMatches = asyncHandler(async (req, res) => {
 
 /* ========== SWIPE (CineMatch swipe-to-follow) ========== */
 
-// Calendar-day boundary in UTC — the app doesn't collect per-user timezone
-// anywhere else, so this mirrors that rather than inventing new plumbing.
-// Shared by getSwipeQueue (to surface the count before the user swipes at
-// all) and swipeMatch (to actually enforce the limit).
-const getSwipesUsedToday = async (userId) => {
-  const startOfToday = new Date();
-  startOfToday.setUTCHours(0, 0, 0, 0);
-  const count = await MatchDecision.countDocuments({ user: userId, createdAt: { $gte: startOfToday } });
-  return { count, startOfToday };
-};
-
 /**
  * GET /api/match/swipe/queue
- * Ranked batch of candidates the user hasn't decided on yet (accepted people
- * never resurface; rejected people come back after REJECT_COOLDOWN_DAYS).
+ * Ranked batch of match candidates, sorted by matchPercentage descending —
+ * the profile-cloud results view is just the top of this same array, no
+ * separate endpoint. (No more accept/reject/exclusion here — CineMatch is a
+ * browse-and-follow feature now, not swipe-to-decide, so there's no
+ * decision history left to exclude candidates by.)
  * Free/any tier without canUseMatchFilters always gets DEFAULT_MATCH_FILTERS,
  * enforced here — not just hidden client-side — so a tampered request can't
- * bypass the Pro/Premium-only filter UI. Also returns the tier's daily swipe
- * allowance and how much of it is already used, so the client can show
- * "X of Y swipes left today" before the user starts swiping, not only after
- * hitting the limit.
+ * bypass the Pro/Premium-only filter UI. Each candidate now also carries its
+ * full breakdown (computeMatchBreakdown already computes it per-candidate;
+ * it used to be discarded here, keeping only matchPercentage) so the client
+ * can render a per-category ring, not just a flat percentage, plus a
+ * matchInsights block (shared genres, favorites overlap, social overlap
+ * detail) for a future match-detail view.
  */
 export const getSwipeQueue = asyncHandler(async (req, res) => {
   const meId = req.user.id;
-  const { canUseMatchFilters, maxMatches, swipesPerDay } = getTierLimits(req.user.accountTier);
-  const { count: swipesUsedToday } = await getSwipesUsedToday(meId);
+  const { canUseMatchFilters, maxMatches } = getTierLimits(req.user.accountTier);
 
   const requested = canUseMatchFilters
     ? {
@@ -586,7 +642,7 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
 
   const me = await User.findById(meId).lean();
   if (!me || !me[cineKey]) {
-    return sendSuccess(res, { candidates: [], swipesPerDay, swipesUsedToday }, "No candidates found");
+    return sendSuccess(res, { candidates: [] }, "No candidates found");
   }
 
   const others = await User.find({ _id: { $ne: meId } })
@@ -594,24 +650,39 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
     .limit(1000)
     .lean();
 
-  const cooldownCutoff = new Date(Date.now() - REJECT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-  const latestDecisions = await MatchDecision.aggregate([
-    { $match: { user: new mongoose.Types.ObjectId(meId), contentType: type } },
-    { $sort: { createdAt: -1 } },
-    { $group: { _id: "$targetUser", decision: { $first: "$decision" }, createdAt: { $first: "$createdAt" } } },
+  const eligibleOthers = others.filter((u) => u[cineKey]);
+
+  // One batched query for every candidate that will actually be scored (plus
+  // the requesting user), instead of computeMatchBreakdown's bonus signal
+  // doing its own DB call per candidate inside the loop below — that would
+  // be a real N+1 against up to 1000 candidates. "Last 3 months" matches
+  // the recency window the bonus formula's activityRecency sub-signal uses.
+  const RATING_RECENCY_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
+  const ratingCutoff = new Date(Date.now() - RATING_RECENCY_WINDOW_MS);
+  const recentRatingsRaw = await Rating.find({
+    user: { $in: [meId, ...eligibleOthers.map((u) => u._id)] },
+    createdAt: { $gte: ratingCutoff },
+  })
+    .select("user contentId createdAt")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const ratingsByUser = new Map();
+  for (const r of recentRatingsRaw) {
+    const uid = r.user.toString();
+    if (!ratingsByUser.has(uid)) ratingsByUser.set(uid, []);
+    ratingsByUser.get(uid).push(r);
+  }
+  const myRecentRatings = ratingsByUser.get(meId) || [];
+
+  const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
+  const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [
+    me[favField],
+    ...eligibleOthers.map((u) => u[favField]),
   ]);
 
-  const excludedIds = new Set(
-    latestDecisions
-      .filter((d) => d.decision === "accept" || (d.decision === "reject" && d.createdAt > cooldownCutoff))
-      .map((d) => d._id.toString())
-  );
-
   const results = [];
-  for (const u of others) {
-    if (!u[cineKey]) continue;
-    if (excludedIds.has(u._id.toString())) continue;
-
+  for (const u of eligibleOthers) {
     try {
       // Same helper getMatchWithUser/analyzeMatchWithUser use (see
       // computeMatchBreakdown's doc comment) — previously this called
@@ -622,7 +693,13 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
       // to one genre barely moved the swipe-card percentage while the same
       // filter on a profile page (already on computeMatchBreakdown, whose
       // full collaborative term is genre-filtered) visibly did.
-      const { matchPercentage } = computeMatchBreakdown(me, u, cineKey, { type, genres, useCount, useAvgRating });
+      const { matchPercentage, breakdown, matchInsights } = computeMatchBreakdown(
+        me,
+        u,
+        cineKey,
+        { type, genres, useCount, useAvgRating },
+        { recentRatings: { me: myRecentRatings, target: ratingsByUser.get(u._id.toString()) || [] }, favoriteGenreIds }
+      );
       results.push({
         user: {
           _id: u._id,
@@ -632,6 +709,8 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
         },
         contentType: type,
         matchPercentage,
+        breakdown,
+        matchInsights,
       });
     } catch {
       continue;
@@ -642,126 +721,9 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
 
   return sendSuccess(
     res,
-    { candidates: results.slice(0, maxMatches), swipesPerDay, swipesUsedToday },
+    { candidates: results.slice(0, maxMatches) },
     "Swipe queue fetched"
   );
-});
-
-/**
- * POST /api/match/swipe
- * Records an accept/reject decision. Accept reuses the exact follow logic
- * from userController.followUser (public → follow directly, private → follow
- * request) so swipe-accept behaves identically to the regular Follow button.
- */
-export const swipeMatch = asyncHandler(async (req, res) => {
-  const meId = req.user.id;
-  const { targetUserId, contentType = "movie", decision, matchPercentage = 0 } = req.body;
-
-  if (!targetUserId) return sendError(res, "targetUserId is required", 400);
-  if (!["movie", "series"].includes(contentType)) return sendError(res, "Invalid contentType", 400);
-  if (!["accept", "reject"].includes(decision)) return sendError(res, "Invalid decision", 400);
-  if (meId === targetUserId) return sendError(res, "Cannot swipe on yourself", 400);
-
-  const target = await User.findById(targetUserId);
-  if (!target) return sendError(res, "User not found", 404);
-
-  const { swipesPerDay } = getTierLimits(req.user.accountTier);
-  const { count: swipesToday, startOfToday } = await getSwipesUsedToday(meId);
-
-  if (swipesToday >= swipesPerDay) {
-    return sendError(res, "Daily swipe limit reached", 429, {
-      swipesPerDay,
-      resetAt: new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000),
-    });
-  }
-
-  await MatchDecision.create({
-    user: meId,
-    targetUser: targetUserId,
-    contentType,
-    decision,
-    matchPercentage: Math.max(0, Math.min(100, Math.round(Number(matchPercentage) || 0))),
-  });
-
-  let followType = null;
-  if (decision === "accept") {
-    if (req.user.following.includes(targetUserId)) {
-      followType = "following";
-    } else {
-      const visibility = target.visibility || "public";
-      if (visibility === "private") {
-        const existingReq = await FollowRequest.findOne({ requesterId: meId, targetId: targetUserId });
-        if (!existingReq) {
-          await FollowRequest.create({ requesterId: meId, targetId: targetUserId, status: "pending" });
-          await Notification.create({ user: targetUserId, sender: meId, type: "follow_request", read: false });
-        }
-        followType = "requested";
-      } else {
-        await User.updateOne({ _id: meId }, { $addToSet: { following: targetUserId } });
-        await User.updateOne({ _id: targetUserId }, { $addToSet: { followers: meId } });
-        await Notification.create({ user: targetUserId, sender: meId, type: "follow" });
-        followType = "following";
-      }
-    }
-  }
-
-  return sendSuccess(
-    res,
-    { decision, followType, swipesRemainingToday: Math.max(0, swipesPerDay - swipesToday - 1) },
-    "Swipe recorded"
-  );
-});
-
-/**
- * GET /api/match/swipe/rejected
- * Pro/Premium/Dev only — currently-rejected (still within cooldown)
- * candidates, so they can reconsider a decision.
- */
-export const getRejectedMatches = asyncHandler(async (req, res) => {
-  const meId = req.user.id;
-  const { canViewRejectedMatches } = getTierLimits(req.user.accountTier);
-  if (!canViewRejectedMatches) {
-    return sendSuccess(res, [], "Viewing rejected matches is not available on your plan");
-  }
-
-  const cooldownCutoff = new Date(Date.now() - REJECT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-
-  const latestDecisions = await MatchDecision.aggregate([
-    { $match: { user: new mongoose.Types.ObjectId(meId) } },
-    { $sort: { createdAt: -1 } },
-    {
-      $group: {
-        _id: { targetUser: "$targetUser", contentType: "$contentType" },
-        decision: { $first: "$decision" },
-        createdAt: { $first: "$createdAt" },
-        matchPercentage: { $first: "$matchPercentage" },
-      },
-    },
-    { $match: { decision: "reject", createdAt: { $gt: cooldownCutoff } } },
-    { $sort: { createdAt: -1 } },
-    { $limit: 50 },
-  ]);
-
-  const targetIds = latestDecisions.map((d) => d._id.targetUser);
-  const users = await User.find({ _id: { $in: targetIds } })
-    .select("username profile_pic_url bio")
-    .lean();
-  const userMap = new Map(users.map((u) => [u._id.toString(), u]));
-
-  const result = latestDecisions
-    .map((d) => {
-      const user = userMap.get(d._id.targetUser.toString());
-      if (!user) return null;
-      return {
-        user,
-        contentType: d._id.contentType,
-        matchPercentage: d.matchPercentage,
-        rejectedAt: d.createdAt,
-      };
-    })
-    .filter(Boolean);
-
-  return sendSuccess(res, result, "Rejected matches fetched");
 });
 
 /**
@@ -786,17 +748,211 @@ const calculateDiversityInMemory = (cineGraph) => {
   return Math.min(1, stdDev / (maxPossibleStdDev || 1));
 };
 
+// Shannon entropy of a user's own genre-watch distribution, normalized 0-1
+// (0 = concentrated in one genre, 1 = spread evenly across all of them).
+// Ports diversityScoreService.js's calculateGenreDiversityEntropy exactly,
+// operating on an already-loaded CineGraph object instead of a fresh
+// User.findById.
+const calculateGenreEntropy = (cineGraph) => {
+  if (!cineGraph || Object.keys(cineGraph).length === 0) return 0;
+  const counts = Object.values(cineGraph).map((g) => g.count || 0);
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total === 0) return 0;
+  const probabilities = counts.map((c) => c / total);
+  let entropy = 0;
+  for (const p of probabilities) {
+    if (p > 0) entropy -= p * Math.log2(p);
+  }
+  const maxEntropy = Math.log2(counts.length);
+  return maxEntropy === 0 ? 0 : entropy / maxEntropy;
+};
+
+// Symmetric difference of which genres each user has any data for at all —
+// ports diversityScoreService.js's calculateGenreDifference exactly.
+const calculateGenreDifference = (cineGraph1, cineGraph2) => {
+  if (!cineGraph1 || !cineGraph2) return 0.5;
+  const genres1 = new Set(Object.keys(cineGraph1));
+  const genres2 = new Set(Object.keys(cineGraph2));
+  const union = new Set([...genres1, ...genres2]);
+  if (union.size === 0) return 0;
+  const symmetricDiff = [...union].filter((g) => !(genres1.has(g) && genres2.has(g)));
+  return symmetricDiff.length / union.size;
+};
+
+/**
+ * Replaces the crude std-dev calculateDiversityInMemory (still used by the
+ * separate findMatches/scoreHybridCandidate path, left untouched) with the
+ * Shannon-entropy-based formula from diversityScoreService.js: are the two
+ * users' own diversity *levels* similar (entropyAlignment, 50%), blended
+ * with how different the actual *genres* they watch are — complementary
+ * variety (genreDifference, 50%). Operates on the full, un-genre-filtered
+ * CineGraph, same convention the code it replaces used — diversity is about
+ * each user's overall taste breadth, independent of whatever genre a
+ * particular match request happens to be filtered to.
+ */
+const calculateDiversityScoreInMemory = (myGraph, targetGraph) => {
+  const entropy1 = calculateGenreEntropy(myGraph);
+  const entropy2 = calculateGenreEntropy(targetGraph);
+  const entropyAlignment = 1 - Math.min(1, Math.abs(entropy1 - entropy2));
+  const genreDifference = calculateGenreDifference(myGraph, targetGraph);
+  return Math.min(1, 0.5 * entropyAlignment + 0.5 * genreDifference);
+};
+
+const RECENT_TRENDING_LIMIT = 10; // matches bonusMetricsService.js's calculateTrendingAlignment's own limit=10
+const ACTIVITY_RECENCY_TARGET = 20; // matches calculateActivityRecency's own min(1, count/20)
+
+// bonusMetricsService.js's calculateTrendingAlignment reads `r.content`, but
+// Rating.js has no `content` field (only `contentId`, a plain String) — that
+// function has never actually worked, always falling through to its 0.5
+// empty-set fallback. This ports the *intent* (Jaccard overlap of each
+// side's most-recently-rated content) using the real field, and — a
+// deliberate change from the source — does NOT special-case empty inputs to
+// a neutral 0.5: a bonus category should reward positive evidence, not
+// reward the absence of data as a coin-flip neutral. Zero recent ratings on
+// either side naturally falls out to 0 via the union-size guard below, no
+// special-casing needed.
+const calculateTrendingAlignmentInMemory = (meRatings, targetRatings) => {
+  const meIds = new Set(meRatings.slice(0, RECENT_TRENDING_LIMIT).map((r) => r.contentId.toString()));
+  const targetIds = new Set(targetRatings.slice(0, RECENT_TRENDING_LIMIT).map((r) => r.contentId.toString()));
+  const union = new Set([...meIds, ...targetIds]);
+  if (union.size === 0) return 0;
+  const intersection = [...meIds].filter((id) => targetIds.has(id)).length;
+  return intersection / union.size;
+};
+
+// Is the candidate (target) actually active lately — single-user signal,
+// same 0-if-no-recent-ratings reasoning as calculateTrendingAlignmentInMemory
+// above (an inactive/new account shouldn't score the same as a genuinely
+// average one here).
+const calculateActivityRecencyInMemory = (targetRatings) => Math.min(1, targetRatings.length / ACTIVITY_RECENCY_TARGET);
+
+// Watch-volume compatibility (casual viewer vs. heavy watcher) — ports
+// diversityScoreService.js's calculateWatchActivityScore, using the
+// already-loaded CineGraph instead of a fresh DB fetch. No Rating query
+// needed at all. Unlike the two signals above, a zero-total-watches case
+// keeps the original 0.5 neutral on purpose — this is a genuine "not enough
+// data to compare" case, not an "no positive evidence to reward" one.
+const calculateWatchActivityScoreInMemory = (myGraph, targetGraph) => {
+  const total1 = Object.values(myGraph || {}).reduce((sum, g) => sum + (g.count || 0), 0);
+  const total2 = Object.values(targetGraph || {}).reduce((sum, g) => sum + (g.count || 0), 0);
+  if (total1 === 0 || total2 === 0) return 0.5;
+  const ratio = Math.max(total1, total2) / Math.min(total1, total2);
+  if (ratio <= 1) return 1.0;
+  if (ratio >= 10) return 0.0;
+  return 1 - (ratio - 1) / 9;
+};
+
+const MATCH_INSIGHTS_MAX_SHARED_FAVORITE_IDS = 20;
+// Favorites score weighting: mostly exact-title overlap, a smaller credit
+// for "your favorites at least cover the same genres" even without any
+// title in common.
+const CONTENT_SCORE_EXACT_WEIGHT = 0.7;
+const CONTENT_SCORE_GENRE_WEIGHT = 0.3;
+
+// Reverse genre-name -> numeric TMDB ID lookup, shared by computeMatchBreakdown's
+// favorites genre-filter below and getSharedGenreContent.
+const resolveGenreIds = (genreMap, genreNames) =>
+  Object.keys(genreMap)
+    .filter((id) => genreNames.includes(genreMap[id]))
+    .map(Number);
+
+const jaccard = (setA, setB) => {
+  if (setA.size === 0 && setB.size === 0) return 0;
+  const intersection = [...setA].filter((x) => setB.has(x)).length;
+  const union = new Set([...setA, ...setB]).size;
+  return union === 0 ? 0 : intersection / union;
+};
+
+// One batched Movie/Series lookup for every favorite ID across the given
+// lists, keyed by contentId -> genre_ids, so computeMatchBreakdown (a
+// deliberately DB-call-free function, safe to call in getSwipeQueue's
+// up-to-1000-candidate loop) can both filter favorites by an active genre
+// filter AND blend genre-overlap into the Favorites score, without doing its
+// own per-candidate query. Always fetched now (used to early-return null when
+// no genre filter was active, back when the genre filter was its only
+// consumer) — still just one batched query per request, not per-candidate.
+const buildFavoriteGenreIdsMap = async (type, favoriteIdLists) => {
+  const allIds = new Set();
+  favoriteIdLists.forEach((ids) => (ids || []).forEach((id) => allIds.add(id.toString())));
+  if (allIds.size === 0) return new Map();
+  const Model = mongoose.model(type === "movie" ? "Movie" : "Series");
+  const docs = await Model.find({ _id: { $in: [...allIds] } }).select("_id genre_ids").lean();
+  return new Map(docs.map((d) => [d._id.toString(), d.genre_ids || []]));
+};
+
+// Lightweight (no formatForLLM, no LLM-prompt baggage) derivation of the
+// extra data a future match-detail UI will want, built entirely from data
+// computeMatchBreakdown already has in scope by the time it's called —
+// zero extra computation or DB calls.
+const buildMatchInsights = (genreCounts1, genreCounts2, favorites1, favorites2, socialOverlap, favoriteGenreIds) => {
+  // Every shared genre, not just a top slice — the client's own carousel
+  // (arrows, one genre at a time) already handles however many there are
+  // without a crowded chip row, so there's no display reason to cap this
+  // server-side. Still sorted by combined watch count, heaviest overlap first.
+  const allGenres = new Set([...Object.keys(genreCounts1), ...Object.keys(genreCounts2)]);
+  const sharedGenres = [...allGenres]
+    .map((genre) => ({ genre, meCount: genreCounts1[genre] || 0, targetCount: genreCounts2[genre] || 0 }))
+    .filter((entry) => entry.meCount > 0 && entry.targetCount > 0)
+    .sort((a, b) => b.meCount + b.targetCount - (a.meCount + a.targetCount));
+
+  const favSet1 = new Set(favorites1.map((id) => id.toString()));
+  const favSet2 = new Set(favorites2.map((id) => id.toString()));
+  const favIntersection = [...favSet1].filter((id) => favSet2.has(id));
+  const favUnion = new Set([...favSet1, ...favSet2]);
+
+  // Favorites that don't match exactly but share a genre with something on
+  // the other side — the "different title, same taste" case the blended
+  // Favorites score (computeMatchBreakdown's contentScore) already credits
+  // internally but never surfaced before now.
+  const genreIdsFor = (id) => favoriteGenreIds?.get(id.toString()) || [];
+  const nonExact1 = [...favSet1].filter((id) => !favSet2.has(id));
+  const nonExact2 = [...favSet2].filter((id) => !favSet1.has(id));
+  const otherGenres2 = new Set(nonExact2.flatMap(genreIdsFor));
+  const otherGenres1 = new Set(nonExact1.flatMap(genreIdsFor));
+  const genreOnlyMine = nonExact1.filter((id) => genreIdsFor(id).some((g) => otherGenres2.has(g)));
+  const genreOnlyTheirs = nonExact2.filter((id) => genreIdsFor(id).some((g) => otherGenres1.has(g)));
+
+  return {
+    sharedGenres,
+    favoritesOverlap: {
+      intersectionCount: favIntersection.length,
+      unionCount: favUnion.size,
+      sharedIds: favIntersection.slice(0, MATCH_INSIGHTS_MAX_SHARED_FAVORITE_IDS),
+      genreOnly: {
+        mine: genreOnlyMine.slice(0, MATCH_INSIGHTS_MAX_SHARED_FAVORITE_IDS),
+        theirs: genreOnlyTheirs.slice(0, MATCH_INSIGHTS_MAX_SHARED_FAVORITE_IDS),
+      },
+    },
+    socialOverlap,
+  };
+};
+
 /**
  * Full weighted match score + per-dimension breakdown between two specific
- * users — shared by getMatchWithUser (the score shown on a profile) and
- * analyzeMatchWithUser (the LLM narrative). Previously each endpoint had its
- * own copy, and analyzeMatchWithUser's was a simplified stand-in (no Pearson
- * correlation, social/diversity/bonus hardcoded to 50) — so the "match
- * score" a user saw and the score referenced inside their Analyze result
- * could disagree. Single source of truth now; both endpoints get the same
- * number for the same pair of users and filters.
+ * users — shared by getSwipeQueue (the swipe/match-cloud list), getMatchWithUser
+ * (the score shown on a profile), and analyzeMatchWithUser (the LLM narrative).
+ * Single source of truth; every caller gets the same number for the same pair
+ * of users and filters.
+ *
+ * recentRatings (5th param, optional) must be pre-fetched by the caller —
+ * already-sorted-newest-first, plain {user, contentId, createdAt} objects —
+ * this function itself makes no DB calls, so it stays safe to call in
+ * getSwipeQueue's up-to-1000-candidate loop.
+ *
+ * favoriteGenreIds (5th param, optional) — a Map<contentId, genre_ids[]> from
+ * buildFavoriteGenreIdsMap, pre-fetched by the caller the same way. If a
+ * genre filter is active but the caller doesn't pass this, favorites
+ * silently stay unfiltered (today's behavior) rather than throwing — every
+ * current caller passes it, but a future one that forgets it won't get an
+ * error, just the old broad behavior.
  */
-const computeMatchBreakdown = (me, target, cineKey, { type, genres = [], useCount = true, useAvgRating = true }) => {
+const computeMatchBreakdown = (
+  me,
+  target,
+  cineKey,
+  { type, genres = [], useCount = true, useAvgRating = true },
+  { recentRatings = { me: [], target: [] }, favoriteGenreIds = null } = {}
+) => {
   const myGraph = me[cineKey];
   const targetGraph = target[cineKey];
 
@@ -804,14 +960,25 @@ const computeMatchBreakdown = (me, target, cineKey, { type, genres = [], useCoun
   const g2 = {};
   const r1 = {};
   const r2 = {};
+  // Always populated with real watch counts, independent of `useCount`
+  // below — Shared Genres' own "which genres do you two genuinely have in
+  // common" list (buildMatchInsights' sharedGenres) reads from this, not
+  // from g1/g2, so it doesn't silently come back completely empty just
+  // because the *score* currently isn't weighing raw watch volume. Those
+  // are two different questions: how the score is weighted (useCount) vs.
+  // which genres genuinely overlap (always true or false, regardless).
+  const genreCounts1 = {};
+  const genreCounts2 = {};
 
   for (const [genre, v] of Object.entries(myGraph)) {
     if (genres.length && !genres.includes(genre)) continue;
+    genreCounts1[genre] = v.count;
     if (useCount) g1[genre] = v.count;
     if (useAvgRating) r1[genre] = v.avgRating;
   }
   for (const [genre, v] of Object.entries(targetGraph)) {
     if (genres.length && !genres.includes(genre)) continue;
+    genreCounts2[genre] = v.count;
     if (useCount) g2[genre] = v.count;
     if (useAvgRating) r2[genre] = v.avgRating;
   }
@@ -820,15 +987,45 @@ const computeMatchBreakdown = (me, target, cineKey, { type, genres = [], useCoun
   const ratingScore = avgRatingSimilarity(r1, r2);
   const collaborativeScore = 0.5 * genreScore + 0.5 * ratingScore;
 
-  const favorites1 = (type === "movie" ? me.favoriteMovies : me.favoriteSeries) || [];
-  const favorites2 = (type === "movie" ? target.favoriteMovies : target.favoriteSeries) || [];
+  // When a genre filter is active, favorites should be scoped to it too —
+  // otherwise "Comedy only" narrows the Taste score and Shared Genres but
+  // Shared Favorites keeps showing overlap across the user's entire library,
+  // which reads as inconsistent (this is exactly what the fix addresses).
+  const genreFilterActive = genres.length > 0;
+  const activeGenreIdSet = genreFilterActive
+    ? new Set(resolveGenreIds(type === "movie" ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP, genres))
+    : null;
+  const filterFavoritesByGenre = (favIds) => {
+    if (!genreFilterActive || !favoriteGenreIds) return favIds;
+    return favIds.filter((id) => {
+      const gids = favoriteGenreIds.get(id.toString());
+      return Array.isArray(gids) && gids.some((gid) => activeGenreIdSet.has(gid));
+    });
+  };
+  const favorites1 = filterFavoritesByGenre((type === "movie" ? me.favoriteMovies : me.favoriteSeries) || []);
+  const favorites2 = filterFavoritesByGenre((type === "movie" ? target.favoriteMovies : target.favoriteSeries) || []);
+  // Favorites score blends two signals: mostly exact-title overlap (do you
+  // both actually favorite the same movie/show), plus a smaller genre-overlap
+  // credit (do your favorites at least cover the same genres) — two people
+  // who both favorite different sci-fi movies used to get zero credit for
+  // that shared taste; now they get a partial one. Same scoping as today:
+  // operates on favorites1/favorites2 *after* filterFavoritesByGenre, so an
+  // active genre filter already narrows both sets the same way it did before.
   let contentScore = 0;
   if (favorites1.length > 0 && favorites2.length > 0) {
-    const set1 = new Set(favorites1.map((id) => id.toString()));
-    const set2 = new Set(favorites2.map((id) => id.toString()));
-    const intersection = [...set1].filter((x) => set2.has(x)).length;
-    const union = new Set([...set1, ...set2]).size;
-    contentScore = union === 0 ? 0 : intersection / union;
+    const idSet1 = new Set(favorites1.map((id) => id.toString()));
+    const idSet2 = new Set(favorites2.map((id) => id.toString()));
+    const exactScore = jaccard(idSet1, idSet2);
+
+    const genreSet1 = new Set();
+    const genreSet2 = new Set();
+    if (favoriteGenreIds) {
+      favorites1.forEach((id) => (favoriteGenreIds.get(id.toString()) || []).forEach((g) => genreSet1.add(g)));
+      favorites2.forEach((id) => (favoriteGenreIds.get(id.toString()) || []).forEach((g) => genreSet2.add(g)));
+    }
+    const genreScore = jaccard(genreSet1, genreSet2);
+
+    contentScore = CONTENT_SCORE_EXACT_WEIGHT * exactScore + CONTENT_SCORE_GENRE_WEIGHT * genreScore;
   }
 
   const myFollowing = new Set((me.following || []).map((id) => id.toString()));
@@ -844,16 +1041,34 @@ const computeMatchBreakdown = (me, target, cineKey, { type, genres = [], useCoun
   const unionFollowers = new Set([...myFollowers, ...targetFollowers]).size;
   const followersOverlapRate = unionFollowers === 0 ? 0 : mutualFollowers / unionFollowers;
 
-  const socialScore = 0.4 * followingOverlapRate + 0.4 * followersOverlapRate;
+  const meIdStr = me._id.toString();
+  const targetIdStr = target._id.toString();
+  const iFollowTarget = myFollowing.has(targetIdStr);
+  const targetFollowsMe = targetFollowing.has(meIdStr);
 
-  const myDiversity = calculateDiversityInMemory(myGraph);
-  const targetDiversity = calculateDiversityInMemory(targetGraph);
-  const diversityDiff = Math.abs(myDiversity - targetDiversity);
-  const diversityScore = 1 - Math.min(1, diversityDiff);
+  // Direct-connection bonus (mirrors socialScoreService.js's own
+  // calculateSocialScore exactly) — without this, socialScore was
+  // mathematically capped at 0.8 (0.4+0.4) and could never reach 100%.
+  let directConnectionBonus = 0;
+  if (iFollowTarget || targetFollowsMe) {
+    directConnectionBonus = 0.2;
+  } else if (myFollowers.size > 0 || targetFollowers.size > 0) {
+    const avgFollowers = (myFollowers.size + targetFollowers.size) / 2;
+    directConnectionBonus = Math.min(1, avgFollowers / 100) * 0.15;
+  }
 
-  // Not a real computed signal yet (see CINEMATCH_ANALYZE_AND_SWIPE_REPORTS.md) —
-  // kept as a flat placeholder, but the same one in both endpoints now.
-  const bonusScore = 0.5;
+  const socialScore = Math.min(1, 0.4 * followingOverlapRate + 0.4 * followersOverlapRate + directConnectionBonus);
+
+  const diversityScore = calculateDiversityScoreInMemory(myGraph, targetGraph);
+
+  const trendingAlignment = calculateTrendingAlignmentInMemory(recentRatings.me, recentRatings.target);
+  const activityRecency = calculateActivityRecencyInMemory(recentRatings.target);
+  const watchActivityScore = calculateWatchActivityScoreInMemory(myGraph, targetGraph);
+  // trendingAlignment gets the majority share — it's the one signal nothing
+  // else in this formula captures ("are they engaging with the same content
+  // right now"); activityRecency/watchActivityScore are secondary quality
+  // signals splitting the remainder evenly.
+  const bonusScore = Math.min(1, 0.5 * trendingAlignment + 0.25 * activityRecency + 0.25 * watchActivityScore);
 
   const finalScore =
     0.35 * collaborativeScore +
@@ -861,6 +1076,13 @@ const computeMatchBreakdown = (me, target, cineKey, { type, genres = [], useCoun
     0.2 * socialScore +
     0.15 * diversityScore +
     0.05 * bonusScore;
+
+  const socialOverlap = {
+    mutualFollowing,
+    mutualFollowers,
+    followingOverlapRate: Math.round(followingOverlapRate * 100),
+    followersOverlapRate: Math.round(followersOverlapRate * 100),
+  };
 
   return {
     matchPercentage: Math.round(finalScore * 100),
@@ -873,12 +1095,8 @@ const computeMatchBreakdown = (me, target, cineKey, { type, genres = [], useCoun
     },
     favorites1,
     favorites2,
-    socialOverlap: {
-      mutualFollowing,
-      mutualFollowers,
-      followingOverlapRate: Math.round(followingOverlapRate * 100),
-      followersOverlapRate: Math.round(followersOverlapRate * 100),
-    },
+    socialOverlap,
+    matchInsights: buildMatchInsights(genreCounts1, genreCounts2, favorites1, favorites2, socialOverlap, favoriteGenreIds),
   };
 };
 
@@ -924,11 +1142,23 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
   }
 
   try {
+    const ratingCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const pairRatings = await Rating.find({ user: { $in: [meId, targetUserId] }, createdAt: { $gte: ratingCutoff } })
+      .select("user contentId createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+    const myRecentRatings = pairRatings.filter((r) => r.user.toString() === meId);
+    const targetRecentRatings = pairRatings.filter((r) => r.user.toString() === targetUserId);
+
+    const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
+    const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]);
+
     const { matchPercentage, breakdown, favorites1, favorites2 } = computeMatchBreakdown(
       me,
       target,
       cineKey,
-      { type, genres, useCount, useAvgRating }
+      { type, genres, useCount, useAvgRating },
+      { recentRatings: { me: myRecentRatings, target: targetRecentRatings }, favoriteGenreIds }
     );
 
     const llmInput = formatForLLM({
@@ -991,6 +1221,17 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
 
   if (!me || !me[cineKey] || !target || !target[cineKey]) return sendError(res, 'Required data not found', 404);
 
+  const ratingCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const pairRatings = await Rating.find({ user: { $in: [meId, targetUserId] }, createdAt: { $gte: ratingCutoff } })
+    .select("user contentId createdAt")
+    .sort({ createdAt: -1 })
+    .lean();
+  const myRecentRatings = pairRatings.filter((r) => r.user.toString() === meId);
+  const targetRecentRatings = pairRatings.filter((r) => r.user.toString() === targetUserId);
+
+  const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
+  const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]);
+
   // Same helper getMatchWithUser uses, with the same filters the client
   // used for its Cinematch call — so the score referenced here matches what
   // was already shown on screen instead of a second, different number.
@@ -998,7 +1239,8 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     me,
     target,
     cineKey,
-    { type, genres, useCount, useAvgRating }
+    { type, genres, useCount, useAvgRating },
+    { recentRatings: { me: myRecentRatings, target: targetRecentRatings }, favoriteGenreIds }
   );
 
   const llmInput = formatForLLM({
@@ -1042,12 +1284,24 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
 
   const promptTemplate = {
     system: `You are the Cinephix match assistant. Address the user directly, in a warm, concise tone, writing naturally in ${languageName}. Do not speak in third person. Do not give technical explanations.`,
+    // Conciseness constraints (word cap on `analysis`, item caps on the
+    // three lists, the trailing "Be concise" line) are a real, live-tested
+    // fix, not a style preference: DEFAULT_GROQ_MODEL (llmAdapter.js) runs
+    // meaningfully more verbose than the previous Groq model when not
+    // explicitly constrained, and a real test run of this exact prompt
+    // without these limits hit finish_reason:"length" (truncated mid-JSON,
+    // unparseable) at 500 completion tokens; with them, repeated real runs
+    // landed around 150-200 tokens every time — comfortably inside the
+    // budget in callGroq.
     instruction: [
       "Based on the following data, return ONLY valid JSON.",
-      "Fields: analysis, strengths, weaknesses, conversation_starters, graph_ascii.",
-      `analysis: 2-3 short sentences, written in natural ${languageName}, addressing the user directly ("you").`,
+      "Fields: analysis, strengths, weaknesses, conversation_starters, graph_ascii, match_title.",
+      `analysis: 2-3 short sentences (40 words max total), written in natural ${languageName}, addressing the user directly ("you").`,
       "In analysis, mention the strongest shared genre, shared favorites count, and social overlap where possible, but keep it short.",
-      "Do not use markdown code blocks. Do not add any text outside the JSON.",
+      "Do not mention or repeat the exact percentage/compatibility score number in the analysis — it's shown separately elsewhere.",
+      "strengths, weaknesses, conversation_starters: short bullet phrases, at most 3 items each.",
+      `match_title: a short, creative 2-4 word title capturing the vibe of this match (e.g. "Horror Cinephile Duo", "Slow-Burn Drama Fans"), written in ${languageName}.`,
+      "Do not use markdown code blocks. Do not add any text outside the JSON. Be concise throughout.",
     ].join(" "),
   };
 
@@ -1080,4 +1334,282 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     { provider, matchPercentage, breakdown, parsed, raw: llmResp.raw || llmResp },
     'Analysis generated'
   );
+});
+
+// Closeness, not a high-rating floor — matches computeMatchBreakdown's own
+// avgRatingSimilarity (1 - |diff|/10), which scores two people agreeing at
+// the low end exactly as well as agreeing at the high end. This endpoint
+// used to require both ratings >= 7 with no closeness check at all (so a 7
+// and a 10 counted as a "match" while two people both rating something a 2
+// — clearly aligned taste, just a shared dislike — never showed up
+// anywhere), which didn't reflect what the Sync score itself actually
+// rewards. Deviation on the model's own 1-10 scale.
+const SHARED_GENRE_CONTENT_MAX_RATING_DEVIATION = 2;
+
+/**
+ * Titles either side has rated, grouped by genre — included when both have
+ * rated it and are within SHARED_GENRE_CONTENT_MAX_RATING_DEVIATION of each
+ * other (agreeing they loved it and agreeing they disliked it both count,
+ * only the rating GAP matters, not its level), OR when only one side has
+ * rated it at all (the other renders "Not rated yet" client-side — this
+ * used to be excluded entirely, which silently hid every title unless both
+ * sides happened to have already rated it). Only excluded when both sides
+ * rated it and disagree by more than the deviation. One round trip for
+ * every genre in `genres` at once, since the expensive part (the two Rating
+ * queries + the batched Movie/Series fetch) is genre-independent; only the
+ * final filter step varies per genre. Unbounded per genre — the client's
+ * own poster row/coverflow handles however many come back.
+ *
+ * @route  POST /api/match/:targetUserId/shared-genre-content
+ * @access Private
+ */
+export const getSharedGenreContent = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+  const { type, genres = [] } = req.body;
+
+  if (type !== "movie" && type !== "series") {
+    return sendError(res, 'type must be "movie" or "series"', 400);
+  }
+  if (!Array.isArray(genres) || genres.length === 0) {
+    return sendSuccess(res, {}, "No genres requested");
+  }
+
+  const Model = mongoose.model(type === "movie" ? "Movie" : "Series");
+  const genreMap = type === "movie" ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
+  const titleField = type === "movie" ? "title" : "name";
+  const dateField = type === "movie" ? "release_date" : "first_air_date";
+
+  const ratings = await Rating.find({
+    user: { $in: [meId, targetUserId] },
+    contentType: type,
+  })
+    .select("user contentId value")
+    .lean();
+
+  const myRatingById = new Map();
+  const targetRatingById = new Map();
+  for (const r of ratings) {
+    // contentId is schema-typed as String, but a chunk of this DB's seeded
+    // Rating docs actually store it as a raw ObjectId (bypassing Mongoose's
+    // own cast, e.g. from a bulk insert that wrote real ObjectId values
+    // instead of going through .create()/.save()) — .lean() returns
+    // whatever BSON type is really stored, so `r.contentId` here is a
+    // String for some rows and an ObjectId object for others. Using it
+    // as-is as a Map key silently broke this for every ObjectId-typed row:
+    // Map keys compare objects by reference, so `d._id.toString()` (always
+    // a real string) below could never find a match under an ObjectId-object
+    // key — real confirmed live: `$in: candidateIds` still matched the
+    // right Mongo document either way (the driver compares BSON values, not
+    // JS types), so the poster showed up, but its own rating lookup missed
+    // and both sides silently rendered "Not rated yet" despite a real
+    // rating existing. String(...) normalizes either shape to the same
+    // canonical id string `d._id.toString()` will also produce.
+    const contentId = String(r.contentId);
+    if (r.user.toString() === meId) myRatingById.set(contentId, r.value);
+    else if (r.user.toString() === targetUserId) targetRatingById.set(contentId, r.value);
+  }
+  const candidateIds = [...new Set([...myRatingById.keys(), ...targetRatingById.keys()])].filter((id) => {
+    const mine = myRatingById.get(id);
+    const theirs = targetRatingById.get(id);
+    // Only one side has rated it — no disagreement to check, always include.
+    if (mine == null || theirs == null) return true;
+    return Math.abs(mine - theirs) <= SHARED_GENRE_CONTENT_MAX_RATING_DEVIATION;
+  });
+
+  if (candidateIds.length === 0) {
+    return sendSuccess(res, Object.fromEntries(genres.map((g) => [g, []])), "No rated shared content");
+  }
+
+  const docs = await Model.find({ _id: { $in: candidateIds } })
+    .select(`_id ${titleField} poster_path vote_average ${dateField} genre_ids`)
+    .lean();
+  // Both users' own rating for this title (undefined on whichever side
+  // hasn't rated it — already fetched above to build the candidate set,
+  // surfaced here so the client can show "you rated it X, they rated it Y"
+  // / "Not rated yet" without a second call.
+  const enriched = docs.map((d) => ({
+    ...d,
+    myRating: myRatingById.get(d._id.toString()),
+    targetRating: targetRatingById.get(d._id.toString()),
+  }));
+
+  const result = {};
+  for (const genre of genres) {
+    const targetGenreIds = resolveGenreIds(genreMap, [genre]);
+    result[genre] = enriched
+      .filter((d) => Array.isArray(d.genre_ids) && d.genre_ids.some((gid) => targetGenreIds.includes(gid)))
+      // Both-rated-and-closest agreement first, then whichever's only rated
+      // by one side (no real gap to sort by, so they trail the ranked ones
+      // rather than being interleaved arbitrarily among them).
+      .sort((a, b) => {
+        const diffOf = (d) => (d.myRating != null && d.targetRating != null ? Math.abs(d.myRating - d.targetRating) : Infinity);
+        return diffOf(a) - diffOf(b);
+      });
+  }
+
+  sendSuccess(res, result, "Shared genre content fetched");
+});
+
+/**
+ * Both users' own rating (if any) for an arbitrary set of content ids — no
+ * threshold, no mutual-rating requirement (unlike getSharedGenreContent
+ * above, which needs both sides' ratings within SHARED_GENRE_CONTENT_MAX_RATING_DEVIATION
+ * of each other). Built for the Favorites card's detail box, where a
+ * favorited title is often rated by one side, both, or neither.
+ *
+ * @route  POST /api/match/:targetUserId/content-ratings
+ * @access Private
+ */
+export const getContentRatings = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+  const { type, ids = [] } = req.body;
+
+  if (type !== "movie" && type !== "series") {
+    return sendError(res, 'type must be "movie" or "series"', 400);
+  }
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return sendSuccess(res, {}, "No ids requested");
+  }
+
+  const ratings = await Rating.find({
+    user: { $in: [meId, targetUserId] },
+    contentType: type,
+    contentId: { $in: ids },
+  })
+    .select("user contentId value")
+    .lean();
+
+  const result = {};
+  for (const id of ids) result[id] = {};
+  for (const r of ratings) {
+    const bucket = result[r.contentId.toString()];
+    if (!bucket) continue;
+    if (r.user.toString() === meId) bucket.myRating = r.value;
+    else if (r.user.toString() === targetUserId) bucket.targetRating = r.value;
+  }
+
+  sendSuccess(res, result, "Content ratings fetched");
+});
+
+// Deliberately its own constant, not RATING_RECENCY_WINDOW_MS (the 90-day
+// window that actually feeds computeMatchBreakdown's own bonus/"Activity"
+// score via trendingAlignment/activityRecency) — per direct ask, this only
+// changes what the *Activity detail card* displays ("what you've both been
+// watching lately" reads better over the last month than the last quarter),
+// without touching the real match-percentage math anywhere.
+const RECENT_ACTIVITY_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Titles both the requesting user and targetUserId have rated within the
+ * last RECENT_ACTIVITY_WINDOW_MS — the actual overlap set
+ * computeMatchBreakdown's own trendingAlignment sub-score is a Jaccard
+ * ratio *of*, made visible instead of just scored. Deliberately an
+ * intersection (both sides, not one-sided-OK like getSharedGenreContent's
+ * own broadened rule) — Activity is specifically about co-engagement
+ * ("did you both watch/rate this around the same time"), not "here's
+ * something either of you might like", which is what Shared Genres/
+ * Favorites already cover.
+ *
+ * @route  POST /api/match/:targetUserId/recent-activity
+ * @access Private
+ */
+export const getRecentSharedActivity = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+  const { type } = req.body;
+
+  if (type !== "movie" && type !== "series") {
+    return sendError(res, 'type must be "movie" or "series"', 400);
+  }
+
+  const Model = mongoose.model(type === "movie" ? "Movie" : "Series");
+  const titleField = type === "movie" ? "title" : "name";
+  const dateField = type === "movie" ? "release_date" : "first_air_date";
+
+  const cutoff = new Date(Date.now() - RECENT_ACTIVITY_WINDOW_MS);
+  const ratings = await Rating.find({
+    user: { $in: [meId, targetUserId] },
+    contentType: type,
+    createdAt: { $gte: cutoff },
+  })
+    .select("user contentId value createdAt")
+    .lean();
+
+  const myRatingById = new Map();
+  const targetRatingById = new Map();
+  for (const r of ratings) {
+    // Same normalization as getSharedGenreContent — contentId is a mix of
+    // real Strings and raw ObjectId values across this DB's seeded rows.
+    const contentId = String(r.contentId);
+    if (r.user.toString() === meId) myRatingById.set(contentId, { value: r.value, createdAt: r.createdAt });
+    else if (r.user.toString() === targetUserId) targetRatingById.set(contentId, { value: r.value, createdAt: r.createdAt });
+  }
+
+  const sharedIds = [...myRatingById.keys()].filter((id) => targetRatingById.has(id));
+
+  if (sharedIds.length === 0) {
+    return sendSuccess(res, [], "No recent shared activity");
+  }
+
+  const docs = await Model.find({ _id: { $in: sharedIds } })
+    .select(`_id ${titleField} poster_path vote_average ${dateField}`)
+    .lean();
+
+  const enriched = docs
+    .map((d) => {
+      const mine = myRatingById.get(d._id.toString());
+      const theirs = targetRatingById.get(d._id.toString());
+      return {
+        ...d,
+        myRating: mine.value,
+        targetRating: theirs.value,
+        // Whichever of the two rated it more recently — sorting by this
+        // surfaces "the thing you two most recently both landed on" first,
+        // not just an arbitrary DB order.
+        mostRecentAt: mine.createdAt > theirs.createdAt ? mine.createdAt : theirs.createdAt,
+      };
+    })
+    .sort((a, b) => b.mostRecentAt - a.mostRecentAt);
+
+  sendSuccess(res, enriched, "Recent shared activity fetched");
+});
+
+/**
+ * Paginated list of users BOTH the requester and targetUserId follow (people
+ * both of us follow, not raw followers/following of either side alone — the
+ * existing getMyFollowing/getMyFollowers endpoints return one user's own
+ * unfiltered list). Powers the Social Overlap card's mutual-connections
+ * avatar grid.
+ *
+ * @route  GET /api/match/:targetUserId/mutual-connections
+ * @access Private
+ */
+export const getMutualConnections = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+  const { page = 1, limit = 20 } = req.query;
+
+  const [me, target] = await Promise.all([
+    User.findById(meId).select("following").lean(),
+    User.findById(targetUserId).select("following").lean(),
+  ]);
+  if (!target) return sendError(res, "User not found", 404);
+
+  const targetFollowingSet = new Set((target.following || []).map((id) => id.toString()));
+  const mutualIds = (me.following || []).map((id) => id.toString()).filter((id) => targetFollowingSet.has(id));
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const pageIds = mutualIds.slice(skip, skip + parseInt(limit));
+
+  const users = await User.find({ _id: { $in: pageIds } })
+    .select("_id username profile_pic_url")
+    .lean();
+  // $in doesn't preserve order — re-sort to match pageIds so pagination
+  // stays stable/deterministic across page requests.
+  const byId = new Map(users.map((u) => [u._id.toString(), u]));
+  const ordered = pageIds.map((id) => byId.get(id)).filter(Boolean);
+
+  sendPaginated(res, ordered, mutualIds.length, parseInt(page), parseInt(limit), "Mutual connections fetched");
 });

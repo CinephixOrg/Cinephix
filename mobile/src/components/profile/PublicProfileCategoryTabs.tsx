@@ -11,7 +11,7 @@ import type { CineGraphData, Favorites } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
 
-type Category = "sharings" | "favorites" | "cinegraph";
+export type Category = "sharings" | "favorites" | "cinegraph";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -24,6 +24,9 @@ interface Props {
   favorites: Favorites | null;
   cineGraph: CineGraphData | null;
   userId: string;
+  // Lets a deep link (e.g. a "favorited" activity row) land straight on a
+  // specific tab instead of always defaulting to Sharings.
+  initialCategory?: Category;
 }
 
 const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
@@ -40,7 +43,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
 // they live as CineGraphCompatibilityCard at the top of the CineGraph tab
 // body instead, since that's the only place a compatibility score is
 // actually relevant.
-export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId }: Props) {
+export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -64,7 +67,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
     [colors]
   );
 
-  const [category, setCategory] = useState<Category>("sharings");
+  const [category, setCategory] = useState<Category>(initialCategory || "sharings");
   const [cinegraphSubTab, setCinegraphSubTab] = useState<CineGraphSubTab>("movie");
 
   const movies = favorites?.isAuthorized ? favorites.movies : [];

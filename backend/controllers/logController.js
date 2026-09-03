@@ -1,6 +1,7 @@
 import ActivityLog from "../models/ActivityLog.js";
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
+import FavoriteEvent from "../models/FavoriteEvent.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { createMovieModel } from "../models/Movie.js";
@@ -152,6 +153,13 @@ export const resetData = asyncHandler(async (req, res) => {
 
   // Delete all Activity Logs
   await ActivityLog.deleteMany({ userId });
+
+  // favoriteMovies/favoriteSeries above are a plain array (no history of
+  // their own), but FavoriteEvent is a separate append-only log powering
+  // the network Activity feed's "favorited" event — needs its own explicit
+  // cleanup or a stale "favorited X" event would keep showing in other
+  // people's feeds for a favorite that's now gone.
+  await FavoriteEvent.deleteMany({ user: userId });
 
   sendSuccess(res, null, 'All data reset successfully');
 });

@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, PopularReview, Review } from "../types";
+import type { ContentType, PopularReview, Review, ReviewsFeedResult } from "../types";
 import type { ListResult } from "./contentService";
 
 export async function getContentReviews(
@@ -30,6 +30,15 @@ export async function getPopularReviews(limit = 10, type?: ContentType, q?: stri
 // content on the Content Detail page.
 export async function getReviewsFromFriends(limit = 10, type?: ContentType): Promise<PopularReview[]> {
   const res = await API.get(API_ROUTES.REVIEWS.GET_FRIENDS_FEED, { params: { limit, type } });
+  return res.data;
+}
+
+// Discover's paginated Reviews tab feed — one merged, server-sorted query
+// (friends' reviews first, then popular, see reviewController.js's
+// getReviewsFeed) replacing a client-side merge of getPopularReviews +
+// getReviewsFromFriends that couldn't paginate correctly.
+export async function getReviewsFeed(page = 1, limit = 15): Promise<ReviewsFeedResult> {
+  const res = await API.get(API_ROUTES.REVIEWS.GET_FEED, { params: { page, limit } });
   return res.data;
 }
 

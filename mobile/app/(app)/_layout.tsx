@@ -37,6 +37,7 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: { backgroundColor: colors.base200, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.placeholder,
@@ -77,7 +78,7 @@ export default function AppLayout() {
       />
       <Tabs.Screen
         name="match"
-        options={{ title: t("Cinematch"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
+        options={{ title: t("Sync"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
       />
       <Tabs.Screen
         name="socials"

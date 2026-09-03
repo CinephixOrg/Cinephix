@@ -37,7 +37,7 @@ export default function PublicProfileScreen() {
   error: { color: colors.error, fontSize: 16 },
 }), [colors]);
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
   const { user } = useAuth();
   const navigation = useNavigation();
 
@@ -143,7 +143,12 @@ export default function PublicProfileScreen() {
         actionsSlot={<FollowButton targetUserId={id} initialStatus={initialStatus} style={styles.followButton} />}
       />
 
-      <PublicProfileCategoryTabs favorites={favorites} cineGraph={cineGraph} userId={id} />
+      <PublicProfileCategoryTabs
+        favorites={favorites}
+        cineGraph={cineGraph}
+        userId={id}
+        initialCategory={tab === "favorites" ? "favorites" : undefined}
+      />
     </ScrollView>
   );
 }

@@ -14,6 +14,7 @@ import ActivityLog from "../models/ActivityLog.js";
 import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
 import FollowRequest from "../models/FollowRequest.js";
+import FavoriteEvent from "../models/FavoriteEvent.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -576,14 +577,28 @@ export const updateFavorites = async (req, res) => {
 
   try {
     const fieldToUpdate = type === 'movie' ? 'favoriteMovies' : 'favoriteSeries';
-    
+
+    // This is a whole-list replace, not an add/remove toggle — diff against
+    // the *previous* list (already on req.user, no extra fetch needed) to
+    // find ids that are genuinely new, and log only those as FavoriteEvents
+    // for the network Activity feed. Never logs removals or a re-submit of
+    // an id that was already present.
+    const previousIds = new Set((req.user[fieldToUpdate] || []).map((id) => id.toString()));
+    const newlyAddedIds = list.filter((id) => !previousIds.has(id.toString()));
+
     // 1. Update user's list
     await User.findByIdAndUpdate(
       userId,
       { [fieldToUpdate]: list }, // Replace list directly with the new list from request
       { new: true, runValidators: true }
     );
-    
+
+    if (newlyAddedIds.length) {
+      await FavoriteEvent.insertMany(
+        newlyAddedIds.map((contentId) => ({ user: userId, contentId, contentType: type }))
+      );
+    }
+
     // 2. UPDATE: No populate. Just return the current list of IDs.
     res.status(200).json(list);
 

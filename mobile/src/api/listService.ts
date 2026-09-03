@@ -76,3 +76,13 @@ export async function toggleListLike(id: string): Promise<{ likeCount: number; h
   const res = await API.post(API_ROUTES.LISTS.TOGGLE_LIKE(id));
   return res.data;
 }
+
+export async function getListsForContent(
+  contentType: ContentType,
+  contentId: string,
+  page = 1,
+  limit = 20
+): Promise<{ lists: DiscoverListItem[]; page: number; hasMore: boolean }> {
+  const res = await API.get(API_ROUTES.LISTS.FOR_CONTENT(contentType, contentId), { params: { page, limit } });
+  return res.data;
+}

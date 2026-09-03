@@ -18,6 +18,18 @@ import { syncTMDBTrending } from "./services/tmdbSyncService.js";
 
 dotenv.config();
 const app = express();
+// Express 5 defaults to the "simple" query parser (Node's built-in
+// querystring), which does NOT understand bracket-array syntax
+// (?genres[]=Comedy&genres[]=Drama) — it parses "genres[]" as a literal key
+// name, leaving req.query.genres undefined. axios's default array-param
+// serialization always uses that bracket syntax (confirmed: even a single-
+// element array becomes ?genres[]=Comedy), so any GET endpoint reading an
+// array off req.query silently got an empty/undefined value for every array
+// param sent by the mobile app — this is what broke CineMatch's genre
+// filter on /match/swipe/queue. "extended" restores the old Express 4
+// default (the qs package, already present in node_modules), which parses
+// both bracket and repeated-key array syntax correctly.
+app.set('query parser', 'extended');
 app.use(helmet());
 
 const allowedOrigins = process.env.FRONTEND_URL

@@ -12,6 +12,7 @@ import {
   DMSans_400Regular_Italic,
   DMSans_500Medium,
   DMSans_700Bold,
+  DMSans_800ExtraBold,
 } from "@expo-google-fonts/dm-sans";
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
 import { NotificationProvider } from "../src/context/NotificationContext";
@@ -107,6 +108,7 @@ export default function RootLayout() {
     DMSans_400Regular_Italic,
     DMSans_500Medium,
     DMSans_700Bold,
+    DMSans_800ExtraBold,
   });
   const [i18nReady, setI18nReady] = useState(false);
   const [initialTheme, setInitialTheme] = useState<ThemeName | null>(null);

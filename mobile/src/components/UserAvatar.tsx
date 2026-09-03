@@ -47,7 +47,7 @@ export default function UserAvatar({ userId, username, profilePicUrl, size = 40,
         ) : (
           <View style={[styles.fallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
             <Text style={[styles.fallbackText, { fontSize: innerSize * 0.32 }]}>
-              {username.slice(0, 2).toUpperCase()}
+              {(username || "?").slice(0, 2).toUpperCase()}
             </Text>
           </View>
         )

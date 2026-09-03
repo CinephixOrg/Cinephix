@@ -38,6 +38,86 @@ const withLikeMeta = (reviews, userId) =>
     };
   });
 
+// Bulk-fetches movie/series title+poster for a set of already-aggregated
+// review docs (each already carrying `likeCount`/`rating`/a populated
+// `user`) and shapes the final {_id,user,text,createdAt,likeCount,hasLiked,
+// rating,content} response item — shared by getPopularReviews and
+// getReviewsFeed, both of which run the same aggregation shape up to this
+// point and only differ in their $match/$sort/$skip stages before it.
+// Was two separate `.find()`s (movies, series) — folded into one aggregation
+// seeded from the already-fetched `reviews`' distinct content refs via
+// Mongo's `$documents` stage, joined against both `movies`/`series` by id
+// (plain equality $lookup, not correlated — see activityController.js's
+// getNetworkActivity for why that distinction matters at volume) and
+// picking whichever matched. `$documents` needs a database-level
+// {aggregate:1} command, which Model.aggregate() can't issue (always
+// collection-scoped), hence the raw driver's db.aggregate() rather than a
+// Model call. Review.contentId is a plain String while movies/series `_id`
+// is a real ObjectId (Mongoose defaults `_id` to ObjectId even under
+// `strict:false`) — the $convert step bridges that; a malformed id just
+// fails to match rather than throwing.
+async function hydrateReviewResults(reviews, userId) {
+  if (reviews.length === 0) return [];
+  const contentDocs = [
+    ...new Map(reviews.map((r) => [`${r.contentType}:${r.contentId}`, { contentId: r.contentId, contentType: r.contentType }])).values(),
+  ];
+
+  const hydratedContent = await mongoose.connection.db
+    .aggregate([
+      { $documents: contentDocs },
+      { $addFields: { _cidOid: { $convert: { input: "$contentId", to: "objectId", onError: null, onNull: null } } } },
+      {
+        $lookup: {
+          from: "movies",
+          localField: "_cidOid",
+          foreignField: "_id",
+          pipeline: [{ $project: { title: 1, name: 1, poster_path: 1 } }],
+          as: "_movieMatch",
+        },
+      },
+      {
+        $lookup: {
+          from: "series",
+          localField: "_cidOid",
+          foreignField: "_id",
+          pipeline: [{ $project: { title: 1, name: 1, poster_path: 1 } }],
+          as: "_seriesMatch",
+        },
+      },
+      {
+        $addFields: {
+          _item: { $cond: [{ $eq: ["$contentType", "movie"] }, { $arrayElemAt: ["$_movieMatch", 0] }, { $arrayElemAt: ["$_seriesMatch", 0] }] },
+        },
+      },
+      { $match: { _item: { $ne: null } } },
+      { $project: { _id: 0, contentId: 1, contentType: 1, item: "$_item" } },
+    ])
+    .toArray();
+
+  const contentMap = Object.fromEntries(hydratedContent.map((h) => [`${h.contentType}:${h.contentId}`, h.item]));
+
+  return reviews.reduce((acc, r) => {
+    const item = contentMap[`${r.contentType}:${r.contentId}`];
+    if (!item) return acc;
+    acc.push({
+      _id: r._id,
+      user: r.user,
+      text: r.text,
+      createdAt: r.createdAt,
+      likeCount: r.likeCount,
+      hasLiked: r.likes?.some((id) => id.toString() === userId),
+      rating: r.rating ?? null,
+      content: {
+        id: r.contentId,
+        title: item.title || item.name,
+        poster_path: item.poster_path,
+        type: r.contentType,
+      },
+    });
+    return acc;
+  }, []);
+}
+
 /**
  * @route  GET /api/reviews/content/:contentId
  * @access Public (optionalAuth — includes hasLiked if logged in)
@@ -176,40 +256,79 @@ export const getPopularReviews = asyncHandler(async (req, res) => {
 
   if (reviews.length === 0) return sendSuccess(res, [], "No popular reviews yet");
 
-  // Bulk-fetch content titles and posters
-  const movieIds = reviews.filter((r) => r.contentType === "movie").map((r) => r.contentId);
-  const seriesIds = reviews.filter((r) => r.contentType === "series").map((r) => r.contentId);
-
-  const [movies, seriesList] = await Promise.all([
-    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
-    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
-  ]);
-
-  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
-  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
-
-  const result = reviews.reduce((acc, r) => {
-    const item = r.contentType === "movie" ? movieMap[r.contentId] : seriesMap[r.contentId];
-    if (!item) return acc;
-    acc.push({
-      _id: r._id,
-      user: r.user,
-      text: r.text,
-      createdAt: r.createdAt,
-      likeCount: r.likeCount,
-      hasLiked: r.likes?.some((id) => id.toString() === userId),
-      rating: r.rating ?? null,
-      content: {
-        id: r.contentId,
-        title: item.title || item.name,
-        poster_path: item.poster_path,
-        type: r.contentType,
-      },
-    });
-    return acc;
-  }, []);
+  const result = await hydrateReviewResults(reviews, userId);
 
   sendSuccess(res, result, "Popular reviews fetched");
+});
+
+/**
+ * @route  GET /api/reviews/feed?page=&limit=
+ * @access Private
+ * Discover's Reviews tab feed — a single paginated query replacing what
+ * used to be two separate, non-paginated calls (getPopularReviews +
+ * getReviewsFromFriends) merged client-side. Friends' reviews surface
+ * first (ranked by their own popularity), then everyone else's, also by
+ * popularity — expressed as one sort key (`isFriend` computed in the
+ * aggregation itself) rather than two independently-paginated queries,
+ * so a single page is always correctly ordered and never repeats an item
+ * across pages.
+ */
+export const getReviewsFeed = asyncHandler(async (req, res) => {
+  const userId = req.user._id.toString();
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(parseInt(req.query.limit) || 15, 30);
+
+  // authMiddleware already fetched the caller's full document (and
+  // coalesces concurrent lookups for the same request burst) — reusing
+  // `req.user.following` instead of re-fetching it here removes one more
+  // redundant round trip.
+  const followingIds = req.user.following || [];
+
+  const [reviews, total] = await Promise.all([
+    Review.aggregate([
+      {
+        $addFields: {
+          likeCount: { $size: { $ifNull: ["$likes", []] } },
+          isFriend: { $in: ["$user", followingIds] },
+        },
+      },
+      { $sort: { isFriend: -1, likeCount: -1, createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+          pipeline: [{ $project: { username: 1, profile_pic_url: 1 } }],
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $lookup: {
+          from: "ratings",
+          let: { reviewUser: "$user._id", reviewContentId: "$contentId" },
+          pipeline: [
+            { $match: { $expr: { $and: [{ $eq: ["$user", "$$reviewUser"] }, { $eq: ["$contentId", "$$reviewContentId"] }] } } },
+            { $project: { value: 1 } },
+          ],
+          as: "ratingDoc",
+        },
+      },
+      { $addFields: { rating: { $ifNull: [{ $arrayElemAt: ["$ratingDoc.value", 0] }, null] } } },
+    ]),
+    Review.countDocuments({}),
+  ]);
+
+  const hydrated = await hydrateReviewResults(reviews, userId);
+  // hydrateReviewResults can drop entries whose content lookup failed
+  // (orphaned contentId) — reattach isFriend by _id rather than assuming
+  // index alignment with the pre-hydration `reviews` array.
+  const friendIds = new Set(reviews.filter((r) => r.isFriend).map((r) => r._id.toString()));
+  const items = hydrated.map((r) => ({ ...r, fromFriend: friendIds.has(r._id.toString()) }));
+
+  sendSuccess(res, { items, page, hasMore: page * limit < total }, "Reviews feed fetched");
 });
 
 /**

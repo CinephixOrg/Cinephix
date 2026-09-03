@@ -16,12 +16,16 @@ const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 interface Props {
   review: PopularReview;
   basePath: "/home" | "/search";
+  // Discover's merged Popular+Friends feed marks friend-sourced reviews
+  // inline instead of putting them in their own section — a small tag
+  // next to the title rather than a structural split.
+  fromFriend?: boolean;
 }
 
 // Reviews tab card — replaces PopularReviewCard's vertical rail layout with
 // a horizontal one: poster on the left, profile beside it (not below), with
 // the reviewer's rating and review text directly under the profile.
-export default function ReviewFeedCard({ review, basePath }: Props) {
+export default function ReviewFeedCard({ review, basePath, fromFriend }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -44,7 +48,18 @@ export default function ReviewFeedCard({ review, basePath }: Props) {
         posterFallback: { alignItems: "center", justifyContent: "center" },
         posterFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
         body: { flex: 1 },
-        title: { fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
+        titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+        title: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
+        friendChip: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 3,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+          borderRadius: 8,
+          backgroundColor: `${colors.primary}1A`,
+        },
+        friendChipText: { fontSize: 9, fontFamily: fonts.bold, color: colors.primary },
         reviewerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
         reviewerName: { fontSize: 12, color: colors.baseContent, fontFamily: fonts.medium, flexShrink: 1 },
         ratingRow: { marginTop: 3 },
@@ -90,9 +105,17 @@ export default function ReviewFeedCard({ review, basePath }: Props) {
       )}
 
       <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={1}>
-          {review.content.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {review.content.title}
+          </Text>
+          {fromFriend && (
+            <View style={styles.friendChip}>
+              <Ionicons name="people" size={9} color={colors.primary} />
+              <Text style={styles.friendChipText}>{t("Friends")}</Text>
+            </View>
+          )}
+        </View>
 
         <Pressable style={styles.reviewerRow} onPress={() => router.push(`/user/${review.user._id}`)}>
           <UserAvatar userId={review.user._id} username={review.user.username} profilePicUrl={review.user.profile_pic_url} size={20} />
