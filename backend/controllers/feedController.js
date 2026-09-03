@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
+import Share from "../models/Share.js";
 import Notification from "../models/Notification.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
@@ -304,25 +305,86 @@ async function getPopularAdds({ matchUsers, type, limit, sinceDate }) {
   const seriesIds = sorted.filter((c) => c.itemType === "series").map((c) => c.itemId);
   const allAdderIds = [...new Set(sorted.flatMap((c) => c.adderIds.map((id) => id.toString())))];
 
-  const [movies, seriesList, adders] = await Promise.all([
-    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
-    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
+  const [hydrated, adders, ratingStats] = await Promise.all([
+    // Movies and series were two separate `.find()`s before — folded into
+    // one aggregation seeded from `sorted` (already computed above) via
+    // $documents, each item joined against both `movies` and `series` by id
+    // (plain equality $lookup, not a correlated one — see
+    // activityController.js's own getNetworkActivity for why that
+    // distinction matters at volume) and picking whichever matched.
+    // $documents needs a database-level {aggregate:1} command, not a
+    // collection-scoped one, hence the raw driver's db.aggregate() rather
+    // than a Model.aggregate() call. `itemId` is a String here (this
+    // function's own JS-side dedupe/count step normalizes it via
+    // `.toString()`) but `movies`/`series` `_id` is a real ObjectId
+    // (Mongoose defaults `_id` to ObjectId even under `strict:false`) — the
+    // $convert step bridges that; a malformed id just fails to match rather
+    // than throwing.
+    mongoose.connection.db
+      .aggregate([
+        { $documents: sorted.map((c) => ({ itemId: c.itemId, itemType: c.itemType })) },
+        { $addFields: { _itemIdOid: { $convert: { input: "$itemId", to: "objectId", onError: null, onNull: null } } } },
+        {
+          $lookup: {
+            from: "movies",
+            localField: "_itemIdOid",
+            foreignField: "_id",
+            pipeline: [{ $project: { title: 1, name: 1, poster_path: 1, release_date: 1 } }],
+            as: "_movieMatch",
+          },
+        },
+        {
+          $lookup: {
+            from: "series",
+            localField: "_itemIdOid",
+            foreignField: "_id",
+            pipeline: [{ $project: { title: 1, name: 1, poster_path: 1, first_air_date: 1 } }],
+            as: "_seriesMatch",
+          },
+        },
+        {
+          $addFields: {
+            _item: { $cond: [{ $eq: ["$itemType", "movie"] }, { $arrayElemAt: ["$_movieMatch", 0] }, { $arrayElemAt: ["$_seriesMatch", 0] }] },
+          },
+        },
+        { $match: { _item: { $ne: null } } },
+        { $project: { _id: 0, itemId: 1, itemType: 1, item: "$_item" } },
+      ])
+      .toArray(),
     allAdderIds.length ? User.find({ _id: { $in: allAdderIds } }).select("username profile_pic_url").lean() : [],
+    // Bulk average — one aggregation for the whole rail rather than a
+    // per-item lookup (getAllRatingsForContent's own per-content-page
+    // pattern doesn't scale to a 20-40 item rail). Rating.value is 1-10;
+    // stays that scale on the wire, same as everywhere else in this app —
+    // StarRatingDisplay already halves it to a 5-star scale itself.
+    [...movieIds, ...seriesIds].length
+      ? Rating.aggregate([
+          { $match: { contentId: { $in: [...movieIds, ...seriesIds] } } },
+          { $group: { _id: "$contentId", avgRating: { $avg: "$value" }, ratingCount: { $sum: 1 } } },
+        ])
+      : [],
   ]);
 
-  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
-  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+  const itemMap = Object.fromEntries(hydrated.map((h) => [h.itemId, h.item]));
   const adderMap = Object.fromEntries(adders.map((u) => [u._id.toString(), u]));
+  const ratingMap = Object.fromEntries(ratingStats.map((r) => [r._id, { avgRating: r.avgRating, ratingCount: r.ratingCount }]));
 
   return sorted.reduce((acc, c) => {
-    const item = c.itemType === "movie" ? movieMap[c.itemId] : seriesMap[c.itemId];
+    const item = itemMap[c.itemId];
     if (!item) return acc;
+    // Same release_date/first_air_date → releaseYear extraction shareController.js's
+    // hydrateContentData already does for review/recommendation shares.
+    const date = c.itemType === "movie" ? item.release_date : item.first_air_date;
+    const rating = ratingMap[c.itemId];
     acc.push({
       content: {
         id: c.itemId,
         title: item.title || item.name,
         poster_path: item.poster_path,
         type: c.itemType,
+        releaseYear: date ? new Date(date).getFullYear() : undefined,
+        avgRating: rating?.avgRating,
+        ratingCount: rating?.ratingCount,
       },
       addCount: c.count,
       topAdders: c.adderIds.map((id) => adderMap[id.toString()]).filter(Boolean),
@@ -341,13 +403,15 @@ export const getPopularThisWeek = asyncHandler(async (req, res) => {
 });
 
 export const getPopularWithFriends = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
   const limit = Math.min(parseInt(req.query.limit) || 20, 40);
   const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const currentUser = await User.findById(userId).select("following").lean();
-  const followingIds = currentUser?.following || [];
+  // authMiddleware already fetched the caller's full document (and
+  // coalesces concurrent lookups for the same request burst) — reusing
+  // `req.user.following` instead of re-fetching it here removes one more
+  // redundant round trip.
+  const followingIds = req.user.following || [];
 
   if (followingIds.length === 0) {
     return sendSuccess(res, [], "No popular-with-friends content this week");
@@ -355,6 +419,191 @@ export const getPopularWithFriends = asyncHandler(async (req, res) => {
 
   const result = await getPopularAdds({ matchUsers: followingIds, type, limit, sinceDate: oneWeekAgo });
   sendSuccess(res, result, "Popular with friends fetched");
+});
+
+// A single rated/favorited item can silently drop below the movie/series
+// bulk-hydration step (orphaned contentId) — filters those out the same
+// way getPopularAdds's own reduce does.
+async function hydrateLeaderboardEntries(entries) {
+  const movieIds = entries.filter((e) => e.itemType === "movie").map((e) => e.itemId);
+  const seriesIds = entries.filter((e) => e.itemType === "series").map((e) => e.itemId);
+
+  const [movies, seriesList] = await Promise.all([
+    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
+    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
+  ]);
+  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
+  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+
+  return entries.reduce((acc, e) => {
+    const item = e.itemType === "movie" ? movieMap[e.itemId] : seriesMap[e.itemId];
+    if (!item) return acc;
+    acc.push({
+      ...e,
+      content: {
+        id: e.itemId,
+        title: item.title || item.name,
+        poster_path: item.poster_path,
+        type: e.itemType,
+      },
+    });
+    return acc;
+  }, []);
+}
+
+// A single vote (10/10 from one person) shouldn't be able to top the
+// "highest rated" leaderboard over something 50 people rated 8/10 —
+// requires at least this many Cinephix ratings to qualify.
+const LEADERBOARD_MIN_RATING_COUNT = 3;
+const LEADERBOARD_SIZE = 3;
+
+// @route GET /api/feed/leaderboard
+// Discover's Most Favorited / Highest Rated / Most Recommended podium —
+// all-time, content-only signals (complements the This-Week-scoped
+// Trending rails above them on the same page). All 3 default to combined
+// movie+series rankings (matching how Friends' Choice already mixes types
+// in one rail), but accept an optional ?type=movie|series to scope all 3
+// lists to one content type at once — the podium's own mode toggle, same
+// "ignore anything not exactly movie/series" validation as
+// getPopularWithFriends's own type param. Each list carries only its own
+// metric (no cross-enrichment) — an earlier version showed both favorite
+// count and rating on every card regardless of list, but the user's own
+// follow-up simplified the podium back to one metric per page, so the
+// heavier "fetch every rating ever given" query that cross-enrichment
+// needed is gone too, not just unused on the client.
+export const getLeaderboard = asyncHandler(async (req, res) => {
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+
+  const [movieFavStats, seriesFavStats, ratingStats, recommendStats] = await Promise.all([
+    type && type !== "movie"
+      ? []
+      : User.aggregate([
+          { $match: { favoriteMovies: { $exists: true, $ne: [] } } },
+          { $unwind: "$favoriteMovies" },
+          { $group: { _id: "$favoriteMovies", favoriteCount: { $sum: 1 } } },
+        ]),
+    type && type !== "series"
+      ? []
+      : User.aggregate([
+          { $match: { favoriteSeries: { $exists: true, $ne: [] } } },
+          { $unwind: "$favoriteSeries" },
+          { $group: { _id: "$favoriteSeries", favoriteCount: { $sum: 1 } } },
+        ]),
+    Rating.aggregate([
+      ...(type ? [{ $match: { contentType: type } }] : []),
+      { $group: { _id: { itemId: "$contentId", itemType: "$contentType" }, avgRating: { $avg: "$value" }, ratingCount: { $sum: 1 } } },
+      { $match: { ratingCount: { $gte: LEADERBOARD_MIN_RATING_COUNT } } },
+      { $sort: { avgRating: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]),
+    Share.aggregate([
+      { $match: { type: "recommendation", ...(type ? { contentType: type } : {}) } },
+      { $group: { _id: { itemId: "$contentId", itemType: "$contentType" }, recommendCount: { $sum: 1 } } },
+      { $sort: { recommendCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]),
+  ]);
+
+  const mostFavoritedEntries = [
+    ...movieFavStats.map((s) => ({ itemId: s._id.toString(), itemType: "movie", favoriteCount: s.favoriteCount })),
+    ...seriesFavStats.map((s) => ({ itemId: s._id.toString(), itemType: "series", favoriteCount: s.favoriteCount })),
+  ]
+    .sort((a, b) => b.favoriteCount - a.favoriteCount)
+    .slice(0, LEADERBOARD_SIZE);
+
+  const highestRatedEntries = ratingStats.map((r) => ({
+    itemId: r._id.itemId,
+    itemType: r._id.itemType,
+    avgRating: r.avgRating,
+    ratingCount: r.ratingCount,
+  }));
+
+  const mostRecommendedEntries = recommendStats.map((r) => ({
+    itemId: r._id.itemId,
+    itemType: r._id.itemType,
+    recommendCount: r.recommendCount,
+  }));
+
+  const [mostFavorited, highestRated, mostRecommended] = await Promise.all([
+    hydrateLeaderboardEntries(mostFavoritedEntries),
+    hydrateLeaderboardEntries(highestRatedEntries),
+    hydrateLeaderboardEntries(mostRecommendedEntries),
+  ]);
+
+  sendSuccess(res, { mostFavorited, highestRated, mostRecommended }, "Leaderboard fetched");
+});
+
+// @route GET /api/feed/people-leaderboard
+// Medya/Shares' own podium — ranks people, not content, so it lives on
+// the social tab rather than Discover (Discover's podium above is
+// deliberately content-only; a "top users" ranking doesn't help anyone
+// find something to watch, which is Discover's whole point). Most
+// Followed (social reach), Most Watched (consumption volume, from the
+// `watchlist` field — the *already-watched* list, not `toWatchList`),
+// Most Reviewed (contribution — a real, already-existing signal with
+// built-in gaming resistance since a review takes real effort). Only Most
+// Watched has a movie/series dimension, so `?type=` only actually changes
+// that one list — Most Followed/Most Reviewed ignore it, same as how
+// Most Favorited/Highest Rated above already behave under `getLeaderboard`.
+export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+
+  const [followedRaw, watchedRaw, reviewedRaw] = await Promise.all([
+    User.aggregate([
+      { $project: { username: 1, profile_pic_url: 1, accountTier: 1, followerCount: { $size: { $ifNull: ["$followers", []] } } } },
+      { $match: { followerCount: { $gte: 1 } } },
+      { $sort: { followerCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]),
+    User.aggregate([
+      {
+        $project: {
+          username: 1,
+          profile_pic_url: 1,
+          accountTier: 1,
+          watchedCount: type
+            ? { $size: { $filter: { input: { $ifNull: ["$watchlist", []] }, cond: { $eq: ["$$this.itemType", type] } } } }
+            : { $size: { $ifNull: ["$watchlist", []] } },
+        },
+      },
+      { $match: { watchedCount: { $gte: 1 } } },
+      { $sort: { watchedCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]),
+    Review.aggregate([
+      { $group: { _id: "$user", reviewCount: { $sum: 1 } } },
+      { $sort: { reviewCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]),
+  ]);
+
+  // mostReviewed only carries {_id, reviewCount} off the Review collection
+  // — bulk-hydrate user identity, same "bulk lookup, drop anything
+  // missing" shape as hydrateLeaderboardEntries above.
+  const reviewedUsers = await User.find({ _id: { $in: reviewedRaw.map((r) => r._id) } })
+    .select("username profile_pic_url accountTier")
+    .lean();
+  const reviewedUserMap = new Map(reviewedUsers.map((u) => [u._id.toString(), u]));
+
+  const mostFollowed = followedRaw.map((d) => ({
+    user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
+    followerCount: d.followerCount,
+  }));
+  const mostWatched = watchedRaw.map((d) => ({
+    user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
+    watchedCount: d.watchedCount,
+  }));
+  const mostReviewed = reviewedRaw
+    .filter((r) => reviewedUserMap.has(r._id.toString()))
+    .map((r) => {
+      const u = reviewedUserMap.get(r._id.toString());
+      return {
+        user: { id: u._id.toString(), username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
+        reviewCount: r.reviewCount,
+      };
+    });
+
+  sendSuccess(res, { mostFollowed, mostWatched, mostReviewed }, "People leaderboard fetched");
 });
 
 export const getRecommendations = asyncHandler(async (req, res) => {

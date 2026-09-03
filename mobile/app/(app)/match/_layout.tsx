@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import NotificationBell from "../../../src/components/NotificationBell";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
@@ -15,10 +14,10 @@ export default function MatchStackLayout() {
         headerTintColor: colors.baseContent,
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{ title: t("Cinematch"), headerRight: () => <NotificationBell /> }}
-      />
+      {/* headerShown:false removes this screen's own top header, including
+          the NotificationBell that used to live in its headerRight — that
+          bell has no other access point on this screen now. */}
+      <Stack.Screen name="index" options={{ title: t("Sync"), headerShown: false }} />
     </Stack>
   );
 }

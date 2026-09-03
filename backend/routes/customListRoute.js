@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
-import User from "../models/User.js";
 
 const router = express.Router();
 
@@ -14,35 +13,80 @@ const getSeries = () => mongoose.connection.model("Series");
 // worst a ReDoS-shaped query).
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Attaches previewItems (title+poster for the first 5 items of each list,
+// Attaches previewItems (title+poster for the first N items of each list,
 // bulk-hydrated the same way feedController.js/reviewController.js resolve
-// content) and likeCount — used by both /discover and /popular, which return
-// otherwise-differently-sourced list arrays in the same enriched shape.
-async function hydratePreviewItems(lists) {
-  const previewSlices = lists.map((l) => l.items.slice(0, 5));
-  const movieIds = new Set();
-  const seriesIds = new Set();
+// content) and likeCount — used by /discover, /popular, and /for-content,
+// which return otherwise-differently-sourced list arrays in the same
+// enriched shape. Exported for shareController.js's "list"-type
+// createShare, which needs the exact same denormalized snapshot shape.
+// `limit` defaults to 5, but /discover, /popular, and /for-content all now
+// pass 20 explicitly — DiscoverListCard.tsx's own poster preview switched
+// from a small fixed-count cascade to a scrollable "film strip" (same
+// technique as Medya's own list-post box, see shareController.js's
+// createShare), so a fixed 5-item cap now silently truncated real content
+// and made a strip with nothing to scroll past on lists that had more.
+// /me stays at the bare default (5) — that route backs list *management*,
+// not the film-strip card.
+// Was two separate `.find()`s (movies, series) — folded into one aggregation
+// seeded from the distinct item refs across every list's own preview slice
+// via Mongo's `$documents` stage, joined against both `movies`/`series` by
+// id (plain equality $lookup, not correlated — see activityController.js's
+// getNetworkActivity for why that distinction matters at volume) and
+// picking whichever matched. `$documents` needs a database-level
+// {aggregate:1} command, which Model.aggregate() can't issue (always
+// collection-scoped), hence the raw driver's db.aggregate() rather than a
+// Model call. `CustomList.items[].itemId` is already schema-typed
+// ObjectId (unlike Review/Rating's String `contentId`), so no $convert
+// step is needed here — it matches `movies`/`series` `_id` directly.
+export async function hydratePreviewItems(lists, limit = 5) {
+  const previewSlices = lists.map((l) => l.items.slice(0, limit));
+  const allItems = [];
   for (const slice of previewSlices) {
-    for (const item of slice) {
-      if (item.itemType === "movie") movieIds.add(item.itemId.toString());
-      else seriesIds.add(item.itemId.toString());
-    }
+    for (const item of slice) allItems.push({ itemId: item.itemId, itemType: item.itemType });
   }
+  const uniqueItems = [...new Map(allItems.map((it) => [`${it.itemType}:${it.itemId.toString()}`, it])).values()];
 
-  const [movies, seriesList] = await Promise.all([
-    movieIds.size ? getMovie().find({ _id: { $in: [...movieIds] } }).select("_id title name poster_path").lean() : [],
-    seriesIds.size ? getSeries().find({ _id: { $in: [...seriesIds] } }).select("_id title name poster_path").lean() : [],
-  ]);
+  const hydrated = uniqueItems.length
+    ? await mongoose.connection.db
+        .aggregate([
+          { $documents: uniqueItems.map((it) => ({ itemId: it.itemId, itemType: it.itemType })) },
+          {
+            $lookup: {
+              from: "movies",
+              localField: "itemId",
+              foreignField: "_id",
+              pipeline: [{ $project: { title: 1, name: 1, poster_path: 1 } }],
+              as: "_movieMatch",
+            },
+          },
+          {
+            $lookup: {
+              from: "series",
+              localField: "itemId",
+              foreignField: "_id",
+              pipeline: [{ $project: { title: 1, name: 1, poster_path: 1 } }],
+              as: "_seriesMatch",
+            },
+          },
+          {
+            $addFields: {
+              _item: { $cond: [{ $eq: ["$itemType", "movie"] }, { $arrayElemAt: ["$_movieMatch", 0] }, { $arrayElemAt: ["$_seriesMatch", 0] }] },
+            },
+          },
+          { $match: { _item: { $ne: null } } },
+          { $project: { _id: 0, itemId: 1, itemType: 1, item: "$_item" } },
+        ])
+        .toArray()
+    : [];
 
-  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
-  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+  const itemMap = Object.fromEntries(hydrated.map((h) => [`${h.itemType}:${h.itemId.toString()}`, h.item]));
 
   return lists.map((l, i) => ({
     ...l,
     likeCount: (l.likes || []).length,
     previewItems: previewSlices[i]
       .map((item) => {
-        const doc = item.itemType === "movie" ? movieMap[item.itemId.toString()] : seriesMap[item.itemId.toString()];
+        const doc = itemMap[`${item.itemType}:${item.itemId.toString()}`];
         if (!doc) return null;
         return {
           itemId: item.itemId.toString(),
@@ -59,8 +103,11 @@ async function hydratePreviewItems(lists) {
 router.get("/discover", authMiddleware, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-    const currentUser = await User.findById(req.user._id).select("following").lean();
-    const followingIds = currentUser?.following || [];
+    // authMiddleware already fetched the caller's full document (and
+    // coalesces concurrent lookups for the same request burst) — reusing
+    // `req.user.following` instead of re-fetching it here removes one more
+    // redundant round trip.
+    const followingIds = req.user.following || [];
 
     // Public lists from followed users
     const followedLists = followingIds.length
@@ -98,7 +145,7 @@ router.get("/discover", authMiddleware, async (req, res) => {
         fromFollowing: followingIds.some((id) => id.toString() === l.owner._id.toString()),
       }));
 
-    return res.json({ lists: await hydratePreviewItems(lists) });
+    return res.json({ lists: await hydratePreviewItems(lists, 20) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
@@ -114,8 +161,15 @@ router.get("/popular", authMiddleware, async (req, res) => {
     const lists = await CustomList.aggregate([
       { $match: { isPublic: true } },
       ...(q ? [{ $match: { name: { $regex: escapeRegex(q), $options: "i" } } }] : []),
-      { $addFields: { likeCount: { $size: { $ifNull: ["$likes", []] } } } },
-      { $sort: { likeCount: -1, updatedAt: -1 } },
+      {
+        $addFields: {
+          likeCount: { $size: { $ifNull: ["$likes", []] } },
+          // Likes are a deliberate, stronger intent signal than a passive
+          // view, so they're weighted 5:1 against raw view count.
+          popularityScore: { $add: [{ $multiply: [{ $size: { $ifNull: ["$likes", []] } }, 5] }, { $ifNull: ["$views", 0] }] },
+        },
+      },
+      { $sort: { popularityScore: -1, updatedAt: -1 } },
       { $limit: limit },
       {
         $lookup: {
@@ -129,7 +183,38 @@ router.get("/popular", authMiddleware, async (req, res) => {
       { $unwind: "$owner" },
     ]);
 
-    return res.json({ lists: await hydratePreviewItems(lists) });
+    return res.json({ lists: await hydratePreviewItems(lists, 20) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── GET /api/lists/for-content/:contentType/:contentId ── public lists
+// that contain this specific movie/series — backs Content Detail's "Lists"
+// stat button. Didn't exist before: contentStatsRoute.js's own listCount
+// only ever needed a bare `countDocuments`, never the actual documents.
+router.get("/for-content/:contentType/:contentId", authMiddleware, async (req, res) => {
+  try {
+    const { contentType, contentId } = req.params;
+    if (!["movie", "series"].includes(contentType)) {
+      return res.status(400).json({ message: "contentType must be movie or series" });
+    }
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+
+    const query = { isPublic: true, items: { $elemMatch: { itemId: contentId, itemType: contentType } } };
+    const [lists, total] = await Promise.all([
+      CustomList.find(query)
+        .sort({ updatedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("owner", "username profile_pic_url")
+        .lean(),
+      CustomList.countDocuments(query),
+    ]);
+
+    return res.json({ lists: await hydratePreviewItems(lists, 20), page, hasMore: page * limit < total });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });

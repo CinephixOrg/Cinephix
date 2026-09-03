@@ -20,6 +20,10 @@ export default function WatchlistStackLayout() {
         options={{ title: t("Watched List"), headerRight: () => <NotificationBell /> }}
       />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
+      <Stack.Screen name="content/[type]/[id]/reviews" options={{ title: t("Reviews") }} />
+      <Stack.Screen name="content/[type]/[id]/lists" options={{ title: t("Lists") }} />
+      <Stack.Screen name="content/[type]/[id]/watched" options={{ title: t("Watched") }} />
+      <Stack.Screen name="content/[type]/[id]/favorited" options={{ title: t("Favorites") }} />
     </Stack>
   );
 }

@@ -11,11 +11,13 @@ export const API_ROUTES = {
     GET_ALL: "/movies",
     GET_BY_ID: (id: string) => `/movies/${id}`,
     SEARCH: "/movies/search",
+    BULK: "/movies/bulk",
   },
   SERIES: {
     GET_ALL: "/series",
     GET_BY_ID: (id: string) => `/series/${id}`,
     SEARCH: "/series/search",
+    BULK: "/series/bulk",
   },
   RATINGS: {
     CREATE_OR_UPDATE: "/ratings",
@@ -26,6 +28,7 @@ export const API_ROUTES = {
   REVIEWS: {
     GET_POPULAR: "/reviews/popular",
     GET_FRIENDS_FEED: "/reviews/friends",
+    GET_FEED: "/reviews/feed",
     GET_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}`,
     GET_FRIENDS_FOR_CONTENT: (contentId: string) => `/reviews/content/${contentId}/friends`,
     CREATE_OR_UPDATE: "/reviews",
@@ -95,6 +98,8 @@ export const API_ROUTES = {
   CONTENT: {
     GET_STATS: (type: string, id: string) => `/content/${type}/${id}/stats`,
     GET_WATCHED_BY_FRIENDS: (type: string, id: string) => `/content/${type}/${id}/watched-by-friends`,
+    GET_WATCHED_BY: (type: string, id: string) => `/content/${type}/${id}/watched-by`,
+    GET_FAVORITED_BY: (type: string, id: string) => `/content/${type}/${id}/favorited-by`,
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
@@ -108,20 +113,26 @@ export const API_ROUTES = {
       `/lists/${id}/items/${itemId}?itemType=${itemType}`,
     DISCOVER: "/lists/discover",
     POPULAR: "/lists/popular",
+    FOR_CONTENT: (contentType: string, contentId: string) => `/lists/for-content/${contentType}/${contentId}`,
     TOGGLE_LIKE: (id: string) => `/lists/${id}/like`,
   },
   FEED: {
     POPULAR_THIS_WEEK: "/feed/popular-this-week",
     POPULAR_WITH_FRIENDS: "/feed/popular-with-friends",
     GET_FEED: "/feed",
+    LEADERBOARD: "/feed/leaderboard",
+    PEOPLE_LEADERBOARD: "/feed/people-leaderboard",
+    ACTIVITY: "/feed/activity",
   },
   MATCH: {
     FIND: "/match",
     ANALYZE: (id: string) => `/match/${id}/analyze`,
     WITH_USER: (id: string) => `/match/${id}`,
     SWIPE_QUEUE: "/match/swipe/queue",
-    SWIPE: "/match/swipe",
-    SWIPE_REJECTED: "/match/swipe/rejected",
+    SHARED_GENRE_CONTENT: (id: string) => `/match/${id}/shared-genre-content`,
+    CONTENT_RATINGS: (id: string) => `/match/${id}/content-ratings`,
+    RECENT_ACTIVITY: (id: string) => `/match/${id}/recent-activity`,
+    MUTUAL_CONNECTIONS: (id: string) => `/match/${id}/mutual-connections`,
   },
   NOTIFICATIONS: {
     GET_ALL: "/notifications",

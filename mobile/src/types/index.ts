@@ -72,6 +72,63 @@ export interface PopularReview {
   hasLiked: boolean;
   rating: number | null; // 1-10, joined server-side from the Rating collection
   content: { id: string; title: string; poster_path?: string; type: ContentType };
+  // Only present on getReviewsFeed items (Discover's paginated Reviews
+  // tab) — server-computed there, not on getPopularReviews/getFriendsReviews.
+  fromFriend?: boolean;
+}
+
+export interface ReviewsFeedResult {
+  items: PopularReview[];
+  page: number;
+  hasMore: boolean;
+}
+
+// GET /feed/activity — Discover's "Friends' Activity" section: a
+// chronological feed of who-you-follow's real activity. A discriminated
+// union on `type` rather than one loose object so each event's own extra
+// fields (`value`, `excerpt`, `listId`/`listName`, `rating`) are only
+// accessible after narrowing.
+// `favorited` was added once favorite-adds got their own append-only event
+// log (`FavoriteEvent`, backend/models/FavoriteEvent.js) — the *existing*
+// `favoriteMovies`/`favoriteSeries` fields on User still have no per-item
+// timestamp and weren't touched (that would've meant migrating every
+// match-making/leaderboard/content-stats call site that reads them as
+// plain id arrays); this is a separate, additive log written only when a
+// favorite is genuinely newly added.
+// `list_item_added` — an item added to an *existing* list
+// (CustomList.items[].addedAt already existed for this, no schema change
+// needed). There used to be a sibling `list_created` variant too (a
+// brand-new list, rather than an item added to one) — dropped from this
+// feed entirely per direct request (this endpoint no longer generates it;
+// `getMyActivity`, a separate self-activity endpoint, still has its own
+// independent "created a list" concept, untouched).
+// `watchlist_added` no longer appears via *this* feed either (dropped for
+// the same reason `list_created` was — `rated`'s own redesign now covers
+// the same "I've engaged with this" signal, see ContentDetailScreen.tsx's
+// own "Add to Watched List to save" prompt on rating), but the type itself
+// stays in this union since ContentWatchedSection.tsx (Content Detail's own
+// "Watched by" list) still actively constructs and renders it via the same
+// `ActivityRow` component.
+export interface ActivityContent {
+  id: string;
+  title: string;
+  poster_path?: string;
+  type: ContentType;
+}
+export type ActivityEvent =
+  | { type: "rated"; actor: FeedUserRef; content: ActivityContent; value: number; createdAt: string }
+  | { type: "reviewed"; actor: FeedUserRef; content: ActivityContent; excerpt?: string; createdAt: string }
+  // `rating` (1-10, same scale as `rated.value`) is populated only if this
+  // same actor has also rated this same content — a bonus enrichment, not
+  // guaranteed present.
+  | { type: "watchlist_added"; actor: FeedUserRef; content: ActivityContent; rating?: number; createdAt: string }
+  | { type: "favorited"; actor: FeedUserRef; content: ActivityContent; createdAt: string }
+  | { type: "list_item_added"; actor: FeedUserRef; content: ActivityContent; listId: string; listName: string; createdAt: string };
+
+export interface ActivityFeedResult {
+  items: ActivityEvent[];
+  page: number;
+  hasMore: boolean;
 }
 
 export interface WatchlistItem {
@@ -255,34 +312,58 @@ export interface MatchUser {
   bio?: string;
 }
 
-export type SwipeDecision = "accept" | "reject";
+// The 5 weighted signals computeMatchBreakdown (backend) combines into
+// matchPercentage — always present now (was computed server-side all along,
+// previously discarded before reaching the client). Order here is heaviest-
+// weighted first.
+export interface MatchBreakdown {
+  collaborative: number;
+  contentBased: number;
+  social: number;
+  diversity: number;
+  bonus: number;
+}
 
-// GET /match/swipe/queue row — same shape for the swipe-away-forever queue
-// and (via the same `user` field) the Rejected list below.
+export interface MatchInsightGenre {
+  genre: string;
+  meCount: number;
+  targetCount: number;
+}
+
+export interface MatchFavoritesOverlap {
+  intersectionCount: number;
+  unionCount: number;
+  sharedIds: string[];
+  genreOnly: { mine: string[]; theirs: string[] };
+}
+
+export interface MatchSocialOverlap {
+  mutualFollowing: number;
+  mutualFollowers: number;
+  followingOverlapRate: number;
+  followersOverlapRate: number;
+}
+
+// Extra per-candidate detail computeMatchBreakdown already computed but
+// getSwipeQueue used to discard — surfaced for a future match-detail view,
+// not consumed by any component yet.
+export interface MatchInsights {
+  sharedGenres: MatchInsightGenre[];
+  favoritesOverlap: MatchFavoritesOverlap;
+  socialOverlap: MatchSocialOverlap;
+}
+
+// GET /match/swipe/queue row — one ranked match candidate.
 export interface SwipeCandidate {
   user: MatchUser;
   contentType: ContentType;
   matchPercentage: number;
+  breakdown: MatchBreakdown;
+  matchInsights?: MatchInsights;
 }
 
 export interface SwipeQueueResult {
   candidates: SwipeCandidate[];
-  swipesPerDay: number;
-  swipesUsedToday: number;
-}
-
-export interface SwipeResult {
-  decision: SwipeDecision;
-  followType: "following" | "requested" | null;
-  swipesRemainingToday: number;
-}
-
-// GET /match/swipe/rejected row — Pro/Premium/Dev only.
-export interface RejectedMatchEntry {
-  user: MatchUser;
-  contentType: ContentType;
-  matchPercentage: number;
-  rejectedAt: string;
 }
 
 export interface MatchWithUserResult {
@@ -317,6 +398,8 @@ export interface MatchAnalysis {
     weaknesses: string[];
     conversation_starters: string[];
     graph_ascii: string | string[];
+    // Absent on analyses fetched/cached before this field existed.
+    match_title?: string;
   };
   raw: unknown;
 }
@@ -520,9 +603,75 @@ export interface GroupMember {
 }
 
 export interface PopularThisWeekItem {
-  content: { id: string; title: string; poster_path?: string; type: ContentType };
+  content: {
+    id: string;
+    title: string;
+    poster_path?: string;
+    type: ContentType;
+    releaseYear?: number;
+    avgRating?: number; // 1-10 scale, bulk-averaged from Rating across all Cinephix users — same scale StarRatingDisplay already expects
+    ratingCount?: number;
+  };
   addCount: number;
   topAdders?: FeedUserRef[]; // up to 3, present on popular-this-week/popular-with-friends
+}
+
+// Discover's Most Favorited/Highest Rated/Most Recommended podium —
+// always exactly 3 entries per list, all-time content signals
+// (GET /feed/leaderboard). Each list carries only its own single metric
+// (no cross-enrichment — an earlier version showed both favorite count and
+// rating on every card regardless of list, simplified back to one metric
+// per page per a follow-up request).
+interface LeaderboardContent {
+  id: string;
+  title: string;
+  poster_path?: string;
+  type: ContentType;
+}
+export interface FavoritedLeaderboardItem {
+  content: LeaderboardContent;
+  favoriteCount: number;
+}
+export interface RatedLeaderboardItem {
+  content: LeaderboardContent;
+  avgRating: number; // 1-10 scale, same as everywhere else — StarRatingDisplay expects this directly
+  ratingCount: number;
+}
+export interface RecommendedLeaderboardItem {
+  content: LeaderboardContent;
+  recommendCount: number;
+}
+export interface LeaderboardResult {
+  mostFavorited: FavoritedLeaderboardItem[];
+  highestRated: RatedLeaderboardItem[];
+  mostRecommended: RecommendedLeaderboardItem[];
+}
+
+// Medya/Shares' own podium — ranks people, not content (GET
+// /feed/people-leaderboard). Only Most Watched has a movie/series
+// dimension; Most Followed/Most Reviewed ignore the optional type filter.
+interface PodiumUser {
+  id: string;
+  username: string;
+  profile_pic_url?: string;
+  accountTier?: AccountTier;
+}
+export interface MostFollowedItem {
+  user: PodiumUser;
+  followerCount: number;
+}
+export interface MostWatchedItem {
+  user: PodiumUser;
+  watchedCount: number;
+}
+export interface MostReviewedItem {
+  user: PodiumUser;
+  reviewCount: number;
+}
+export interface PeopleLeaderboardResult {
+  mostFollowed: MostFollowedItem[];
+  mostWatched: MostWatchedItem[];
+  mostReviewed: MostReviewedItem[];
 }
 
 export type FeedActivityType = "rated" | "reviewed" | "watchlisted" | "followed";
@@ -531,6 +680,9 @@ export interface FeedUserRef {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  // Only populated on Share.user (getShareFeed/getUserShares) — drives the
+  // Pro-tier gold card treatment on ShareCard, not present on other
+  // FeedUserRef usages (topViewers, FeedActivityItem.user).
   accountTier?: AccountTier;
 }
 
@@ -586,7 +738,17 @@ export interface PersonalActivityResult {
 // analysis/review/recommendation at the moment it was posted, never a live
 // reference (mirrors how chat's analysis_share/recommendation messages
 // already snapshot instead of referencing).
-export type ShareType = "analysis" | "review" | "recommendation";
+export type ShareType = "analysis" | "review" | "recommendation" | "list";
+
+// Denormalized snapshot of a CustomList at share time — same {itemId,
+// itemType, title, poster_path} shape backend's hydratePreviewItems (also
+// used by /lists/discover, /lists/popular, /lists/me) already returns.
+export interface ShareListPreviewItem {
+  itemId: string;
+  itemType: ContentType;
+  title: string;
+  poster_path?: string;
+}
 
 export interface Share {
   _id: string;
@@ -599,6 +761,8 @@ export interface Share {
   contentId?: string; // "review" | "recommendation"
   contentType?: ContentType; // "review" | "recommendation"
   contentData?: { title: string; posterUrl: string | null; releaseYear?: number }; // "review" | "recommendation"
+  listId?: string; // "list" only
+  listData?: { name: string; description?: string; itemCount: number; previewItems: ShareListPreviewItem[] }; // "list" only
   likeCount: number;
   liked: boolean;
   viewCount: number;
@@ -623,6 +787,7 @@ export interface DiscoverListItem {
   items: CustomListItem[];
   previewItems: ListPreviewItem[];
   likeCount: number;
+  views: number;
   createdAt: string;
   updatedAt: string;
   // Only present on /discover results — /popular reuses this same shape

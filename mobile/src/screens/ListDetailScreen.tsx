@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
+  Animated,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -15,6 +16,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getListById, removeItem, toggleListLike, updateList } from "../api/listService";
+import { createShare } from "../api/shareService";
 import { getMovieById, getSeriesById } from "../api/contentService";
 import MiniContentCard from "../components/MiniContentCard";
 import UserAvatar from "../components/UserAvatar";
@@ -31,6 +33,7 @@ interface HydratedItem {
 }
 
 type ItemTypeFilter = "all" | ContentType;
+const ITEM_TYPE_FILTERS: ItemTypeFilter[] = ["all", "movie", "series"];
 
 const GRID_COLUMNS = 6;
 const GRID_GAP = 4;
@@ -41,7 +44,10 @@ interface Props {
   // forwarded to the item grid's MiniContentCard so its own content-detail
   // navigation stays within that same Stack (see ContentCard's basePath
   // comment). Defaults to "/lists" since that's this screen's original home.
-  basePath?: "/lists" | "/home" | "/search";
+  // "/profile" added alongside the new profile/lists/[id].tsx thin route,
+  // needed so a "list" ShareCard tapped from the Profile tab's Sharings
+  // view can navigate to this same screen within that tab's own Stack.
+  basePath?: "/lists" | "/home" | "/search" | "/profile";
 }
 
 export default function ListDetailScreen({ basePath = "/lists" }: Props) {
@@ -59,6 +65,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   badgePrivate: { backgroundColor: colors.border },
   badgeText: { fontSize: 11, fontFamily: fonts.medium, color: colors.baseContent },
   description: { color: colors.baseContent, fontSize: 14, marginTop: 8, lineHeight: 20 },
+  ownerActionsRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   editButton: {
     alignSelf: "flex-start",
     borderWidth: 1,
@@ -66,9 +73,21 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginTop: 12,
   },
   editButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
+  // Icon-only, same border/radius/vertical-padding as editButton so the two
+  // sit at matching height side by side — only shown for public lists
+  // (sharing a private list to the public Medya feed doesn't make sense).
+  shareButton: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   statsRow: { flexDirection: "row", alignItems: "center", gap: 18, marginTop: 12 },
   statItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   statText: { fontSize: 13, color: colors.placeholder },
@@ -104,19 +123,31 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     alignItems: "center",
   },
   saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
-  // Same underline style as the outer Films/Series/Reviews/Lists tab bar
-  // and the Reviews tab's inner Movie/Series sub-tab.
-  tabBar: {
+  // Same compact sliding-pill segmented control as SharesFeedSection.tsx's
+  // Recent/Popular/Network filter (colors.base200 pill, a spring-animated
+  // colors.primary indicator behind the active segment) — replaces the old
+  // full-width underline tab bar, which was both visually flat and took up
+  // a whole extra row (paddingVertical:10 + its own bottom border).
+  segmented: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginTop: 16,
+    backgroundColor: colors.base200,
+    borderRadius: 10,
+    padding: 3,
+    marginTop: 14,
     marginBottom: 8,
+    position: "relative",
   },
-  tabButton: { flex: 1, alignItems: "center", paddingVertical: 10 },
-  tabButtonActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },
-  tabText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
-  tabTextActive: { color: colors.primary, fontFamily: fonts.bold },
+  segmentIndicator: {
+    position: "absolute",
+    top: 3,
+    bottom: 3,
+    left: 3,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+  },
+  segment: { flex: 1, paddingVertical: 7, alignItems: "center", zIndex: 1 },
+  segmentText: { fontFamily: fonts.medium, fontSize: 12, color: colors.placeholder },
+  segmentTextActive: { color: colors.primaryContent, fontFamily: fonts.bold },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
   errorText: { color: colors.error, marginTop: 8 },
 }), [colors]);
@@ -133,6 +164,24 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Sliding indicator for the All/Movies/Series segmented control — same
+  // measured-width + spring-animated-translateX technique as
+  // SharesFeedSection.tsx's Recent/Popular/Network control.
+  const [segmentedWidth, setSegmentedWidth] = useState(0);
+  const segmentIndicatorAnim = useRef(new Animated.Value(0)).current;
+  const itemTypeFilterIndex = ITEM_TYPE_FILTERS.indexOf(itemTypeFilter);
+
+  useEffect(() => {
+    if (segmentedWidth === 0) return;
+    const segmentWidth = (segmentedWidth - 6) / ITEM_TYPE_FILTERS.length;
+    Animated.spring(segmentIndicatorAnim, {
+      toValue: itemTypeFilterIndex * segmentWidth,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 80,
+    }).start();
+  }, [itemTypeFilterIndex, segmentedWidth]);
+
   const [likeCount, setLikeCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -143,6 +192,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sharingToMedia, setSharingToMedia] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -210,6 +260,23 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
       showToast(t("Something went wrong. Please try again."));
     } finally {
       setLiking(false);
+    }
+  };
+
+  // Mirrors ProfileAnalysisModal.tsx's handleShareToMedia exactly (single
+  // direct action, no ShareOptionsMenu/DM picker — lists have no existing
+  // DM-sharing precedent to preserve, same reasoning ReviewComposer.tsx's
+  // simpler Save/Save+Share toggle already used).
+  const handleShareToMedia = async () => {
+    if (!list) return;
+    setSharingToMedia(true);
+    try {
+      await createShare({ type: "list", listId: list._id });
+      showToast(t("Shared to Medya"));
+    } catch {
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setSharingToMedia(false);
     }
   };
 
@@ -330,23 +397,38 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
               </View>
 
               {isOwner && (
-                <Pressable style={styles.editButton} onPress={() => setEditing(true)}>
-                  <Text style={styles.editButtonText}>{t("Edit")}</Text>
-                </Pressable>
+                <View style={styles.ownerActionsRow}>
+                  <Pressable style={styles.editButton} onPress={() => setEditing(true)}>
+                    <Text style={styles.editButtonText}>{t("Edit")}</Text>
+                  </Pressable>
+                  {list.isPublic && (
+                    <Pressable style={styles.shareButton} onPress={handleShareToMedia} disabled={sharingToMedia} hitSlop={4}>
+                      {sharingToMedia ? (
+                        <ActivityIndicator size="small" color={colors.baseContent} />
+                      ) : (
+                        <Ionicons name="newspaper-outline" size={18} color={colors.baseContent} />
+                      )}
+                    </Pressable>
+                  )}
+                </View>
               )}
             </>
           )}
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
-          <View style={styles.tabBar}>
-            {(["all", "movie", "series"] as ItemTypeFilter[]).map((filter) => (
-              <Pressable
-                key={filter}
-                style={[styles.tabButton, itemTypeFilter === filter && styles.tabButtonActive]}
-                onPress={() => setItemTypeFilter(filter)}
-              >
-                <Text style={[styles.tabText, itemTypeFilter === filter && styles.tabTextActive]}>
+          <View style={styles.segmented} onLayout={(e) => setSegmentedWidth(e.nativeEvent.layout.width)}>
+            {segmentedWidth > 0 && (
+              <Animated.View
+                style={[
+                  styles.segmentIndicator,
+                  { width: (segmentedWidth - 6) / ITEM_TYPE_FILTERS.length, transform: [{ translateX: segmentIndicatorAnim }] },
+                ]}
+              />
+            )}
+            {ITEM_TYPE_FILTERS.map((filter) => (
+              <Pressable key={filter} style={styles.segment} onPress={() => setItemTypeFilter(filter)}>
+                <Text style={[styles.segmentText, itemTypeFilter === filter && styles.segmentTextActive]}>
                   {filter === "all" ? t("All") : filter === "movie" ? t("Movies") : t("Series")}
                 </Text>
               </Pressable>

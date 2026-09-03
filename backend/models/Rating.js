@@ -40,5 +40,11 @@ ratingSchema.index({ contentType: 1 });
 // Fast lookups by user (for getting user's all ratings)
 ratingSchema.index({ user: 1 });
 
+// Recent-ratings-per-user lookups (CineMatch's bonus signal: matchController.js's
+// getSwipeQueue/getMatchWithUser/analyzeMatchWithUser all query "this user's
+// ratings from the last N days") — without this, createdAt >= cutoff can only be
+// applied as a post-fetch filter over every rating a user has ever given.
+ratingSchema.index({ user: 1, createdAt: -1 });
+
 const Rating = mongoose.model('Rating', ratingSchema);
 export default Rating;

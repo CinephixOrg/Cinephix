@@ -11,7 +11,7 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -48,8 +48,6 @@ import { fonts } from "../theme/typography";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 const OVERVIEW_LINE_HEIGHT = 20; // matches styles.overview's lineHeight
-
-type ReviewTab = "friends" | "popular";
 
 // Rendered from a thin route file inside EACH tab that links to it
 // (movies/content/[type]/[id].tsx, series/..., watchlist/..., lists/...),
@@ -114,27 +112,33 @@ export default function ContentDetailScreen() {
     marginTop: 16,
   },
   statItem: { flex: 1, alignItems: "center", gap: 4 },
-  statValue: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
+  // A small tinted circle behind each icon — one distinct semantic color
+  // per stat (info/secondary/warning/success, all real theme tokens, not
+  // new hardcoded hex) rather than the flat baseContent icons every stat
+  // shared before. Favorites reuses `warning` — the exact same gold this
+  // screen's own "Add to Favorites" star icon below already uses, not a
+  // fresh pick.
+  statIconBadge: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  statValue: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent, marginTop: 2 },
   statLabel: { fontSize: 11, color: colors.placeholder },
   actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  // Same neutral look as listButton below now (border/text colors were the
+  // one thing that made this row visually inconsistent — the first two
+  // buttons had their own primary-tinted treatment the other four never
+  // did). toggleButtonActive (the *filled* state once you've actually
+  // rated/added it) is unchanged and already shared with listButton's own
+  // active state elsewhere in this row.
   toggleButton: {
     width: "48%",
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.border,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: "center",
   },
   toggleButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  toggleButtonText: { fontFamily: fonts.medium, color: colors.primary },
+  toggleButtonText: { fontFamily: fonts.medium, color: colors.baseContent },
   toggleButtonTextActive: { color: colors.primaryContent },
-  rateText: {
-    fontFamily: fonts.medium,
-    color: colors.primary,
-    fontSize: 18,
-    lineHeight: 24,
-    textAlignVertical: "center",
-  },
   listButton: {
     width: "48%",
     flexDirection: "row",
@@ -152,20 +156,12 @@ export default function ContentDetailScreen() {
   friendsRow: { flexGrow: 0 },
   friendCard: { alignItems: "center", width: 66, marginRight: 14, gap: 4 },
   friendName: { fontSize: 12, color: colors.baseContent, maxWidth: 66 },
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  tabButton: { flex: 1, alignItems: "center", paddingVertical: 10 },
-  tabButtonActive: { borderBottomWidth: 2, borderBottomColor: colors.primary },
-  tabText: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
-  tabTextActive: { color: colors.primary, fontFamily: fonts.bold },
+  // Reviews' inline section header — title + "See all" leading to the
+  // full ContentReviewsSection.tsx page, same titleRow/seeAll language
+  // ContentRail.tsx's own rails already use elsewhere in this app.
+  previewSectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  seeAllText: { fontFamily: fonts.medium, fontSize: 12, color: colors.primary },
   reviewsEmpty: { textAlign: "center", color: colors.placeholder, marginTop: 12, marginBottom: 8 },
-  loadMoreButton: { alignItems: "center", paddingVertical: 12 },
-  loadMoreText: { color: colors.primary, fontFamily: fonts.medium, fontSize: 13 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -204,6 +200,21 @@ export default function ContentDetailScreen() {
   const { type, id } = useLocalSearchParams<{ type: ContentType; id: string }>();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
+  // This screen is duplicated into every tab (content/[type]/[id].tsx under
+  // home/socials/watchlist/profile/search/to-watch/lists, plus
+  // user/[id]/content/[type]/[id].tsx) with no basePath prop of its own —
+  // it's never needed one before now, since it had no internal navigation
+  // of its own. The Lists/Reviews stat buttons are its first, so rather
+  // than thread a new prop through every one of those 8 thin re-export
+  // files, this derives "which tab am I in" straight from the current URL:
+  // `/home/content/movie/123` → `/home`, `/user/abc/content/...` → `/user/abc`.
+  const pathname = usePathname();
+  const basePath = useMemo(() => {
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments[0] === "user" && segments[1]) return `/user/${segments[1]}`;
+    return segments[0] ? `/${segments[0]}` : "/home";
+  }, [pathname]);
 
   const [content, setContent] = useState<Movie | Series | null>(null);
   const [loading, setLoading] = useState(true);
@@ -244,12 +255,16 @@ export default function ContentDetailScreen() {
   const [sharingRecommendation, setSharingRecommendation] = useState(false);
 
   const { myReview, setMyReview } = useMyReview(id, user?._id);
-  const [activeReviewTab, setActiveReviewTab] = useState<ReviewTab>("friends");
+  // Trimmed from a full Friends/Popular-tab-plus-pagination section down to
+  // a small, tab-less preview once the Reviews stat button started leading
+  // to a dedicated full page (ContentReviewsSection.tsx) showing this exact
+  // same thing — keeping both the full tabbed/paginated version *and* the
+  // stat-button link to an identical full page was genuine duplication.
+  // Still fetches both (friends preferred, popular fills the rest) so the
+  // couple of reviews shown here keep the same "people you follow first"
+  // preference the old tabs implied by defaulting to the Friends tab.
   const [friendsReviews, setFriendsReviews] = useState<Review[]>([]);
   const [popularReviews, setPopularReviews] = useState<Review[]>([]);
-  const [popularPage, setPopularPage] = useState(1);
-  const [popularHasMore, setPopularHasMore] = useState(true);
-  const [popularLoadingMore, setPopularLoadingMore] = useState(false);
 
   const [watchedByFriends, setWatchedByFriends] = useState<WatchedByFriend[]>([]);
 
@@ -294,14 +309,15 @@ export default function ContentDetailScreen() {
   // screen's fatal `error` state.
   const loadReviews = useCallback(async () => {
     try {
+      // limit:5 is plenty — this only ever needs to fill a 2-review
+      // preview (friends first, popular fills the rest), no pagination
+      // happens on this screen anymore.
       const [friends, popular] = await Promise.all([
         getFriendsReviews(id),
-        getContentReviews(id, { sort: "popular", page: 1, limit: 20 }),
+        getContentReviews(id, { sort: "popular", page: 1, limit: 5 }),
       ]);
       setFriendsReviews(friends);
       setPopularReviews(popular.items);
-      setPopularPage(1);
-      setPopularHasMore(popular.pagination ? 1 < popular.pagination.pages : popular.items.length > 0);
     } catch {
       // leave whatever was already loaded in place
     }
@@ -373,20 +389,6 @@ export default function ContentDetailScreen() {
   useEffect(() => {
     loadWatchedByFriends();
   }, [loadWatchedByFriends]);
-
-  const loadMorePopular = async () => {
-    if (popularLoadingMore || !popularHasMore) return;
-    setPopularLoadingMore(true);
-    try {
-      const nextPage = popularPage + 1;
-      const popular = await getContentReviews(id, { sort: "popular", page: nextPage, limit: 20 });
-      setPopularReviews((prev) => [...prev, ...popular.items]);
-      setPopularPage(nextPage);
-      setPopularHasMore(popular.pagination ? nextPage < popular.pagination.pages : popular.items.length > 0);
-    } finally {
-      setPopularLoadingMore(false);
-    }
-  };
 
   const handleReviewSaved = (review: Review) => {
     setMyReview(review);
@@ -462,6 +464,20 @@ export default function ContentDetailScreen() {
     } finally {
       setWatchlistBusy(false);
     }
+  };
+
+  // The Rate modal's own closing action — reuses toggleWatchlist's add
+  // branch (never its remove branch: this only ever ADDS, tapping it while
+  // already on the watched list is a no-op besides closing) rather than
+  // duplicating the add-and-save-pending-rating logic a second time. The
+  // standalone "Add to Watchedlist" button reads the same `inWatchlist`
+  // state, so it updates to reflect this automatically — no separate sync
+  // needed.
+  const handleRateModalDone = async () => {
+    if (!inWatchlist) {
+      await toggleWatchlist();
+    }
+    setRateModalVisible(false);
   };
 
   const toggleToWatch = async () => {
@@ -577,7 +593,21 @@ export default function ContentDetailScreen() {
   const posterPath = content.poster_path;
   const overview = content.overview;
   const releaseDate = type === "movie" ? (content as Movie).release_date : (content as Series).first_air_date;
-  const activeReviews = activeReviewTab === "friends" ? friendsReviews : popularReviews;
+  // Friends first (same preference the old Friends/Popular tabs implied by
+  // defaulting to Friends), popular fills the rest, deduped in case a
+  // review happens to appear in both — capped to 2, this is a preview now,
+  // not the full list (that's ContentReviewsSection.tsx, one tap away).
+  const previewReviews = (() => {
+    const seen = new Set<string>();
+    const merged: Review[] = [];
+    for (const r of [...friendsReviews, ...popularReviews]) {
+      if (seen.has(r._id)) continue;
+      seen.add(r._id);
+      merged.push(r);
+      if (merged.length === 2) break;
+    }
+    return merged;
+  })();
   const inAnyList = myLists.some((l) => l.items.some((it) => it.itemId === id && it.itemType === type));
   const overviewLines =
     !overviewExpanded && posterHeight > 0
@@ -674,26 +704,34 @@ export default function ContentDetailScreen() {
       <RatingDistributionChart ratings={ratings} />
 
       <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Ionicons name="eye-outline" size={20} color={colors.baseContent} />
+        <Pressable style={styles.statItem} onPress={() => router.push(`${basePath}/content/${type}/${id}/watched` as any)}>
+          <View style={[styles.statIconBadge, { backgroundColor: `${colors.info}1F` }]}>
+            <Ionicons name="eye-outline" size={20} color={colors.info} />
+          </View>
           <Text style={styles.statValue}>{stats?.watchedCount ?? 0}</Text>
           <Text style={styles.statLabel}>{t("Watched")}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Ionicons name="chatbubble-outline" size={20} color={colors.baseContent} />
+        </Pressable>
+        <Pressable style={styles.statItem} onPress={() => router.push(`${basePath}/content/${type}/${id}/reviews` as any)}>
+          <View style={[styles.statIconBadge, { backgroundColor: `${colors.secondary}1F` }]}>
+            <Ionicons name="chatbubble-outline" size={20} color={colors.secondary} />
+          </View>
           <Text style={styles.statValue}>{stats?.reviewCount ?? 0}</Text>
           <Text style={styles.statLabel}>{t("Reviews")}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Ionicons name="star" size={20} color={colors.baseContent} />
+        </Pressable>
+        <Pressable style={styles.statItem} onPress={() => router.push(`${basePath}/content/${type}/${id}/favorited` as any)}>
+          <View style={[styles.statIconBadge, { backgroundColor: `${colors.warning}1F` }]}>
+            <Ionicons name="star" size={20} color={colors.warning} />
+          </View>
           <Text style={styles.statValue}>{stats?.favoriteCount ?? 0}</Text>
           <Text style={styles.statLabel}>{t("Favorites")}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Ionicons name="list" size={20} color={colors.baseContent} />
+        </Pressable>
+        <Pressable style={styles.statItem} onPress={() => router.push(`${basePath}/content/${type}/${id}/lists` as any)}>
+          <View style={[styles.statIconBadge, { backgroundColor: `${colors.success}1F` }]}>
+            <Ionicons name="list" size={20} color={colors.success} />
+          </View>
           <Text style={styles.statValue}>{stats?.listCount ?? 0}</Text>
           <Text style={styles.statLabel}>{t("Lists")}</Text>
-        </View>
+        </Pressable>
       </View>
 
       <View style={styles.actionRow}>
@@ -710,10 +748,10 @@ export default function ContentDetailScreen() {
           style={[styles.toggleButton, myRating > 0 && styles.toggleButtonActive]}
           onPress={() => setRateModalVisible(true)}
         >
-          <Text style={[styles.rateText, myRating > 0 && styles.toggleButtonTextActive]}>
+          <Text style={[styles.toggleButtonText, myRating > 0 && styles.toggleButtonTextActive]}>
             {myRating > 0 ? `${(myRating / 2).toFixed(1)} ` : t("Rate")}
             {myRating > 0 && (
-              <Text style={[styles.rateText, styles.toggleButtonTextActive]}>★</Text>
+              <Text style={[styles.toggleButtonText, styles.toggleButtonTextActive]}>★</Text>
             )}
           </Text>
         </Pressable>
@@ -786,44 +824,21 @@ export default function ContentDetailScreen() {
 
       <View style={styles.divider} />
 
-      <Text style={styles.sectionTitle}>{t("Reviews")}</Text>
-      <View style={styles.tabBar}>
-        <Pressable
-          style={[styles.tabButton, activeReviewTab === "friends" && styles.tabButtonActive]}
-          onPress={() => setActiveReviewTab("friends")}
-        >
-          <Text style={[styles.tabText, activeReviewTab === "friends" && styles.tabTextActive]}>
-            {t("Friends")}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.tabButton, activeReviewTab === "popular" && styles.tabButtonActive]}
-          onPress={() => setActiveReviewTab("popular")}
-        >
-          <Text style={[styles.tabText, activeReviewTab === "popular" && styles.tabTextActive]}>
-            {t("Popular")}
-          </Text>
+      {/* Trimmed preview (was a full Friends/Popular-tab-plus-pagination
+          section) — "See all" leads to ContentReviewsSection.tsx, the
+          exact same tabbed/paginated experience this section used to be
+          inline, so keeping both here would just be duplication. */}
+      <View style={styles.previewSectionHeader}>
+        <Text style={styles.sectionTitle}>{t("Reviews")}</Text>
+        <Pressable onPress={() => router.push(`${basePath}/content/${type}/${id}/reviews` as any)} hitSlop={8}>
+          <Text style={styles.seeAllText}>{t("See all")}</Text>
         </Pressable>
       </View>
 
-      {activeReviews.length === 0 ? (
-        <Text style={styles.reviewsEmpty}>
-          {activeReviewTab === "friends"
-            ? t("No friends have reviewed this yet.")
-            : t("No reviews yet. Be the first!")}
-        </Text>
+      {previewReviews.length === 0 ? (
+        <Text style={styles.reviewsEmpty}>{t("No reviews yet. Be the first!")}</Text>
       ) : (
-        activeReviews.map((r) => <ReviewCard key={r._id} review={r} />)
-      )}
-
-      {activeReviewTab === "popular" && popularHasMore && popularReviews.length > 0 && (
-        <Pressable style={styles.loadMoreButton} onPress={loadMorePopular} disabled={popularLoadingMore}>
-          {popularLoadingMore ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Text style={styles.loadMoreText}>{t("Load more")}</Text>
-          )}
-        </Pressable>
+        previewReviews.map((r) => <ReviewCard key={r._id} review={r} />)
       )}
 
       <Modal visible={listModalVisible} transparent animationType="fade">
@@ -895,8 +910,8 @@ export default function ContentDetailScreen() {
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{t("Your rating")}</Text>
             <StarRatingInput value={myRating} onChange={handleRate} disabled={savingRating} size={52} />
-            <Pressable style={styles.modalDoneButton} onPress={() => setRateModalVisible(false)}>
-              <Text style={styles.modalDoneText}>{t("Done")}</Text>
+            <Pressable style={styles.modalDoneButton} onPress={handleRateModalDone} disabled={watchlistBusy}>
+              <Text style={styles.modalDoneText}>{inWatchlist ? t("Done") : t("Add to Watchedlist")}</Text>
             </Pressable>
           </View>
         </View>

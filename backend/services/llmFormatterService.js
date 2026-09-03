@@ -95,7 +95,7 @@ export function formatForLLM({
       examples: {
         short_analysis: "They have strong genre overlap and shared favorites — good match. Social overlap is low, try mentioning a shared favorite movie to start conversation.",
       },
-      required_output_keys: ["analysis", "strengths", "weaknesses", "conversation_starters", "graph_ascii"],
+      required_output_keys: ["analysis", "strengths", "weaknesses", "conversation_starters", "graph_ascii", "match_title"],
     },
   };
 }

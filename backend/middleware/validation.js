@@ -258,11 +258,6 @@ export const validationSchemas = {
     genres: { type: 'array' },
   },
 
-  swipeMatch: {
-    targetUserId: { required: true, type: 'string' },
-    decision: { required: true, enum: ['accept', 'reject'] },
-  },
-
   // Update password
   updatePassword: {
     oldPassword: { required: true, type: 'string' },

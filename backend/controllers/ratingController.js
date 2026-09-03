@@ -44,6 +44,16 @@ const updateCineGraph = async ({
 
       graph.set(genre, {
         ...node,
+        // count and ratedCount track the same thing (how many times this
+        // genre has been rated) — count is what CineMatch's genre-affinity
+        // math and feedController.js's genre recommendations actually read;
+        // ratedCount is this function's own internal bookkeeping for the
+        // incremental average above. They'd drifted apart because this
+        // branch only ever updated ratedCount, leaving count stuck at 0 for
+        // every user who rates through the normal app flow (bulk import's
+        // rebuildUserCineGraph/recalculateUserCineGraph compute count
+        // correctly from scratch, which is how this went unnoticed).
+        count: node.count + 1,
         ratedCount: newRatedCount,
         avgRating: Number(newAvg.toFixed(2)),
       });

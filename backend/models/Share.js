@@ -9,7 +9,7 @@ const { Schema } = mongoose;
 const shareSchema = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, enum: ["analysis", "review", "recommendation"], required: true },
+    type: { type: String, enum: ["analysis", "review", "recommendation", "list"], required: true },
 
     // type: "analysis"
     analysisData: { type: Schema.Types.Mixed },
@@ -28,6 +28,22 @@ const shareSchema = new Schema(
       title: String,
       posterUrl: String,
       releaseYear: Number,
+    },
+
+    // type: "list"
+    listId: { type: Schema.Types.ObjectId, ref: "CustomList" },
+    listData: {
+      name: String,
+      description: String,
+      itemCount: Number,
+      previewItems: [
+        {
+          itemId: String,
+          itemType: { type: String, enum: ["movie", "series"] },
+          title: String,
+          poster_path: String,
+        },
+      ],
     },
 
     // Instagram-style single like, not a multi-emoji reaction. Cached count

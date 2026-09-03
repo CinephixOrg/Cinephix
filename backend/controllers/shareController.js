@@ -3,6 +3,8 @@ import Share from "../models/Share.js";
 import Review from "../models/Review.js";
 import Rating from "../models/Rating.js";
 import User from "../models/User.js";
+import CustomList from "../models/CustomList.js";
+import { hydratePreviewItems } from "../routes/customListRoute.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
@@ -86,53 +88,135 @@ export const createShare = asyncHandler(async (req, res) => {
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
-  return sendError(res, 'type must be "analysis", "review", or "recommendation"', 400);
+  if (type === "list") {
+    const { listId } = req.body;
+    if (!listId) return sendError(res, "listId is required", 400);
+    const list = await CustomList.findOne({ _id: listId, owner: userId, isPublic: true }).lean();
+    if (!list) return sendError(res, "List not found", 404);
+
+    // Bigger limit than the default 5 — this box stacks however many
+    // posters actually fit the post's real width (PosterCascade's
+    // fitToWidth on the mobile side), not a fixed small preview count.
+    const [hydrated] = await hydratePreviewItems([list], 20);
+    const share = await Share.create({
+      user: userId,
+      type: "list",
+      listId: list._id,
+      listData: {
+        name: list.name,
+        description: list.description,
+        itemCount: list.items.length,
+        previewItems: hydrated.previewItems,
+      },
+    });
+    return sendSuccess(res, share, "Shared to Medya", 201);
+  }
+
+  return sendError(res, 'type must be "analysis", "review", "recommendation", or "list"', 400);
 });
 
-// ── GET /api/shares/feed?sort=recent|popular|network&type=&page=&limit= ──
+// A like is worth ~20h of recency, following the author ~53h — real enough
+// to matter, not enough to bury every brand-new post from someone you
+// don't follow. Replaces the old separate Sort (Recent/Popular/Network) +
+// Type filter UI: recency/engagement/network are blended into one ranking
+// instead of being exposed as manual controls the user has to pick between
+// (same "remove the control, let the page organize itself" call already
+// made for Discover's own tab bar earlier this session), and per-type
+// filtering was dropped entirely since every post already carries its own
+// icon/color badge (ShareCard.tsx's typeMeta) for visual scanning, plus
+// dedicated full-browse pages already exist for Reviews/Lists specifically
+// (/home/reviews, /home/lists-discover).
+const FEED_LIKE_WEIGHT = 3;
+const FEED_NETWORK_BOOST = 8;
+const FEED_DECAY_PER_HOUR = 0.15;
+
+// ── GET /api/shares/feed?page=&limit=&scope= ── scope defaults to "all"
+// (the blended ranking above); "following" restricts to just the shares
+// of people the caller follows, still ranked by the same score within
+// that subset — a lightweight re-add of a "Friends" view, requested
+// directly by the user after the broader Sort/Type filter UI was removed
+// (see FEED_LIKE_WEIGHT's own comment above). Not the old removed
+// "Network" sort mode brought back wholesale — that also changed the
+// *ranking formula* itself; this is purely a hard filter on top of the
+// exact same one ranking everyone else sees, so "All" and "Friends" never
+// disagree on relative order, only on which posts are eligible at all.
+// Following nobody legitimately returns an empty feed here, unlike the
+// "all" scope's own following-agnostic fallback — that's the whole point
+// of asking for just your friends' posts.
 export const getShareFeed = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
-  const sort = ["recent", "popular", "network"].includes(req.query.sort) ? req.query.sort : "recent";
-  const type = ["analysis", "review", "recommendation"].includes(req.query.type) ? req.query.type : null;
+  const scope = req.query.scope === "following" ? "following" : "all";
 
-  const query = {};
-  if (type) query.type = type;
-
-  if (sort === "network") {
-    const currentUser = await User.findById(userId).select("following").lean();
-    const followingIds = currentUser?.following || [];
-    if (followingIds.length === 0) {
-      return sendSuccess(res, { items: [], page, hasMore: false }, "Share feed fetched");
-    }
-    query.user = { $in: followingIds };
-  }
-
-  const sortSpec = sort === "popular" ? { likeCount: -1, createdAt: -1 } : { createdAt: -1 };
+  const currentUser = await User.findById(userId).select("following").lean();
+  const followingIds = currentUser?.following || [];
+  const now = new Date();
+  const scopeMatch = scope === "following" ? [{ $match: { user: { $in: followingIds } } }] : [];
+  const scopeCountQuery = scope === "following" ? { user: { $in: followingIds } } : {};
 
   const [items, total] = await Promise.all([
-    Share.find(query)
-      .sort(sortSpec)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("user", "username profile_pic_url")
-      .populate("views", "username profile_pic_url")
-      .lean(),
-    Share.countDocuments(query),
+    Share.aggregate([
+      ...scopeMatch,
+      {
+        $addFields: {
+          isFollowed: { $in: ["$user", followingIds] },
+          ageHours: { $divide: [{ $subtract: [now, "$createdAt"] }, 1000 * 60 * 60] },
+        },
+      },
+      {
+        $addFields: {
+          score: {
+            $subtract: [
+              { $add: [{ $multiply: ["$likeCount", FEED_LIKE_WEIGHT] }, { $cond: ["$isFollowed", FEED_NETWORK_BOOST, 0] }] },
+              { $multiply: ["$ageHours", FEED_DECAY_PER_HOUR] },
+            ],
+          },
+        },
+      },
+      { $sort: { score: -1, createdAt: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "user" } },
+      { $unwind: "$user" },
+      { $lookup: { from: "users", localField: "views", foreignField: "_id", as: "viewUsers" } },
+      {
+        $addFields: {
+          liked: { $in: [new mongoose.Types.ObjectId(userId), "$likes"] },
+          topViewers: { $slice: ["$viewUsers", 5] },
+        },
+      },
+      {
+        $project: {
+          type: 1,
+          analysisData: 1,
+          reviewText: 1,
+          reviewRating: 1,
+          note: 1,
+          contentId: 1,
+          contentType: 1,
+          contentData: 1,
+          listId: 1,
+          listData: 1,
+          likeCount: 1,
+          viewCount: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          liked: 1,
+          "user._id": 1,
+          "user.username": 1,
+          "user.profile_pic_url": 1,
+          "user.accountTier": 1,
+          "topViewers._id": 1,
+          "topViewers.username": 1,
+          "topViewers.profile_pic_url": 1,
+        },
+      },
+    ]),
+    Share.countDocuments(scopeCountQuery),
   ]);
 
-  const withMeta = items.map((s) => {
-    const liked = (s.likes || []).some((id) => id.toString() === userId.toString());
-    const topViewers = (s.views || []).slice(0, 3);
-    return { ...s, liked, topViewers, likes: undefined, views: undefined };
-  });
-
-  sendSuccess(
-    res,
-    { items: withMeta, page, hasMore: page * limit < total },
-    "Share feed fetched"
-  );
+  sendSuccess(res, { items, page, hasMore: page * limit < total }, "Share feed fetched");
 });
 
 // ── POST /api/shares/:id/like ── toggle the caller's own like on/off
@@ -156,6 +240,28 @@ export const toggleShareLike = asyncHandler(async (req, res) => {
   }
 
   await share.save();
+
+  // A "list" share is a snapshot post ABOUT a real CustomList, not its own
+  // independent thing to like — liking the post should mean liking the
+  // list, so the list's own `likes` (already the signal /lists/popular
+  // ranks on) actually reflects engagement that happened via the feed, not
+  // just via visiting the list detail page directly. Keeps the list's
+  // like state as a mirror of this user's share-like state (set, not
+  // re-toggle) so it can't drift out of sync on repeated toggles.
+  if (share.type === "list" && share.listId) {
+    const list = await CustomList.findById(share.listId).select("likes");
+    if (list) {
+      const listHasLiked = list.likes.some((id) => id.toString() === userId.toString());
+      if (liked && !listHasLiked) {
+        list.likes.push(userId);
+        await list.save();
+      } else if (!liked && listHasLiked) {
+        list.likes.pull(userId);
+        await list.save();
+      }
+    }
+  }
+
   sendSuccess(res, { likeCount: share.likeCount, liked }, "Like updated");
 });
 
@@ -173,6 +279,14 @@ export const registerShareView = asyncHandler(async (req, res) => {
     share.views.push(userId);
     share.viewCount += 1;
     await share.save();
+
+    // Same reasoning as toggleShareLike above — a view of a "list" share is
+    // a real view of the underlying list, so it should count toward the
+    // list's own `views` counter (the same one /lists/:id increments when
+    // someone visits the list directly), not just the share's own count.
+    if (share.type === "list" && share.listId) {
+      await CustomList.updateOne({ _id: share.listId }, { $inc: { views: 1 } });
+    }
   }
 
   sendSuccess(res, { viewCount: share.viewCount }, "View registered");
@@ -190,9 +304,10 @@ export const getUserShares = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      // accountTier included here only (not getShareFeed's populate above,
-      // which also backs Home's SharesFeedSection/KesfetSection) — the
-      // tiered avatar frame is Profile-tab-only for now.
+      // accountTier included here so Profile's own shares grid can drive
+      // TierAvatarFrame — getShareFeed above uses a $lookup-based
+      // aggregation instead of populate() and already selects
+      // "user.accountTier" itself (see that function).
       .populate("user", "username profile_pic_url accountTier")
       .populate("views", "username profile_pic_url")
       .lean(),
@@ -202,7 +317,7 @@ export const getUserShares = asyncHandler(async (req, res) => {
   const requesterId = req.user.id;
   const withMeta = items.map((s) => {
     const liked = (s.likes || []).some((id) => id.toString() === requesterId.toString());
-    const topViewers = (s.views || []).slice(0, 3);
+    const topViewers = (s.views || []).slice(0, 5);
     return { ...s, liked, topViewers, likes: undefined, views: undefined };
   });
 
