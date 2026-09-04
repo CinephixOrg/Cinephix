@@ -8,12 +8,12 @@ import { CATEGORY_KEYS, categoryMeta } from "./matchCategoryMeta";
 import { getOrCreateConversation, sendRichMessage } from "../../api/conversationService";
 import { useChat } from "../../context/ChatContext";
 import { useToast } from "../../context/ToastContext";
-import type { SwipeCandidate, MatchAnalysis } from "../../types";
+import type { SyncCandidate, MatchAnalysis } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
 interface Props {
-  candidate: SwipeCandidate;
+  candidate: SyncCandidate;
   analysis: MatchAnalysis | null;
 }
 
@@ -52,10 +52,19 @@ export default function MatchCoverCard({ candidate, analysis }: Props) {
     setSending(true);
     try {
       const conv = await getOrCreateConversation(candidate.user._id);
+      // Only the fields SyncShareMessageCard.tsx/AnalyzeModal.tsx actually
+      // read (matchPercentage for the preview card, provider/breakdown/
+      // parsed for the full view once opened) — `analysis.raw` is the
+      // *entire* unfiltered LLM provider API response (verified: never
+      // read by any consumer), and the backend stores analysisData as-is
+      // with no schema/validation (Schema.Types.Mixed) — sending it would
+      // permanently bloat this chat message with third-party API metadata
+      // the recipient has no reason to see.
+      const { provider, matchPercentage, breakdown, parsed } = analysis;
       await sendRichMessage(conv._id, {
         text: t("📊 Shared a CineMatch analysis"),
         type: "analysis_share",
-        analysisData: analysis,
+        analysisData: { provider, matchPercentage, breakdown, parsed },
       });
       await refreshConversations();
       setShared(true);

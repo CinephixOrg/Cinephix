@@ -565,7 +565,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   // Pro/Premium only (not dev, even though tierFrames.ts defines a color
   // for it too) — matches the original tier-badge's own scope from before
   // this whole arc, the user's own ask was specifically about these two.
-  const tierLabel = share.user.accountTier === "pro" || share.user.accountTier === "premium" ? share.user.accountTier : null;
+  const tierLabel = share.user.accountTier === "plus" || share.user.accountTier === "premium" ? share.user.accountTier : null;
   const tierMark = tierLabel ? <Ionicons name="diamond" size={12} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
 
   // Hollow rounded-rect stroke overlaid on the inner box (shareBox or

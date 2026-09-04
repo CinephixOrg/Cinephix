@@ -687,7 +687,7 @@ export const setOwnAccountTier = asyncHandler(async (req, res) => {
   }
 
   const { tier } = req.body;
-  if (!['free', 'pro', 'premium', 'dev'].includes(tier)) {
+  if (!['free', 'plus', 'premium', 'dev'].includes(tier)) {
     return sendError(res, 'Invalid tier', 400);
   }
 
@@ -927,14 +927,19 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
   const movieIds = watchlist.filter(item => item.itemType === 'movie').map(item => item.itemId);
   const seriesIds = watchlist.filter(item => item.itemType === 'series').map(item => item.itemId);
 
-  const movies = await Movie.find({ '_id': { $in: movieIds } }).select('genre_ids').lean();
-  const series = await Series.find({ '_id': { $in: seriesIds } }).select('genre_ids').lean();
-
-  // Rating.contentId is a plain String, not an ObjectId ref — coerce before matching.
-  const ratings = await Rating.find({
-    user: targetUserId,
-    contentId: { $in: [...movieIds, ...seriesIds].map((id) => id.toString()) },
-  }).select('contentId contentType value').lean();
+  // Independent queries, run concurrently rather than three sequential
+  // round trips — this endpoint sits directly in front of a visible UI ring
+  // (Sync page's own CineMatchGenreRing among other callers), so its own
+  // latency is directly felt as "loads a bit late" on first paint.
+  const [movies, series, ratings] = await Promise.all([
+    Movie.find({ '_id': { $in: movieIds } }).select('genre_ids').lean(),
+    Series.find({ '_id': { $in: seriesIds } }).select('genre_ids').lean(),
+    // Rating.contentId is a plain String, not an ObjectId ref — coerce before matching.
+    Rating.find({
+      user: targetUserId,
+      contentId: { $in: [...movieIds, ...seriesIds].map((id) => id.toString()) },
+    }).select('contentId contentType value').lean(),
+  ]);
   const ratingByContentId = new Map(ratings.map((r) => [r.contentId, r.value]));
 
   const movieGenreCounts = {};

@@ -10,7 +10,12 @@ const profileAnalysisSchema = new Schema({
   },
   tier: {
     type: String,
-    enum: ['free', 'pro', 'premium', 'dev'],
+    // 'pro' kept alongside 'plus' for backward compatibility with existing
+    // history rows written before the pro->plus rename — this is an
+    // append-only historical log (what tier the user actually was at
+    // analysis time), never re-saved after creation, so old rows are left
+    // as-is rather than migrated.
+    enum: ['free', 'pro', 'plus', 'premium', 'dev'],
     required: true
   },
   schemaVersion: {

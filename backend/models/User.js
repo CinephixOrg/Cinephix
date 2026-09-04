@@ -60,7 +60,7 @@ const userSchema = new Schema({
 
   accountTier: {
     type: String,
-    enum: ['free', 'pro', 'premium', 'dev'],
+    enum: ['free', 'plus', 'premium', 'dev'],
     default: 'free'
   },
   tierUpdatedAt: {

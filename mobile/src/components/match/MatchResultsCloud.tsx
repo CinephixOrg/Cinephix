@@ -2,12 +2,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText, Line } from "react-native-svg";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import MatchCloudBubble from "./MatchCloudBubble";
 import MatchAnalysisPanel from "./MatchAnalysisPanel";
 import { prefetchMatchAnalysis, type MatchFilters } from "../../api/matchService";
-import type { SwipeCandidate } from "../../types";
+import type { SyncCandidate } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+
+// Which cloud ranks (0-indexed: #1 is rank 0) are tier-gated — Free only
+// ever gets its #1 match locked (the most enticing one, and already the
+// cloud's own largest/most-central bubble); Plus gets #4-5 locked instead,
+// keeping its own top 3 fully open. Premium/dev: nothing locked.
+function lockedRanksFor(tier: string): Set<number> {
+  if (tier === "free") return new Set([0]);
+  if (tier === "plus") return new Set([3, 4]);
+  return new Set();
+}
 
 const RANK_RATIO = [1.0, 0.82, 0.68, 0.56, 0.56];
 const EDGE_PAD = 8;
@@ -45,7 +57,7 @@ interface BubblePosition {
 // unchanged near 90°/270°), using the standard ellipse-radius-at-angle
 // formula, rather than one flat radius.
 function computeCloudLayout(
-  candidates: SwipeCandidate[],
+  candidates: SyncCandidate[],
   cloudWidth: number,
   cloudHeight: number,
   bubbleBaseDiameter: number
@@ -110,7 +122,7 @@ function computeCloudLayout(
 }
 
 interface Props {
-  candidates: SwipeCandidate[];
+  candidates: SyncCandidate[];
   filters: MatchFilters;
 }
 
@@ -124,8 +136,22 @@ interface Props {
 export default function MatchResultsCloud({ candidates, filters }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Which candidate ids are currently tier-locked — kept in a ref (assigned
+  // fresh every render, not a dependency of handleSelectCandidate below) so
+  // the callback's own identity stays stable for MatchCloudBubble's memo,
+  // the same reasoning activeCandidateIdRef-style refs already use elsewhere
+  // in this feature for "read latest value inside a stable callback."
+  const lockedIdsRef = useRef<Set<string>>(new Set());
+  const lockedRanks = lockedRanksFor(user?.accountTier ?? "free");
+  lockedIdsRef.current = new Set(
+    candidates.filter((_, i) => lockedRanks.has(i)).map((c) => c.user._id)
+  );
+
   // Stable across renders (empty dep array — it only ever reads/writes via
   // the updater-function form of setSelectedId, never closes over selectedId
   // itself) so MatchCloudBubble's own React.memo can actually take effect —
@@ -134,6 +160,10 @@ export default function MatchResultsCloud({ candidates, filters }: Props) {
   // memo, since a changed prop identity always defeats a shallow-compare
   // memo even when nothing else about that bubble actually changed.
   const handleSelectCandidate = useCallback((id: string) => {
+    if (lockedIdsRef.current.has(id)) {
+      router.push("/match/subscription" as any);
+      return;
+    }
     setSelectedId((prev) => (prev === id ? null : id));
   }, []);
 
@@ -174,6 +204,24 @@ export default function MatchResultsCloud({ candidates, filters }: Props) {
     if (!lineBobAnimsRef.current[id]) lineBobAnimsRef.current[id] = new Animated.ValueXY({ x: 0, y: 0 });
     return lineBobAnimsRef.current[id];
   };
+  // Both dictionaries above only ever grow via getBobAnim/getLineBobAnim —
+  // this component isn't remounted between searches (the same instance
+  // just receives a new `candidates` prop), so with no pruning they'd keep
+  // an Animated.ValueXY pair around for every candidate ever seen across
+  // the whole session, not just the current 5. Small per-entry (two plain
+  // objects), but genuinely unbounded over many re-searches. Pruned
+  // whenever the candidate *set* actually changes (layoutKey), not on
+  // every render.
+  useEffect(() => {
+    const currentIds = new Set(candidates.map((c) => c.user._id));
+    for (const id of Object.keys(bobAnimsRef.current)) {
+      if (!currentIds.has(id)) delete bobAnimsRef.current[id];
+    }
+    for (const id of Object.keys(lineBobAnimsRef.current)) {
+      if (!currentIds.has(id)) delete lineBobAnimsRef.current[id];
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey]);
 
   const centerCandidateId = candidates[0]?.user._id;
   const centerPos = centerCandidateId ? layout[centerCandidateId] : undefined;
@@ -191,15 +239,29 @@ export default function MatchResultsCloud({ candidates, filters }: Props) {
   // means the common case doesn't pay that wait twice over. Nothing here
   // needs the result directly — MatchAnalysisPanel's own effect picks it up
   // from prefetchMatchAnalysis's shared cache once the user actually taps.
+  //
+  // Keyed on filtersKey (a stable content key), not `filters` itself —
+  // match/index.tsx's filters/results pages both stay mounted at once (a
+  // deliberate slide-transition choice, not something this fix touches),
+  // so it's real: going back to the filters page, toggling a switch off
+  // then on again, and returning here *without* re-searching hands this
+  // component a brand-new `filters` object reference with the exact same
+  // values. Keying on the object itself refired this prefetch — a real
+  // network call, now gated by analyzeMatchWithUser's own per-pair
+  // cooldown (matchController.js) — for a candidate list that never
+  // actually changed, silently eating into that candidate's cooldown
+  // budget for zero benefit.
+  const filtersKey = `${filters.type}:${filters.genres.join(",")}:${filters.useCount}:${filters.useAvgRating}`;
   useEffect(() => {
     if (centerCandidateId) prefetchMatchAnalysis(centerCandidateId, filters).catch(() => {});
-  }, [centerCandidateId, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerCandidateId, filtersKey]);
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
         wrap: { width: cloudWidth, alignSelf: "center" },
-        headerCaptionSvg: { marginBottom: 12 },
+        headerCaptionSvg: { marginTop: 14, marginBottom: 14 },
         cloudBox: { width: cloudWidth, height: cloudHeight, position: "relative" },
         // Pushed well below the cloud rather than hugging it — this hint is
         // meant to mark the spot the results deck itself will open into
@@ -213,7 +275,7 @@ export default function MatchResultsCloud({ candidates, filters }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <Svg width="100%" height={22} style={styles.headerCaptionSvg}>
+      <Svg width="100%" height={30} style={styles.headerCaptionSvg}>
         <Defs>
           <LinearGradient id="cloudHeaderGradient" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0" stopColor={colors.primary} />
@@ -222,11 +284,11 @@ export default function MatchResultsCloud({ candidates, filters }: Props) {
         </Defs>
         <SvgText
           x="50%"
-          y="16"
+          y="22"
           textAnchor="middle"
-          fontFamily={fonts.bold}
-          fontSize={13}
-          fontWeight="bold"
+          fontFamily={fonts.extrabold}
+          fontSize={19}
+          fontWeight="800"
           letterSpacing={0.4}
           fill="url(#cloudHeaderGradient)"
         >
@@ -287,6 +349,7 @@ export default function MatchResultsCloud({ candidates, filters }: Props) {
               onSelect={handleSelectCandidate}
               isSelected={selectedId === candidate.user._id}
               selectedScale={(pos.diameter + SELECTED_GROWTH_PX) / pos.diameter}
+              locked={lockedRanks.has(pos.rank)}
             />
           );
         })}

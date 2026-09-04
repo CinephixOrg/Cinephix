@@ -30,7 +30,7 @@ import { PALETTES, THEME_NAMES } from "../../../src/theme/palettes";
 import { fonts } from "../../../src/theme/typography";
 import type { AccountTier } from "../../../src/types";
 
-const TIER_OPTIONS: AccountTier[] = ["free", "pro", "premium", "dev"];
+const TIER_OPTIONS: AccountTier[] = ["free", "plus", "premium", "dev"];
 
 // Native names — proper nouns, not translated (matches web's LanguageSwitcher.jsx).
 const LANGUAGES: { code: string; name: string }[] = [

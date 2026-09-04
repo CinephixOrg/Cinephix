@@ -18,6 +18,7 @@ export default function MatchStackLayout() {
           the NotificationBell that used to live in its headerRight — that
           bell has no other access point on this screen now. */}
       <Stack.Screen name="index" options={{ title: t("Sync"), headerShown: false }} />
+      <Stack.Screen name="subscription" options={{ title: t("Sync Plans") }} />
     </Stack>
   );
 }

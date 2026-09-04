@@ -1,6 +1,6 @@
 export type ContentType = "movie" | "series";
 
-export type AccountTier = "free" | "pro" | "premium" | "dev";
+export type AccountTier = "free" | "plus" | "premium" | "dev";
 
 export interface User {
   _id: string;
@@ -345,7 +345,7 @@ export interface MatchSocialOverlap {
 }
 
 // Extra per-candidate detail computeMatchBreakdown already computed but
-// getSwipeQueue used to discard — surfaced for a future match-detail view,
+// getSyncCandidates used to discard — surfaced for a future match-detail view,
 // not consumed by any component yet.
 export interface MatchInsights {
   sharedGenres: MatchInsightGenre[];
@@ -353,8 +353,8 @@ export interface MatchInsights {
   socialOverlap: MatchSocialOverlap;
 }
 
-// GET /match/swipe/queue row — one ranked match candidate.
-export interface SwipeCandidate {
+// GET /match/sync/candidates row — one ranked match candidate.
+export interface SyncCandidate {
   user: MatchUser;
   contentType: ContentType;
   matchPercentage: number;
@@ -362,8 +362,8 @@ export interface SwipeCandidate {
   matchInsights?: MatchInsights;
 }
 
-export interface SwipeQueueResult {
-  candidates: SwipeCandidate[];
+export interface SyncCandidatesResult {
+  candidates: SyncCandidate[];
 }
 
 export interface MatchWithUserResult {

@@ -5,8 +5,8 @@ dotenv.config();
 
 const [, , emailOrUsername, tier] = process.argv;
 
-if (!emailOrUsername || !["free", "pro", "premium", "dev"].includes(tier)) {
-  console.error("Usage: node backend/scripts/setUserTier.js <email-or-username> <free|pro|premium|dev>");
+if (!emailOrUsername || !["free", "plus", "premium", "dev"].includes(tier)) {
+  console.error("Usage: node backend/scripts/setUserTier.js <email-or-username> <free|plus|premium|dev>");
   process.exit(1);
 }
 

@@ -128,7 +128,7 @@ export const API_ROUTES = {
     FIND: "/match",
     ANALYZE: (id: string) => `/match/${id}/analyze`,
     WITH_USER: (id: string) => `/match/${id}`,
-    SWIPE_QUEUE: "/match/swipe/queue",
+    SYNC_CANDIDATES: "/match/sync/candidates",
     SHARED_GENRE_CONTENT: (id: string) => `/match/${id}/shared-genre-content`,
     CONTENT_RATINGS: (id: string) => `/match/${id}/content-ratings`,
     RECENT_ACTIVITY: (id: string) => `/match/${id}/recent-activity`,
@@ -167,4 +167,5 @@ export const STORAGE_KEYS = {
   USER: "cinephix_user",
   LANGUAGE: "cinephix_language",
   THEME: "cinephix_theme",
+  SYNC_INTRO_SEEN: "cinephix_sync_intro_seen",
 };

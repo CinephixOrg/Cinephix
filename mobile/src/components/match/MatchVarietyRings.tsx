@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { View, Text, Pressable, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
 // Same fix as PosterCoverflow.tsx: this row nests inside MatchAnalysisPanel's
 // own card-paging ScrollView (same horizontal axis) — a plain RN ScrollView
@@ -10,7 +10,8 @@ import UserAvatar from "../UserAvatar";
 import { getCineGraph } from "../../api/userService";
 import { genreColor, hexLuminance } from "./CineMatchGenreRing";
 import { categoryMeta } from "./matchCategoryMeta";
-import type { CineGraphStats, SwipeCandidate } from "../../types";
+import LockedUnlockNote from "./LockedUnlockNote";
+import type { CineGraphStats, SyncCandidate } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { fonts } from "../../theme/typography";
@@ -29,16 +30,28 @@ const RING_STROKE_RATIO = 0.16;
 const CHIP_HEIGHT = 34;
 const CHIP_GAP = 12;
 const CHIP_CENTER_SCALE = 1.08;
-const CHIP_H_PADDING = 14;
+const CHIP_H_PADDING = 16;
 const MIN_CHIP_WIDTH = 54;
-// Text-length estimate, not a measured layout — good enough for a pill
-// whose only job is "roughly as wide as its own word" (this codebase's own
-// CineGraphDonut/CineMatchGenreRing chips fall back to an near-identical
-// formula before their first real onLayout measurement lands); estimating
-// only avoids the "chip visibly resizes right after mount" jitter those
-// two files have to specifically freeze against once real measurements
-// arrive, at the cost of not being pixel-exact.
-const CHAR_WIDTH_ESTIMATE = 6.8;
+// A real, measured onLayout on the chip itself was tried twice here and
+// removed both times — first because the *visible* chip sits inside a
+// normal-flow flex child with an explicit width (`item`, below), which
+// genuinely caps available width for text wrapping regardless of
+// `alignItems:"center"` (unlike CineGraphDonut.tsx/CineMatchGenreRing.tsx's
+// own chips, which measure cleanly because they're position:"absolute",
+// entirely outside constrained flex flow) — so an undersized estimate
+// caused the text to actually wrap, and the "measurement" captured was
+// that already-wrapped box, frozen forever. The follow-up fix (an
+// invisible, genuinely unconstrained probe Text measuring each genre
+// separately) was structurally correct but still reported live as
+// unreliable in practice. Landed on the simplest fix that has no
+// dependency on any of that: a generously wide flat per-character
+// estimate — 9.5px/char (up from 6.8) plus extra padding (16, up from
+// 14) — sized to comfortably clear real DM Sans Medium 11.5px text for
+// every realistic genre name, including wide-glyph ones ("Science
+// Fiction", "TV Movie"), not just tuned to the shortest ones. A little
+// extra empty space inside a pill is a far smaller visual cost than
+// wrapped, broken text.
+const CHAR_WIDTH_ESTIMATE = 9.5;
 const chipWidthFor = (genre: string) => Math.max(MIN_CHIP_WIDTH, Math.round(genre.length * CHAR_WIDTH_ESTIMATE) + CHIP_H_PADDING * 2);
 // The coverflow's own resting slot before the first genre — deliberately
 // blank, no chip inside it. At rest (no scroll yet) this is what's centered,
@@ -195,11 +208,15 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
   const [centerIndex, setCenterIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const focusedIndexRef = useRef(0);
+  const scrollRef = useRef<any>(null);
 
   const onLayout = (e: LayoutChangeEvent) => setViewportWidth(e.nativeEvent.layout.width);
 
   const slots = useMemo<Slot[]>(
-    () => [{ key: "__empty__", genre: null, width: EMPTY_SLOT_WIDTH }, ...genres.map((g) => ({ key: g, genre: g, width: chipWidthFor(g) }))],
+    () => [
+      { key: "__empty__", genre: null, width: EMPTY_SLOT_WIDTH },
+      ...genres.map((g) => ({ key: g, genre: g, width: chipWidthFor(g) })),
+    ],
     [genres]
   );
 
@@ -223,27 +240,43 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
   const offsets = useMemo(() => centers.map((c) => leadingPad + c - viewportWidth / 2), [centers, leadingPad, viewportWidth]);
   const trailingPad = Math.max(0, viewportWidth / 2 - (slots[slots.length - 1]?.width ?? 0) / 2);
 
-  useEffect(() => {
-    if (viewportWidth === 0 || offsets.length === 0) return;
-    const id = scrollX.addListener(({ value }) => {
-      let bestIdx = 0;
-      let bestDist = Infinity;
-      offsets.forEach((offset, i) => {
-        const dist = Math.abs(value - offset);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestIdx = i;
-        }
-      });
-      if (bestIdx !== focusedIndexRef.current) {
-        focusedIndexRef.current = bestIdx;
-        setCenterIndex(bestIdx);
-        onFocusChange(slots[bestIdx].genre);
+  // Settle-only commit — matches PosterCoverflow.tsx's own fix: committing
+  // focus (React state + onFocusChange, which drives the detail panel
+  // below) on every intermediate scroll frame visibly falls behind a fast
+  // fling once there are enough chips. The chip's own grow/shrink scale
+  // stays fully native-driven off scrollX regardless, so only the
+  // *committed* focus now waits for the scroll to actually stop.
+  const commitFocus = (idx: number) => {
+    if (idx !== focusedIndexRef.current) {
+      focusedIndexRef.current = idx;
+      setCenterIndex(idx);
+      onFocusChange(slots[idx].genre);
+    }
+  };
+
+  const handleScrollSettle = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
+    if (offsets.length === 0) return;
+    const value = e.nativeEvent.contentOffset.x;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    offsets.forEach((offset, i) => {
+      const dist = Math.abs(value - offset);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
       }
     });
-    return () => scrollX.removeListener(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offsets, slots]);
+    commitFocus(bestIdx);
+  };
+
+  // Lets tapping a chip that's already visible (fully centered or only
+  // partway, peeking in from the side) jump straight to it, instead of
+  // scrolling being the only way to move through the row — the scroll
+  // listener above still reports whichever slot ends up centered the same
+  // way either way, so nothing else needs to change to support this.
+  const goToIndex = (i: number) => {
+    scrollRef.current?.scrollTo({ x: offsets[i], animated: true });
+  };
 
   // Fresh genre list (a different candidate) — rest on the leading empty
   // slot again, matching where the scroll position (still 0 on a fresh
@@ -262,7 +295,8 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
         wrap: { width: "100%" },
         row: { alignItems: "center" },
         item: { alignItems: "center", justifyContent: "center" },
-        chip: { height: CHIP_HEIGHT, borderRadius: CHIP_HEIGHT / 2, borderWidth: 1.5, alignItems: "center", justifyContent: "center", paddingHorizontal: CHIP_H_PADDING },
+        pressable: { alignSelf: "stretch" },
+        chip: { height: CHIP_HEIGHT, borderRadius: CHIP_HEIGHT / 2, borderWidth: 1.5, alignItems: "center", justifyContent: "center", paddingHorizontal: CHIP_H_PADDING, alignSelf: "stretch" },
         chipText: { fontSize: 11.5, fontFamily: fonts.medium, textAlign: "center" },
       }),
     [colors]
@@ -274,6 +308,7 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
     <View style={styles.wrap} onLayout={onLayout}>
       {viewportWidth > 0 && (
         <AnimatedGHScrollView
+          ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           snapToOffsets={offsets}
@@ -281,6 +316,8 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
           contentContainerStyle={[styles.row, { paddingLeft: leadingPad, paddingRight: trailingPad, gap: CHIP_GAP, height: CHIP_HEIGHT + 8 }]}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
           scrollEventThrottle={16}
+          onMomentumScrollEnd={handleScrollSettle}
+          onScrollEndDrag={handleScrollSettle}
         >
           {slots.map((slot, i) => {
             if (!slot.genre) {
@@ -293,18 +330,19 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
             });
             const isCentered = i === centerIndex;
             const color = colorByGenre.get(slot.genre) ?? colors.placeholder;
+            const genre = slot.genre;
             return (
               <View key={slot.key} style={[styles.item, { width: slot.width, zIndex: isCentered ? 10 : 0 }]}>
-                <Animated.View
-                  style={[
-                    styles.chip,
-                    { borderColor: color, backgroundColor: isCentered ? color : colors.base100, transform: [{ scale }] },
-                  ]}
-                >
-                  <Text style={[styles.chipText, { color: isCentered ? "#2b2b2b" : color }]} numberOfLines={1}>
-                    {slot.genre}
-                  </Text>
-                </Animated.View>
+                <Pressable onPress={() => goToIndex(i)} style={styles.pressable}>
+                  <Animated.View
+                    style={[
+                      styles.chip,
+                      { borderColor: color, backgroundColor: isCentered ? color : colors.base100, transform: [{ scale }] },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, { color: isCentered ? "#2b2b2b" : color }]}>{genre}</Text>
+                  </Animated.View>
+                </Pressable>
               </View>
             );
           })}
@@ -315,7 +353,7 @@ function GenreCoverflow({ genres, colorByGenre, onFocusChange }: GenreCoverflowP
 }
 
 interface Props {
-  candidate: SwipeCandidate;
+  candidate: SyncCandidate;
   // The Sync search's own active genre filter (MatchFilters.genres) — empty
   // means no filter, matching that same convention everywhere else it's
   // used (computeMatchBreakdown's own `if (genres.length && ...)` guard).
@@ -326,7 +364,21 @@ interface Props {
   // favoritesOverlap already applies server-side, just done here instead
   // since this card's own data source can't take a filter param.
   activeGenres: string[];
+  // False until the viewer has scrolled past the deck's own summary card —
+  // see MatchAnalysisPanel.tsx's shouldLoadExtras. This card fires two
+  // getCineGraph calls (viewer's own stats + the candidate's) that used to
+  // both start the instant a candidate was selected, regardless of whether
+  // this card was ever actually scrolled to.
+  shouldLoad: boolean;
+  // Plus tier — only the top 6 (by combined count, rankedGenres is already
+  // sorted that way) genre chips are shown, rest hidden behind
+  // LockedUnlockNote. The rings above the coverflow stay untouched (they
+  // reflect real totals, not the chip list) since they were never a
+  // per-genre browsing surface to begin with.
+  locked?: boolean;
 }
+
+const VARIETY_LOCKED_VISIBLE_COUNT = 6;
 
 // Real counts for just the active genre filter (or every genre, when no
 // filter is active) — everything this component derives for display
@@ -339,7 +391,7 @@ function filterStats(stats: CineGraphStats | null, activeGenres: string[]): Cine
   return Object.fromEntries(Object.entries(stats).filter(([genre]) => activeGenres.includes(genre)));
 }
 
-export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
+export default function MatchVarietyRings({ candidate, activeGenres, shouldLoad, locked }: Props) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -353,13 +405,46 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
   const isMovie = candidate.contentType === "movie";
+  // "Which isMovie/candidate this fetch has *successfully completed* for"
+  // — set only inside the .then(), never before starting the request. A
+  // real, live bug came from an earlier version that set this eagerly
+  // (right before firing the request): a candidate switch while
+  // activeIndex was already >=1 from browsing a *previous* candidate
+  // starts shouldLoad already true, fires the fetch, marks the ref — then
+  // MatchAnalysisPanel's own reset-activeIndex-to-0 effect flips
+  // shouldLoad back to false a moment later, cancelling the in-flight
+  // request via this effect's own cleanup. With the ref already marked,
+  // every later shouldLoad:true (swiping past the summary again) saw
+  // "already handled" and skipped fetching forever — myStats/theirStats
+  // stayed permanently null, `loaded` never became true, the card
+  // rendered blank with no way to recover short of leaving and
+  // reselecting the candidate. Marking success-only means a cancelled
+  // attempt leaves the ref untouched, so the next shouldLoad:true
+  // genuinely retries.
+  const myStatsFetchKeyRef = useRef<string | null>(null);
+  const theirStatsFetchKeyRef = useRef<string | null>(null);
+
+  // myStats has no per-candidate identity at all (it's always "the
+  // viewer's own" stats) — reset only when the content type actually
+  // changes, not on every candidate switch.
+  useEffect(() => {
+    setMyStats(null);
+    myStatsFetchKeyRef.current = null;
+  }, [isMovie]);
 
   useEffect(() => {
-    if (!user) return;
+    setTheirStats(null);
+    theirStatsFetchKeyRef.current = null;
+  }, [candidate.user._id, isMovie]);
+
+  useEffect(() => {
+    if (!user || !shouldLoad || myStatsFetchKeyRef.current === String(isMovie)) return;
     let cancelled = false;
     getCineGraph(user._id)
       .then((data) => {
-        if (!cancelled) setMyStats(isMovie ? data.movieStats : data.seriesStats);
+        if (cancelled) return;
+        myStatsFetchKeyRef.current = String(isMovie);
+        setMyStats(isMovie ? data.movieStats : data.seriesStats);
       })
       .catch(() => {
         if (!cancelled) setMyStats({});
@@ -367,13 +452,17 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [user, isMovie]);
+  }, [user, isMovie, shouldLoad]);
 
   useEffect(() => {
+    const key = `${candidate.user._id}:${isMovie}`;
+    if (!shouldLoad || theirStatsFetchKeyRef.current === key) return;
     let cancelled = false;
     getCineGraph(candidate.user._id)
       .then((data) => {
-        if (!cancelled) setTheirStats(isMovie ? data.movieStats : data.seriesStats);
+        if (cancelled) return;
+        theirStatsFetchKeyRef.current = key;
+        setTheirStats(isMovie ? data.movieStats : data.seriesStats);
       })
       .catch(() => {
         if (!cancelled) setTheirStats({});
@@ -381,7 +470,7 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [candidate.user._id, isMovie]);
+  }, [candidate.user._id, isMovie, shouldLoad]);
 
   const filteredMyStats = useMemo(() => filterStats(myStats, activeGenres), [myStats, activeGenres]);
   const filteredTheirStats = useMemo(() => filterStats(theirStats, activeGenres), [theirStats, activeGenres]);
@@ -414,6 +503,15 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
   );
   const myCount = selectedGenre ? filteredMyStats?.[selectedGenre] ?? 0 : totalMine;
   const theirCount = selectedGenre ? filteredTheirStats?.[selectedGenre] ?? 0 : totalTheirs;
+  // What share of that person's own total this one genre makes up — only
+  // meaningful once a specific genre is selected (against the resting
+  // "overall total" state, a percentage of itself is always 100%, not
+  // worth showing). Each side's percentage is against their *own* total,
+  // not a shared denominator — the two people can have very different
+  // totals, so "this is a bigger slice of my taste than of theirs" is
+  // exactly the comparison this is meant to surface.
+  const myPct = selectedGenre && totalMine > 0 ? Math.round((myCount / totalMine) * 100) : null;
+  const theirPct = selectedGenre && totalTheirs > 0 ? Math.round((theirCount / totalTheirs) * 100) : null;
   const currentColor = selectedGenre ? colorByGenre.get(selectedGenre) ?? colors.baseContent : colors.baseContent;
   const unitLabel = isMovie ? t("movies") : t("series");
 
@@ -428,10 +526,17 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
         // poster detail (ratingColumn/ratingName/ratingText) — per direct
         // ask that these headers match that card's, not this card's own
         // earlier, smaller styling.
-        detailRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24, marginTop: 16 },
-        detailColumn: { alignItems: "center", gap: 8, maxWidth: "45%" },
+        // Same divider MatchSharedFavorites.tsx uses between its own poster
+        // row and detail block — per direct ask that this card's coverflow-
+        // to-detail transition read the same way.
+        divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginTop: 12, marginBottom: 10 },
+        detailRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24, marginTop: 6 },
+        detailColumn: { alignItems: "center", gap: 6, maxWidth: "45%" },
         detailName: { fontFamily: fonts.bold, fontSize: 14, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5 },
-        detailText: { fontSize: 15, fontFamily: fonts.medium, color: colors.baseContent },
+        // Smaller and muted — per direct feedback this read as too big/
+        // prominent next to detailName above it, which is meant to be the
+        // one bold, attention-getting line in this pair.
+        detailText: { fontSize: 12.5, fontFamily: fonts.medium, color: colors.placeholder },
       }),
     [colors]
   );
@@ -467,7 +572,17 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
 
       {loaded && rankedGenres.length > 0 && (
         <>
-          <GenreCoverflow key={candidate.user._id} genres={rankedGenres} colorByGenre={colorByGenre} onFocusChange={setSelectedGenre} />
+          <GenreCoverflow
+            key={candidate.user._id}
+            genres={locked ? rankedGenres.slice(0, VARIETY_LOCKED_VISIBLE_COUNT) : rankedGenres}
+            colorByGenre={colorByGenre}
+            onFocusChange={setSelectedGenre}
+          />
+          {locked && rankedGenres.length > VARIETY_LOCKED_VISIBLE_COUNT && (
+            <LockedUnlockNote label={t("Showing {{shown}} of {{total}}", { shown: VARIETY_LOCKED_VISIBLE_COUNT, total: rankedGenres.length })} />
+          )}
+
+          <View style={styles.divider} />
 
           <View style={styles.detailRow}>
             <View style={styles.detailColumn}>
@@ -476,6 +591,7 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
               </Text>
               <Text style={styles.detailText}>
                 {myCount} {unitLabel}
+                {myPct != null ? ` · ${myPct}%` : ""}
               </Text>
             </View>
             <View style={styles.detailColumn}>
@@ -484,6 +600,7 @@ export default function MatchVarietyRings({ candidate, activeGenres }: Props) {
               </Text>
               <Text style={styles.detailText}>
                 {theirCount} {unitLabel}
+                {theirPct != null ? ` · ${theirPct}%` : ""}
               </Text>
             </View>
           </View>
