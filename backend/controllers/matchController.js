@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Rating from "../models/Rating.js";
+import MatchAnalysisLog from "../models/MatchAnalysisLog.js";
+import SyncSearchLog from "../models/SyncSearchLog.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 
 // New imports for consistent responses and error handling
@@ -9,11 +11,15 @@ import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
 // The "hybrid approach" services (contentBasedService.js, socialScoreService.js,
 // diversityScoreService.js, bonusMetricsService.js) used to be imported here but
-// never actually called — computeMatchBreakdown below now has its own in-memory
-// equivalents (see calculateDiversityScoreInMemory / calculateTrendingAlignmentInMemory
-// / etc.) that operate on data this file already has loaded, instead of each doing
-// its own redundant User.findById per candidate. The service files themselves are
-// untouched — backend/scripts/test_hybrid_matching.js still imports them directly.
+// never actually called — computeMatchBreakdown below has its own in-memory
+// equivalents instead (see calculateDiversityScoreInMemory /
+// calculateTrendingAlignmentInMemory / etc.) that operate on data this file
+// already has loaded, instead of each doing its own redundant User.findById per
+// candidate. Deleted along with their only caller (the orphaned, never-wired-into-
+// any-npm-script backend/scripts/test_hybrid_matching.js) — bonusMetricsService.js
+// in particular had a real, live bug (read `r.content`, a field that doesn't exist
+// on Rating.js, only `contentId`), so keeping it around as unreachable dead code
+// wasn't neutral, it was a bug waiting for something to call it again.
 import { formatForLLM } from "../services/llmFormatterService.js";
 import { sanitizeForLLM } from "../services/llmSanitizerService.js";
 import { callLLM } from "../services/llmAdapter.js";
@@ -353,8 +359,8 @@ const normalizeLLMAnalysis = (obj, payload = {}, fallbackText = "", language = '
  * 
  * Expected accuracy: 60-70%
  */
-// Extracted from findMatches's hybrid-mode branch so the new swipe queue
-// (getSwipeQueue, below) can reuse the exact same scoring instead of yet a
+// Extracted from findMatches's hybrid-mode branch so the new sync candidates
+// endpoint (getSyncCandidates, below) can reuse the exact same scoring instead of yet a
 // third slightly-different copy — findMatches and getMatchWithUser already
 // disagree on weights (see CINEMATCH_ANALYZE_AND_SWIPE_REPORTS.md). Body is
 // unchanged from the original inline block, just parameterized.
@@ -606,10 +612,15 @@ export const findMatches = asyncHandler(async (req, res) => {
   sendPaginated(res, paginatedResults, total, pageNum, limitNum, 'Hybrid Matches found', { tierCapped, maxMatches });
 });
 
-/* ========== SWIPE (CineMatch swipe-to-follow) ========== */
+/* ========== SYNC (CineMatch browse-and-follow) ========== */
+
+// How many random candidates get scored per search — see the $sample comment
+// at its own call site below for why this is a random draw, not a plain
+// .limit().
+const CANDIDATE_POOL_SIZE = 1000;
 
 /**
- * GET /api/match/swipe/queue
+ * GET /api/match/sync/candidates
  * Ranked batch of match candidates, sorted by matchPercentage descending —
  * the profile-cloud results view is just the top of this same array, no
  * separate endpoint. (No more accept/reject/exclusion here — CineMatch is a
@@ -624,20 +635,46 @@ export const findMatches = asyncHandler(async (req, res) => {
  * matchInsights block (shared genres, favorites overlap, social overlap
  * detail) for a future match-detail view.
  */
-export const getSwipeQueue = asyncHandler(async (req, res) => {
+export const getSyncCandidates = asyncHandler(async (req, res) => {
   const meId = req.user.id;
-  const { canUseMatchFilters, maxMatches } = getTierLimits(req.user.accountTier);
+  const { canUseMatchFilters, canUseAdvancedMatchFilters, maxMatches, syncSearchesPerDay } = getTierLimits(
+    req.user.accountTier
+  );
 
   const requested = canUseMatchFilters
     ? {
         type: ["movie", "series"].includes(req.query.type) ? req.query.type : DEFAULT_MATCH_FILTERS.type,
         genres: Array.isArray(req.query.genres) ? req.query.genres : (req.query.genres ? [req.query.genres] : []),
-        useCount: req.query.useCount !== "false",
-        useAvgRating: req.query.useAvgRating !== "false",
+        // The useCount/useAvgRating *weighting* toggles are Premium-only —
+        // a Plus (or Free, moot since canUseMatchFilters is already false
+        // there) request is forced back to DEFAULT_MATCH_FILTERS' values
+        // here regardless of what the client sends, same "enforced
+        // server-side, not just hidden client-side" rule canUseMatchFilters
+        // itself already follows for type/genres.
+        useCount: canUseAdvancedMatchFilters ? req.query.useCount !== "false" : DEFAULT_MATCH_FILTERS.useCount,
+        useAvgRating: canUseAdvancedMatchFilters
+          ? req.query.useAvgRating !== "false"
+          : DEFAULT_MATCH_FILTERS.useAvgRating,
       }
     : { ...DEFAULT_MATCH_FILTERS };
 
   const { type, genres, useCount, useAvgRating } = requested;
+
+  // Daily sync-search quota — movies and series share one quota (this is a
+  // per-day count of *searches*, not of results), tracked via SyncSearchLog.
+  // Checked before doing any of the real work below (candidate sampling,
+  // scoring) so a request over quota fails fast.
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const searchesToday = await SyncSearchLog.countDocuments({ user: meId, createdAt: { $gte: dayStart } });
+  if (searchesToday >= syncSearchesPerDay) {
+    const tomorrow = new Date(dayStart);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return sendError(res, "Daily sync limit reached", 429, {
+      retryAfterMs: tomorrow.getTime() - Date.now(),
+      limit: syncSearchesPerDay,
+    });
+  }
   const cineKey = type === "movie" ? "movieCineGraph" : "seriesCineGraph";
 
   const me = await User.findById(meId).lean();
@@ -645,10 +682,34 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
     return sendSuccess(res, { candidates: [] }, "No candidates found");
   }
 
-  const others = await User.find({ _id: { $ne: meId } })
-    .select(`username profile_pic_url bio ${cineKey} following followers favoriteMovies favoriteSeries watchlist`)
-    .limit(1000)
-    .lean();
+  // $sample (a random draw), not .find().limit(CANDIDATE_POOL_SIZE) — a plain
+  // limit() always returns the same first N users in whatever order Mongo's
+  // natural/_id order happens to be, every single request, for every user on
+  // the app. Past CANDIDATE_POOL_SIZE users, anyone outside that fixed first
+  // slice could never appear as a match candidate for *anyone*, no matter how
+  // well their taste actually aligns — not a hypothetical at this app's
+  // current scale, but a real structural ceiling the old query guaranteed
+  // the moment the user collection grew past it. $sample draws a fresh random
+  // subset per request instead, so over repeated searches every user
+  // eventually gets a chance to be scored, not just whoever happens to sit
+  // in the first CANDIDATE_POOL_SIZE documents.
+  const others = await User.aggregate([
+    { $match: { _id: { $ne: new mongoose.Types.ObjectId(meId) } } },
+    { $sample: { size: CANDIDATE_POOL_SIZE } },
+    {
+      $project: {
+        username: 1,
+        profile_pic_url: 1,
+        bio: 1,
+        [cineKey]: 1,
+        following: 1,
+        followers: 1,
+        favoriteMovies: 1,
+        favoriteSeries: 1,
+        watchlist: 1,
+      },
+    },
+  ]);
 
   const eligibleOthers = others.filter((u) => u[cineKey]);
 
@@ -690,7 +751,7 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
       // weight (Pearson rating correlation) was computed over ALL of a
       // user's ratings regardless of the genre filter, only its minor 15%
       // "genre affinity" term actually respected it. That's why filtering
-      // to one genre barely moved the swipe-card percentage while the same
+      // to one genre barely moved the sync-card percentage while the same
       // filter on a profile page (already on computeMatchBreakdown, whose
       // full collaborative term is genre-filtered) visibly did.
       const { matchPercentage, breakdown, matchInsights } = computeMatchBreakdown(
@@ -719,10 +780,17 @@ export const getSwipeQueue = asyncHandler(async (req, res) => {
 
   results.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
+  // Best-effort, same pattern as analyzeMatchWithUser's own MatchAnalysisLog
+  // write below — logged after a search actually succeeds (not up front at
+  // the quota check above), so a request that fails before this point
+  // (network hiccup, an unexpected exception) doesn't silently burn part of
+  // today's quota for nothing.
+  SyncSearchLog.create({ user: meId }).catch(() => {});
+
   return sendSuccess(
     res,
     { candidates: results.slice(0, maxMatches) },
-    "Swipe queue fetched"
+    "Sync candidates fetched"
   );
 });
 
@@ -829,13 +897,17 @@ const calculateActivityRecencyInMemory = (targetRatings) => Math.min(1, targetRa
 // Watch-volume compatibility (casual viewer vs. heavy watcher) — ports
 // diversityScoreService.js's calculateWatchActivityScore, using the
 // already-loaded CineGraph instead of a fresh DB fetch. No Rating query
-// needed at all. Unlike the two signals above, a zero-total-watches case
-// keeps the original 0.5 neutral on purpose — this is a genuine "not enough
-// data to compare" case, not an "no positive evidence to reward" one.
+// needed at all. A zero-total-watches case used to return 0.5 (neutral) here
+// — the one bonus sub-signal that did, while calculateTrendingAlignmentInMemory
+// and calculateActivityRecencyInMemory both deliberately treat missing data
+// as 0 ("a bonus category should reward positive evidence, not reward the
+// absence of data as a coin-flip neutral" — see the former's own comment).
+// Brought in line with that same reasoning: no watch history on either side
+// isn't a neutral "can't compare," it's simply nothing to reward yet.
 const calculateWatchActivityScoreInMemory = (myGraph, targetGraph) => {
   const total1 = Object.values(myGraph || {}).reduce((sum, g) => sum + (g.count || 0), 0);
   const total2 = Object.values(targetGraph || {}).reduce((sum, g) => sum + (g.count || 0), 0);
-  if (total1 === 0 || total2 === 0) return 0.5;
+  if (total1 === 0 || total2 === 0) return 0;
   const ratio = Math.max(total1, total2) / Math.min(total1, total2);
   if (ratio <= 1) return 1.0;
   if (ratio >= 10) return 0.0;
@@ -865,7 +937,7 @@ const jaccard = (setA, setB) => {
 
 // One batched Movie/Series lookup for every favorite ID across the given
 // lists, keyed by contentId -> genre_ids, so computeMatchBreakdown (a
-// deliberately DB-call-free function, safe to call in getSwipeQueue's
+// deliberately DB-call-free function, safe to call in getSyncCandidates's
 // up-to-1000-candidate loop) can both filter favorites by an active genre
 // filter AND blend genre-overlap into the Favorites score, without doing its
 // own per-candidate query. Always fetched now (used to early-return null when
@@ -929,7 +1001,7 @@ const buildMatchInsights = (genreCounts1, genreCounts2, favorites1, favorites2, 
 
 /**
  * Full weighted match score + per-dimension breakdown between two specific
- * users — shared by getSwipeQueue (the swipe/match-cloud list), getMatchWithUser
+ * users — shared by getSyncCandidates (the sync/match-cloud list), getMatchWithUser
  * (the score shown on a profile), and analyzeMatchWithUser (the LLM narrative).
  * Single source of truth; every caller gets the same number for the same pair
  * of users and filters.
@@ -937,7 +1009,7 @@ const buildMatchInsights = (genreCounts1, genreCounts2, favorites1, favorites2, 
  * recentRatings (5th param, optional) must be pre-fetched by the caller —
  * already-sorted-newest-first, plain {user, contentId, createdAt} objects —
  * this function itself makes no DB calls, so it stays safe to call in
- * getSwipeQueue's up-to-1000-candidate loop.
+ * getSyncCandidates's up-to-1000-candidate loop.
  *
  * favoriteGenreIds (5th param, optional) — a Map<contentId, genre_ids[]> from
  * buildFavoriteGenreIdsMap, pre-fetched by the caller the same way. If a
@@ -1070,10 +1142,22 @@ const computeMatchBreakdown = (
   // signals splitting the remainder evenly.
   const bonusScore = Math.min(1, 0.5 * trendingAlignment + 0.25 * activityRecency + 0.25 * watchActivityScore);
 
+  // Social dropped from 0.2 to 0.15 (the freed 0.05 went to collaborativeScore,
+  // 0.35->0.4) — at 0.2 it outweighed every actual taste signal here except
+  // collaborativeScore itself, on a *content* matching app, meaning two users
+  // with perfectly aligned taste but zero mutual follows could never clear
+  // 80%. 0.15 now matches scoreHybridCandidate's own social weight (used by
+  // getSyncCandidates for the actual candidate ranking) — the two functions
+  // previously disagreed on this one weight (0.2 here vs 0.15 there) with no
+  // record of that being intentional; they still differ structurally in
+  // other ways (this one has a bonusScore term, scoreHybridCandidate
+  // redistributes collaborative/genre weight based on the useCount/
+  // useAvgRating toggles instead) so full parity isn't attempted here, just
+  // this specific, flagged-as-too-high number.
   const finalScore =
-    0.35 * collaborativeScore +
+    0.4 * collaborativeScore +
     0.25 * contentScore +
-    0.2 * socialScore +
+    0.15 * socialScore +
     0.15 * diversityScore +
     0.05 * bonusScore;
 
@@ -1214,6 +1298,27 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   if (!targetUserId) return sendError(res, 'Target user ID is required', 400);
   if (meId === targetUserId) return sendError(res, 'Cannot analyze yourself', 400);
 
+  // Per-(user,targetUser)-pair cooldown — analyzing several different
+  // candidates in one session is fine, re-analyzing the exact same one
+  // repeatedly just re-burns a real LLM call for data that hasn't changed.
+  // Checked before any of the DB/LLM work below, not after — fail fast.
+  const { matchAnalysisCooldownMinutes } = getTierLimits(req.user.accountTier);
+  if (matchAnalysisCooldownMinutes > 0) {
+    const lastAnalysis = await MatchAnalysisLog.findOne({ user: meId, targetUser: targetUserId })
+      .sort({ createdAt: -1 })
+      .lean();
+    if (lastAnalysis) {
+      const cooldownMs = matchAnalysisCooldownMinutes * 60 * 1000;
+      const elapsedMs = Date.now() - lastAnalysis.createdAt.getTime();
+      if (elapsedMs < cooldownMs) {
+        return sendError(res, 'Analysis on cooldown', 429, {
+          retryAfterMs: cooldownMs - elapsedMs,
+          lastRunAt: lastAnalysis.createdAt,
+        });
+      }
+    }
+  }
+
   const cineKey = type === 'movie' ? 'movieCineGraph' : 'seriesCineGraph';
 
   const me = await User.findById(meId).lean();
@@ -1328,6 +1433,13 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     || { analysis: llmResp.text || "Analysis could not be generated." };
 
   const parsed = normalizeLLMAnalysis(parsedCandidate, sanitized, llmResp.text || "", language);
+
+  // Best-effort — a transient write failure here shouldn't fail an otherwise-
+  // successful analysis the user is about to receive; it would just mean this
+  // one call doesn't count toward the pair's cooldown.
+  MatchAnalysisLog.create({ user: meId, targetUser: targetUserId }).catch((err) =>
+    console.error("Failed to record MatchAnalysisLog entry:", err.message)
+  );
 
   return sendSuccess(
     res,

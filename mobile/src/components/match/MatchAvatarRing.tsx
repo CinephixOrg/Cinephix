@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, RadialGradient, Stop, G } from "react-native-svg";
 import UserAvatar from "../UserAvatar";
-import type { SwipeCandidate } from "../../types";
+import type { SyncCandidate } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
@@ -19,9 +19,13 @@ const MEDAL_COLORS = ["#FFC94A", "#C7CBD1", "#CD7F32"];
 const MEDAL_HIGHLIGHT_COLORS = ["#FFF3C4", "#F2F3F5", "#F0C08A"];
 
 interface Props {
-  candidate: SwipeCandidate;
+  candidate: SyncCandidate;
   diameter: number;
   rank?: number;
+  // Tier-gated bubble — dims the ring/avatar/percentage rather than hiding
+  // them outright, so the percentage stays legible as the actual "tease"
+  // (MatchCloudBubble layers a lock badge on top of this).
+  dimmed?: boolean;
 }
 
 // The gray progress-ring + avatar + percentage-text visual, extracted out of
@@ -30,7 +34,7 @@ interface Props {
 // relying on a CSS transform to scale up the tiny cloud bubble's version —
 // simpler and avoids any transform/compositing risk for the one place this
 // needs to render large and reliably.
-export default function MatchAvatarRing({ candidate, diameter, rank = 0 }: Props) {
+export default function MatchAvatarRing({ candidate, diameter, rank = 0, dimmed }: Props) {
   const { colors } = useTheme();
 
   const STROKE = Math.max(3, diameter * 0.045);
@@ -42,6 +46,14 @@ export default function MatchAvatarRing({ candidate, diameter, rank = 0 }: Props
   const medalColor = MEDAL_COLORS[rank] ?? colors.placeholder;
   const medalHighlight = MEDAL_HIGHLIGHT_COLORS[rank];
   const badgeSize = Math.max(18, Math.min(30, diameter * 0.26));
+  // Unique per candidate, not a hardcoded shared id — MatchResultsCloud
+  // mounts up to 5 of these at once (one per cloud bubble), and up to 3 of
+  // them (rank 0/1/2, gold/silver/bronze) render this same RadialGradient
+  // simultaneously. A shared id here would collide the same way this
+  // feature's other gradient-using SVGs already guard against explicitly
+  // (see MatchGradientTitle.tsx/MatchTitleBadge.tsx's own gradientId prop
+  // comments) — this one was the exception that hadn't been caught yet.
+  const medalGradientId = `medalShine-${candidate.user._id}`;
 
   const styles = useMemo(
     () =>
@@ -61,7 +73,7 @@ export default function MatchAvatarRing({ candidate, diameter, rank = 0 }: Props
   );
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, dimmed && { opacity: 0.35 }]}>
       <View style={{ width: diameter, height: diameter }}>
         <Svg width={diameter} height={diameter}>
           <G rotation="-90" origin={`${diameter / 2}, ${diameter / 2}`}>
@@ -104,7 +116,7 @@ export default function MatchAvatarRing({ candidate, diameter, rank = 0 }: Props
           <Svg width={badgeSize} height={badgeSize}>
             <Defs>
               {medalHighlight && (
-                <RadialGradient id="medalShine" cx="35%" cy="30%" r="70%">
+                <RadialGradient id={medalGradientId} cx="35%" cy="30%" r="70%">
                   <Stop offset="0" stopColor={medalHighlight} />
                   <Stop offset="1" stopColor={medalColor} />
                 </RadialGradient>
@@ -114,7 +126,7 @@ export default function MatchAvatarRing({ candidate, diameter, rank = 0 }: Props
               cx={badgeSize / 2}
               cy={badgeSize / 2}
               r={badgeSize / 2 - 1}
-              fill={medalHighlight ? "url(#medalShine)" : medalColor}
+              fill={medalHighlight ? `url(#${medalGradientId})` : medalColor}
               stroke={colors.base100}
               strokeWidth={1.5}
             />

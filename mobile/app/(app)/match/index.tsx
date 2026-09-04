@@ -2,14 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, View, Text, Pressable, ScrollView, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import * as SecureStore from "expo-secure-store";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../../src/context/AuthContext";
-import { getSwipeQueue, type MatchFilters } from "../../../src/api/matchService";
+import { getSyncCandidates, type MatchFilters } from "../../../src/api/matchService";
 import { getCineGraph } from "../../../src/api/userService";
 import MatchFilterStrip from "../../../src/components/match/MatchFilterStrip";
 import MatchResultsCloud from "../../../src/components/match/MatchResultsCloud";
-import type { CineGraphData, SwipeCandidate } from "../../../src/types";
+import SyncIntroCard from "../../../src/components/match/SyncIntroCard";
+import type { CineGraphData, SyncCandidate } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
+import { STORAGE_KEYS } from "../../../src/constants/apiRoutes";
 
 // Nothing selected by default — the previous round's live-apply/auto-
 // refetch model is gone; the filter panel's own "Find Your Match" button is
@@ -38,6 +43,8 @@ const PAGE_SLIDE_MS = 320;
 export default function MatchScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -45,14 +52,54 @@ export default function MatchScreen() {
   // Same tier boundary the rest of the app already uses for gated features
   // (ProfileAnalysesTab, analysis history) — the server independently
   // enforces both regardless of what the client sends.
-  const canUseMatchFilters = tier === "pro" || tier === "premium" || tier === "dev";
+  const canUseMatchFilters = tier === "plus" || tier === "premium" || tier === "dev";
+  // Separate from canUseMatchFilters (type/genre) — the useCount/
+  // useAvgRating weighting toggles stay Premium-only.
+  const canUseAdvancedMatchFilters = tier === "premium" || tier === "dev";
+
+  // Defaults to false (skip it) rather than a tri-state "still checking" —
+  // SecureStore's read is async with no sync fallback on native, and
+  // blocking the whole page behind it would delay the common case (a
+  // return visit, where this stays false) for every single visit just to
+  // avoid a one-time, one-frame flash on someone's very first-ever visit.
+  const [showIntro, setShowIntro] = useState(false);
+  useEffect(() => {
+    SecureStore.getItemAsync(STORAGE_KEYS.SYNC_INTRO_SEEN).then((seen) => {
+      if (!seen) setShowIntro(true);
+    });
+  }, []);
+  const dismissIntro = useCallback(() => {
+    setShowIntro(false);
+    SecureStore.setItemAsync(STORAGE_KEYS.SYNC_INTRO_SEEN, "1");
+  }, []);
 
   const [filters, setFilters] = useState<MatchFilters>(DEFAULT_FILTERS);
+
+  // Free/Plus can't toggle useCount/useAvgRating at all (MatchFilterStrip's
+  // own advancedLocked treatment) — the server forces both true regardless
+  // of what's sent (getSyncCandidates, canUseAdvancedMatchFilters), but
+  // DEFAULT_FILTERS itself starts both false (a deliberate "nothing
+  // selected until Sync is pressed" choice for the *interactive*,
+  // Premium-only case). Left as false for a locked toggle, hasSignal (this
+  // file's own hasAnyCriterion, mirrored inside MatchFilterStrip) could
+  // never become true — Plus genuinely could not press Sync at all, a real
+  // reported bug. Forced true here to match what the server will actually
+  // use, and to show "Apply All Filters" as already checked (matching what
+  // the locked switches themselves imply) rather than looking unset.
+  useEffect(() => {
+    if (canUseAdvancedMatchFilters) return;
+    setFilters((prev) => (prev.useCount && prev.useAvgRating ? prev : { ...prev, useCount: true, useAvgRating: true }));
+  }, [canUseAdvancedMatchFilters]);
+
   const [cineGraph, setCineGraph] = useState<CineGraphData | null>(null);
-  const [candidates, setCandidates] = useState<SwipeCandidate[]>([]);
+  const [candidates, setCandidates] = useState<SyncCandidate[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Distinct from a generic error — retrying does nothing until tomorrow (or
+  // an upgrade), so the results page shows an "Upgrade" CTA instead of the
+  // usual "Retry" button for this one specific case.
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
   // Drives the ring's collapse/spin animation and gates the page slide —
   // stays true until both the request resolves AND the ring's own spin
   // animation reports itself actually finished (see queueReadyRef/
@@ -91,12 +138,18 @@ export default function MatchScreen() {
   const loadQueue = useCallback(
     async (nextFilters: MatchFilters) => {
       setError(null);
+      setQuotaExceeded(false);
       setHasSearched(true);
       try {
-        const result = await getSwipeQueue(nextFilters);
+        const result = await getSyncCandidates(nextFilters);
         setCandidates(Array.isArray(result.candidates) ? result.candidates : []);
       } catch (e: any) {
-        setError(e?.response?.data?.message || t("Failed to load matches."));
+        if (e?.response?.status === 429 && e?.response?.data?.errors?.limit != null) {
+          setQuotaExceeded(true);
+          setError(t("You've used all {{limit}} sync searches for today. Come back tomorrow, or upgrade for more.", { limit: e.response.data.errors.limit }));
+        } else {
+          setError(e?.response?.data?.message || t("Failed to load matches."));
+        }
       } finally {
         setRefreshing(false);
       }
@@ -125,8 +178,20 @@ export default function MatchScreen() {
   // before, just driven by two real events instead of a guessed duration.
   const tryFinishMatch = useCallback(() => {
     if (queueReadyRef.current && spinDoneRef.current) {
-      setMatchAnimating(false);
-      goToPage(1);
+      // Deferred one frame: `setCandidates` (loadQueue, above) was
+      // dispatched from a promise continuation just before this runs, and
+      // isn't guaranteed to have actually committed/painted yet — goToPage's
+      // slide is native-driven and starts immediately, independent of
+      // React's own render timing, so without this the transition could
+      // begin while page 1 was still showing its *previous* render (the "no
+      // results yet" empty state, with its own "Adjust Filters" button) for
+      // the first frame or two — a real, reported flash of that button right
+      // as the results screen opens. requestAnimationFrame gives React's
+      // scheduler a chance to flush that pending update first.
+      requestAnimationFrame(() => {
+        setMatchAnimating(false);
+        goToPage(1);
+      });
     }
   }, [goToPage]);
 
@@ -165,7 +230,7 @@ export default function MatchScreen() {
         pageBackButton: {
           position: "absolute",
           left: 16,
-          bottom: 16,
+          top: insets.top + 12,
           width: 40,
           height: 40,
           borderRadius: 20,
@@ -174,7 +239,7 @@ export default function MatchScreen() {
           justifyContent: "center",
         },
       }),
-    [colors, screenWidth]
+    [colors, screenWidth, insets.top]
   );
 
   return (
@@ -185,23 +250,30 @@ export default function MatchScreen() {
             <ScrollView
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
             >
-              {user && (
-                <MatchFilterStrip
-                  filters={filters}
-                  onChange={setFilters}
-                  onSubmit={handleMatchSubmit}
-                  loading={matchAnimating}
-                  onSpinComplete={handleSpinComplete}
-                  cineGraph={cineGraph}
-                  locked={!canUseMatchFilters}
-                  viewer={user}
-                />
-              )}
+              {showIntro ? (
+                <SyncIntroCard onStart={dismissIntro} />
+              ) : (
+                <>
+                  {user && (
+                    <MatchFilterStrip
+                      filters={filters}
+                      onChange={setFilters}
+                      onSubmit={handleMatchSubmit}
+                      loading={matchAnimating}
+                      onSpinComplete={handleSpinComplete}
+                      cineGraph={cineGraph}
+                      locked={!canUseMatchFilters}
+                      advancedLocked={!canUseAdvancedMatchFilters}
+                      viewer={user}
+                    />
+                  )}
 
-              {!hasSearched && (
-                <View style={styles.center}>
-                  <Text style={styles.centerText}>{t("Set your filters above, then tap Sync.")}</Text>
-                </View>
+                  {!hasSearched && (
+                    <View style={styles.center}>
+                      <Text style={styles.centerText}>{t("Set your filters above, then tap Sync.")}</Text>
+                    </View>
+                  )}
+                </>
               )}
             </ScrollView>
           </View>
@@ -211,13 +283,26 @@ export default function MatchScreen() {
               {error ? (
                 <View style={styles.center}>
                   <Text style={styles.centerText}>{error}</Text>
-                  <Pressable style={styles.primaryButton} onPress={handleMatchSubmit}>
-                    <Text style={styles.primaryButtonText}>{t("Retry")}</Text>
-                  </Pressable>
+                  {quotaExceeded ? (
+                    <Pressable style={styles.primaryButton} onPress={() => router.push("/match/subscription" as any)}>
+                      <Text style={styles.primaryButtonText}>{t("Upgrade")}</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable style={styles.primaryButton} onPress={handleMatchSubmit}>
+                      <Text style={styles.primaryButtonText}>{t("Retry")}</Text>
+                    </Pressable>
+                  )}
                 </View>
               ) : candidates.length === 0 ? (
                 <View style={styles.center}>
                   <Text style={styles.centerText}>{t("No matches found for these filters yet.")}</Text>
+                  {/* Same action the small pageBackButton (top-left,
+                      easy to miss) already offers, surfaced as an actual
+                      button here — unlike the `error` branch above, this
+                      state previously had no visible next step at all. */}
+                  <Pressable style={styles.primaryButton} onPress={() => goToPage(0)}>
+                    <Text style={styles.primaryButtonText}>{t("Adjust Filters")}</Text>
+                  </Pressable>
                 </View>
               ) : (
                 <View style={styles.cloudWrap}>

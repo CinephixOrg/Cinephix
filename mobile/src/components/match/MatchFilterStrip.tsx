@@ -3,6 +3,7 @@ import { View, Text, Pressable, Switch, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import CineGraphSubTabSwitcher from "../profile/CineGraphSubTabSwitcher";
 import CineMatchGenreRing, { MATCH_GENRE_KEYS } from "./CineMatchGenreRing";
 import type { CineGraphData, MatchUser } from "../../types";
@@ -15,7 +16,15 @@ interface Props {
   onChange: (filters: MatchFilters) => void;
   onSubmit: () => void;
   cineGraph: CineGraphData | null;
+  // Free tier — the whole card is dimmed + non-interactive, nothing below
+  // this can be customized at all.
   locked: boolean;
+  // Plus tier — the card itself is usable (type/genre), but the
+  // useCount/useAvgRating weighting toggles specifically stay Premium-only;
+  // forced true/true server-side (getSyncCandidates) regardless of what a
+  // client sends, so this just reflects that visually rather than letting
+  // Plus interact with switches that silently wouldn't do anything anyway.
+  advancedLocked: boolean;
   viewer: MatchUser;
   // True while the ring's own collapse/spin loading animation is running —
   // disables the ring, the Match button, and hides the disabled-reason note.
@@ -48,9 +57,20 @@ function hexToRgba(hex: string, alpha: number): string {
 // Replaces the previous round's live-apply/auto-refetch model entirely:
 // nothing is selected by default, nothing fetches until "Match" is
 // explicitly pressed.
-export default function MatchFilterStrip({ filters, onChange, onSubmit, cineGraph, locked, viewer, loading, onSpinComplete }: Props) {
+export default function MatchFilterStrip({
+  filters,
+  onChange,
+  onSubmit,
+  cineGraph,
+  locked,
+  advancedLocked,
+  viewer,
+  loading,
+  onSpinComplete,
+}: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
 
   const genreKeys = MATCH_GENRE_KEYS[filters.type];
   const allGenresSelected = genreKeys.length > 0 && genreKeys.every((g) => filters.genres.includes(g));
@@ -84,10 +104,12 @@ export default function MatchFilterStrip({ filters, onChange, onSubmit, cineGrap
   const styles = useMemo(
     () =>
       StyleSheet.create({
+        cardWrap: { position: "relative" },
         card: { backgroundColor: colors.base200, borderRadius: 16, paddingVertical: 16, marginHorizontal: 16, marginTop: 8 },
         locked: { opacity: 0.5 },
         lockNotice: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12, paddingHorizontal: 16 },
         lockNoticeText: { fontSize: 12, color: colors.placeholder, flex: 1 },
+        advancedLockHint: { textAlign: "center", paddingHorizontal: 24, marginTop: 8, textDecorationLine: "underline" },
         switcherWrap: { alignItems: "center" },
         infoNote: { fontSize: 12, color: colors.placeholder, textAlign: "center", lineHeight: 17, marginTop: 12, paddingHorizontal: 20 },
         // "Watched Count" / "Average Rating" — moved between the info note
@@ -122,69 +144,93 @@ export default function MatchFilterStrip({ filters, onChange, onSubmit, cineGrap
     [colors]
   );
 
+  const goToSubscription = () => router.push("/match/subscription" as any);
+
   return (
     <View>
-      <View style={[styles.card, locked && styles.locked]} pointerEvents={locked ? "none" : "auto"}>
-        {locked && (
-          <View style={styles.lockNotice}>
-            <Ionicons name="lock-closed" size={14} color={colors.placeholder} />
-            <Text style={styles.lockNoticeText}>{t("Upgrade to Pro or Premium to customize match filters.")}</Text>
-          </View>
-        )}
-
-        <View style={styles.switcherWrap}>
-          <CineGraphSubTabSwitcher activeTab={filters.type} onChange={(type) => onChange({ ...filters, type, genres: [] })} />
-        </View>
-
-        <Text style={styles.infoNote}>{t("Find your closest match on Cinephix. Tap your whole CineGraph or just the genres you want to filter by.")}</Text>
-
-        <View style={styles.signalsRow}>
-          <View style={styles.signalUnit}>
-            <Text style={styles.signalLabel}>{t("Watched Count")}</Text>
-            <Switch
-              value={filters.useCount}
-              onValueChange={(v) => onChange({ ...filters, useCount: v })}
-              trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
-              thumbColor={filters.useCount ? "#fff" : colors.placeholder}
-            />
-          </View>
-          <View style={styles.signalUnit}>
-            <Text style={styles.signalLabel}>{t("Average Rating")}</Text>
-            <Switch
-              value={filters.useAvgRating}
-              onValueChange={(v) => onChange({ ...filters, useAvgRating: v })}
-              trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
-              thumbColor={filters.useAvgRating ? "#fff" : colors.placeholder}
-            />
-          </View>
-        </View>
-
-        <CineMatchGenreRing
-          stats={stats}
-          type={filters.type}
-          selectedGenres={filters.genres}
-          onToggleGenre={toggleGenre}
-          userId={viewer._id}
-          username={viewer.username}
-          profilePicUrl={viewer.profile_pic_url}
-          loading={!!loading}
-          onSpinComplete={onSpinComplete}
-        />
-
-        <View style={styles.applyRow}>
-          <Pressable style={styles.applyUnit} onPress={toggleApplyAllGenres}>
-            <View style={[styles.checkCircle, allGenresSelected && styles.checkCircleActive]}>
-              {allGenresSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
+      <View style={styles.cardWrap}>
+        <View style={[styles.card, locked && styles.locked]} pointerEvents={locked ? "none" : "auto"}>
+          {locked && (
+            <View style={styles.lockNotice}>
+              <Ionicons name="lock-closed" size={14} color={colors.placeholder} />
+              <Text style={styles.lockNoticeText}>{t("Upgrade to Plus or Premium to customize match filters.")}</Text>
             </View>
-            <Text style={styles.applyUnitText}>{t("Apply All Genres")}</Text>
-          </Pressable>
-          <Pressable style={styles.applyUnit} onPress={toggleApplyAllFilters}>
-            <View style={[styles.checkCircle, allFiltersSelected && styles.checkCircleActive]}>
-              {allFiltersSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
+          )}
+
+          <View style={styles.switcherWrap}>
+            <CineGraphSubTabSwitcher activeTab={filters.type} onChange={(type) => onChange({ ...filters, type, genres: [] })} />
+          </View>
+
+          <Text style={styles.infoNote}>{t("Find your closest match on Cinephix. Tap your whole CineGraph or just the genres you want to filter by.")}</Text>
+
+          <View style={styles.signalsRow}>
+            <View style={[styles.signalUnit, advancedLocked && styles.locked]} pointerEvents={advancedLocked ? "none" : "auto"}>
+              <Text style={styles.signalLabel}>{t("Watched Count")}</Text>
+              {advancedLocked ? (
+                <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
+              ) : (
+                <Switch
+                  value={filters.useCount}
+                  onValueChange={(v) => onChange({ ...filters, useCount: v })}
+                  trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
+                  thumbColor={filters.useCount ? "#fff" : colors.placeholder}
+                />
+              )}
             </View>
-            <Text style={styles.applyUnitText}>{t("Apply All Filters")}</Text>
-          </Pressable>
+            <View style={[styles.signalUnit, advancedLocked && styles.locked]} pointerEvents={advancedLocked ? "none" : "auto"}>
+              <Text style={styles.signalLabel}>{t("Average Rating")}</Text>
+              {advancedLocked ? (
+                <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
+              ) : (
+                <Switch
+                  value={filters.useAvgRating}
+                  onValueChange={(v) => onChange({ ...filters, useAvgRating: v })}
+                  trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
+                  thumbColor={filters.useAvgRating ? "#fff" : colors.placeholder}
+                />
+              )}
+            </View>
+          </View>
+          {advancedLocked && !locked && (
+            <Pressable onPress={goToSubscription}>
+              <Text style={[styles.lockNoticeText, styles.advancedLockHint]}>{t("Upgrade to Premium to weight matches by watch count or average rating.")}</Text>
+            </Pressable>
+          )}
+
+          <CineMatchGenreRing
+            stats={stats}
+            type={filters.type}
+            selectedGenres={filters.genres}
+            onToggleGenre={toggleGenre}
+            userId={viewer._id}
+            username={viewer.username}
+            profilePicUrl={viewer.profile_pic_url}
+            loading={!!loading}
+            onSpinComplete={onSpinComplete}
+          />
+
+          <View style={styles.applyRow}>
+            <Pressable style={styles.applyUnit} onPress={toggleApplyAllGenres}>
+              <View style={[styles.checkCircle, allGenresSelected && styles.checkCircleActive]}>
+                {allGenresSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
+              </View>
+              <Text style={styles.applyUnitText}>{t("Apply All Genres")}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.applyUnit}
+              onPress={toggleApplyAllFilters}
+              disabled={advancedLocked}
+              pointerEvents={advancedLocked ? "none" : "auto"}
+            >
+              <View style={[styles.checkCircle, allFiltersSelected && styles.checkCircleActive]}>
+                {allFiltersSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
+              </View>
+              <Text style={styles.applyUnitText}>{t("Apply All Filters")}</Text>
+            </Pressable>
+          </View>
         </View>
+
+        {locked && <Pressable style={StyleSheet.absoluteFill} onPress={goToSubscription} />}
       </View>
 
       {/* Outside the locked/pointerEvents-none wrapper on purpose — Free

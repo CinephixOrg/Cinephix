@@ -45,6 +45,14 @@ function polygonPoints(radiusFor: (i: number) => number) {
 
 interface Props {
   breakdown: MatchBreakdown;
+  // Purely to key the reset-on-switch effect below — every other card in
+  // this deck (Shared Genres, Shared Favorites, Activity, Variety) clears
+  // its own "currently selected/expanded" state when the candidate
+  // changes; this chart's activeCategory used to be the one exception,
+  // leaking whichever category was left open into the next candidate's
+  // (different) breakdown values instead of starting closed like the rest
+  // of the deck.
+  candidateId: string;
 }
 
 // Custom-SVG radar/spider chart of the 5 weighted match categories — chosen
@@ -56,10 +64,14 @@ interface Props {
 // same JS-thread-mirror technique already established in this feature
 // (MatchCloudBubble's bobAnim -> lineBobAnim sync), just unthrottled since
 // this is a single short one-shot mount animation, not a continuous idle one.
-export default function MatchRadarChart({ breakdown }: Props) {
+export default function MatchRadarChart({ breakdown, candidateId }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<keyof MatchBreakdown | null>(null);
+
+  useEffect(() => {
+    setActiveCategory(null);
+  }, [candidateId]);
   const [progress, setProgress] = useState(0);
   const fillAnim = useRef(new Animated.Value(0)).current;
   // Re-plays every time a different category is tapped (not just on first

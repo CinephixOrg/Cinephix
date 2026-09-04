@@ -53,6 +53,29 @@ const DEFAULT_GROQ_MODEL = process.env.GROQ_DEFAULT_MODEL || "qwen/qwen3.8-27b";
 const DEFAULT_GEMINI_MODEL = process.env.GEMINI_DEFAULT_MODEL || "gemini-flash-latest";
 const CACHE_TTL_MS = 60 * 1000; // 60s
 const RATE_LIMIT_PER_MIN = parseInt(process.env.LLM_RATE_LIMIT_PER_MIN || "60", 10);
+// None of the four provider calls below had any timeout at all — a hung
+// (not erroring, just never responding) provider would leave the request
+// waiting indefinitely, and worse, analyzeMatchWithUser's own provider
+// fallback loop (matchController.js) tries each candidate in sequence on a
+// plain try/catch — a hang here never throws, so it never falls through to
+// the next provider (or the guaranteed-to-succeed mock) either. Every
+// callX() below now races its fetch against this via fetchWithTimeout.
+const LLM_REQUEST_TIMEOUT_MS = parseInt(process.env.LLM_REQUEST_TIMEOUT_MS || "15000", 10);
+
+async function fetchWithTimeout(url, options, timeoutMs = LLM_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 const cache = new Map();
 let rateCounter = 0;
@@ -142,7 +165,7 @@ async function callOpenAI({ messages, model = DEFAULT_MODEL, max_tokens = 300, t
 
   const body = JSON.stringify({ model, messages, max_tokens, temperature, top_p });
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -169,7 +192,7 @@ async function callOpenRouter({ messages, model = DEFAULT_OPENROUTER_MODEL, max_
 
   const body = JSON.stringify({ model, messages, max_tokens, temperature, top_p });
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -207,7 +230,7 @@ async function callGemini({ messages, model = DEFAULT_GEMINI_MODEL } = {}) {
     generationConfig: { responseMimeType: 'application/json' },
   });
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
@@ -259,7 +282,7 @@ async function callGroq({ messages, model = DEFAULT_GROQ_MODEL, max_tokens = 600
   // model again.
   const body = JSON.stringify({ model, messages, max_tokens, temperature, top_p, reasoning_effort: 'low' });
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,

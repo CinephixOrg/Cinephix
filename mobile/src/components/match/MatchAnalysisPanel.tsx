@@ -14,11 +14,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import MatchRadarChart from "./MatchRadarChart";
 import MatchSharedFavorites from "./MatchSharedFavorites";
-import PosterRow from "./PosterRow";
-import PosterCoverflow, { COVERFLOW_MIN_ITEMS } from "./PosterCoverflow";
-import MutualConnectionsGrid from "./MutualConnectionsGrid";
+import PosterCoverflow from "./PosterCoverflow";
+import MutualConnectionsGrid, { SOCIAL_LOCKED_VISIBLE_COUNT } from "./MutualConnectionsGrid";
+import LockedUnlockNote from "./LockedUnlockNote";
 import MatchVarietyRings from "./MatchVarietyRings";
 import MatchActivityFeed from "./MatchActivityFeed";
 import MatchTitleBadge from "./MatchTitleBadge";
@@ -30,12 +31,13 @@ import { prefetchMatchAnalysis, getSharedGenreContent, getMutualConnections, typ
 import type { LightweightContent } from "../../api/contentService";
 import { useRevealAnimation } from "../../hooks/useRevealAnimation";
 import { formatFiveScale } from "../../utils/rating";
-import type { SwipeCandidate, MatchAnalysis, Connection } from "../../types";
+import type { SyncCandidate, MatchAnalysis, Connection } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import { useAuth } from "../../context/AuthContext";
 import { fonts } from "../../theme/typography";
 
 interface Props {
-  candidate: SwipeCandidate;
+  candidate: SyncCandidate;
   filters: MatchFilters;
   // The actual width this panel renders within — MatchResultsCloud's own
   // root `wrap` is capped at `cloudWidth` (Math.min(screenWidth-16, 480)),
@@ -62,6 +64,11 @@ const CARD_GAP = 12;
 // Matches this panel's own `wrap` horizontal padding (16 each side) so one
 // card fills exactly the same content width the header above it uses.
 const HORIZONTAL_PADDING = 16;
+// How long a candidate switch's analysis fetch has to be genuinely slow
+// before the "Generating..." spinner is allowed to actually render — a
+// prefetched/cached candidate resolves well under this, so the spinner
+// never flashes for one at all. See showAnalyzingSpinner below.
+const ANALYZING_SPINNER_DELAY_MS = 150;
 
 interface CardDef {
   key: string;
@@ -69,9 +76,19 @@ interface CardDef {
   render: () => ReactNode;
 }
 
+// Same shape as ProfileAnalysesTab.tsx's own local formatCooldown — small
+// enough, and specific enough to each screen's own copy, that a shared util
+// wasn't worth the cross-feature coupling for four lines.
+function formatCooldown(ms: number): string {
+  const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
 // The full analysis design revealed below the profile cloud when a bubble is
 // tapped — instant/batch data (breakdown, matchInsights) renders immediately
-// since it's already on `candidate` from getSwipeQueue; only the AI
+// since it's already on `candidate` from getSyncCandidates; only the AI
 // narrative section loads separately, on mount, via the same
 // analyzeMatchWithUser call app/user/[id]/index.tsx already uses for its own
 // Analyze button (same filters, so the score this narrative is built from
@@ -86,11 +103,63 @@ interface CardDef {
 export default function MatchAnalysisPanel({ candidate, filters, containerWidth }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const router = useRouter();
   const { height: screenHeight } = useWindowDimensions();
   const cardHeight = Math.min(IDEAL_CARD_HEIGHT, screenHeight * MAX_CARD_HEIGHT_RATIO);
+  const accountTier = user?.accountTier ?? "free";
+  // Free: the deck below is replaced entirely with a single locked-teaser
+  // card (see the "locked" card in the cards useMemo). Plus: every card
+  // shows, but Shared Genres/Variety/Activity/Social Overlap each truncate
+  // their own list behind LockedUnlockNote — Shared Favorites deliberately
+  // excluded, per direct ask not to gate it. Premium/dev: nothing locked.
+  const isFreeDeck = accountTier === "free";
+  const isPlusPartialLock = accountTier === "plus";
   const [analyzing, setAnalyzing] = useState(true);
+  // Debounced view of `analyzing` — true only once it's been loading for
+  // longer than ANALYZING_SPINNER_DELAY_MS. Switching to a candidate whose
+  // analysis was already prefetched/cached (MatchResultsCloud.tsx's own
+  // ahead-of-tap prefetch, or simply revisiting one already viewed this
+  // session) resolves in a handful of milliseconds — gating the spinner on
+  // raw `analyzing` made that read as a real card (the loading state)
+  // flashing on screen and vanishing before the actual content underneath
+  // it. Genuinely slow loads still show the spinner exactly as before,
+  // just past this short grace window instead of instantly.
+  const [showAnalyzingSpinner, setShowAnalyzingSpinner] = useState(false);
+  useEffect(() => {
+    if (!analyzing) {
+      setShowAnalyzingSpinner(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowAnalyzingSpinner(true), ANALYZING_SPINNER_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [analyzing]);
   const [analyzeData, setAnalyzeData] = useState<MatchAnalysis | null>(null);
+  // Set only when the AI analysis specifically failed on its per-pair
+  // cooldown (matchController.js's analyzeMatchWithUser) — a real, expected
+  // state (already analyzed this candidate recently), not a generic
+  // failure, so the ai-summary card renders a distinct message instead of
+  // the generic "No analysis available." fallback.
+  const [analysisCooldownRetryAt, setAnalysisCooldownRetryAt] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Gates every card's own data fetch except the ai-summary card's (which
+  // stays eager — it's card 0, always the first thing shown). Before this,
+  // selecting a candidate fired every other card's fetch at once —
+  // getSharedGenreContent, getMutualConnections, MatchSharedFavorites' own
+  // two calls, MatchActivityFeed's, MatchVarietyRings' two getCineGraph
+  // calls — up to 8 parallel requests regardless of whether the viewer ever
+  // scrolls past the summary card at all. `activeIndex >= 1` (index 1 is
+  // always "breakdown", which needs no fetch of its own — reads straight
+  // off `candidate.breakdown`, already on hand) is a deliberately simple,
+  // single shared gate rather than per-card proximity math keyed to each
+  // card's own position in the (conditionally-built) deck — that would need
+  // recomputing "which index would this card have" in two places (here and
+  // the `cards` useMemo below) with a real risk of the two drifting apart.
+  // This groups every later card's fetch together instead of staggering
+  // them individually, but still captures the actual win: nothing fires
+  // until the viewer shows real intent to browse past the summary, instead
+  // of unconditionally on every single selection.
+  const shouldLoadExtras = activeIndex >= 1;
   const scrollRef = useRef<ScrollView>(null);
   // Drives MatchTitleBadge's own fade-out live, not through activeIndex —
   // that only updates once a swipe fully settles (onMomentumScrollEnd), so
@@ -114,6 +183,14 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
   const [mutualPage, setMutualPage] = useState(0);
   const [mutualHasMore, setMutualHasMore] = useState(true);
   const [mutualLoadingMore, setMutualLoadingMore] = useState(false);
+  // Distinct from mutualLoadingMore (which only covers *additional* pages
+  // once the first one has already landed) — true only while the very
+  // first page is in flight. Without this, MutualConnectionsGrid had no way
+  // to tell "haven't fetched yet" apart from "fetched, genuinely zero
+  // connections" and showed the same "No mutual connections yet." text for
+  // both — misleading in the (real, shouldLoadExtras-widened) window between
+  // the card becoming visible and its data actually arriving.
+  const [mutualInitialLoading, setMutualInitialLoading] = useState(false);
   // A single always-on genre carousel (arrows cycle through) rather than a
   // row of chips — with 10+ shared genres for a long-time user, a wrapped
   // chip row gets crowded fast; a one-at-a-time picker doesn't.
@@ -141,18 +218,27 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
   // underlying effect only re-fires on the null<->selected transition, not
   // on every poster-to-poster change.
   const { opacity: titleOpacity, translateY: titleTranslateY } = useRevealAnimation(selectedPosterId ? "shown" : null);
-  // Crossfades with the titles/values block — visible only while nothing is
-  // selected yet, same hintAnim pattern as MatchRadarChart's own hint.
-  const hintAnim = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    Animated.timing(hintAnim, {
-      toValue: selectedPosterId ? 0 : 1,
-      duration: 480,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPosterId === null]);
+  // Crossfades with the titles/values block — visible only while nothing
+  // else is showing in this reserved area (no poster selected AND the
+  // "show all genres" grid isn't open). A real, reported live bug came
+  // from an earlier version of this: a hand-rolled Animated.Value whose
+  // *consuming JSX* was conditionally unmounted/remounted via a
+  // `showAllGenres ? grid : hintWrap` ternary (the grid and hint used to
+  // be mutually exclusive branches) — double-tapping the genre pill
+  // (open the grid, close it again) unmounted and remounted the hint
+  // element, but the hand-rolled effect only re-fired on the
+  // `selectedPosterId===null` boundary, not on this remount, so the
+  // freshly-remounted element could pick up a stale mid-animation value
+  // instead of a clean state, reading as "stuck." Fixed two ways: this
+  // now uses the same shared useRevealAnimation hook every other reveal
+  // in this feature already uses (a *new* truthy key always replays the
+  // animation from scratch, exactly what a clean remount needs), keyed on
+  // the actual full condition rather than just selectedPosterId; and the
+  // hint element itself is now *always* mounted (opacity-only, matching
+  // MatchRadarChart.tsx's own hint — structurally immune to this class of
+  // bug, since there's no unmount/remount for its animation to race
+  // against) rather than living inside a branch of the grid/hint ternary.
+  const { opacity: hintOpacity } = useRevealAnimation(!showAllGenres && !selectedPosterId ? "shown" : null);
 
   const goToGenre = (dir: 1 | -1, total: number) => {
     genreSlideDir.current = dir;
@@ -192,22 +278,49 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
   // resolved request instead of firing a second redundant LLM call; for
   // any other candidate, this is the first call and behaves exactly as
   // analyzeMatchWithUser always did.
+  //
+  // filtersKey (not `filters` itself) in the dependency array below — same
+  // reasoning as MatchResultsCloud.tsx's own prefetch effect: the filters/
+  // results pages both stay mounted, so a round trip back to the filters
+  // page and back here (without an actual re-search) hands this panel a
+  // new `filters` object reference with identical values, and object-
+  // identity deps would refire this real (now per-pair-cooldown-gated)
+  // network call for no reason.
+  const filtersKey = `${filters.type}:${filters.genres.join(",")}:${filters.useCount}:${filters.useAvgRating}`;
   useEffect(() => {
     let cancelled = false;
     setAnalyzing(true);
     setAnalyzeData(null);
+    setAnalysisCooldownRetryAt(null);
     prefetchMatchAnalysis(candidate.user._id, filters)
       .then((data) => {
         if (!cancelled) setAnalyzeData(data);
       })
-      .catch(() => {})
+      .catch((err: any) => {
+        if (cancelled) return;
+        // The one error shape worth telling the user about specifically —
+        // analyzeMatchWithUser's per-(user,target) cooldown (backend
+        // matchController.js). Everything else stays a silent failure
+        // (falls through to the generic "No analysis available." text)
+        // since there's nothing more useful to say about a transient
+        // network/provider error than that. Previously this branch was
+        // empty — a real gap once the cooldown existed at all: a re-visit
+        // to an already-analyzed candidate (cache cleared by an app
+        // restart) silently showed the same generic text as a genuine
+        // failure, no indication it was expected/temporary.
+        const retryAfterMs = err?.response?.data?.errors?.retryAfterMs;
+        if (err?.response?.status === 429 && retryAfterMs) {
+          setAnalysisCooldownRetryAt(Date.now() + retryAfterMs);
+        }
+      })
       .finally(() => {
         if (!cancelled) setAnalyzing(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [candidate.user._id, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidate.user._id, filtersKey]);
 
   const insights = candidate.matchInsights;
   const sharedGenreNames = insights?.sharedGenres?.map((g) => g.genre) ?? [];
@@ -226,37 +339,35 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
 
   // Switching genres clears whichever poster was selected in the previous
   // one (a stale selection from Comedy shouldn't carry over once the
-  // carousel advances to Drama), and — for a genre with enough items to use
-  // PosterCoverflow — immediately selects that genre's own first item here,
-  // rather than relying on PosterCoverflow's own mount effect to report it.
-  // That child effect and this one both used to fire in the same commit
-  // whenever genreIndex changed, and effects fire child-before-parent, so
-  // this one (the parent) ran last and silently overwrote the coverflow's
-  // correct index-0 selection back to null — the exact bug reported live:
-  // the first poster looked selected but its info never rendered (the hint
-  // text stayed instead) until scrolling the coverflow away and back
-  // re-fired the child's listener with nothing left to race against. Both
-  // effects now compute the same value, so the ordering no longer matters.
+  // carousel advances to Drama) — unconditionally to null now, for both
+  // branches: PosterCoverflow itself now rests on its own leading empty
+  // slot (leadingEmptySlot below) instead of auto-focusing item 0, the
+  // same "nothing selected at rest, swipe or tap to reveal something"
+  // convention MatchSharedFavorites.tsx/MatchVarietyRings.tsx's own
+  // coverflows already use — so this effect and PosterCoverflow's own
+  // mount effect now always agree on null, with no ordering-dependent race
+  // between them the way there used to be back when this one tried to
+  // predict and immediately apply the coverflow's index-0 selection itself.
   useEffect(() => {
     setShowAllGenres(false);
-    if (sharedGenreNames.length === 0) {
-      setSelectedPosterId(null);
-      return;
-    }
-    const idx = ((genreIndex % sharedGenreNames.length) + sharedGenreNames.length) % sharedGenreNames.length;
-    const items = genreContent?.[sharedGenreNames[idx]];
-    setSelectedPosterId(items && items.length >= COVERFLOW_MIN_ITEMS ? items[0]._id : null);
+    setSelectedPosterId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [genreIndex, genreContent, sharedGenreNames.join(",")]);
 
   // Fetches every shared genre's content at once (see getSharedGenreContent's
   // own doc comment) so advancing the carousel just reveals already-fetched
-  // data, no per-genre network call or loading flicker.
+  // data, no per-genre network call or loading flicker. Gated on
+  // shouldLoadExtras — deferred until the viewer has actually moved past
+  // the summary card, not fired the instant a candidate is selected.
   useEffect(() => {
     if (sharedGenreNames.length === 0) {
       setGenreContent(null);
       return;
     }
+    // Free tier's deck never shows this card at all (isFreeDeck's
+    // locked-teaser card replaces it) — no point spending a real network
+    // call on content that's never rendered.
+    if (!shouldLoadExtras || isFreeDeck) return;
     let cancelled = false;
     setGenreContentLoading(true);
     getSharedGenreContent(candidate.user._id, candidate.contentType, sharedGenreNames)
@@ -273,19 +384,24 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidate.user._id, candidate.contentType, sharedGenreNames.join(",")]);
+  }, [candidate.user._id, candidate.contentType, sharedGenreNames.join(","), shouldLoadExtras, isFreeDeck]);
 
   // First page of the mutual-connections grid, fetched once per candidate —
-  // same trigger as the getSharedGenreContent effect above. Further pages
-  // load on demand via loadMoreMutualConnections as the card scrolls.
+  // same trigger (and same shouldLoadExtras gate) as the
+  // getSharedGenreContent effect above. Further pages load on demand via
+  // loadMoreMutualConnections as the card scrolls.
   useEffect(() => {
     activeCandidateIdRef.current = candidate.user._id;
     setMutualConnections([]);
     setMutualPage(0);
     setMutualHasMore(true);
     setMutualLoadingMore(false);
+    setMutualInitialLoading(false);
     if (!insights?.socialOverlap || insights.socialOverlap.mutualFollowing <= 0) return;
+    // Free tier's deck never shows this card at all.
+    if (!shouldLoadExtras || isFreeDeck) return;
     let cancelled = false;
+    setMutualInitialLoading(true);
     getMutualConnections(candidate.user._id, 1)
       .then(({ items, pagination }) => {
         if (cancelled) return;
@@ -295,14 +411,20 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
       })
       .catch(() => {
         if (!cancelled) setMutualHasMore(false);
+      })
+      .finally(() => {
+        if (!cancelled) setMutualInitialLoading(false);
       });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidate.user._id, insights?.socialOverlap?.mutualFollowing]);
+  }, [candidate.user._id, insights?.socialOverlap?.mutualFollowing, shouldLoadExtras, isFreeDeck]);
 
   const loadMoreMutualConnections = () => {
+    // Plus tier never needs a page past what LockedUnlockNote already shows
+    // — no point fetching pages the grid would just slice away again.
+    if (isPlusPartialLock && mutualConnections.length >= SOCIAL_LOCKED_VISIBLE_COUNT) return;
     if (mutualLoadingMore || !mutualHasMore) return;
     setMutualLoadingMore(true);
     const nextPage = mutualPage + 1;
@@ -430,6 +552,11 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
         dotsRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 },
         dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
         dotActive: { width: 18, backgroundColor: colors.primary },
+        freeLockedWrap: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, gap: 10 },
+        freeLockedTitle: { fontFamily: fonts.bold, fontSize: 16, color: colors.baseContent, textAlign: "center" },
+        freeLockedText: { fontSize: 13, color: colors.placeholder, textAlign: "center", lineHeight: 19 },
+        freeLockedButton: { marginTop: 10, backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 12 },
+        freeLockedButtonText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primaryContent },
       }),
     [colors]
   );
@@ -453,7 +580,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
         key: "ai-summary",
         title: t("Sync Summary"),
         render: () =>
-          analyzing ? (
+          showAnalyzingSpinner ? (
             <View style={styles.narrativeLoading}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.narrativeLoadingText}>{t("Generating your compatibility analysis...")}</Text>
@@ -463,28 +590,73 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
               <MatchTierRow candidate={candidate} />
               <MatchSummarySwiper analysis={parsed.analysis} strengths={strengths} weaknesses={weaknesses} conversationStarters={conversationStarters} />
             </Animated.View>
+          ) : analyzing ? null : analysisCooldownRetryAt ? (
+            <Text style={styles.paragraph}>
+              {t("You've already analyzed this match recently. A new analysis will be available in {{time}}.", {
+                time: formatCooldown(analysisCooldownRetryAt - Date.now()),
+              })}
+            </Text>
           ) : (
             <Text style={styles.paragraph}>{t("No analysis available.")}</Text>
           ),
       },
     ];
 
+    // Free tier: everything between the summary and the closing Share card
+    // is replaced with one locked-teaser card — Plus/Premium/dev fall
+    // through to the full deck below, each middle card individually
+    // truncated for Plus (see each card's own `locked` prop).
+    if (isFreeDeck) {
+      list.push({
+        key: "locked",
+        title: t("Full Details"),
+        render: () => (
+          <View style={styles.freeLockedWrap}>
+            <Ionicons name="lock-closed" size={28} color={colors.placeholder} />
+            <Text style={styles.freeLockedTitle}>{t("Unlock the full breakdown")}</Text>
+            <Text style={styles.freeLockedText}>
+              {t("Shared genres, favorites, variety, activity, and social overlap are available on Plus and Premium.")}
+            </Text>
+            <Pressable style={styles.freeLockedButton} onPress={() => router.push("/match/subscription" as any)}>
+              <Text style={styles.freeLockedButtonText}>{t("See Plans")}</Text>
+            </Pressable>
+          </View>
+        ),
+      });
+
+      list.push({
+        key: "cover",
+        title: t("Share"),
+        render: () => <MatchCoverCard candidate={candidate} analysis={analyzeData} />,
+      });
+
+      return list;
+    }
+
     list.push({
       key: "breakdown",
       title: t("Sync Breakdown"),
-      render: () => <MatchRadarChart breakdown={candidate.breakdown} />,
+      render: () => <MatchRadarChart breakdown={candidate.breakdown} candidateId={candidate.user._id} />,
     });
 
-    if (insights?.sharedGenres?.length) {
-      const total = insights.sharedGenres.length;
+    // Plus tier — only the first N shared genres are browsable; Premium/dev
+    // get the full list. This narrows what the carousel below cycles
+    // through (total, currentGenre, the "show all" grid) all at once, so
+    // there's no separate slicing needed further down.
+    const visibleSharedGenres =
+      isPlusPartialLock && insights?.sharedGenres ? insights.sharedGenres.slice(0, 5) : insights?.sharedGenres;
+    const hiddenGenreCount = (insights?.sharedGenres?.length ?? 0) - (visibleSharedGenres?.length ?? 0);
+
+    if (visibleSharedGenres?.length) {
+      const total = visibleSharedGenres.length;
       const genreBgLuminance = hexLuminance(colors.base100);
       const currentIndex = ((genreIndex % total) + total) % total;
-      const currentGenre = insights.sharedGenres[currentIndex].genre;
+      const currentGenre = visibleSharedGenres[currentIndex].genre;
       const currentColor = genreColor(currentIndex, total, genreBgLuminance);
       const currentCount = genreContent?.[currentGenre]?.length;
       const genreItems = genreContent?.[currentGenre];
       const selectedItem = genreItems?.find((i) => i._id === selectedPosterId);
-      const hintText = t("Tap a poster to compare ratings, or the genre button above to see them all.");
+      const hintText = t("Swipe or tap a poster to compare ratings, or the genre button above to see them all.");
 
       list.push({
         key: "genres",
@@ -533,41 +705,36 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
                 </View>
               ) : genreItems?.length ? (
                 <>
-                  {genreItems.length >= COVERFLOW_MIN_ITEMS ? (
-                    <PosterCoverflow
-                      // Remounts on every genre switch — same reasoning as
-                      // PosterRow's own key below, but also resets the
-                      // coverflow's internal scroll position, which
-                      // otherwise has no way to know the underlying items
-                      // changed out from under it.
-                      key={currentGenre}
-                      items={genreItems}
-                      onFocusChange={(id) => {
-                        setShowAllGenres(false);
-                        setSelectedPosterId(id);
-                      }}
-                    />
-                  ) : (
-                    <PosterRow
-                      // Remounts on every genre switch — cheap (a handful of
-                      // posters) and guarantees the row's own horizontal
-                      // scroll position resets to the start, rather than
-                      // carrying over wherever the previous genre's row had
-                      // been scrolled to.
-                      key={currentGenre}
-                      items={genreItems}
-                      selectedId={selectedPosterId}
-                      onSelect={(id) => {
-                        setShowAllGenres(false);
-                        setSelectedPosterId((prev) => (prev === id ? null : id));
-                      }}
-                    />
-                  )}
+                  {/* Always the coverflow now, regardless of item count —
+                      the tap-based PosterRow fallback used to kick in
+                      below a minimum item count, but per direct ask the
+                      scroll interaction should behave identically no
+                      matter how few posters a genre has. */}
+                  <PosterCoverflow
+                    // Remounts on every genre switch — resets the
+                    // coverflow's internal scroll position, which
+                    // otherwise has no way to know the underlying items
+                    // changed out from under it.
+                    key={currentGenre}
+                    items={genreItems}
+                    onFocusChange={(id) => {
+                      setShowAllGenres(false);
+                      setSelectedPosterId(id);
+                    }}
+                    leadingEmptySlot
+                  />
                   <View style={styles.posterDivider} />
                   <View style={styles.posterDetailReserve}>
-                    {showAllGenres ? (
+                    {/* Always mounted, opacity-only — see the hintOpacity
+                        comment above for why this can no longer live
+                        inside a branch of a showAllGenres ternary. */}
+                    <Animated.View style={[styles.posterHintWrap, { opacity: hintOpacity }]} pointerEvents="none">
+                      <Text style={styles.posterHint}>{hintText}</Text>
+                    </Animated.View>
+
+                    {showAllGenres && (
                       <Animated.View style={[styles.genreGridWrap, { opacity: gridOpacity, transform: [{ scaleY: gridOpacity }] }]}>
-                        {insights.sharedGenres.map((g, i) => {
+                        {visibleSharedGenres.map((g, i) => {
                           const c = genreColor(i, total, genreBgLuminance);
                           return (
                             <Pressable key={g.genre} onPress={() => goToSpecificGenre(g.genre)} style={[styles.genreGridChip, { borderColor: c }]}>
@@ -576,10 +743,11 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
                           );
                         })}
                       </Animated.View>
-                    ) : (
-                      <Animated.View style={[styles.posterHintWrap, { opacity: hintAnim }]} pointerEvents="none">
-                        <Text style={styles.posterHint}>{hintText}</Text>
-                      </Animated.View>
+                    )}
+                    {hiddenGenreCount > 0 && (
+                      <LockedUnlockNote
+                        label={t("Showing {{shown}} of {{total}}", { shown: total, total: total + hiddenGenreCount })}
+                      />
                     )}
 
                     {!showAllGenres && selectedPosterId && (
@@ -655,6 +823,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
             genreOnlyMineIds={fav.genreOnly?.mine ?? []}
             genreOnlyTheirsIds={fav.genreOnly?.theirs ?? []}
             targetUsername={candidate.user.username}
+            shouldLoad={shouldLoadExtras}
           />
         ),
       });
@@ -663,13 +832,15 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
     list.push({
       key: "variety",
       title: t("Variety"),
-      render: () => <MatchVarietyRings candidate={candidate} activeGenres={filters.genres} />,
+      render: () => (
+        <MatchVarietyRings candidate={candidate} activeGenres={filters.genres} shouldLoad={shouldLoadExtras} locked={isPlusPartialLock} />
+      ),
     });
 
     list.push({
       key: "activity",
       title: t("Activity"),
-      render: () => <MatchActivityFeed candidate={candidate} />,
+      render: () => <MatchActivityFeed candidate={candidate} shouldLoad={shouldLoadExtras} locked={isPlusPartialLock} />,
     });
 
     // Pushed whenever socialOverlap was actually computed (basically
@@ -682,7 +853,14 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
       list.push({
         key: "social",
         title: t("Social Overlap"),
-        render: () => <MutualConnectionsGrid items={mutualConnections} loadingMore={mutualLoadingMore} />,
+        render: () => (
+          <MutualConnectionsGrid
+            items={mutualConnections}
+            loadingMore={mutualLoadingMore}
+            initialLoading={mutualInitialLoading}
+            locked={isPlusPartialLock}
+          />
+        ),
       });
     }
 
@@ -703,7 +881,10 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
     filters,
     insights,
     analyzing,
+    showAnalyzingSpinner,
     analyzeData,
+    analysisCooldownRetryAt,
+    shouldLoadExtras,
     parsed,
     t,
     colors,
@@ -712,7 +893,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
     genreContentLoading,
     selectedPosterId,
     genreSlideAnim,
-    hintAnim,
+    hintOpacity,
     titleOpacity,
     titleTranslateY,
     valueOpacity,
@@ -721,8 +902,12 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
     gridOpacity,
     mutualConnections,
     mutualLoadingMore,
+    mutualInitialLoading,
     summaryOpacity,
     summaryTranslateY,
+    isFreeDeck,
+    isPlusPartialLock,
+    router,
   ]);
 
   // A fresh candidate starts the card deck over at "Sync Summary" (index 0)

@@ -41,7 +41,7 @@ ratingSchema.index({ contentType: 1 });
 ratingSchema.index({ user: 1 });
 
 // Recent-ratings-per-user lookups (CineMatch's bonus signal: matchController.js's
-// getSwipeQueue/getMatchWithUser/analyzeMatchWithUser all query "this user's
+// getSyncCandidates/getMatchWithUser/analyzeMatchWithUser all query "this user's
 // ratings from the last N days") — without this, createdAt >= cutoff can only be
 // applied as a post-fetch filter over every rating a user has ever given.
 ratingSchema.index({ user: 1, createdAt: -1 });

@@ -13,14 +13,14 @@ interface TierFrameStyle {
 
 export const TIER_FRAME_STYLES: Partial<Record<AccountTier, TierFrameStyle>> = {
   // Platinum blue — steel blue easing into pale ice blue. Moved here from
-  // Premium at explicit request (a Pro/Premium color swap) — Pro now
-  // carries Premium's old look.
-  pro: { gradient: ["#4A6FA0", "#B8D4EE"], glowColor: "#5B85B8" },
-  // Gold — moved here from Pro's old silver at the same request, and
-  // deliberately matching ShareCard.tsx's own TIER_GOLD/TIER_GOLD_HIGHLIGHT
-  // (the Premium post-box frame's exact colors) so the avatar ring and the
-  // post frame read as the same "Premium" gold everywhere in the app, not
-  // two different golds.
+  // Premium at explicit request (a Pro/Premium color swap, back when this
+  // tier was still named "pro") — carries Premium's old look.
+  plus: { gradient: ["#4A6FA0", "#B8D4EE"], glowColor: "#5B85B8" },
+  // Gold — moved here from the middle tier's old silver at the same
+  // request, and deliberately matching ShareCard.tsx's own
+  // TIER_GOLD/TIER_GOLD_HIGHLIGHT (the Premium post-box frame's exact
+  // colors) so the avatar ring and the post frame read as the same
+  // "Premium" gold everywhere in the app, not two different golds.
   premium: { gradient: ["#FFF3C4", "#FFC94A"], glowColor: "#FFC94A" },
   // Purple -> magenta, deliberately muted (not the neon version) so it
   // reads as a distinct internal/dev marker without shouting.

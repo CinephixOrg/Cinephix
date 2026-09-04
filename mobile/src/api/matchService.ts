@@ -2,7 +2,7 @@ import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
 import i18next from "../i18n";
 import type { LightweightContent } from "./contentService";
-import type { ContentType, MatchAnalysis, MatchWithUserResult, SwipeQueueResult, Connection, Pagination } from "../types";
+import type { ContentType, MatchAnalysis, MatchWithUserResult, SyncCandidatesResult, Connection, Pagination } from "../types";
 
 export interface MatchFilters {
   type: ContentType;
@@ -120,12 +120,12 @@ export async function getRecentSharedActivity(targetUserId: string, type: Conten
   return res.data;
 }
 
-// GET /match/swipe/queue — Free (and any tier without filter access) has its
+// GET /match/sync/candidates — Free (and any tier without filter access) has its
 // filters silently overridden server-side regardless of what's sent here, so
 // passing filters is harmless for Free too; only Pro/Premium's request
 // actually changes the result.
-export async function getSwipeQueue(filters?: MatchFilters): Promise<SwipeQueueResult> {
-  const res = await API.get(API_ROUTES.MATCH.SWIPE_QUEUE, {
+export async function getSyncCandidates(filters?: MatchFilters): Promise<SyncCandidatesResult> {
+  const res = await API.get(API_ROUTES.MATCH.SYNC_CANDIDATES, {
     params: filters
       ? {
           type: filters.type,

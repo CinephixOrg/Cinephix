@@ -97,7 +97,7 @@ export default function PeoplePodiumCard({ rank, user, metric }: Props) {
     [colors, medalColor, avatarSize, isFirst]
   );
 
-  const tierLabel = user.accountTier === "pro" || user.accountTier === "premium" ? user.accountTier : null;
+  const tierLabel = user.accountTier === "plus" || user.accountTier === "premium" ? user.accountTier : null;
 
   return (
     <Pressable style={styles.card} onPress={() => router.push(`/user/${user.id}` as any)}>

@@ -243,13 +243,32 @@ export default function CineMatchGenreRing({
   const boxHeight = spaceAbove + spaceBelow;
   const centerY = spaceAbove;
 
+  // Measured once per genre, then frozen — never overwritten again after
+  // that first successful layout. A copy of the exact fix already landed in
+  // CineGraphDonut.tsx (Profile's own version of this ring), for the exact
+  // same bug: this component's `rotateAnim`/`collapseAnim` (and any parent
+  // re-render — a filter change, a prop update) fire onLayout again on
+  // every already-placed chip, and RN's text layout can report a ±1px
+  // oscillating width for the same string across otherwise-identical
+  // renders (sub-pixel font-hinting noise). The previous version here
+  // committed every new value it saw (guarded only by "did the rounded
+  // value actually change"), which was enough to let that noise feed back
+  // into `chips`' position math (a chip's radius depends on its own
+  // width) — a chip nowhere near the current interaction could start
+  // visibly nudging on its own, reported as buttons jittering "under
+  // certain conditions." Freezing after the first commit makes chipSizes
+  // write-once, so later onLayout events for an already-measured genre are
+  // simply ignored — the feedback loop becomes structurally impossible
+  // instead of just less likely. Safe to trust permanently: the map itself
+  // resets on remount (switching the movie/series subtab unmounts this
+  // component), so a genre is never measured against a stale size left
+  // over from a previous dataset.
   const [chipSizes, setChipSizes] = useState<Record<string, { width: number; height: number }>>({});
   const handleChipLayout = (genre: string, width: number, height: number) => {
-    const w = Math.round(width);
-    const h = Math.round(height);
-    setChipSizes((prev) =>
-      prev[genre]?.width === w && prev[genre]?.height === h ? prev : { ...prev, [genre]: { width: w, height: h } }
-    );
+    setChipSizes((prev) => {
+      if (prev[genre]) return prev;
+      return { ...prev, [genre]: { width: Math.round(width), height: Math.round(height) } };
+    });
   };
 
   const slices = useMemo(() => {

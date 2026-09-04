@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, Text, View, StyleSheet, type LayoutChangeEvent } from "react-native";
+import {
+  Animated,
+  Image,
+  Pressable,
+  Text,
+  View,
+  StyleSheet,
+  type LayoutChangeEvent,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from "react-native";
 // Same fix as PosterRow.tsx: this row nests inside MatchAnalysisPanel's own
 // card-paging ScrollView (same horizontal axis) — a plain RN ScrollView loses
 // the drag gesture to the outer one.
@@ -35,15 +45,22 @@ const CENTER_RATIO = 0.35;
 // posters never actually touch even mid-scroll, not just at rest.
 const GAP = 14;
 
-// Below this count a center-focus coverflow has nothing meaningful to show
-// (no real "neighbors" to peek) — every caller falls back to a plain
-// tap-to-select PosterRow instead when there are fewer items than this.
-export const COVERFLOW_MIN_ITEMS = 3;
-
 interface Props {
   items: LightweightContent[];
   badgeFor?: (item: LightweightContent) => PosterBadge | null;
-  onFocusChange: (id: string) => void;
+  // null reports "resting on the leading empty slot" — only reachable when
+  // leadingEmptySlot is true.
+  onFocusChange: (id: string | null) => void;
+  // Off by default (MatchActivityFeed.tsx's own usage, unchanged) — when
+  // on (MatchSharedFavorites.tsx, the Shared Genres card), the row rests on
+  // a genuine blank slot before item 0 instead of auto-focusing it, the
+  // same "nothing selected at rest, matches the tap-based fallback's own
+  // idle state" convention MatchVarietyRings.tsx's GenreCoverflow already
+  // established — so a caller can show the same "tap/scroll to see
+  // details" hint regardless of whether it's showing the <3-item fallback
+  // row or this coverflow, instead of the coverflow jumping straight to
+  // item 0's detail with no equivalent hint state at all.
+  leadingEmptySlot?: boolean;
 }
 
 // Center-focused "coverflow" carousel: the centered poster renders larger,
@@ -54,17 +71,26 @@ interface Props {
 // each edge. Scaling is transform-only (no layout width/height animated),
 // driven by the scroll position continuously, so the next poster visibly
 // grows as it approaches center rather than snapping to size only on settle.
-export default function PosterCoverflow({ items, badgeFor, onFocusChange }: Props) {
+export default function PosterCoverflow({ items, badgeFor, onFocusChange, leadingEmptySlot = false }: Props) {
   const { colors } = useTheme();
   const [viewportWidth, setViewportWidth] = useState(0);
   // Mirrors focusedIndexRef, but as real state — only used to paint the
   // currently-centered poster on top of its neighbors (zIndex), since RN's
   // default array-order stacking gets the paint order backwards when
   // scrolling toward a lower index (the shrinking item would otherwise
-  // render on top of the one growing into focus).
-  const [centerIndex, setCenterIndex] = useState(0);
+  // render on top of the one growing into focus). -1 (only reachable with
+  // leadingEmptySlot) means the empty slot itself is centered.
+  const [centerIndex, setCenterIndex] = useState(leadingEmptySlot ? -1 : 0);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const focusedIndexRef = useRef(0);
+  const focusedIndexRef = useRef(leadingEmptySlot ? -1 : 0);
+  const scrollRef = useRef<any>(null);
+  // How many pitch-widths every item is shifted by — a real leading slot
+  // (a plain blank View, same width as any other) rendered before `items`
+  // below, not a manual offset computed by hand — normal flex flow then
+  // places item i at content position (i+1)*pitch for free, the same
+  // technique MatchVarietyRings.tsx's GenreCoverflow uses for its own
+  // leading empty slot.
+  const slotOffset = leadingEmptySlot ? 1 : 0;
 
   const sideW = viewportWidth * SIDE_RATIO;
   const centerW = viewportWidth * CENTER_RATIO;
@@ -77,28 +103,54 @@ export default function PosterCoverflow({ items, badgeFor, onFocusChange }: Prop
 
   const onLayout = (e: LayoutChangeEvent) => setViewportWidth(e.nativeEvent.layout.width);
 
-  useEffect(() => {
-    if (pitch === 0 || items.length === 0) return;
-    const id = scrollX.addListener(({ value }) => {
-      const idx = Math.max(0, Math.min(items.length - 1, Math.round(value / pitch)));
-      if (idx !== focusedIndexRef.current) {
-        focusedIndexRef.current = idx;
-        setCenterIndex(idx);
-        onFocusChange(items[idx]._id);
-      }
-    });
-    return () => scrollX.removeListener(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pitch, items]);
+  // Tapping a poster that's already visible (centered, or only peeking in
+  // from the side) jumps straight to it instead of requiring an actual
+  // scroll gesture — the listener below still reports whichever slot ends
+  // up centered the same way regardless of how it got there.
+  const goToIndex = (i: number) => {
+    scrollRef.current?.scrollTo({ x: (i + slotOffset) * pitch, animated: true });
+  };
 
-  // Fresh item list (e.g. a different candidate) — report index 0 as focused
-  // again, matching where the scroll position (still 0 on a fresh mount) sits.
+  // Committing focus (React state, plus the onFocusChange call that drives
+  // the parent's detail panel) on every intermediate scroll frame — the
+  // previous approach, via a continuous scrollX listener — meant a fast
+  // fling through a long list (100+ shared titles) fired that state update,
+  // and the re-render it drives in the parent, once per frame: visibly
+  // unable to keep up with the gesture on a long list. The centered
+  // poster's own grow/shrink (the `scale` interpolation below) stays fully
+  // native-driven off scrollX regardless, so it's just as smooth mid-flick;
+  // only the *committed* focus (and therefore the detail panel) now waits
+  // for the scroll to actually settle before updating, so a fast flick
+  // through many items commits once, right when it stops, instead of many
+  // times while it's still moving.
+  const commitFocus = (idx: number) => {
+    if (idx !== focusedIndexRef.current) {
+      focusedIndexRef.current = idx;
+      setCenterIndex(idx);
+      onFocusChange(idx === -1 ? null : items[idx]._id);
+    }
+  };
+
+  const handleScrollSettle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (pitch === 0 || items.length === 0) return;
+    const rawIdx = Math.round(e.nativeEvent.contentOffset.x / pitch) - slotOffset;
+    const idx = Math.max(leadingEmptySlot ? -1 : 0, Math.min(items.length - 1, rawIdx));
+    commitFocus(idx);
+  };
+
+  // Fresh item list (e.g. a different candidate) — rest back on whichever
+  // slot the scroll position (still 0 on a fresh mount) actually sits on:
+  // the leading empty slot when there is one, item 0 otherwise.
   useEffect(() => {
-    focusedIndexRef.current = 0;
-    setCenterIndex(0);
-    if (items.length > 0) onFocusChange(items[0]._id);
+    focusedIndexRef.current = leadingEmptySlot ? -1 : 0;
+    setCenterIndex(leadingEmptySlot ? -1 : 0);
+    if (leadingEmptySlot) {
+      onFocusChange(null);
+    } else if (items.length > 0) {
+      onFocusChange(items[0]._id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.map((i) => i._id).join(",")]);
+  }, [items.map((i) => i._id).join(","), leadingEmptySlot]);
 
   const styles = useMemo(
     () =>
@@ -130,6 +182,7 @@ export default function PosterCoverflow({ items, badgeFor, onFocusChange }: Prop
     <View style={styles.wrap} onLayout={onLayout}>
       {viewportWidth > 0 && (
         <AnimatedGHScrollView
+          ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
           snapToInterval={pitch}
@@ -137,34 +190,40 @@ export default function PosterCoverflow({ items, badgeFor, onFocusChange }: Prop
           contentContainerStyle={[styles.row, { paddingHorizontal: (viewportWidth - pitch) / 2, height: centerH }]}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
           scrollEventThrottle={16}
+          onMomentumScrollEnd={handleScrollSettle}
+          onScrollEndDrag={handleScrollSettle}
         >
+          {leadingEmptySlot && <View style={{ width: pitch, height: centerH }} />}
           {items.map((item, i) => {
+            const itemPos = (i + slotOffset) * pitch;
             const scale = scrollX.interpolate({
-              inputRange: [(i - 1) * pitch, i * pitch, (i + 1) * pitch],
+              inputRange: [itemPos - pitch, itemPos, itemPos + pitch],
               outputRange: [1, centerW / sideW, 1],
               extrapolate: "clamp",
             });
             const badge = badgeFor?.(item);
             return (
               <View key={item._id} style={[styles.item, { width: pitch, height: centerH, zIndex: i === centerIndex ? 10 : 0 }]}>
-                <Animated.View style={{ transform: [{ scale }] }}>
-                  <View style={[styles.posterBorder, { width: sideW, height: sideH }]}>
-                    {item.poster_path ? (
-                      <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={[styles.poster, { width: sideW, height: sideH }]} />
-                    ) : (
-                      <View style={[styles.poster, { width: sideW, height: sideH }]} />
-                    )}
-                  </View>
-                  {badge && (
-                    <View style={styles.badge} pointerEvents="none">
-                      {"icon" in badge ? (
-                        <Ionicons name={badge.icon} size={14} color={badge.color} />
+                <Pressable onPress={() => goToIndex(i)}>
+                  <Animated.View style={{ transform: [{ scale }] }}>
+                    <View style={[styles.posterBorder, { width: sideW, height: sideH }]}>
+                      {item.poster_path ? (
+                        <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={[styles.poster, { width: sideW, height: sideH }]} />
                       ) : (
-                        <Text style={[styles.badgeChar, { color: badge.color }]}>{badge.char}</Text>
+                        <View style={[styles.poster, { width: sideW, height: sideH }]} />
                       )}
                     </View>
-                  )}
-                </Animated.View>
+                    {badge && (
+                      <View style={styles.badge} pointerEvents="none">
+                        {"icon" in badge ? (
+                          <Ionicons name={badge.icon} size={14} color={badge.color} />
+                        ) : (
+                          <Text style={[styles.badgeChar, { color: badge.color }]}>{badge.char}</Text>
+                        )}
+                      </View>
+                    )}
+                  </Animated.View>
+                </Pressable>
               </View>
             );
           })}

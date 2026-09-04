@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, View, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,8 +6,8 @@ import { getMoviesBulk, getSeriesBulk, type LightweightContent } from "../../api
 import { getContentRatings } from "../../api/matchService";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../../constants/contentGenreIds";
 import { formatFiveScale } from "../../utils/rating";
-import PosterRow, { type PosterBadge } from "./PosterRow";
-import PosterCoverflow, { COVERFLOW_MIN_ITEMS } from "./PosterCoverflow";
+import type { PosterBadge } from "./PosterRow";
+import PosterCoverflow from "./PosterCoverflow";
 import { useRevealAnimation } from "../../hooks/useRevealAnimation";
 import type { ContentType } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
@@ -20,6 +20,12 @@ interface Props {
   genreOnlyMineIds: string[];
   genreOnlyTheirsIds: string[];
   targetUsername: string;
+  // False until the viewer has scrolled past the deck's own summary card —
+  // see MatchAnalysisPanel.tsx's shouldLoadExtras. This card fires two
+  // fetches (bulk content lookup + ratings) that used to both start the
+  // instant a candidate was selected, regardless of whether this card was
+  // ever actually scrolled to.
+  shouldLoad: boolean;
 }
 
 type MatchKind = "exact" | "mine" | "theirs";
@@ -40,6 +46,7 @@ export default function MatchSharedFavorites({
   genreOnlyMineIds,
   genreOnlyTheirsIds,
   targetUsername,
+  shouldLoad,
 }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -48,18 +55,50 @@ export default function MatchSharedFavorites({
   // Driven by a tap in the <3-item fallback row, or by scroll position in the
   // 3+-item coverflow — either way, "the poster whose detail is showing below".
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  // Which "contentType:allIds" key each fetch below has *successfully
+  // completed* for — set only inside the .then(), never before starting
+  // the request. A real, live bug came from an earlier version that set
+  // this eagerly (right before firing the request): a candidate switch
+  // while activeIndex was already >=1 from browsing a *previous* candidate
+  // starts shouldLoad already true, fires the fetch, marks the ref — then
+  // MatchAnalysisPanel's own reset-activeIndex-to-0 effect flips shouldLoad
+  // back to false a moment later, which cancels the in-flight request via
+  // this effect's own cleanup. With the ref already marked, every later
+  // shouldLoad:true (the user swiping past the summary again) saw
+  // "already handled" and skipped fetching forever — itemsById/ratingsById
+  // stayed permanently empty for that candidate, the card rendering as a
+  // blank `return null` with no way to recover short of leaving and
+  // reselecting. Marking success-only means a cancelled attempt leaves the
+  // ref untouched, so the next shouldLoad:true genuinely retries.
+  const itemsFetchKeyRef = useRef<string | null>(null);
+  const ratingsFetchKeyRef = useRef<string | null>(null);
 
   const allIds = [...new Set([...sharedIds, ...genreOnlyMineIds, ...genreOnlyTheirsIds])];
+  const allIdsKey = allIds.join(",");
+
+  // Reset on candidate switch, independent of shouldLoad — see
+  // MatchActivityFeed.tsx's own identical comment for why this stays a
+  // separate effect rather than relying on shouldLoad's own reset.
+  useEffect(() => {
+    setItemsById(new Map());
+    setRatingsById(new Map());
+    itemsFetchKeyRef.current = null;
+    ratingsFetchKeyRef.current = null;
+  }, [targetUserId]);
 
   useEffect(() => {
     if (allIds.length === 0) {
       setItemsById(new Map());
       return;
     }
+    const key = `${contentType}:${allIdsKey}`;
+    if (!shouldLoad || itemsFetchKeyRef.current === key) return;
     let cancelled = false;
     (contentType === "movie" ? getMoviesBulk(allIds) : getSeriesBulk(allIds))
       .then((res) => {
-        if (!cancelled) setItemsById(new Map(res.map((item) => [item._id, item])));
+        if (cancelled) return;
+        itemsFetchKeyRef.current = key;
+        setItemsById(new Map(res.map((item) => [item._id, item])));
       })
       .catch(() => {
         if (!cancelled) setItemsById(new Map());
@@ -68,17 +107,21 @@ export default function MatchSharedFavorites({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentType, allIds.join(",")]);
+  }, [contentType, allIdsKey, shouldLoad]);
 
   useEffect(() => {
     if (allIds.length === 0) {
       setRatingsById(new Map());
       return;
     }
+    const key = `${contentType}:${allIdsKey}`;
+    if (!shouldLoad || ratingsFetchKeyRef.current === key) return;
     let cancelled = false;
     getContentRatings(targetUserId, contentType, allIds)
       .then((res) => {
-        if (!cancelled) setRatingsById(new Map(Object.entries(res)));
+        if (cancelled) return;
+        ratingsFetchKeyRef.current = key;
+        setRatingsById(new Map(Object.entries(res)));
       })
       .catch(() => {
         if (!cancelled) setRatingsById(new Map());
@@ -87,7 +130,7 @@ export default function MatchSharedFavorites({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetUserId, contentType, allIds.join(",")]);
+  }, [targetUserId, contentType, allIdsKey, shouldLoad]);
 
   const kindById = useMemo(() => {
     const map = new Map<string, MatchKind>();
@@ -104,15 +147,16 @@ export default function MatchSharedFavorites({
 
   const resolve = (ids: string[]) => ids.map((id) => itemsById.get(id)).filter((item): item is LightweightContent => !!item);
   const orderedItems = [...resolve(sharedIds), ...resolve(genreOnlyMineIds), ...resolve(genreOnlyTheirsIds)];
-  const useCoverflow = orderedItems.length >= COVERFLOW_MIN_ITEMS;
 
   // A fresh candidate/filter (different id-list identity, or itemsById just
-  // finished loading for the current one) resets focus: the coverflow branch
-  // always has a real focus (index 0, matching its scroll position at rest),
-  // the fallback tap row goes back to its "nothing tapped yet" hint state.
+  // finished loading for the current one) resets focus to "nothing yet" —
+  // both branches now start there: the coverflow rests on its own leading
+  // empty slot (PosterCoverflow's leadingEmptySlot), the fallback tap row
+  // was already starting unfocused. PosterCoverflow's own mount effect
+  // reports this same null right back via onFocusChange once it renders,
+  // this just avoids a stale previous candidate's id briefly showing first.
   useEffect(() => {
-    const items = [...resolve(sharedIds), ...resolve(genreOnlyMineIds), ...resolve(genreOnlyTheirsIds)];
-    setFocusedId(items.length >= COVERFLOW_MIN_ITEMS ? items[0]._id : null);
+    setFocusedId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedIds.join(","), genreOnlyMineIds.join(","), genreOnlyTheirsIds.join(","), itemsById]);
 
@@ -216,18 +260,24 @@ export default function MatchSharedFavorites({
 
   return (
     <View>
-      {useCoverflow ? (
-        <PosterCoverflow items={orderedItems} badgeFor={badgeFor} onFocusChange={setFocusedId} />
-      ) : (
-        <PosterRow items={orderedItems} selectedId={focusedId} onSelect={setFocusedId} badgeFor={badgeFor} />
-      )}
+      {/* Always the coverflow now, regardless of item count (even a single
+          poster) — the tap-based PosterRow fallback used to kick in below
+          COVERFLOW_MIN_ITEMS, but per direct ask the scroll interaction
+          should behave identically no matter how few posters there are,
+          not switch to a different (tap-only) mechanism. */}
+      <PosterCoverflow items={orderedItems} badgeFor={badgeFor} onFocusChange={setFocusedId} leadingEmptySlot />
 
       <View style={styles.divider} />
 
       <View style={styles.reserve}>
-        {!useCoverflow && (
+        {/* Shown whenever nothing's focused, not just in the tap-based
+            fallback — the coverflow now rests on its own leading empty
+            slot the same way (PosterCoverflow's leadingEmptySlot), so it
+            needs the same "here's what to do" hint instead of jumping
+            straight into a poster's detail with no equivalent idle state. */}
+        {!focusedId && (
           <Animated.View style={[styles.hintWrap, { opacity: hintOpacity }]} pointerEvents="none">
-            <Text style={styles.hint}>{t("Tap a poster to see how it matched.")}</Text>
+            <Text style={styles.hint}>{t("Swipe or tap a poster to see how it matched.")}</Text>
           </Animated.View>
         )}
 

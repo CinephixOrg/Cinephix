@@ -26,7 +26,7 @@ const app = express();
 // element array becomes ?genres[]=Comedy), so any GET endpoint reading an
 // array off req.query silently got an empty/undefined value for every array
 // param sent by the mobile app — this is what broke CineMatch's genre
-// filter on /match/swipe/queue. "extended" restores the old Express 4
+// filter on /match/sync/candidates. "extended" restores the old Express 4
 // default (the qs package, already present in node_modules), which parses
 // both bracket and repeated-key array syntax correctly.
 app.set('query parser', 'extended');

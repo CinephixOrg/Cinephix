@@ -4,7 +4,7 @@ import {
   findMatches,
   getMatchWithUser,
   analyzeMatchWithUser,
-  getSwipeQueue,
+  getSyncCandidates,
   getSharedGenreContent,
   getContentRatings,
   getRecentSharedActivity,
@@ -17,10 +17,10 @@ const router = express.Router();
 // POST because we're sending filters
 router.post("/", authMiddleware, validateRequest(validationSchemas.findMatches), findMatches);
 
-// Registered before "/:targetUserId" so "/swipe/queue" isn't swallowed by
+// Registered before "/:targetUserId" so "/sync/candidates" isn't swallowed by
 // that param route. CineMatch is browse-and-follow now, not swipe-to-decide
 // — no accept/reject/rejected-list routes anymore.
-router.get("/swipe/queue", authMiddleware, getSwipeQueue);
+router.get("/sync/candidates", authMiddleware, getSyncCandidates);
 
 // NEW: Calculate match with single user
 router.post("/:targetUserId", authMiddleware, getMatchWithUser);

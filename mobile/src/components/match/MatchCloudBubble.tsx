@@ -1,7 +1,9 @@
-import { memo, useCallback, useEffect, useRef } from "react";
-import { Animated, Easing, Pressable, StyleSheet } from "react-native";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import MatchAvatarRing from "./MatchAvatarRing";
-import type { SwipeCandidate } from "../../types";
+import { useTheme } from "../../context/ThemeContext";
+import type { SyncCandidate } from "../../types";
 
 // Idle "still floating" drift — deliberately much slower/gentler than every
 // other animation in this feature (1300ms moves, 700ms fills): a small
@@ -31,7 +33,7 @@ function rand(a: number, b: number) {
 }
 
 interface Props {
-  candidate: SwipeCandidate;
+  candidate: SyncCandidate;
   x: number;
   y: number;
   diameter: number;
@@ -55,11 +57,12 @@ interface Props {
   // own doc comment for why this is a per-bubble pixel-bounded scale, not one
   // flat percentage shared by every rank.
   selectedScale: number;
+  // Tier-gated bubble (Free's #1, or Plus's #4-5) — dimmed with a lock badge
+  // over it instead of its real ring/percentage. Still calls onSelect on tap
+  // (this component doesn't know about tiers or the subscription page) —
+  // MatchResultsCloud's own handler is what routes a locked tap differently.
+  locked?: boolean;
 }
-
-const styles = StyleSheet.create({
-  wrap: { position: "absolute", alignItems: "center" },
-});
 
 // One cloud bubble: MatchAvatarRing's gray %-ring + avatar + percentage
 // text, plus a gentle idle drift. Tapping reveals MatchAnalysisPanel below
@@ -76,8 +79,24 @@ const styles = StyleSheet.create({
 // reference-stable across those re-renders, so memo's shallow comparison
 // correctly skips the untouched bubbles instead of needing a custom
 // comparator.
-function MatchCloudBubble({ candidate, x, y, diameter, rank, bobAnim, lineBobAnim, onSelect, isSelected, selectedScale }: Props) {
+function MatchCloudBubble({ candidate, x, y, diameter, rank, bobAnim, lineBobAnim, onSelect, isSelected, selectedScale, locked }: Props) {
+  const { colors } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        wrap: { position: "absolute", alignItems: "center" },
+        lockBadge: {
+          position: "absolute",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.base100,
+          borderRadius: 999,
+          padding: 6,
+        },
+      }),
+    [colors]
+  );
   useEffect(() => {
     Animated.timing(scaleAnim, {
       toValue: isSelected ? selectedScale : 1,
@@ -132,7 +151,12 @@ function MatchCloudBubble({ candidate, x, y, diameter, rank, bobAnim, lineBobAni
     <Animated.View style={[styles.wrap, { left: x - diameter / 2, top: y - diameter / 2, width: diameter, zIndex: isSelected ? 10 : 0 }]}>
       <Animated.View style={{ transform: [...bobAnim.getTranslateTransform(), { scale: scaleAnim }] }}>
         <Pressable onPress={handlePress} hitSlop={4}>
-          <MatchAvatarRing candidate={candidate} diameter={diameter} rank={rank} />
+          <MatchAvatarRing candidate={candidate} diameter={diameter} rank={rank} dimmed={locked} />
+          {locked && (
+            <View style={[styles.lockBadge, { top: diameter / 2 - 14, left: diameter / 2 - 14 }]} pointerEvents="none">
+              <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
+            </View>
+          )}
         </Pressable>
       </Animated.View>
     </Animated.View>

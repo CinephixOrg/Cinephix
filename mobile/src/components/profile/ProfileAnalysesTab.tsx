@@ -73,7 +73,7 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
   );
 
   const tier = user?.accountTier ?? "free";
-  const hasAccess = tier === "pro" || tier === "premium" || tier === "dev";
+  const hasAccess = tier === "plus" || tier === "premium" || tier === "dev";
 
   const [analyzing, setAnalyzing] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);

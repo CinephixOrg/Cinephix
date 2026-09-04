@@ -5,11 +5,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { getRecentSharedActivity } from "../../api/matchService";
 import type { LightweightContent } from "../../api/contentService";
 import { formatFiveScale } from "../../utils/rating";
-import PosterRow from "./PosterRow";
-import PosterCoverflow, { COVERFLOW_MIN_ITEMS } from "./PosterCoverflow";
+import PosterCoverflow from "./PosterCoverflow";
+import LockedUnlockNote from "./LockedUnlockNote";
 import { useRevealAnimation } from "../../hooks/useRevealAnimation";
 import { categoryMeta } from "./matchCategoryMeta";
-import type { SwipeCandidate } from "../../types";
+import type { SyncCandidate } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
@@ -20,7 +20,18 @@ import { fonts } from "../../theme/typography";
 const DETAIL_RESERVE_HEIGHT = 104;
 
 interface Props {
-  candidate: SwipeCandidate;
+  candidate: SyncCandidate;
+  // False until the viewer has scrolled past the deck's own summary card —
+  // see MatchAnalysisPanel.tsx's shouldLoadExtras for why: this card's own
+  // fetch used to fire the instant a candidate was selected, one of up to 8
+  // parallel requests regardless of whether this specific card was ever
+  // scrolled to.
+  shouldLoad: boolean;
+  // Plus tier — half the posters (rounded up) are hidden behind
+  // LockedUnlockNote instead of the full feed. Free never reaches this card
+  // at all (MatchAnalysisPanel's own 3-card deck), Premium/dev leave this
+  // false.
+  locked?: boolean;
 }
 
 // "Activity" made visible as actual titles, not a score — the real overlap
@@ -31,13 +42,29 @@ interface Props {
 // 90-day RATING_RECENCY_WINDOW_MS the real score itself still uses, so this
 // card's own "lately" reads as recent without changing anything about the
 // actual match percentage.
-export default function MatchActivityFeed({ candidate }: Props) {
+export default function MatchActivityFeed({ candidate, shouldLoad, locked }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const [items, setItems] = useState<LightweightContent[] | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
+  // Reset on candidate switch — independent of shouldLoad, which resets to
+  // false on every switch too (MatchAnalysisPanel.tsx's own activeIndex
+  // reset), but keeping this explicit rather than relying on that
+  // indirection means a stale previous candidate's items can never survive
+  // a switch even if shouldLoad somehow stayed true across it.
   useEffect(() => {
+    setItems(null);
+  }, [candidate.user._id]);
+
+  // Gated on shouldLoad, and on `items === null` — the latter is what
+  // prevents a redundant re-fetch every time shouldLoad flips (true while
+  // scrolled near this card, false while scrolled away, back to true on a
+  // return visit): once a real result has landed for the current
+  // candidate, this effect becomes a no-op until the candidate actually
+  // changes (which clears items back to null above).
+  useEffect(() => {
+    if (!shouldLoad || items !== null) return;
     let cancelled = false;
     getRecentSharedActivity(candidate.user._id, candidate.contentType)
       .then((data) => {
@@ -49,17 +76,19 @@ export default function MatchActivityFeed({ candidate }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [candidate.user._id, candidate.contentType]);
-
-  const useCoverflow = (items?.length ?? 0) >= COVERFLOW_MIN_ITEMS;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidate.user._id, candidate.contentType, shouldLoad]);
 
   // A fresh item list (a different candidate, or the fetch just landed)
-  // resets focus — same rule MatchSharedFavorites.tsx uses: the coverflow
-  // branch always has a real focus (index 0, matching its scroll position
-  // at rest), the fallback tap row starts at "nothing tapped yet".
+  // resets focus to "nothing yet" — matches Shared Genres/Shared
+  // Favorites' own convention now: PosterCoverflow rests on its own
+  // leading empty slot (leadingEmptySlot below) rather than auto-focusing
+  // item 0, so every poster-scrolling card in this deck starts the same
+  // way. PosterCoverflow's own mount effect reports this same null right
+  // back via onFocusChange once it renders; this just avoids a stale
+  // previous candidate's id briefly showing first.
   useEffect(() => {
-    if (!items) return;
-    setFocusedId(items.length >= COVERFLOW_MIN_ITEMS ? items[0]._id : null);
+    setFocusedId(null);
   }, [items]);
 
   const { opacity: detailOpacity, translateY: detailTranslateY } = useRevealAnimation(focusedId, 360, 8);
@@ -99,24 +128,32 @@ export default function MatchActivityFeed({ candidate }: Props) {
     );
   }
 
+  // Plus tier — half the posters (rounded up, so 1 item stays visible
+  // rather than locking everything) hidden behind LockedUnlockNote.
+  const visibleItems = locked ? items.slice(0, Math.max(1, Math.ceil(items.length / 2))) : items;
+  const hiddenCount = items.length - visibleItems.length;
+
   return (
     <View>
       <Text style={styles.desc}>{categoryMeta("bonus", colors, t).desc}</Text>
 
-      {useCoverflow ? (
-        <PosterCoverflow items={items} onFocusChange={setFocusedId} />
-      ) : (
-        <PosterRow items={items} selectedId={focusedId} onSelect={setFocusedId} />
-      )}
+      {/* Always the coverflow now, regardless of item count — the tap-based
+          PosterRow fallback used to kick in below a minimum item count,
+          but per direct ask the scroll interaction should behave
+          identically no matter how few posters there are.
+          leadingEmptySlot matches Shared Genres/Shared Favorites, per
+          direct ask that this card start the same way as the others
+          (nothing focused at rest) rather than jumping straight to item
+          0's detail with no equivalent idle state. */}
+      <PosterCoverflow items={visibleItems} onFocusChange={setFocusedId} leadingEmptySlot />
+      {hiddenCount > 0 && <LockedUnlockNote label={t("Showing {{shown}} of {{total}}", { shown: visibleItems.length, total: items.length })} />}
 
       <View style={styles.divider} />
 
       <View style={styles.reserve}>
-        {!useCoverflow && (
-          <Animated.View style={[styles.hintWrap, { opacity: hintOpacity }]} pointerEvents="none">
-            <Text style={styles.hint}>{t("Tap a poster to see how you both rated it.")}</Text>
-          </Animated.View>
-        )}
+        <Animated.View style={[styles.hintWrap, { opacity: hintOpacity }]} pointerEvents="none">
+          <Text style={styles.hint}>{t("Swipe or tap a poster to see how you both rated it.")}</Text>
+        </Animated.View>
 
         {focusedId && focusedItem && (
           <Animated.View style={[styles.detailWrap, { opacity: detailOpacity, transform: [{ translateY: detailTranslateY }] }]}>
