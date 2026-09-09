@@ -3,6 +3,7 @@ import { API_ROUTES } from "../constants/apiRoutes";
 import type {
   AccountTier,
   CineGraphData,
+  UserCollections,
   Connection,
   FeedUserRef,
   FollowActionType,
@@ -46,6 +47,13 @@ export async function getProfileAnalysisHistory(
   const res = await API.get(API_ROUTES.USERS.GET_PROFILE_ANALYSIS_HISTORY, { params: { page, limit } });
   const pagination = (res as any).pagination as Pagination;
   return { items: res.data, pagination };
+}
+
+// Lists + watched list + watchlist in one call, for the public profile's
+// Lists tab.
+export async function getUserCollections(id: string): Promise<UserCollections> {
+  const res = await API.get(API_ROUTES.USERS.GET_COLLECTIONS(id));
+  return res.data;
 }
 
 export async function getCineGraph(id: string): Promise<CineGraphData> {
@@ -107,6 +115,11 @@ export async function deleteAccount(): Promise<void> {
 interface ConnectionsResult {
   items: Connection[];
   pagination?: Pagination;
+  // Both totals, on every page of either list. The network screen labels its
+  // two tabs with both numbers, and it used to get them by firing two extra
+  // limit-1 requests whose entire purpose was to read one figure out of the
+  // pagination envelope.
+  counts?: { followers: number; following: number };
 }
 
 // userId omitted = your own list (axios drops undefined params, reproducing
@@ -115,12 +128,12 @@ interface ConnectionsResult {
 // don't follow 403 instead of leaking the list).
 export async function getFollowing(page = 1, limit = 20, userId?: string): Promise<ConnectionsResult> {
   const res = await API.get(API_ROUTES.USERS.GET_FOLLOWING, { params: { page, limit, userId } });
-  return { items: res.data, pagination: (res as any).pagination };
+  return { items: res.data, pagination: (res as any).pagination, counts: (res as any).counts };
 }
 
 export async function getFollowers(page = 1, limit = 20, userId?: string): Promise<ConnectionsResult> {
   const res = await API.get(API_ROUTES.USERS.GET_FOLLOWERS, { params: { page, limit, userId } });
-  return { items: res.data, pagination: (res as any).pagination };
+  return { items: res.data, pagination: (res as any).pagination, counts: (res as any).counts };
 }
 
 export async function searchUsers(

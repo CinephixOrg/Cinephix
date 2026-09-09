@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import ContentRail from "../ContentRail";
@@ -15,7 +15,7 @@ import { updateFavorites } from "../../api/favoriteService";
 import type { CineGraphData, ContentType, Favorites, ProfileAnalysis } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 
-type Category = "sharings" | "favorites" | "cinegraph" | "analyses";
+export type Category = "sharings" | "favorites" | "cinegraph" | "analyses";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -44,6 +44,17 @@ function buildSlots(items: FavItem[], editing: boolean): FavSlot[] {
 interface Props {
   favorites: Favorites | null;
   cineGraph: CineGraphData | null;
+  // Controlled from the parent (profile/index.tsx) so the header's Shares
+  // stat can jump straight to the Sharings tab from outside this
+  // component — the fade below still runs regardless of which of them
+  // triggered the change, since it's keyed on the `category` value itself.
+  category: Category;
+  onCategoryChange: (category: Category) => void;
+  // Whether this whole screen currently has navigation focus — passed
+  // through to AddFavoriteModal so it can hide (without resetting) while a
+  // result's poster/title tap sends us to that title's Content Detail page,
+  // then reappear with its search state intact once we come back.
+  screenFocused: boolean;
 }
 
 const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
@@ -53,7 +64,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
   analyses: { active: "document-text", inactive: "document-text-outline" },
 };
 
-export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
+export default function ProfileCategoryTabs({ favorites, cineGraph, category, onCategoryChange, screenFocused }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -75,12 +86,52 @@ export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
         // icon's own column — movie/series only, icon stays plain.
         subFilterRow: { alignItems: "center", paddingTop: 8 },
         body: { paddingTop: 8 },
+        hiddenTab: { display: "none" },
       }),
     [colors]
   );
 
-  const [category, setCategory] = useState<Category>("sharings");
   const [cinegraphSubTab, setCinegraphSubTab] = useState<CineGraphSubTab>("movie");
+
+  // Which categories have ever been opened. Once a tab has been visited it
+  // stays mounted and is merely hidden, instead of being unmounted and
+  // rebuilt from nothing on the next visit.
+  //
+  // This is the fix for "CineGraph is slow and shows a loader every time":
+  // conditional rendering meant each visit remounted CineGraphDonut, which
+  // recomputes its slice geometry, re-derives 19 chip positions, and then
+  // re-measures every one of those chips through onLayout before it can
+  // settle. ProfileSharingsTab was worse — it refetched the user's shares
+  // and showed a spinner on every single switch back to it.
+  //
+  // Written during render rather than in an effect so the tab is present on
+  // the very same pass that selects it (an effect would leave one blank
+  // frame). Adding to a Set is idempotent, so StrictMode's double render is
+  // harmless here.
+  const visitedRef = useRef<Set<Category>>(new Set());
+  visitedRef.current.add(category);
+  const hasVisited = (key: Category) => visitedRef.current.has(key);
+  // `display: none` keeps the subtree mounted with all its state, timers and
+  // fetched data intact, but takes it out of layout entirely — so hidden
+  // tabs cost nothing to lay out or draw.
+  const visibility = (key: Category) => (category === key ? undefined : styles.hiddenTab);
+
+  // Fades the body in on every category change, regardless of whether it
+  // came from tapping one of the icons below or from the header's Shares
+  // stat (ProfileHeaderInstagram, a sibling rendered outside this
+  // component) — keyed purely on the value so both sources look identical.
+  // Skips the very first render so the initial "sharings" tab doesn't
+  // fade in on mount.
+  const bodyOpacity = useRef(new Animated.Value(1)).current;
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    bodyOpacity.setValue(0);
+    Animated.timing(bodyOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+  }, [category, bodyOpacity]);
 
   const [localFavorites, setLocalFavorites] = useState(favorites);
   useEffect(() => {
@@ -179,6 +230,13 @@ export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
   const [analysisData, setAnalysisData] = useState<ProfileAnalysis | null>(null);
   const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
 
+  // Stable identity: the Analyses tab now stays mounted, so an inline arrow
+  // here would hand it a new prop on every render of this component.
+  const handleViewAnalysis = useCallback((data: ProfileAnalysis) => {
+    setAnalysisData(data);
+    setAnalysisModalVisible(true);
+  }, []);
+
   return (
     <>
       <View style={styles.tabRow}>
@@ -186,7 +244,7 @@ export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
           const isActive = category === key;
           const icon = CATEGORY_ICON[key];
           return (
-            <Pressable key={key} style={styles.tabButton} onPress={() => setCategory(key)}>
+            <Pressable key={key} style={styles.tabButton} onPress={() => onCategoryChange(key)}>
               <Ionicons
                 name={isActive ? icon.active : icon.inactive}
                 size={24}
@@ -197,17 +255,24 @@ export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
         })}
       </View>
 
-      {category === "cinegraph" && cineGraph?.isAuthorized && (
-        <View style={styles.subFilterRow}>
+      {/* Kept mounted alongside the graph it belongs to — it measures its
+          own slot widths via onLayout to drive the sliding window, and
+          remounting made it re-measure and re-animate from scratch. */}
+      {hasVisited("cinegraph") && cineGraph?.isAuthorized && (
+        <View style={[styles.subFilterRow, visibility("cinegraph")]}>
           <CineGraphSubTabSwitcher activeTab={cinegraphSubTab} onChange={setCinegraphSubTab} />
         </View>
       )}
 
-      <View style={styles.body}>
-        {category === "sharings" && <ProfileSharingsTab />}
+      <Animated.View style={[styles.body, { opacity: bodyOpacity }]}>
+        {hasVisited("sharings") && (
+          <View style={visibility("sharings")}>
+            <ProfileSharingsTab active={category === "sharings"} />
+          </View>
+        )}
 
-        {category === "favorites" && localFavorites && (
-          <>
+        {hasVisited("favorites") && localFavorites && (
+          <View style={visibility("favorites")}>
             {(() => {
               const movieSlots = buildSlots(localFavorites.movies, editingType === "movie");
               return (
@@ -278,34 +343,41 @@ export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
                 />
               );
             })()}
-          </>
+          </View>
         )}
 
-        {category === "cinegraph" && <ProfileCinegraphsTab cineGraph={cineGraph} subTab={cinegraphSubTab} />}
-
-        {category === "analyses" && (
-          <ProfileAnalysesTab
-            onViewAnalysis={(data) => {
-              setAnalysisData(data);
-              setAnalysisModalVisible(true);
-            }}
-          />
+        {hasVisited("cinegraph") && (
+          <View style={visibility("cinegraph")}>
+            <ProfileCinegraphsTab cineGraph={cineGraph} subTab={cinegraphSubTab} />
+          </View>
         )}
-      </View>
+
+        {hasVisited("analyses") && (
+          <View style={visibility("analyses")}>
+            <ProfileAnalysesTab onViewAnalysis={handleViewAnalysis} />
+          </View>
+        )}
+      </Animated.View>
 
       <AddFavoriteModal
-        visible={addingType !== null}
+        visible={addingType !== null && screenFocused}
         type={addingType ?? "movie"}
         excludeIds={favoriteExcludeIds}
         onClose={() => setAddingType(null)}
         onAdd={(item) => addingType && handleAddFavorite(addingType, item)}
       />
 
+      {/* Same screenFocused gate as AddFavoriteModal above, and for the same
+          reason — tapping a title inside the analysis pushes its detail page,
+          which would otherwise render behind this still-open Modal. Hiding
+          (rather than closing) keeps `analysisModalVisible` true, so coming
+          back re-shows the deck exactly where it was left. */}
       <ProfileAnalysisModal
-        visible={analysisModalVisible}
+        visible={analysisModalVisible && screenFocused}
         onClose={() => setAnalysisModalVisible(false)}
         data={analysisData}
         shareable
+        navigable
       />
     </>
   );

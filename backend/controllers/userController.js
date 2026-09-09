@@ -15,6 +15,9 @@ import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
 import FollowRequest from "../models/FollowRequest.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
+import Share from "../models/Share.js";
+import CustomList from "../models/CustomList.js";
+import { hydratePreviewItems } from "../utils/listPreview.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -25,6 +28,19 @@ import { validateEmail } from "../middleware/validation.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/emailService.js";
 import { getTierLimits } from "../config/tiers.js";
+import {
+  resolveDisplayName,
+  tallyGenres,
+  buildGenreBreakdown,
+  buildRecentGenres,
+  buildFavoriteGenres,
+  buildRatingCurve,
+  buildMonthBuckets,
+  monthKeyOf,
+  monthWindows,
+  isWithin,
+  averageRating
+} from "../utils/analysisMath.js";
 import ProfileAnalysis from "../models/ProfileAnalysis.js";
 import { getOnlineUserIds } from "../services/presenceService.js";
 
@@ -425,12 +441,47 @@ export const getNotifications = asyncHandler(async (req, res) => {
   sendPaginated(res, notifications, total, parseInt(page), parseInt(limit), 'Notifications fetched');
 });
 
+// Shared by the followers and following endpoints, which differ only in
+// which array they page through.
+//
+// The page is resolved by slicing the id array we already have and fetching
+// exactly those users. The previous shape re-fetched the whole target user a
+// SECOND time — with no projection at all, so the entire document (both
+// watch lists, both CineGraphs, every favorite) came back — purely so
+// Mongoose could populate one field of it.
+//
+// `total` for BOTH arrays ships on every response: the screen labels its two
+// tabs with both counts, and getting them any other way meant two extra
+// round trips returning one number each.
+const sendConnectionPage = async (res, { targetDoc, field, page, limit, message }) => {
+  const ids = targetDoc[field] || [];
+  const skip = (page - 1) * limit;
+  const pageIds = ids.slice(skip, skip + limit);
+
+  const users = pageIds.length
+    ? await User.find({ _id: { $in: pageIds } })
+        .select('_id username profile_pic_url accountTier')
+        .lean()
+    : [];
+
+  // $in returns documents in whatever order the index yields, so the page is
+  // put back into the order the id array had.
+  const byId = new Map(users.map((u) => [u._id.toString(), u]));
+  const ordered = pageIds.map((id) => byId.get(id.toString())).filter(Boolean);
+
+  return sendPaginated(res, ordered, ids.length, page, limit, message, {
+    counts: {
+      followers: (targetDoc.followers || []).length,
+      following: (targetDoc.following || []).length,
+    },
+  });
+};
+
 // @desc    Get logged-in user's FOLLOWING list
 // @route   GET /api/users/me/following
 // @access  Private (Login required)
 export const getMyFollowing = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, userId } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
     const targetUserId = userId || req.user.id;
     const viewerId = req.user.id.toString();
 
@@ -446,20 +497,13 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
         return sendError(res, 'This account is private', 403);
     }
 
-    const user = await User.findById(targetUserId)
-        .populate({
-            path: 'following',
-            select: '_id username profile_pic_url accountTier',
-            options: {
-                skip: skip,
-                limit: parseInt(limit)
-            }
-        })
-        .lean();
-
-    const total = targetDoc.following ? targetDoc.following.length : 0;
-
-    sendPaginated(res, user?.following || [], total, parseInt(page), parseInt(limit), 'Following list fetched');
+    return sendConnectionPage(res, {
+        targetDoc,
+        field: 'following',
+        page: parseInt(page),
+        limit: parseInt(limit),
+        message: 'Following list fetched',
+    });
 });
 
 // @desc    Get logged-in user's FOLLOWERS list
@@ -467,7 +511,6 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
 // @access  Private (Login required)
 export const getMyFollowers = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, userId } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
     const targetUserId = userId || req.user.id;
     const viewerId = req.user.id.toString();
 
@@ -483,20 +526,13 @@ export const getMyFollowers = asyncHandler(async (req, res) => {
         return sendError(res, 'This account is private', 403);
     }
 
-    const user = await User.findById(targetUserId)
-        .populate({
-            path: 'followers',
-            select: '_id username profile_pic_url accountTier',
-            options: {
-                skip: skip,
-                limit: parseInt(limit)
-            }
-        })
-        .lean();
-
-    const total = targetDoc.followers ? targetDoc.followers.length : 0;
-
-    sendPaginated(res, user?.followers || [], total, parseInt(page), parseInt(limit), 'Followers list fetched');
+    return sendConnectionPage(res, {
+        targetDoc,
+        field: 'followers',
+        page: parseInt(page),
+        limit: parseInt(limit),
+        message: 'Followers list fetched',
+    });
 });
 
 // @desc    Search users by username
@@ -710,7 +746,117 @@ export const setOwnAccountTier = asyncHandler(async (req, res) => {
 
 // controllers/userController.js
 
-// ... (getUserProfile fonksiyonunun bittiği yerin hemen altına)
+// How many entries of each collection the public profile's Lists tab gets.
+// The rails preview far fewer than this; the surplus is what the "See all"
+// sheet pages through. Capped because a long-time user's watched list runs
+// to hundreds of titles, and none of this is worth shipping in full to
+// render three rails — the client says "showing N of M" when it's short.
+const COLLECTION_ITEM_LIMIT = 60;
+
+// Turns [{itemId, itemType}] subdocuments into displayable rows. These are
+// plain ObjectIds on the user document rather than populate-able refs (the
+// itemType decides which collection they point at), so the lookup is two
+// $in queries rather than a populate.
+const hydrateWatchItems = async (items, limit) => {
+  const Movie = mongoose.model('Movie');
+  const Series = mongoose.model('Series');
+  // Newest-first: `addedAt` is what makes "recently added" the part of a
+  // long list that actually gets shown.
+  const ordered = [...(items || [])].sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
+  const capped = ordered.slice(0, limit);
+
+  const movieIds = capped.filter(i => i.itemType === 'movie').map(i => i.itemId);
+  const seriesIds = capped.filter(i => i.itemType === 'series').map(i => i.itemId);
+  const [movies, series] = await Promise.all([
+    movieIds.length ? Movie.find({ _id: { $in: movieIds } }).select('title name poster_path').lean() : [],
+    seriesIds.length ? Series.find({ _id: { $in: seriesIds } }).select('title name poster_path').lean() : []
+  ]);
+
+  const byId = new Map();
+  for (const m of movies) byId.set(String(m._id), m);
+  for (const s of series) byId.set(String(s._id), s);
+
+  return {
+    total: ordered.length,
+    items: capped
+      .map(entry => {
+        const doc = byId.get(String(entry.itemId));
+        if (!doc) return null;
+        return {
+          itemId: String(entry.itemId),
+          itemType: entry.itemType,
+          // The series collection is inconsistent about which field holds a
+          // show's name (see utils/analysisMath.js's resolveDisplayName) —
+          // same defensiveness here.
+          title: entry.itemType === 'series' ? doc.name || doc.title : doc.title || doc.name,
+          poster_path: doc.poster_path || null
+        };
+      })
+      .filter(Boolean)
+  };
+};
+
+/**
+ * @desc   A user's lists, watched list and watchlist, for the public
+ *         profile's Lists tab. One endpoint rather than three so that tab
+ *         costs a single round trip.
+ * @route  GET /api/users/collections/:id
+ * @access Private
+ */
+export const getUserCollections = asyncHandler(async (req, res) => {
+  const targetUserId = req.params.id === 'me' ? req.user.id : req.params.id;
+  const user = await User.findById(targetUserId)
+    .select('watchlist toWatchList visibility followers')
+    .lean();
+
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  const currentUserId = req.user ? req.user.id.toString() : null;
+  if (!isAuthorizedToView(currentUserId, user)) {
+    // Same masked shape the favorites/CineGraph endpoints use for a private
+    // account: empty, explicitly flagged, never a 403 — the profile page
+    // still renders, it just has nothing to show in this tab.
+    return sendSuccess(
+      res,
+      { lists: [], watched: { items: [], total: 0 }, watchlist: { items: [], total: 0 }, isAuthorized: false },
+      'User collections fetched (masked)'
+    );
+  }
+
+  const isOwner = currentUserId === String(targetUserId);
+  // Someone else's private lists stay private even when their profile is
+  // visible — isPublic is a per-list decision, separate from account
+  // visibility. Viewing your own profile shows both.
+  const listQuery = isOwner ? { owner: targetUserId } : { owner: targetUserId, isPublic: true };
+
+  const [lists, watched, watchlist] = await Promise.all([
+    // Owner populated and items kept so these come back in exactly the
+    // shape /discover and /popular return — the profile's Lists rail can
+    // then reuse ListRailCard rather than needing a third list-card design.
+    CustomList.find(listQuery)
+      .sort({ order: -1, createdAt: -1 })
+      .limit(COLLECTION_ITEM_LIMIT)
+      .populate('owner', 'username profile_pic_url')
+      .lean(),
+    hydrateWatchItems(user.watchlist, COLLECTION_ITEM_LIMIT),
+    hydrateWatchItems(user.toWatchList, COLLECTION_ITEM_LIMIT)
+  ]);
+
+  sendSuccess(
+    res,
+    {
+      // Same preview-poster hydration the Lists screens already use, so a
+      // list card looks identical wherever it's rendered.
+      lists: await hydratePreviewItems(lists),
+      watched,
+      watchlist,
+      isAuthorized: true
+    },
+    'User collections fetched'
+  );
+});
 
 /**
  * @desc   Kullanıcının AYRIŞTIRILMIŞ favori listesini getirir
@@ -1624,19 +1770,36 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
   res.redirect(`${frontendUrl}/oauth-success?data=${userData}`);
 });
 
+// How many real titles (posters) each of the Recent Taste / Favorite Genres
+// cards gets to preview under its percentages. A horizontally scrollable
+// row, not the full list — and every entry here is persisted on the
+// ProfileAnalysis history row forever, so it stays deliberately small.
+const ITEM_PREVIEW_LIMIT = 20;
+// Per-genre poster list revealed by tapping a genre in Genre Breakdown,
+// highest-rated first. Smaller than the row limits above because it's paid
+// once per genre in the breakdown, not once per card.
+const GENRE_ITEM_LIMIT = 8;
+// Same idea for the two tappable Premium charts, paid once per bucket (10
+// rating scores, 6 months). Matches ITEM_PREVIEW_LIMIT rather than being
+// smaller: those rows have a "See all" that opens them into a grid, and 6
+// was visibly short of what a bucket labelled "23 titles" implies. The
+// bucket's TRUE total still ships separately (ratingCurve[i].count), so the
+// UI can say "showing 20 of 23" instead of quietly truncating.
+const BUCKET_ITEM_LIMIT = 20;
+
 // @desc    Get profile statistics and analysis for current user
 // @route   GET /api/users/profile-analysis
 // @access  Private
 export const getProfileAnalysis = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const tier = req.user.accountTier || 'free';
-  const { analysisCooldownHours, analysisSchema } = getTierLimits(tier);
+  const { analysisCooldownHours, analysisSchema, analysisAdvancedCards } = getTierLimits(tier);
   const Movie = mongoose.model('Movie');
   const Series = mongoose.model('Series');
 
   // Fetch user info for watchlist and social counts
   const user = await User.findById(userId)
-    .select("watchlist followers following")
+    .select("watchlist followers following favoriteMovies favoriteSeries createdAt")
     .lean();
 
   if (!user) {
@@ -1655,79 +1818,323 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
     }
   }
 
-  // 1. Movies Watched & Ratings
-  const movieRatings = await Rating.find({ user: userId, contentType: "movie" }).lean();
+  // 1-2. Ratings, both types in ONE query, partitioned in memory. Two
+  // separate contentType queries hit the same {user, ...} index twice for
+  // data that always arrives together, and the 30/60-day windows further
+  // down were re-querying a third time for rows already in this result.
+  const allRatings = await Rating.find({ user: userId }).lean();
+  const movieRatings = allRatings.filter(r => r.contentType === "movie");
+  const seriesRatings = allRatings.filter(r => r.contentType === "series");
   const moviesWatchedCount = movieRatings.length;
-  
-  let moviesAvgRating = 0;
-  let topMovieGenres = [];
-
-  if (moviesWatchedCount > 0) {
-    const totalMovieVal = movieRatings.reduce((sum, r) => sum + r.value, 0);
-    moviesAvgRating = Math.round((totalMovieVal / moviesWatchedCount) * 10) / 10;
-
-    // Fetch movies to get genres
-    const movieIds = movieRatings.map(r => r.contentId);
-    const moviesData = await Movie.find({ _id: { $in: movieIds } }).select("genre_ids").lean();
-    
-    const genreCounts = {};
-    for (const m of moviesData) {
-      if (m.genre_ids && Array.isArray(m.genre_ids)) {
-        for (const gId of m.genre_ids) {
-          const gName = MOVIE_GENRE_MAP[gId];
-          if (gName) {
-            genreCounts[gName] = (genreCounts[gName] || 0) + 1;
-          }
-        }
-      }
-    }
-
-    topMovieGenres = Object.entries(genreCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(entry => entry[0]);
-  }
-
-  // 2. Series Watched & Ratings
-  const seriesRatings = await Rating.find({ user: userId, contentType: "series" }).lean();
   const seriesWatchedCount = seriesRatings.length;
 
-  let seriesAvgRating = 0;
-  let topSeriesGenres = [];
+  // Both content lookups (and the two social counts, which depend on
+  // nothing) in one round of parallel work rather than four sequential
+  // awaits. `title name` is selected for BOTH types on purpose: the series
+  // collection is inconsistent about which field holds a show's name
+  // (see resolveDisplayName), and selecting only one left most series
+  // rendering as a poster with no title under it.
+  const [ratedMovieDocs, ratedSeriesDocs, reviewsCount, shareCount] = await Promise.all([
+    moviesWatchedCount
+      ? Movie.find({ _id: { $in: movieRatings.map(r => r.contentId) } })
+          .select("genre_ids title name poster_path")
+          .lean()
+      : [],
+    seriesWatchedCount
+      ? Series.find({ _id: { $in: seriesRatings.map(r => r.contentId) } })
+          .select("genre_ids title name poster_path")
+          .lean()
+      : [],
+    Review.countDocuments({ user: userId }),
+    Share.countDocuments({ user: userId })
+  ]);
 
-  if (seriesWatchedCount > 0) {
-    const totalSeriesVal = seriesRatings.reduce((sum, r) => sum + r.value, 0);
-    seriesAvgRating = Math.round((totalSeriesVal / seriesWatchedCount) * 10) / 10;
-
-    // Fetch series to get genres
-    const seriesIds = seriesRatings.map(r => r.contentId);
-    const seriesData = await Series.find({ _id: { $in: seriesIds } }).select("genre_ids").lean();
-
-    const genreCounts = {};
-    for (const s of seriesData) {
-      if (s.genre_ids && Array.isArray(s.genre_ids)) {
-        for (const gId of s.genre_ids) {
-          const gName = SERIES_GENRE_MAP[gId];
-          if (gName) {
-            genreCounts[gName] = (genreCounts[gName] || 0) + 1;
-          }
-        }
-      }
-    }
-
-    topSeriesGenres = Object.entries(genreCounts)
+  const moviesAvgRating = averageRating(movieRatings);
+  const seriesAvgRating = averageRating(seriesRatings);
+  const movieGenreCounts = tallyGenres(ratedMovieDocs, MOVIE_GENRE_MAP);
+  const seriesGenreCounts = tallyGenres(ratedSeriesDocs, SERIES_GENRE_MAP);
+  const topOf = (counts) =>
+    Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
-      .map(entry => entry[0]);
+      .map(([genre]) => genre);
+  const topMovieGenres = topOf(movieGenreCounts);
+  const topSeriesGenres = topOf(seriesGenreCounts);
+
+  // 3. All-time genre breakdown — computed straight from real rating data
+  // (movie + series genre tags combined, weighted by how many rated titles
+  // carry each tag), never invented by the LLM. This is what the Genre
+  // Breakdown card renders and grounds ("N of your M rated titles..."):
+  // real counts that always reflect the actual DB, instead of a model
+  // freehanding percentages that happened to land on a suspicious even
+  // split (5 genres at 20% each) when it had nothing concrete to go on.
+  const totalRatings = moviesWatchedCount + seriesWatchedCount;
+  const {
+    tagTotal: genreTagTotal,
+    percentByName: allTimeGenrePercentByName,
+    genreBreakdown
+  } = buildGenreBreakdown(movieGenreCounts, seriesGenreCounts);
+
+  // The user's own score per title, so every poster list below can lead with
+  // their highest-rated picks rather than whatever order the DB returned.
+  const ratingByContentId = new Map();
+  for (const r of allRatings) ratingByContentId.set(String(r.contentId), r.value);
+
+  const genreNamesOf = (doc, type) => {
+    const map = type === "movie" ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
+    return (doc.genre_ids || []).map(id => map[id]).filter(Boolean);
+  };
+  // The client renders `item.title ?? item.name`, so exactly one of the two
+  // has to carry the resolved name — resolveDisplayName picks whichever
+  // field this particular document actually has.
+  const toItem = (doc, type) => {
+    const displayName = resolveDisplayName(doc, type);
+    return {
+      _id: String(doc._id),
+      type,
+      title: type === "movie" ? displayName : undefined,
+      name: type === "series" ? displayName : undefined,
+      poster_path: doc.poster_path || null,
+      rating: ratingByContentId.get(String(doc._id)),
+      genres: genreNamesOf(doc, type)
+    };
+  };
+
+  // Tapping a genre in the breakdown reveals the titles behind it — this is
+  // that list, per top genre, led by whichever the user scored highest.
+  // Built per genre (rather than as one pooled sample the client filters)
+  // specifically so a smaller genre is never squeezed out of the sample and
+  // left with an empty row.
+  const ratedItemsAll = [
+    ...ratedMovieDocs.map(d => toItem(d, "movie")),
+    ...ratedSeriesDocs.map(d => toItem(d, "series"))
+  ];
+  const genreItems = {};
+  for (const { genre } of genreBreakdown) {
+    genreItems[genre] = ratedItemsAll
+      .filter(item => item.genres.includes(genre))
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      .slice(0, GENRE_ITEM_LIMIT);
   }
 
-  // 3. Watchlist
+  // 4. Watchlist
   const watchlistCount = user.watchlist ? user.watchlist.length : 0;
 
-  // 4. Social
-  const reviewsCount = await Review.countDocuments({ user: userId });
+  // 5. Social (counts already fetched in parallel above)
   const followingCount = user.following ? user.following.length : 0;
   const followersCount = user.followers ? user.followers.length : 0;
+
+  // 6. Recent taste (last 30 days) — combined movie+series genre counts from
+  // ratings given in the last month, distinct from the all-time breakdown
+  // above. deltaVsPreviousPeriod compares each genre's share of the last 30
+  // days against its share of the 30 days BEFORE that, so the card's arrows
+  // can honestly be labelled "vs last month" — an earlier version compared
+  // against the all-time share, which is a different claim than the label.
+  //
+  // Both windows are sliced out of `allRatings` and read against the already
+  // fetched rated docs: no extra queries, since every rating in a 30- or
+  // 60-day window is by definition already in the all-time set.
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const recentCutoff = new Date(Date.now() - 30 * DAY_MS);
+  const previousCutoff = new Date(Date.now() - 60 * DAY_MS);
+  const recentRatings = allRatings.filter(r => new Date(r.createdAt) >= recentCutoff);
+  const previousRatings = allRatings.filter(
+    r => new Date(r.createdAt) >= previousCutoff && new Date(r.createdAt) < recentCutoff
+  );
+
+  const ratedDocById = new Map();
+  for (const m of ratedMovieDocs) ratedDocById.set(String(m._id), { doc: m, type: "movie" });
+  for (const s of ratedSeriesDocs) ratedDocById.set(String(s._id), { doc: s, type: "series" });
+  const genreCountsForWindow = (ratings) => {
+    const movieDocs = [];
+    const seriesDocs = [];
+    for (const r of ratings) {
+      const entry = ratedDocById.get(String(r.contentId));
+      if (!entry) continue;
+      (entry.type === "movie" ? movieDocs : seriesDocs).push(entry.doc);
+    }
+    const counts = tallyGenres(movieDocs, MOVIE_GENRE_MAP);
+    return tallyGenres(seriesDocs, SERIES_GENRE_MAP, counts);
+  };
+
+  const recentGenres = buildRecentGenres(
+    genreCountsForWindow(recentRatings),
+    genreCountsForWindow(previousRatings),
+    allTimeGenrePercentByName
+  );
+
+  // The actual titles behind those percentages — newest rating first, with
+  // the score the user gave each one. Percentages alone are abstract; the
+  // posters are what make the card read as "yes, this is really *my* month."
+  // Capped at ITEM_PREVIEW_LIMIT: this is a scrollable preview row, not the
+  // full watch history, and every extra entry is dead weight in the
+  // persisted payload.
+  // Sorted once here and reused by the two Premium charts' buckets below —
+  // every one of those lists wants "most recent first" when truncated.
+  const ratingsNewestFirst = [...allRatings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const recentItems = ratingsNewestFirst
+    .filter(r => new Date(r.createdAt) >= recentCutoff)
+    .map(r => {
+      const entry = ratedDocById.get(String(r.contentId));
+      return entry ? toItem(entry.doc, entry.type) : null;
+    })
+    .filter(Boolean)
+    .slice(0, ITEM_PREVIEW_LIMIT);
+
+  // 7. Favorite genre weighting — from favorited titles themselves, not
+  // ratings, so it reflects "what they've chosen to keep," not "what
+  // they've watched." alignsWithTopWatched flags whether their #1 favorite
+  // genre matches their #1 all-time rated genre — a small, concrete "here's
+  // why we're confident in this" signal to surface next to the persona.
+  const favoriteMovieIds = user.favoriteMovies || [];
+  const favoriteSeriesIds = user.favoriteSeries || [];
+  const [favMoviesData, favSeriesData] = await Promise.all([
+    favoriteMovieIds.length
+      ? Movie.find({ _id: { $in: favoriteMovieIds } }).select("genre_ids title name poster_path").lean()
+      : [],
+    favoriteSeriesIds.length
+      ? Series.find({ _id: { $in: favoriteSeriesIds } }).select("genre_ids title name poster_path").lean()
+      : []
+  ]);
+  const favGenreCounts = tallyGenres(favMoviesData, MOVIE_GENRE_MAP);
+  tallyGenres(favSeriesData, SERIES_GENRE_MAP, favGenreCounts);
+  // `count` and the tag total both ship so the client can show an explicit
+  // "Other" remainder — a top-5 list whose percentages stop at 78% and never
+  // say where the other 22% went reads as broken arithmetic.
+  const { items: favoriteGenreItems, tagTotal: favGenreTotal } = buildFavoriteGenres(favGenreCounts);
+
+  // Same reasoning as recentItems: the posters that actually produced the
+  // percentages above. Movies before series (rather than interleaved) —
+  // they're two separately-ordered favorite lists on the user doc, so
+  // there's no shared ordering to preserve between them anyway.
+  const favoriteItems = [
+    ...favMoviesData.map(m => toItem(m, "movie")),
+    ...favSeriesData.map(s => toItem(s, "series"))
+  ].slice(0, ITEM_PREVIEW_LIMIT);
+
+  // 8. Premium-tier-only sections. Everything above ships to every tier that
+  // can run an analysis at all; these two extra cards are what an upgrade
+  // actually buys, so they're computed (and returned) only when the tier
+  // config says so — the client can't unlock them by asking nicely.
+  // Shared by the timeline buckets below and the monthly-stats window after
+  // them, so both are anchored to the exact same instant.
+  const now = new Date();
+
+  let ratingCurve;
+  let ratingCurveItems;
+  let activityTimeline;
+  let timelineItems;
+  if (analysisAdvancedCards) {
+    // How generously they score, as a 1-10 histogram — "are you a soft
+    // touch or a tough critic" answered from the actual distribution
+    // rather than the single average the stats card already shows.
+    ratingCurve = buildRatingCurve(allRatings);
+
+    // Both charts are tappable, so each bucket also carries the titles that
+    // put it there — keyed by bucket so the client can look them up without
+    // re-deriving which rating or month a title belongs to. Newest-first
+    // (ratingsNewestFirst) so a truncated bucket shows the most recent
+    // titles rather than an arbitrary slice of the collection's own order.
+    const curveItems = {};
+    for (const r of ratingsNewestFirst) {
+      const score = Math.min(10, Math.max(1, Math.round(r.value)));
+      const list = (curveItems[score] ||= []);
+      if (list.length >= BUCKET_ITEM_LIMIT) continue;
+      const entry = ratedDocById.get(String(r.contentId));
+      if (entry) list.push(toItem(entry.doc, entry.type));
+    }
+    ratingCurveItems = curveItems;
+
+    // Ratings per calendar month for the last 6 months, oldest first —
+    // month start is sent as an ISO date so the client can format the label
+    // in the viewer's own locale instead of receiving an English one.
+    const monthBuckets = buildMonthBuckets(now);
+    const bucketByKey = new Map(monthBuckets.map(b => [b.key, b]));
+    const monthItems = {};
+    for (const r of ratingsNewestFirst) {
+      if (!r.createdAt) continue;
+      const bucket = bucketByKey.get(monthKeyOf(r.createdAt));
+      if (!bucket) continue;
+      bucket.count += 1;
+      const monthIso = bucket.start.toISOString();
+      const list = (monthItems[monthIso] ||= []);
+      if (list.length >= BUCKET_ITEM_LIMIT) continue;
+      const entry = ratedDocById.get(String(r.contentId));
+      if (entry) list.push(toItem(entry.doc, entry.type));
+    }
+    activityTimeline = monthBuckets.map(({ start, count }) => ({ month: start.toISOString(), count }));
+    timelineItems = monthItems;
+  }
+
+  // 9. This calendar month vs. the last complete one. Every figure here is
+  // an EVENT count in a window (things that happened this month), never a
+  // running total — which is why followers/following come from the follow
+  // notifications rather than the untimestamped User.followers arrays: those
+  // arrays can only answer "how many now," not "how many this month."
+  // monthEnd is an EXCLUSIVE bound (midnight on the 1st of next month) so
+  // events on the final day still count; periodEnd is the last day itself,
+  // used only for the "1-31 August" label.
+  const { monthStart, monthEnd, periodEnd, prevMonthStart } = monthWindows(now);
+  const ratingsIn = (ratings, start, end) => ratings.filter(r => isWithin(r.createdAt, start, end));
+
+  const thisMonthMovies = ratingsIn(movieRatings, monthStart, monthEnd);
+  const prevMonthMovies = ratingsIn(movieRatings, prevMonthStart, monthStart);
+  const thisMonthSeries = ratingsIn(seriesRatings, monthStart, monthEnd);
+  const prevMonthSeries = ratingsIn(seriesRatings, prevMonthStart, monthStart);
+
+  const watchlistItems = user.watchlist || [];
+  const [
+    reviewsThisMonth,
+    reviewsPrevMonth,
+    sharesThisMonth,
+    sharesPrevMonth,
+    followersThisMonth,
+    followersPrevMonth,
+    followingThisMonth,
+    followingPrevMonth
+  ] = await Promise.all([
+    Review.countDocuments({ user: userId, createdAt: { $gte: monthStart, $lt: monthEnd } }),
+    Review.countDocuments({ user: userId, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
+    Share.countDocuments({ user: userId, createdAt: { $gte: monthStart, $lt: monthEnd } }),
+    Share.countDocuments({ user: userId, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
+    // Someone followed you (public account), or you accepted their request
+    // (private account) — either way you gained a follower.
+    Notification.countDocuments({
+      $or: [{ user: userId, type: "follow" }, { sender: userId, type: "follow_accepted" }],
+      createdAt: { $gte: monthStart, $lt: monthEnd }
+    }),
+    Notification.countDocuments({
+      $or: [{ user: userId, type: "follow" }, { sender: userId, type: "follow_accepted" }],
+      createdAt: { $gte: prevMonthStart, $lt: monthStart }
+    }),
+    // The mirror image: you followed someone, or your request to them was
+    // accepted — either way you started following one more account.
+    Notification.countDocuments({
+      $or: [{ sender: userId, type: "follow" }, { user: userId, type: "follow_accepted" }],
+      createdAt: { $gte: monthStart, $lt: monthEnd }
+    }),
+    Notification.countDocuments({
+      $or: [{ sender: userId, type: "follow" }, { user: userId, type: "follow_accepted" }],
+      createdAt: { $gte: prevMonthStart, $lt: monthStart }
+    })
+  ]);
+
+  const monthlyStats = {
+    periodStart: monthStart.toISOString(),
+    periodEnd: periodEnd.toISOString(),
+    moviesWatched: { value: thisMonthMovies.length, previous: prevMonthMovies.length },
+    seriesWatched: { value: thisMonthSeries.length, previous: prevMonthSeries.length },
+    avgMovieRating: { value: averageRating(thisMonthMovies), previous: averageRating(prevMonthMovies) },
+    avgSeriesRating: { value: averageRating(thisMonthSeries), previous: averageRating(prevMonthSeries) },
+    followers: { value: followersThisMonth, previous: followersPrevMonth },
+    following: { value: followingThisMonth, previous: followingPrevMonth },
+    watchlist: {
+      value: watchlistItems.filter(w => isWithin(w.addedAt, monthStart, monthEnd)).length,
+      previous: watchlistItems.filter(w => isWithin(w.addedAt, prevMonthStart, monthStart)).length
+    },
+    reviews: { value: reviewsThisMonth, previous: reviewsPrevMonth },
+    shares: { value: sharesThisMonth, previous: sharesPrevMonth }
+  };
 
   const payload = {
     movies: {
@@ -1744,9 +2151,46 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
     social: {
       reviewsCount,
       followingCount,
-      followersCount
-    }
+      followersCount,
+      shareCount
+    },
+    totalRatings,
+    memberSince: user.createdAt,
+    // Titles usually carry 2-3 genres each, so a genre's share is of this
+    // tag total, NOT of totalRatings — the client states both denominators
+    // explicitly rather than leaving "37 of 45 titles" sitting next to an
+    // unexplained 31%.
+    genreTagTotal,
+    genreBreakdown,
+    genreItems,
+    recentGenres,
+    recentItems,
+    favoriteGenres: {
+      items: favoriteGenreItems,
+      tagTotal: favGenreTotal,
+      totalFavorites: favoriteMovieIds.length + favoriteSeriesIds.length,
+      alignsWithTopWatched: Boolean(
+        genreBreakdown[0] && favoriteGenreItems[0] && genreBreakdown[0].genre === favoriteGenreItems[0].genre
+      )
+    },
+    favoriteItems,
+    monthlyStats,
+    ...(ratingCurve ? { ratingCurve, ratingCurveItems } : {}),
+    ...(activityTimeline ? { activityTimeline, timelineItems } : {})
   };
+
+  // The poster lists are display-only — ids and image paths are noise in a
+  // prompt asking for a personality read, and they'd be the single biggest
+  // chunk of it. Everything else (counts, percentages, genre names) stays,
+  // so the narrative is still grounded in the same numbers the cards show.
+  const {
+    recentItems: _recentItemsForDisplay,
+    favoriteItems: _favoriteItemsForDisplay,
+    genreItems: _genreItemsForDisplay,
+    ratingCurveItems: _ratingCurveItemsForDisplay,
+    timelineItems: _timelineItemsForDisplay,
+    ...llmPayload
+  } = payload;
 
   const apiKey = process.env.GEMINI_API_KEY;
   const systemInstructionText = buildAnalysisSystemInstruction(analysisSchema, lastAnalysis?.result);
@@ -1757,8 +2201,8 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
   if (apiKey) {
     try {
       const analysisPrompt = lastAnalysis?.result
-        ? `Analyze the user profile metrics:\n${JSON.stringify(payload, null, 2)}\n\nTheir previous analysis result was:\n${JSON.stringify(lastAnalysis.result, null, 2)}`
-        : `Analyze the user profile metrics:\n${JSON.stringify(payload, null, 2)}`;
+        ? `Analyze the user profile metrics:\n${JSON.stringify(llmPayload, null, 2)}\n\nTheir previous analysis result was:\n${JSON.stringify(lastAnalysis.result, null, 2)}`
+        : `Analyze the user profile metrics:\n${JSON.stringify(llmPayload, null, 2)}`;
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -1811,6 +2255,15 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
     provider = "mock";
   }
 
+  // genreBreakdown is never part of the LLM's own schema anymore (see
+  // buildAnalysisSystemInstruction) — stripped defensively here too in case
+  // a model echoes the field name back from an older analysis's result
+  // included in its own prompt context. The real, computed one (`payload.
+  // genreBreakdown` above) is the only one that ever reaches the client.
+  if (analysisResult && typeof analysisResult === "object" && "genreBreakdown" in analysisResult) {
+    delete analysisResult.genreBreakdown;
+  }
+
   await ProfileAnalysis.create({
     user: userId,
     tier,
@@ -1821,7 +2274,7 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
 
   return sendSuccess(
     res,
-    { ...analysisResult, tier },
+    { ...analysisResult, tier, stats: payload },
     provider === "gemini" ? "Profile analysis generated successfully by Gemini" : "Profile analysis generated successfully (Mock)"
   );
 });
@@ -1848,12 +2301,18 @@ export const getProfileAnalysisHistory = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .select("tier result createdAt")
+      .select("tier result payload createdAt")
       .lean(),
     ProfileAnalysis.countDocuments(query),
   ]);
 
-  return sendPaginated(res, history, total, page, limit, "Profile analysis history fetched");
+  // `payload` renamed to `stats` on the way out — matches the shape
+  // getProfileAnalysis's own fresh-run response already uses, so the mobile
+  // card deck can treat a history entry and a just-generated result
+  // identically instead of branching on field name.
+  const withStats = history.map(({ payload, ...rest }) => ({ ...rest, stats: payload }));
+
+  return sendPaginated(res, withStats, total, page, limit, "Profile analysis history fetched");
 });
 
 // Builds the Gemini system instruction, adding richer fields for Pro/Premium schemas
@@ -1867,11 +2326,16 @@ const buildAnalysisSystemInstruction = (analysisSchema, lastResult) => {
     return `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n${basicSchemaFields}\n}`;
   }
 
+  // genreBreakdown is deliberately NOT part of this schema — it used to be,
+  // but asking the model to freehand percentages produced suspiciously even
+  // splits (5 genres at 20% each) with no real grounding. It's computed
+  // server-side from actual rating data instead (payload.genreBreakdown,
+  // already included in the metrics JSON below) and merged into the
+  // response after this call, so it's always real and always explainable.
   const richSchemaFields = `${basicSchemaFields},
-  "genreBreakdown": [{"genre": "string", "percentage": number}],
   "tasteCategory": "A short 2-4 word taste-personality label, e.g. 'Arthouse Purist', 'Blockbuster Loyalist'"${lastResult ? ',\n  "trendVsLastAnalysis": "A short sentence comparing their current stats/taste to their previous analysis."' : ""}`;
 
-  return `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n${richSchemaFields}\n}`;
+  return `Act as a witty, expert cinema analyst. Analyze the user's movie/series metrics (including their real genreBreakdown, recentGenres, and favoriteGenres — ground your narrative in these actual numbers) and output STRICTLY a JSON object matching this exact schema (No markdown wrapper like \`\`\`json, just pure stringified JSON):\n{\n${richSchemaFields}\n}`;
 };
 
 // Helper for witty local mock analysis
@@ -1912,18 +2376,14 @@ const generateMockAnalysis = (payload, analysisSchema = "basic", lastResult = nu
     return basicResult;
   }
 
-  const genres = [...new Set([...(payload.movies.topGenres || []), ...(payload.series.topGenres || [])])].slice(0, 5);
-  const genreBreakdown = genres.length
-    ? genres.map((genre, i) => ({
-        genre,
-        percentage: i === genres.length - 1 ? 100 - Math.floor(100 / genres.length) * (genres.length - 1) : Math.floor(100 / genres.length)
-      }))
-    : [];
+  // Real top genre, not a freehand guess — same source (payload.
+  // genreBreakdown, computed from actual ratings) the client renders in the
+  // Genre Breakdown card, so the mock's tasteCategory never contradicts it.
+  const topGenre = payload.genreBreakdown?.[0]?.genre;
 
   return {
     ...basicResult,
-    genreBreakdown,
-    tasteCategory: genres[0] ? `${genres[0]} Devotee` : "Undiscovered Taste",
+    tasteCategory: topGenre ? `${topGenre} Devotee` : "Undiscovered Taste",
     ...(lastResult && { trendVsLastAnalysis: "Your taste has stayed fairly consistent since your last analysis." })
   };
 };

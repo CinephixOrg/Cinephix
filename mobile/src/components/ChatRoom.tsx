@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { SkeletonChatBubbles } from "./Skeleton";
 import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
 import SyncShareMessageCard from "./SyncShareMessageCard";
+import ProfileShareMessageCard from "./ProfileShareMessageCard";
 
 const AVATAR_SIZE = 28;
 import AnalyzeModal from "./AnalyzeModal";
@@ -31,6 +32,11 @@ interface Props {
   roomId: string;
   canChat: boolean;
   emptyText: string;
+  // A first page the caller already has, so this room can render straight
+  // into it instead of mounting and immediately fetching what its opener
+  // was just handed. Used when a DM is opened from a profile, where the
+  // find-or-create call returns the messages alongside the conversation.
+  initialMessages?: { items: Message[]; pagination: MessagePagination };
   fetchMessages: (
     before?: string,
     limit?: number
@@ -45,7 +51,7 @@ interface Props {
 // screens stay mounted on blur so they use useFocusEffect; a group's Chat
 // tab actually mounts/unmounts with tab switches, so a plain useEffect in
 // the parent already does the right thing).
-export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMessages, markRead, sendRest }: Props) {
+export default function ChatRoom({ roomType, roomId, canChat, emptyText, initialMessages, fetchMessages, markRead, sendRest }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.base100 },
@@ -68,7 +74,12 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
   timestamp: { fontSize: 10, color: colors.placeholder, marginTop: 2 },
   timestampOwn: { textAlign: "right", marginRight: 4 },
   timestampOther: { textAlign: "left", marginLeft: 4 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40, transform: [{ scaleY: -1 }] },
+  // No scaleY counter-flip here. The list is `inverted`, and RN already
+  // composes its own inversion style onto ListEmptyComponent
+  // (VirtualizedList's _renderEmptyComponent) — and because the element's
+  // own style wins that compose, a transform here REPLACES the inversion
+  // rather than cancelling it, leaving the text mirrored.
+  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
   composerRow: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -103,13 +114,16 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
   const { user } = useAuth();
   const { connected, sendMessage, onNewMessage } = useChat();
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [pagination, setPagination] = useState<MessagePagination | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<Message[]>(initialMessages?.items ?? []);
+  const [pagination, setPagination] = useState<MessagePagination | null>(initialMessages?.pagination ?? null);
+  const [loading, setLoading] = useState(!initialMessages);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState("");
   const [viewingAnalysis, setViewingAnalysis] = useState<MatchAnalysis | null>(null);
   const [viewingProfileAnalysis, setViewingProfileAnalysis] = useState<ProfileAnalysis | null>(null);
+  // Consumed once: a later room switch in the same mounted component must
+  // still fetch, since the seed only describes the room it arrived with.
+  const seededRef = useRef(Boolean(initialMessages));
 
   useEffect(() => {
     if (!canChat) {
@@ -117,6 +131,13 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
       return;
     }
     let cancelled = false;
+    // Already handed a page — refetching it would only replace identical
+    // content, so this just marks the room read.
+    if (seededRef.current) {
+      seededRef.current = false;
+      markRead().catch(() => {});
+      return;
+    }
     (async () => {
       setLoading(true);
       try {
@@ -245,8 +266,10 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, fetchMe
                   {!isOwn && <Text style={styles.senderName}>{item.sender.username}</Text>}
                   {item.type === "recommendation" ? (
                     <RecommendationMessageCard message={item} isOwn={isOwn} />
+                  ) : item.type === "profile_share" ? (
+                    <ProfileShareMessageCard message={item} isOwn={isOwn} />
                   ) : item.type === "analysis_share" && (item.analysisData as any)?.type === "profile" ? (
-                    // Profile-analysis shares (CineGraphCompatibilityCard's
+                    // Profile-analysis shares (SyncScoreCard's
                     // own, unrelated feature) keep the original plain bubble
                     // — only the Sync/Cinematch variant below gets the
                     // richer deck-preview treatment.

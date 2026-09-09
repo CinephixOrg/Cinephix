@@ -1,18 +1,24 @@
-import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, Modal, StyleSheet } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { View, Text, Pressable, Modal, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import UserSharePickerModal from "./UserSharePickerModal";
 import ShareOptionsMenu from "./ShareOptionsMenu";
+import ProfileAnalysisCardDeck, {
+  createAnalysisDeckState,
+  type AnalysisDeckState,
+} from "./profile/ProfileAnalysisCardDeck";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
 import { sendGroupRichMessage } from "../api/groupService";
 import { createShare } from "../api/shareService";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useToast } from "../context/ToastContext";
-import type { ProfileAnalysis } from "../types";
+import type { ProfileAnalysis, ProfileAnalysisItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import type { ColorPalette } from "../theme/palettes";
-import { fonts } from "../theme/typography";
 
 interface Props {
   visible: boolean;
@@ -23,69 +29,50 @@ interface Props {
   // in ChatRoom.tsx, matching AnalyzeModal.tsx's identical reasoning: no
   // re-sharing something that was already shared with you.
   shareable?: boolean;
+  // Set only where the caller hides this modal while the viewer is away on
+  // another screen — i.e. it gates `visible` on its own screen focus, the
+  // way ProfileCategoryTabs does. Without that, tapping a poster would push
+  // the title's page UNDERNEATH this Modal (its own native window, above the
+  // whole nav stack) and strand the viewer looking at an analysis they can't
+  // dismiss their way out of. Off by default, so posters simply aren't
+  // tappable anywhere that hasn't opted in.
+  navigable?: boolean;
 }
 
 function buildStyles(colors: ColorPalette) {
   return StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 24 },
-    card: { backgroundColor: colors.base200, borderRadius: 12, overflow: "hidden", maxHeight: "80%" },
-    header: { backgroundColor: colors.primary, padding: 20 },
-    eyebrow: {
-      color: colors.primaryContent,
-      opacity: 0.75,
-      fontSize: 11,
-      fontFamily: fonts.bold,
-      letterSpacing: 1,
-    },
-    nickname: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 22, marginTop: 4 },
-    scrollContent: { padding: 20, paddingBottom: 8 },
-    paragraph: { color: colors.baseContent, fontSize: 14, lineHeight: 20 },
-    section: { marginBottom: 16 },
-    sectionTitle: {
-      fontFamily: fonts.bold,
-      fontSize: 12,
-      color: colors.placeholder,
-      marginBottom: 6,
-    },
-    funFactBox: { backgroundColor: colors.base300, borderRadius: 10, padding: 14 },
-    funFactText: { color: colors.baseContent, fontSize: 13, lineHeight: 19, fontStyle: "italic" },
-    tasteChip: {
-      alignSelf: "flex-start",
-      backgroundColor: colors.base300,
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      paddingVertical: 5,
-    },
-    tasteChipText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 12 },
-    genreRow: { flexDirection: "row", alignItems: "center", marginBottom: 8, gap: 8 },
-    genreLabel: { color: colors.baseContent, fontSize: 12, width: 80 },
-    genreBarTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.base300, overflow: "hidden" },
-    genreBarFill: { height: "100%", borderRadius: 4, backgroundColor: colors.primary },
-    genrePercent: { color: colors.placeholder, fontSize: 11, width: 34, textAlign: "right" },
-    buttonRow: { flexDirection: "row", gap: 8, padding: 20, paddingTop: 4 },
-    closeButton: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: 12,
+    // Tighter padding + a taller ceiling than the original sheet: the
+    // persona card's closing "Did You Know?" box was landing past the fold
+    // and needing a scroll to reach.
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", paddingHorizontal: 14, paddingVertical: 12 },
+    // No more solid-color header banner — the CineMatch-style deck below
+    // carries its own eyebrow + gradient nickname as card 1, so this sheet
+    // is just a neutral frame around it instead of duplicating that chrome.
+    sheet: { backgroundColor: colors.base100, borderRadius: 20, overflow: "hidden", maxHeight: "94%" },
+    deckWrap: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 4 },
+    loadingWrap: { paddingHorizontal: 20, paddingVertical: 40, alignItems: "center" },
+    loadingText: { color: colors.baseContent, fontSize: 14 },
+    // Icon-only, mirroring the circular action buttons ProfilePhotoViewerModal
+    // already established (52x52, centered glyph) rather than the old
+    // text-labeled "Share"/"Close" pair — no label under these two, per
+    // direct ask, so accessibilityLabel carries what the icon alone can't.
+    buttonRow: { flexDirection: "row", justifyContent: "center", gap: 20, paddingVertical: 12 },
+    iconButton: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
       alignItems: "center",
+      justifyContent: "center",
     },
-    closeButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
-    shareButton: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingVertical: 12,
-      alignItems: "center",
-    },
-    shareButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
+    closeButton: { backgroundColor: colors.base300 },
+    shareButton: { backgroundColor: colors.primary },
   });
 }
 
-export default function ProfileAnalysisModal({ visible, onClose, data, shareable }: Props) {
+export default function ProfileAnalysisModal({ visible, onClose, data, shareable, navigable }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
   const { user } = useAuth();
   const { refreshConversations } = useChat();
   const { showToast } = useToast();
@@ -94,6 +81,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
   const [pickerVisible, setPickerVisible] = useState(false);
   const [sending, setSending] = useState(false);
   const [sharingToMedia, setSharingToMedia] = useState(false);
+  const [deckWidth, setDeckWidth] = useState(0);
 
   const handleShareToMedia = async () => {
     if (!data) return;
@@ -140,84 +128,82 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
     }
   };
 
+  const handleDeckLayout = (e: LayoutChangeEvent) => setDeckWidth(e.nativeEvent.layout.width);
+
+  // Closes first, then navigates: this Modal is its own native window sitting
+  // above the whole nav stack, so pushing a screen underneath it would just
+  // leave the user staring at the still-open analysis.
+  const handleUpgrade = useCallback(() => {
+    onClose();
+    router.push("/profile/settings");
+  }, [onClose, router]);
+
+  // The deck's own scroll position, focused genre and already-played
+  // animations, parked somewhere that survives the round trip to a title's
+  // page. It has to live out here rather than inside the deck: an RN Modal
+  // unmounts its children while hidden, so the deck itself is destroyed and
+  // rebuilt, but this component stays mounted the whole time.
+  const deckStateRef = useRef<AnalysisDeckState>(createAnalysisDeckState());
+
+  // Deliberately does NOT call onClose. The caller keeps this modal "open" in
+  // its own state and merely hides it while its screen is unfocused, so
+  // pressing back on the title's page brings the analysis straight back,
+  // exactly where it was.
+  //
+  // useCallback matters here beyond habit: this identity is what the
+  // memoized card bodies and poster rows compare against, so an inline
+  // arrow would re-render every card on every deck render.
+  const handleOpenItem = useCallback(
+    (item: ProfileAnalysisItem) => {
+      router.push(`/profile/content/${item.type}/${item._id}` as never);
+    },
+    [router]
+  );
+  const openItem = navigable ? handleOpenItem : undefined;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.card}>
-          <View style={styles.header}>
-            {/* .toUpperCase() (not textTransform: "uppercase") so casing is
-                JS-level and locale-invariant — RN's native uppercase
-                transform honors the device's OS locale, turning "i" into
-                "İ" on Turkish-locale devices regardless of app language. */}
-            <Text style={styles.eyebrow}>{t("AI Cinematic Persona").toUpperCase()}</Text>
-            <Text style={styles.nickname}>{data?.nickname || t("Silent Observer")}</Text>
-          </View>
-
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {data ? (
-              <>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>{`🧠 ${t("Profile Insights")}`.toUpperCase()}</Text>
-                  <Text style={styles.paragraph}>{data.personalitySummary}</Text>
-                </View>
-
-                {data.tasteCategory && (
-                  <View style={styles.section}>
-                    <View style={styles.tasteChip}>
-                      <Text style={styles.tasteChipText}>{data.tasteCategory}</Text>
-                    </View>
-                  </View>
-                )}
-
-                {data.genreBreakdown && data.genreBreakdown.length > 0 && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{`📊 ${t("Genre Breakdown")}`.toUpperCase()}</Text>
-                    {data.genreBreakdown.map((g) => (
-                      <View key={g.genre} style={styles.genreRow}>
-                        <Text style={styles.genreLabel} numberOfLines={1}>{g.genre}</Text>
-                        <View style={styles.genreBarTrack}>
-                          <View style={[styles.genreBarFill, { width: `${g.percentage}%` }]} />
-                        </View>
-                        <Text style={styles.genrePercent}>{g.percentage}%</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {data.trendVsLastAnalysis && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{`📈 ${t("Since Last Time")}`.toUpperCase()}</Text>
-                    <Text style={styles.paragraph}>{data.trendVsLastAnalysis}</Text>
-                  </View>
-                )}
-
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>{`💡 ${t("Recommended Vibe")}`.toUpperCase()}</Text>
-                  <Text style={styles.paragraph}>{data.recommendedConcept}</Text>
-                </View>
-
-                <View style={styles.funFactBox}>
-                  <Text style={styles.sectionTitle}>{`🍿 ${t("Did You Know?")}`.toUpperCase()}</Text>
-                  <Text style={styles.funFactText}>"{data.funFact}"</Text>
-                </View>
-              </>
+      {/* RN's Modal renders into its own detached native window, outside the
+          app-root GestureHandlerRootView (app/_layout.tsx) — without a second
+          one here, react-native-gesture-handler recognizes nothing inside,
+          and the deck's horizontal poster rows (which use gesture-handler's
+          ScrollView so they win the pan against the outer card pager) would
+          simply not scroll. */}
+      <GestureHandlerRootView style={styles.overlay}>
+        <View style={styles.sheet}>
+          <View style={styles.deckWrap} onLayout={handleDeckLayout}>
+            {data && deckWidth > 0 ? (
+              <ProfileAnalysisCardDeck
+                data={data}
+                containerWidth={deckWidth}
+                viewerTier={user?.accountTier}
+                onUpgrade={handleUpgrade}
+                onOpenItem={openItem}
+                stateRef={deckStateRef}
+              />
             ) : (
-              <Text style={styles.paragraph}>{t("Aggregating statistics...")}</Text>
+              <View style={styles.loadingWrap}>
+                <Text style={styles.loadingText}>{t("Aggregating statistics...")}</Text>
+              </View>
             )}
-          </ScrollView>
+          </View>
 
           <View style={styles.buttonRow}>
             {shareable && data && (
-              <Pressable style={styles.shareButton} onPress={() => setOptionsVisible(true)}>
-                <Text style={styles.shareButtonText}>{t("Share")}</Text>
+              <Pressable
+                style={[styles.iconButton, styles.shareButton]}
+                onPress={() => setOptionsVisible(true)}
+                accessibilityLabel={t("Share")}
+              >
+                <Ionicons name="share-social-outline" size={22} color={colors.primaryContent} />
               </Pressable>
             )}
-            <Pressable style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>{t("Close")}</Text>
+            <Pressable style={[styles.iconButton, styles.closeButton]} onPress={onClose} accessibilityLabel={t("Close")}>
+              <Ionicons name="close" size={24} color={colors.baseContent} />
             </Pressable>
           </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
 
       <ShareOptionsMenu
         visible={optionsVisible}

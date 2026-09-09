@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView, Pressable, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { Drawer } from "react-native-drawer-layout";
 import { useProfile } from "../../../src/context/ProfileContext";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
-import ProfileCategoryTabs from "../../../src/components/profile/ProfileCategoryTabs";
+import ProfileCategoryTabs, { type Category } from "../../../src/components/profile/ProfileCategoryTabs";
 import ProfileDrawerContent from "../../../src/components/profile/ProfileDrawerContent";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import { useTheme } from "../../../src/context/ThemeContext";
@@ -35,6 +35,36 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const { profile, cineGraph, favorites, shareCount, loaded, error, ensureLoaded, refresh } = useProfile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Category lives here (not inside ProfileCategoryTabs) so the header's
+  // Shares stat — a sibling rendered above it, not a descendant — can jump
+  // straight to the Sharings tab. tabsY is the category row's own measured
+  // offset inside the ScrollView, captured via onLayout, so the jump can
+  // also smoothly scroll it into view rather than just swapping content
+  // that might already be off-screen below the fold.
+  const [category, setCategory] = useState<Category>("sharings");
+  const [tabsY, setTabsY] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Lets AddFavoriteModal (opened from ProfileCategoryTabs' favorites edit
+  // mode) hide itself while its own "view this result's detail page" tap
+  // has us navigate away, without actually closing/resetting — RN's Modal
+  // renders in its own native layer above the whole navigation stack, so a
+  // still-"open" Modal would otherwise sit on top of and hide the newly
+  // pushed Content Detail screen. Going back re-focuses this screen, which
+  // re-shows the modal with whatever search state it already had.
+  const [screenFocused, setScreenFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setScreenFocused(true);
+      return () => setScreenFocused(false);
+    }, [])
+  );
+
+  const handleSharesPress = () => {
+    setCategory("sharings");
+    scrollRef.current?.scrollTo({ y: tabsY, animated: true });
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -94,10 +124,16 @@ export default function ProfileScreen() {
       drawerPosition="right"
       renderDrawerContent={() => <ProfileDrawerContent onNavigate={() => setDrawerOpen(false)} />}
     >
-      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
-        <ProfileHeaderInstagram profile={profile} shareCount={shareCount} />
-        <View style={styles.tabContent}>
-          <ProfileCategoryTabs favorites={favorites} cineGraph={cineGraph} />
+      <ScrollView ref={scrollRef} style={styles.screen} contentContainerStyle={styles.scrollContent}>
+        <ProfileHeaderInstagram profile={profile} shareCount={shareCount} onSharesPress={handleSharesPress} />
+        <View style={styles.tabContent} onLayout={(e: LayoutChangeEvent) => setTabsY(e.nativeEvent.layout.y)}>
+          <ProfileCategoryTabs
+            favorites={favorites}
+            cineGraph={cineGraph}
+            category={category}
+            onCategoryChange={setCategory}
+            screenFocused={screenFocused}
+          />
         </View>
       </ScrollView>
     </Drawer>

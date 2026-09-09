@@ -136,6 +136,37 @@ export interface WatchlistItem {
   itemType: ContentType;
 }
 
+// One entry of a watched list / watchlist, already resolved to something
+// renderable by the server (see getUserCollections) rather than needing a
+// second bulk content fetch the way the raw WatchlistItem shape does.
+export interface CollectionItem {
+  itemId: string;
+  itemType: ContentType;
+  title: string;
+  poster_path?: string | null;
+}
+
+export interface CollectionSlice {
+  items: CollectionItem[];
+  // How many the user actually has, which can exceed items.length — the
+  // endpoint caps what it ships. Lets the UI say "showing N of M".
+  total: number;
+}
+
+// GET /users/collections/:id — everything the public profile's Lists tab
+// needs, in one response. `isAuthorized` false is the private-account
+// masked shape, matching favorites/CineGraph.
+//
+// `lists` comes back in the same shape /discover and /popular return, so
+// the profile's Lists rail renders with ListRailCard instead of needing a
+// list card of its own.
+export interface UserCollections {
+  lists: DiscoverListItem[];
+  watched: CollectionSlice;
+  watchlist: CollectionSlice;
+  isAuthorized: boolean;
+}
+
 export interface Pagination {
   total: number;
   page: number;
@@ -376,7 +407,6 @@ export interface MatchWithUserResult {
     diversity: number;
     bonus: number;
   };
-  llmInput: unknown;
 }
 
 export interface MatchAnalysis {
@@ -404,16 +434,129 @@ export interface MatchAnalysis {
   raw: unknown;
 }
 
+// Raw metrics behind an analysis run — same numbers the LLM prompt itself
+// was built from, returned alongside it so the card deck's detail cards
+// (Recent Taste, Favorite Genres, Your Stats) can render without a second
+// round trip. Absent on analyses fetched/cached before this field existed
+// (older ProfileAnalysis history rows), so every consumer treats it as
+// optional rather than assuming it's always there.
+export interface ProfileAnalysisStats {
+  movies: { watchedCount: number; topGenres: string[]; avgRating: number };
+  series: { watchedCount: number; topGenres: string[]; avgRating: number };
+  watchlist: number;
+  // shareCount was added after this feature shipped, same reasoning as the
+  // fields below — optional so old history rows don't lie about having it.
+  social: { reviewsCount: number; followingCount: number; followersCount: number; shareCount?: number };
+  // Below: every field added after this feature's first release, each in
+  // its own pass — a history row saved before a given pass simply doesn't
+  // have that field at all (not an empty array/object, genuinely absent),
+  // so all of them stay optional and every consumer must fall back
+  // (`?? []`/`?? 0`/`?.`) rather than assume they're always present.
+  totalRatings?: number;
+  memberSince?: string;
+  // Total genre tags across all rated titles. A title carries 2-3 genres, so
+  // each genre's `percentage` below is its share of THIS, not of
+  // totalRatings — the two denominators are why "37 of your 45 titles" and
+  // "31%" can both be right, and the UI states each one explicitly.
+  genreTagTotal?: number;
+  // Computed server-side straight from real rating data (movie+series genre
+  // tags combined) — never LLM-invented, so these always reflect the actual
+  // DB and never coincidentally land on a suspicious even split.
+  genreBreakdown?: { genre: string; count: number; percentage: number }[];
+  // Titles behind each genre in the breakdown, highest-rated first — keyed
+  // by genre name, revealed when that genre is tapped.
+  genreItems?: Record<string, ProfileAnalysisItem[]>;
+  // Combined movie+series genre counts from ratings given in the last 30
+  // days — distinct from movies/series.topGenres above, which are all-time.
+  // deltaVsAllTime is this genre's share of the last 30 days minus its
+  // all-time share (positive = leaning into it more than usual lately).
+  recentGenres?: {
+    genre: string;
+    count: number;
+    percentage: number;
+    deltaVsAllTime: number;
+    // This genre's share of the last 30 days minus its share of the 30 days
+    // before that — what the card's ↑/↓ arrows actually mean. Null when
+    // there's no earlier window to compare against ("no prior data" and
+    // "unchanged" must not look the same); absent on older history rows,
+    // which compared against the all-time share instead.
+    deltaVsPreviousPeriod?: number | null;
+  }[];
+  favoriteGenres?: {
+    items: { genre: string; count?: number; percentage: number }[];
+    // Total favorite genre tags, so the card can show an explicit "Other"
+    // remainder rather than a top-5 list that stops at 78%.
+    tagTotal?: number;
+    totalFavorites: number;
+    // True when the #1 favorited genre matches the #1 all-time rated genre.
+    alignsWithTopWatched: boolean;
+  };
+  // This calendar month vs. the last complete one. Every figure is an event
+  // count inside the window (things that happened this month), never a
+  // running total — followers/following included, which is why they come
+  // from follow notifications rather than the untimestamped follower arrays.
+  monthlyStats?: ProfileAnalysisMonthlyStats;
+  // The actual titles behind the two percentage lists above. `genres` lets
+  // the cards filter these client-side when a genre row is tapped, without a
+  // second per-genre payload for lists this small.
+  recentItems?: ProfileAnalysisItem[];
+  favoriteItems?: ProfileAnalysisItem[];
+  // Premium/dev only — absent entirely on lower tiers (the server never
+  // computes them), which is what the deck keys its upsell card off.
+  ratingCurve?: { value: number; count: number }[];
+  activityTimeline?: { month: string; count: number }[];
+  // Titles behind each bucket of the two charts above, so both are tappable.
+  // Keyed by the 1-10 score and by the month's ISO string respectively.
+  ratingCurveItems?: Record<string, ProfileAnalysisItem[]>;
+  timelineItems?: Record<string, ProfileAnalysisItem[]>;
+}
+
+// One monthly figure and the same figure for the previous calendar month.
+export interface MonthlyStatPair {
+  value: number;
+  previous: number;
+}
+
+export interface ProfileAnalysisMonthlyStats {
+  periodStart: string;
+  // Last day of the current month (inclusive) — the label's "1-31 August"
+  // end, not the exclusive bound the queries used.
+  periodEnd: string;
+  moviesWatched: MonthlyStatPair;
+  seriesWatched: MonthlyStatPair;
+  avgMovieRating: MonthlyStatPair;
+  avgSeriesRating: MonthlyStatPair;
+  // New followers / newly followed accounts this month, not running totals.
+  followers: MonthlyStatPair;
+  following: MonthlyStatPair;
+  watchlist: MonthlyStatPair;
+  reviews: MonthlyStatPair;
+  shares: MonthlyStatPair;
+}
+
+export interface ProfileAnalysisItem {
+  _id: string;
+  type: ContentType;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  // The score this user gave it, 1-10 backend-side (see utils/rating.ts).
+  // Absent for a favorited title they never rated.
+  rating?: number;
+  genres?: string[];
+}
+
 export interface ProfileAnalysis {
   nickname: string;
   personalitySummary: string;
   funFact: string;
   recommendedConcept: string;
-  // Pro/Premium only — absent entirely on the Free (basic) schema.
-  genreBreakdown?: { genre: string; percentage: number }[];
   tasteCategory?: string;
   trendVsLastAnalysis?: string;
   tier?: AccountTier;
+  // Real, computed metrics behind this run — genreBreakdown now lives here
+  // (stats.genreBreakdown), not as a separate top-level LLM-authored field.
+  stats?: ProfileAnalysisStats;
   // Added client-side only when sharing, mirrors web's exact convention for
   // letting a receiver distinguish this from a MatchAnalysis share.
   type?: "profile";
@@ -425,6 +568,7 @@ export interface ProfileAnalysisHistoryEntry {
   _id: string;
   tier: AccountTier;
   result: ProfileAnalysis;
+  stats?: ProfileAnalysisStats;
   createdAt: string;
 }
 
@@ -485,7 +629,7 @@ export interface ImportResult {
 
 export type RoomType = "dm" | "group";
 
-export type MessageType = "text" | "recommendation" | "analysis_share";
+export type MessageType = "text" | "recommendation" | "analysis_share" | "profile_share";
 
 export interface MessageSender {
   _id: string;
@@ -512,6 +656,15 @@ export interface Message {
     rating?: number;
   };
   analysisData?: unknown;
+  // "hey, do you know this person?" shares — denormalized at send time
+  // (see backend/models/Message.js), so still renders correctly even if
+  // the shared user later changes their username/avatar/tier.
+  profileData?: {
+    userId: string;
+    username: string;
+    profile_pic_url?: string | null;
+    accountTier?: AccountTier | null;
+  };
   createdAt: string;
   // Local-only fields, never sent by the server.
   clientTempId?: string;
@@ -528,6 +681,13 @@ export interface Conversation {
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+  // Present only on the find-or-create response (POST /conversations), not
+  // on rows from the conversation list. Opening a DM needs its first page of
+  // messages immediately, and the client can't ask for them until it knows
+  // the conversation id — so that endpoint returns both at once rather than
+  // making the chat wait on a second round trip.
+  messages?: Message[];
+  messagesPagination?: MessagePagination;
 }
 
 // A group row from the same GET /conversations response as Conversation

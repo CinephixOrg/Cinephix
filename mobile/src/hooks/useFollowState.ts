@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useFollowGraph } from "../context/FollowGraphContext";
+import { invalidateConnections } from "../api/connectionsCache";
 import { useToast } from "../context/ToastContext";
 import { followTargetUser, unfollowTargetUser } from "../api/userService";
 import type { FollowStatus } from "../types";
@@ -52,6 +53,12 @@ export function useFollowState(targetUserId: string, options?: Options) {
       const { type } = await followTargetUser(targetUserId);
       setLocalStatus(type);
       graph.applyFollow(targetUserId, type);
+      // Both of these lists just changed membership and both counts —
+      // dropping the cached pages here, in the one place every follow in the
+      // app goes through, means the network screen can't show a stale list
+      // no matter which screen the follow was made from.
+      invalidateConnections(targetUserId);
+      if (user?._id) invalidateConnections(user._id);
     } catch (e: any) {
       const message = e?.response?.data?.message || t("Something went wrong. Please try again.");
       setError(message);
@@ -68,6 +75,8 @@ export function useFollowState(targetUserId: string, options?: Options) {
       await unfollowTargetUser(targetUserId);
       setLocalStatus("not-following");
       graph.applyUnfollow(targetUserId);
+      invalidateConnections(targetUserId);
+      if (user?._id) invalidateConnections(user._id);
     } catch (e: any) {
       const message = e?.response?.data?.message || t("Something went wrong. Please try again.");
       setError(message);
