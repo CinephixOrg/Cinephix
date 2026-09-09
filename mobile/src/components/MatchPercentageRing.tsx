@@ -8,10 +8,10 @@ interface Props {
   percentage: number;
   size?: number;
   strokeWidth?: number;
-  // Override the default theme-derived colors — used when the ring sits on
-  // top of a colored/gradient card instead of the plain screen background
-  // (e.g. CineGraphCompatibilityCard), where colors.border/primary/baseContent
-  // wouldn't read correctly against it.
+  // Override the default theme-derived colors. Two reasons callers do this:
+  // the ring sits on a colored surface where the theme's own
+  // border/primary/baseContent wouldn't read, or the fill itself is carrying
+  // meaning — SyncScoreCard tints it red→green by score.
   trackColor?: string;
   fillColor?: string;
   textColor?: string;
@@ -39,8 +39,33 @@ export default function MatchPercentageRing({
     alignItems: "center",
     justifyContent: "center",
   },
-  label: { fontFamily: fonts.bold, fontSize: 15, color: textColor ?? colors.baseContent },
-}), [colors, textColor]);
+  // The number and its unit are two pieces, not one string: at a fixed
+  // size the "%" sat at the same weight as the digits and crowded them
+  // inside a small ring. It's now noticeably smaller, softer and baseline-
+  // aligned, so the number reads as the value and the % as its unit.
+  labelRow: { flexDirection: "row", alignItems: "baseline" },
+  // Scaled off the ring rather than pinned to one size, so this stays
+  // correctly proportioned wherever the ring is used.
+  value: {
+    fontFamily: fonts.bold,
+    fontSize: size * 0.32,
+    color: textColor ?? colors.baseContent,
+    // Tightens the gap between digits — bold numerals set at small sizes
+    // read as slightly loose otherwise.
+    letterSpacing: -0.4,
+    // Android reserves extra vertical space inside Text by default, which
+    // pushes the label off the ring's true center.
+    includeFontPadding: false,
+  },
+  percent: {
+    fontFamily: fonts.bold,
+    fontSize: size * 0.19,
+    color: textColor ?? colors.baseContent,
+    opacity: 0.55,
+    marginLeft: 1,
+    includeFontPadding: false,
+  },
+}), [colors, textColor, size]);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, percentage));
@@ -71,7 +96,10 @@ export default function MatchPercentageRing({
         </G>
       </Svg>
       <View style={styles.labelContainer} pointerEvents="none">
-        <Text style={styles.label}>{clamped}%</Text>
+        <View style={styles.labelRow}>
+          <Text style={styles.value}>{clamped}</Text>
+          <Text style={styles.percent}>%</Text>
+        </View>
       </View>
     </View>
   );

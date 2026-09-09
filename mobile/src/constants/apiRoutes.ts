@@ -55,6 +55,7 @@ export const API_ROUTES = {
     GET_GENRE_DETAIL: (id: string, type: "movie" | "series", genre: string) =>
       `/users/${id}/genre-detail?type=${type}&genre=${encodeURIComponent(genre)}`,
     GET_FAVORITES: (id: string) => `/users/favorites/${id}`,
+    GET_COLLECTIONS: (id: string) => `/users/collections/${id}`,
     UPDATE_FAVORITES: "/users/me/favorites",
     UPDATE_BIO: (id: string) => `/users/profile/${id}/bio`,
     UPLOAD_AVATAR: (id: string) => `/users/profile/${id}/upload-profile-pic`,

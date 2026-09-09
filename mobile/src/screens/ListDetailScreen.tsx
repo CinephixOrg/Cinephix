@@ -47,7 +47,7 @@ interface Props {
   // "/profile" added alongside the new profile/lists/[id].tsx thin route,
   // needed so a "list" ShareCard tapped from the Profile tab's Sharings
   // view can navigate to this same screen within that tab's own Stack.
-  basePath?: "/lists" | "/home" | "/search" | "/profile";
+  basePath?: "/lists" | "/home" | "/search" | "/profile" | `/user/${string}`;
 }
 
 export default function ListDetailScreen({ basePath = "/lists" }: Props) {
@@ -152,7 +152,10 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   errorText: { color: colors.error, marginTop: 8 },
 }), [colors]);
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `listId` on the copy nested under user/[id] — there the bare `id` is
+  // already taken by the profile owner, so the list gets its own param name.
+  const { id, listId } = useLocalSearchParams<{ id: string; listId?: string }>();
+  const targetListId = listId || id;
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = (screenWidth - GRID_PADDING * 2 - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
@@ -196,7 +199,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
 
   const load = useCallback(async () => {
     try {
-      const { list: fetchedList, isOwner: owner, hasLiked: liked } = await getListById(id);
+      const { list: fetchedList, isOwner: owner, hasLiked: liked } = await getListById(targetListId);
       setList(fetchedList);
       setIsOwner(owner);
       setName(fetchedList.name);
@@ -217,7 +220,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     } catch (e: any) {
       setError(e?.response?.data?.message || t("Failed to load list."));
     }
-  }, [id]);
+  }, [targetListId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -229,7 +232,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const handleSaveEdit = async () => {
     setSaving(true);
     try {
-      const updated = await updateList(id, {
+      const updated = await updateList(targetListId, {
         name: name.trim(),
         description: description.trim(),
         isPublic,
@@ -251,7 +254,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
     setLiking(true);
     try {
-      const result = await toggleListLike(id);
+      const result = await toggleListLike(targetListId);
       setHasLiked(result.hasLiked);
       setLikeCount(result.likeCount);
     } catch {
@@ -282,7 +285,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
 
   const handleRemoveItem = async (itemId: string, itemType: ContentType) => {
     try {
-      const updated = await removeItem(id, itemId, itemType);
+      const updated = await removeItem(targetListId, itemId, itemType);
       setList((prev) => (prev ? { ...prev, ...updated, owner: prev.owner } : prev));
       setItems((prev) => prev.filter((it) => it.id !== itemId));
     } catch (e: any) {

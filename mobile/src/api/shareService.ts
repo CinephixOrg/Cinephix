@@ -2,6 +2,11 @@ import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
 import type { ContentType, Share, ShareFeedResult } from "../types";
 
+// How many shares a profile's Sharings grid previews. Lives here rather
+// than in that component because the public profile fetches this page as
+// part of its own bundle, and both sides must ask for the same amount.
+export const SHARES_PREVIEW_LIMIT = 30;
+
 export type CreateSharePayload =
   | { type: "analysis"; analysisData: any }
   | { type: "review"; reviewId: string }

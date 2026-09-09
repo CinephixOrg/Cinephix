@@ -1,7 +1,14 @@
+// TEMP: analysisCooldownHours is 0 for every tier below (Profile Analysis
+// only — matchAnalysisCooldownMinutes is untouched) while the Analyses
+// subtab UI is being iterated on, so it can be re-run back-to-back during
+// testing. Restore the real per-tier values (free 24, plus 6, premium 1)
+// once that's done — dev already has no cooldown, so this makes every
+// tier temporarily behave like dev for this one limit.
 export const TIER_LIMITS = {
   free: {
     maxMatches: 5,
-    analysisCooldownHours: 24,
+    analysisCooldownHours: 0, // was 24
+
     // Separate from analysisCooldownHours (Profile Analysis's own cooldown,
     // re-running your *own* profile) — CineMatch's "Analyze" button targets
     // a *specific other person* per call, and the legitimate use case is
@@ -12,6 +19,11 @@ export const TIER_LIMITS = {
     matchAnalysisCooldownMinutes: 60,
     analysisSchema: 'basic',
     analysisHistory: false,
+    // The two extra Profile Analysis cards (Rating Curve, Watch Timeline).
+    // Computed and returned server-side only for tiers with this on, so a
+    // client can't reveal them by asking — the data simply isn't in the
+    // response. Lower tiers get an upsell card in their place instead.
+    analysisAdvancedCards: false,
     canUseMatchFilters: false,
     // How many times /sync/candidates can be hit per day (SyncSearchLog) —
     // movies and series share one quota, not a separate one each; a Free
@@ -27,20 +39,24 @@ export const TIER_LIMITS = {
   },
   plus: {
     maxMatches: 30,
-    analysisCooldownHours: 6,
+    analysisCooldownHours: 0, // was 6
+
     matchAnalysisCooldownMinutes: 15,
     analysisSchema: 'rich',
     analysisHistory: true,
+    analysisAdvancedCards: false,
     canUseMatchFilters: true,
     syncSearchesPerDay: 3,
     canUseAdvancedMatchFilters: false
   },
   premium: {
     maxMatches: 100,
-    analysisCooldownHours: 1,
+    analysisCooldownHours: 0, // was 1
+
     matchAnalysisCooldownMinutes: 5,
     analysisSchema: 'rich',
     analysisHistory: true,
+    analysisAdvancedCards: true,
     canUseMatchFilters: true,
     // Generous enough that no real usage pattern hits it — this exists to
     // bound worst-case LLM cost per account, not to be felt as a limit by a
@@ -58,6 +74,7 @@ export const TIER_LIMITS = {
     matchAnalysisCooldownMinutes: 0,
     analysisSchema: 'rich',
     analysisHistory: true,
+    analysisAdvancedCards: true,
     canUseMatchFilters: true,
     syncSearchesPerDay: 999,
     canUseAdvancedMatchFilters: true

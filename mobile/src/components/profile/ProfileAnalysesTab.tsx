@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -18,7 +18,7 @@ interface Props {
   onViewAnalysis: (data: ProfileAnalysis) => void;
 }
 
-export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
+function ProfileAnalysesTab({ onViewAnalysis }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -216,7 +216,11 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
         ) : (
           <>
             {history.map((entry) => (
-              <AnalysisHistoryCard key={entry._id} entry={entry} onPress={() => onViewAnalysis(entry.result)} />
+              <AnalysisHistoryCard
+                key={entry._id}
+                entry={entry}
+                onPress={() => onViewAnalysis({ ...entry.result, tier: entry.tier, stats: entry.stats })}
+              />
             ))}
             <PaginationControls page={page} pages={totalPages} onPageChange={handlePageChange} />
           </>
@@ -225,3 +229,7 @@ export default function ProfileAnalysesTab({ onViewAnalysis }: Props) {
     </View>
   );
 }
+
+// Memoized alongside the other now-permanently-mounted tabs. Its one prop is
+// a useCallback in ProfileCategoryTabs, so this actually holds.
+export default memo(ProfileAnalysesTab);
