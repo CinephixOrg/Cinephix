@@ -641,22 +641,25 @@ export const getSyncCandidates = asyncHandler(async (req, res) => {
     req.user.accountTier
   );
 
-  const requested = canUseMatchFilters
-    ? {
-        type: ["movie", "series"].includes(req.query.type) ? req.query.type : DEFAULT_MATCH_FILTERS.type,
-        genres: Array.isArray(req.query.genres) ? req.query.genres : (req.query.genres ? [req.query.genres] : []),
-        // The useCount/useAvgRating *weighting* toggles are Premium-only —
-        // a Plus (or Free, moot since canUseMatchFilters is already false
-        // there) request is forced back to DEFAULT_MATCH_FILTERS' values
-        // here regardless of what the client sends, same "enforced
-        // server-side, not just hidden client-side" rule canUseMatchFilters
-        // itself already follows for type/genres.
-        useCount: canUseAdvancedMatchFilters ? req.query.useCount !== "false" : DEFAULT_MATCH_FILTERS.useCount,
-        useAvgRating: canUseAdvancedMatchFilters
-          ? req.query.useAvgRating !== "false"
-          : DEFAULT_MATCH_FILTERS.useAvgRating,
-      }
-    : { ...DEFAULT_MATCH_FILTERS };
+  // type (movie/series) is every tier's own choice, regardless of
+  // canUseMatchFilters — only genres (canUseMatchFilters) and the
+  // useCount/useAvgRating weighting (canUseAdvancedMatchFilters) actually
+  // stay tier-gated. Each of the three is forced back to
+  // DEFAULT_MATCH_FILTERS' own value server-side when its own gate is
+  // closed, regardless of what the client sends — "enforced, not just
+  // hidden client-side."
+  const requested = {
+    type: ["movie", "series"].includes(req.query.type) ? req.query.type : DEFAULT_MATCH_FILTERS.type,
+    genres: canUseMatchFilters
+      ? Array.isArray(req.query.genres)
+        ? req.query.genres
+        : req.query.genres
+        ? [req.query.genres]
+        : []
+      : DEFAULT_MATCH_FILTERS.genres,
+    useCount: canUseAdvancedMatchFilters ? req.query.useCount !== "false" : DEFAULT_MATCH_FILTERS.useCount,
+    useAvgRating: canUseAdvancedMatchFilters ? req.query.useAvgRating !== "false" : DEFAULT_MATCH_FILTERS.useAvgRating,
+  };
 
   const { type, genres, useCount, useAvgRating } = requested;
 
@@ -779,6 +782,29 @@ export const getSyncCandidates = asyncHandler(async (req, res) => {
   }
 
   results.sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+  // Free tier's own #1 slot is the one shown locked/blurred (mobile's
+  // lockedRanksFor in MatchResultsCloud.tsx locks rank 0 only for free —
+  // Plus/Premium never lock rank 0) — teasing it as "unlock to see" is
+  // pointless if its percentage is visibly identical to an already-unlocked
+  // lower rank, since the viewer can just read the number off someone else.
+  // Pull the nearest candidate with at least a 2-point gap from #1 forward
+  // into position 1 when the natural #2 would otherwise tie (or nearly tie)
+  // with #1. Ties AMONG ranks 2+ themselves are left untouched — only #1's
+  // own gap from the rest matters, direct ask; not applied for other tiers
+  // since only Free ever locks rank 0.
+  if (req.user.accountTier === "free" && results.length > 1) {
+    const top = results[0];
+    const MIN_GAP = 2;
+    const tooCloseToTop = (c) => Math.abs(c.matchPercentage - top.matchPercentage) < MIN_GAP;
+    if (tooCloseToTop(results[1])) {
+      const swapIdx = results.findIndex((c, i) => i > 0 && !tooCloseToTop(c));
+      if (swapIdx > 1) {
+        const [candidate] = results.splice(swapIdx, 1);
+        results.splice(1, 0, candidate);
+      }
+    }
+  }
 
   // Best-effort, same pattern as analyzeMatchWithUser's own MatchAnalysisLog
   // write below — logged after a search actually succeeds (not up front at

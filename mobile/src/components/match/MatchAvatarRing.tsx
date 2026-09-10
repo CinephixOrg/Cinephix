@@ -22,10 +22,12 @@ interface Props {
   candidate: SyncCandidate;
   diameter: number;
   rank?: number;
-  // Tier-gated bubble — dims the ring/avatar/percentage rather than hiding
-  // them outright, so the percentage stays legible as the actual "tease"
-  // (MatchCloudBubble layers a lock badge on top of this).
-  dimmed?: boolean;
+  // Tier-gated bubble — blurs just the photo itself (UserAvatar's own
+  // `blurRadius`, RN's built-in Image feature — a real blur baked into the
+  // image, not a translucent overlay trying to blur whatever's behind it).
+  // The ring/medal badge stay sharp; MatchCloudBubble layers its own lock
+  // icon on top of this.
+  locked?: boolean;
 }
 
 // The gray progress-ring + avatar + percentage-text visual, extracted out of
@@ -34,7 +36,7 @@ interface Props {
 // relying on a CSS transform to scale up the tiny cloud bubble's version —
 // simpler and avoids any transform/compositing risk for the one place this
 // needs to render large and reliably.
-export default function MatchAvatarRing({ candidate, diameter, rank = 0, dimmed }: Props) {
+export default function MatchAvatarRing({ candidate, diameter, rank = 0, locked }: Props) {
   const { colors } = useTheme();
 
   const STROKE = Math.max(3, diameter * 0.045);
@@ -73,7 +75,7 @@ export default function MatchAvatarRing({ candidate, diameter, rank = 0, dimmed 
   );
 
   return (
-    <View style={[styles.wrap, dimmed && { opacity: 0.35 }]}>
+    <View style={styles.wrap}>
       <View style={{ width: diameter, height: diameter }}>
         <Svg width={diameter} height={diameter}>
           <G rotation="-90" origin={`${diameter / 2}, ${diameter / 2}`}>
@@ -97,6 +99,11 @@ export default function MatchAvatarRing({ candidate, diameter, rank = 0, dimmed 
             profilePicUrl={candidate.user.profile_pic_url}
             size={avatarSize}
             disabled
+            // Scaled off avatarSize (not a flat px value) — a fixed blur
+            // radius reads much stronger on a small rank-4/5 bubble than a
+            // large rank-1 one; this keeps the actual blurred-photo look
+            // consistent across every bubble size in the cloud.
+            blurRadius={locked ? Math.max(14, avatarSize * 0.3) : undefined}
           />
         </View>
         <View

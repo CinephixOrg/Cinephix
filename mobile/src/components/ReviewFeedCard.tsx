@@ -4,28 +4,35 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
 import StarRatingDisplay from "./StarRatingDisplay";
+import ReviewFullTextModal from "./ReviewFullTextModal";
 import { toggleReviewLike } from "../api/reviewService";
 import type { PopularReview } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { useTranslation } from "react-i18next";
 import { fonts } from "../theme/typography";
+import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 
 interface Props {
   review: PopularReview;
   basePath: "/home" | "/search";
-  // Discover's merged Popular+Friends feed marks friend-sourced reviews
-  // inline instead of putting them in their own section — a small tag
-  // next to the title rather than a structural split.
-  fromFriend?: boolean;
 }
 
-// Reviews tab card — replaces PopularReviewCard's vertical rail layout with
-// a horizontal one: poster on the left, profile beside it (not below), with
-// the reviewer's rating and review text directly under the profile.
-export default function ReviewFeedCard({ review, basePath, fromFriend }: Props) {
+// Reviews tab card — poster on the left, profile beside it (not below),
+// with the reviewer's rating and review text directly under the profile.
+// The friend-sourced tag (`fromFriend`) is gone — this feed's own All/
+// Friends/Liked filter (ReviewsSection.tsx) replaced it, direct ask, same
+// reasoning Content Detail's own Reviews filter already went through.
+// Like info moved to the card's top-right, aligned with the title row
+// (was bottom-left, its own row) — same Like?/Liked + count wording List
+// Detail's like button uses. Tapping the poster specifically goes straight
+// to the content detail page; tapping anywhere else on the card now opens
+// the same full-text popup ReviewSwipeCard.tsx's cards already use
+// (ReviewFullTextModal, shared) instead of also going straight to detail —
+// direct ask, the two taps used to do the same thing.
+export default function ReviewFeedCard({ review, basePath }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -33,6 +40,7 @@ export default function ReviewFeedCard({ review, basePath, fromFriend }: Props) 
   const [hasLiked, setHasLiked] = useState(review.hasLiked);
   const [likeCount, setLikeCount] = useState(review.likeCount);
   const [liking, setLiking] = useState(false);
+  const [fullTextVisible, setFullTextVisible] = useState(false);
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -48,28 +56,28 @@ export default function ReviewFeedCard({ review, basePath, fromFriend }: Props) 
         posterFallback: { alignItems: "center", justifyContent: "center" },
         posterFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
         body: { flex: 1 },
+        // Like moved here, top-right, aligned with the title — was its own
+        // row at the bottom of the card.
         titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-        title: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
-        friendChip: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 3,
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-          borderRadius: 8,
-          backgroundColor: `${colors.primary}1A`,
-        },
-        friendChipText: { fontSize: 9, fontFamily: fonts.bold, color: colors.primary },
+        title: { flex: 1, fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
         reviewerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
         reviewerName: { fontSize: 12, color: colors.baseContent, fontFamily: fonts.medium, flexShrink: 1 },
         ratingRow: { marginTop: 3 },
         excerpt: { fontSize: 12, color: colors.baseContent, marginTop: 4, lineHeight: 16 },
-        likeRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
+        likeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
         likeRowText: { fontSize: 11, color: colors.placeholder },
         likeRowTextActive: { color: colors.primary, fontFamily: fonts.medium },
       }),
     [colors]
   );
+
+  // Same tier signal as ShareCard.tsx's own posts: UserAvatar's
+  // TierAvatarFrame ring (tier-colored, via its own `tier` prop) plus this
+  // inline diamond next to the username, both sourced from the same
+  // tierFrames.ts colors so a Plus/Premium reviewer reads the same way here
+  // as everywhere else in the app.
+  const tierLabel = review.user.accountTier === "plus" || review.user.accountTier === "premium" ? review.user.accountTier : null;
+  const tierMark = tierLabel ? <Ionicons name="diamond" size={10} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
 
   const handleLike = async () => {
     if (liking) return;
@@ -92,57 +100,71 @@ export default function ReviewFeedCard({ review, basePath, fromFriend }: Props) 
   };
 
   return (
-    <Pressable
-      style={styles.card}
-      onPress={() => router.push(`${basePath}/content/${review.content.type}/${review.content.id}` as any)}
-    >
-      {review.content.poster_path ? (
-        <Image source={{ uri: `${POSTER_BASE}${review.content.poster_path}` }} style={styles.poster} />
-      ) : (
-        <View style={[styles.poster, styles.posterFallback]}>
-          <Text style={styles.posterFallbackText}>{review.content.title.slice(0, 2).toUpperCase()}</Text>
-        </View>
-      )}
-
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {review.content.title}
-          </Text>
-          {fromFriend && (
-            <View style={styles.friendChip}>
-              <Ionicons name="people" size={9} color={colors.primary} />
-              <Text style={styles.friendChipText}>{t("Friends")}</Text>
+    <>
+      <Pressable style={styles.card} onPress={() => setFullTextVisible(true)}>
+        {/* Its own nested Pressable — "inner tap wins" over the card's own
+            onPress, same pattern used throughout this app (e.g. ShareCard.
+            tsx's poster-inside-box) — so tapping the poster specifically
+            still goes straight to the content detail page. */}
+        <Pressable onPress={() => router.push(`${basePath}/content/${review.content.type}/${review.content.id}` as any)}>
+          {review.content.poster_path ? (
+            <Image source={{ uri: `${POSTER_BASE}${review.content.poster_path}` }} style={styles.poster} />
+          ) : (
+            <View style={[styles.poster, styles.posterFallback]}>
+              <Text style={styles.posterFallbackText}>{review.content.title.slice(0, 2).toUpperCase()}</Text>
             </View>
           )}
-        </View>
-
-        <Pressable style={styles.reviewerRow} onPress={() => router.push(`/user/${review.user._id}`)}>
-          <UserAvatar userId={review.user._id} username={review.user.username} profilePicUrl={review.user.profile_pic_url} size={20} />
-          <Text style={styles.reviewerName} numberOfLines={1}>
-            {review.user.username}
-          </Text>
         </Pressable>
 
-        {review.rating != null && (
-          <View style={styles.ratingRow}>
-            <StarRatingDisplay value={review.rating} size={13} />
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={1}>
+              {review.content.title}
+            </Text>
+            <Pressable style={styles.likeRow} onPress={handleLike} disabled={liking} hitSlop={8}>
+              <Ionicons name={hasLiked ? "heart" : "heart-outline"} size={14} color={hasLiked ? colors.primary : colors.placeholder} />
+              <Text style={[styles.likeRowText, hasLiked && styles.likeRowTextActive]}>
+                {hasLiked ? t("Liked") : t("Like?")} {likeCount}
+              </Text>
+            </Pressable>
           </View>
-        )}
 
-        <Text style={styles.excerpt} numberOfLines={3}>
-          {review.text}
-        </Text>
+          <Pressable style={styles.reviewerRow} onPress={() => router.push(`/user/${review.user._id}`)}>
+            <UserAvatar
+              userId={review.user._id}
+              username={review.user.username}
+              profilePicUrl={review.user.profile_pic_url}
+              size={20}
+              tier={review.user.accountTier}
+            />
+            <Text style={styles.reviewerName} numberOfLines={1}>
+              {review.user.username}
+            </Text>
+            {tierMark}
+          </Pressable>
 
-        <Pressable style={styles.likeRow} onPress={handleLike} disabled={liking} hitSlop={8}>
-          <Ionicons
-            name={hasLiked ? "heart" : "heart-outline"}
-            size={14}
-            color={hasLiked ? colors.primary : colors.placeholder}
-          />
-          <Text style={[styles.likeRowText, hasLiked && styles.likeRowTextActive]}>{likeCount}</Text>
-        </Pressable>
-      </View>
-    </Pressable>
+          {review.rating != null && (
+            <View style={styles.ratingRow}>
+              <StarRatingDisplay value={review.rating} size={13} />
+            </View>
+          )}
+
+          <Text style={styles.excerpt} numberOfLines={3}>
+            {review.text}
+          </Text>
+        </View>
+      </Pressable>
+
+      <ReviewFullTextModal
+        review={review}
+        basePath={basePath}
+        visible={fullTextVisible}
+        onClose={() => setFullTextVisible(false)}
+        hasLiked={hasLiked}
+        likeCount={likeCount}
+        onToggleLike={handleLike}
+        liking={liking}
+      />
+    </>
   );
 }

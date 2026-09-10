@@ -114,7 +114,7 @@ router.get("/discover", authMiddleware, async (req, res) => {
       ? await CustomList.find({ owner: { $in: followingIds }, isPublic: true })
           .sort({ updatedAt: -1 })
           .limit(limit)
-          .populate("owner", "username profile_pic_url")
+          .populate("owner", "username profile_pic_url accountTier")
           .lean()
       : [];
 
@@ -132,7 +132,7 @@ router.get("/discover", authMiddleware, async (req, res) => {
           })
             .sort({ updatedAt: -1 })
             .limit(remaining)
-            .populate("owner", "username profile_pic_url")
+            .populate("owner", "username profile_pic_url accountTier")
             .lean()
         : [];
 
@@ -152,38 +152,92 @@ router.get("/discover", authMiddleware, async (req, res) => {
   }
 });
 
+// Search's new Lists filter sheet — "Most Liked" is this route's own
+// long-standing default (the popularityScore formula below), "Most Items"
+// and "Newest" are new alternatives a viewer can switch to instead.
+const LIST_SORTS = {
+  liked: { popularityScore: -1, updatedAt: -1 },
+  items: { itemCount: -1, updatedAt: -1 },
+  newest: { createdAt: -1 },
+};
+
 // ── GET /api/lists/popular ── globally most-liked public lists
+// `page` is optional and additive — omitting it keeps the original "top N,
+// no more" behavior every existing caller (Home's Keşfet/Lists rails) relies
+// on; Search's own paginated browse passes it explicitly. Was a fixed
+// `$limit` with no total count at all — same class of gap as the
+// movies/series list endpoints' own pagination bug fixed earlier, just here
+// by omission (this route was never given real pagination) rather than a
+// misplaced stage: anything past the first `limit` results was permanently
+// unreachable no matter how a viewer scrolled.
 router.get("/popular", authMiddleware, async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const skip = (page - 1) * limit;
     const q = req.query.q?.trim();
+    const sortKey = LIST_SORTS[req.query.sort] ? req.query.sort : "liked";
+    // Discover's Popular Lists own All/Friends/Liked filter — direct ask,
+    // same 3-mode shape reviewController.js's getReviewsFeed now uses.
+    // "all" (default) is this route's original unfiltered behavior.
+    const mode = ["friends", "liked"].includes(req.query.mode) ? req.query.mode : "all";
+    const modeMatch =
+      mode === "friends"
+        ? [{ $match: { owner: { $in: req.user.following || [] } } }]
+        : mode === "liked"
+        ? [{ $match: { likes: req.user._id } }]
+        : [];
 
-    const lists = await CustomList.aggregate([
+    const [result] = await CustomList.aggregate([
       { $match: { isPublic: true } },
       ...(q ? [{ $match: { name: { $regex: escapeRegex(q), $options: "i" } } }] : []),
+      ...modeMatch,
       {
         $addFields: {
           likeCount: { $size: { $ifNull: ["$likes", []] } },
+          itemCount: { $size: { $ifNull: ["$items", []] } },
           // Likes are a deliberate, stronger intent signal than a passive
           // view, so they're weighted 5:1 against raw view count.
           popularityScore: { $add: [{ $multiply: [{ $size: { $ifNull: ["$likes", []] } }, 5] }, { $ifNull: ["$views", 0] }] },
         },
       },
-      { $sort: { popularityScore: -1, updatedAt: -1 } },
-      { $limit: limit },
+      { $sort: LIST_SORTS[sortKey] },
       {
-        $lookup: {
-          from: "users",
-          localField: "owner",
-          foreignField: "_id",
-          as: "owner",
-          pipeline: [{ $project: { username: 1, profile_pic_url: 1 } }],
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            // Owner hydration moved here (only ran on the already-limited set
+            // before too, just via a plain top-level $limit) — now scoped to
+            // just this page's rows instead of the pre-$facet full match set.
+            {
+              $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [{ $project: { username: 1, profile_pic_url: 1, accountTier: 1 } }],
+              },
+            },
+            { $unwind: "$owner" },
+          ],
         },
       },
-      { $unwind: "$owner" },
     ]);
 
-    return res.json({ lists: await hydratePreviewItems(lists, 20) });
+    const total = result?.metadata[0]?.total || 0;
+    const lists = result?.data || [];
+
+    // hydratePreviewItems is shared with createShare's own viewer-agnostic
+    // snapshot use — hasLiked is computed here instead, per-viewer, right
+    // after (each list doc's own `likes` array survives the aggregation
+    // above untouched, no $project ever strips it).
+    const hydrated = await hydratePreviewItems(lists, 20);
+    const myId = req.user._id.toString();
+    const withHasLiked = hydrated.map((l) => ({ ...l, hasLiked: (l.likes || []).some((id) => id.toString() === myId) }));
+
+    return res.json({ lists: withHasLiked, page, hasMore: page * limit < total });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });

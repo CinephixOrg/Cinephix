@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo, useRef } from "react";
+import { useCallback, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
-  Animated,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -35,7 +34,7 @@ interface HydratedItem {
 type ItemTypeFilter = "all" | ContentType;
 const ITEM_TYPE_FILTERS: ItemTypeFilter[] = ["all", "movie", "series"];
 
-const GRID_COLUMNS = 6;
+const GRID_COLUMNS = 5;
 const GRID_GAP = 4;
 const GRID_PADDING = 16; // matches styles.list's paddingHorizontal
 
@@ -88,10 +87,39 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     alignItems: "center",
     justifyContent: "center",
   },
+  // Reordered per direct ask — like, then view, then item count (was item,
+  // like, view) — plus a filter icon pushed to the row's far end
+  // (marginLeft:"auto") replacing the old All/Movies/Series segmented
+  // control entirely.
   statsRow: { flexDirection: "row", alignItems: "center", gap: 18, marginTop: 12 },
   statItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   statText: { fontSize: 13, color: colors.placeholder },
   statTextActive: { color: colors.primary, fontFamily: fonts.medium },
+  // Slightly bigger than the other two stat items — direct ask ("kalp falan
+  // küçük duruyor biraz... biraz büyütebilirsin").
+  likeStatText: { fontSize: 14 },
+  statsRowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginTop: 14 },
+  filterButtonWrap: { marginLeft: "auto", position: "relative" },
+  filterMenuBackdrop: { position: "absolute", top: -2000, left: -2000, right: -2000, bottom: -2000 },
+  filterMenu: {
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    marginTop: 6,
+    backgroundColor: colors.base200,
+    borderRadius: 10,
+    overflow: "hidden",
+    minWidth: 140,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  filterMenuRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 },
+  filterMenuRowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  filterMenuRowText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent },
+  filterMenuRowTextActive: { color: colors.primary, fontFamily: fonts.bold },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -123,31 +151,6 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     alignItems: "center",
   },
   saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
-  // Same compact sliding-pill segmented control as SharesFeedSection.tsx's
-  // Recent/Popular/Network filter (colors.base200 pill, a spring-animated
-  // colors.primary indicator behind the active segment) — replaces the old
-  // full-width underline tab bar, which was both visually flat and took up
-  // a whole extra row (paddingVertical:10 + its own bottom border).
-  segmented: {
-    flexDirection: "row",
-    backgroundColor: colors.base200,
-    borderRadius: 10,
-    padding: 3,
-    marginTop: 14,
-    marginBottom: 8,
-    position: "relative",
-  },
-  segmentIndicator: {
-    position: "absolute",
-    top: 3,
-    bottom: 3,
-    left: 3,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-  },
-  segment: { flex: 1, paddingVertical: 7, alignItems: "center", zIndex: 1 },
-  segmentText: { fontFamily: fonts.medium, fontSize: 12, color: colors.placeholder },
-  segmentTextActive: { color: colors.primaryContent, fontFamily: fonts.bold },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
   errorText: { color: colors.error, marginTop: 8 },
 }), [colors]);
@@ -164,23 +167,11 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Sliding indicator for the All/Movies/Series segmented control — same
-  // measured-width + spring-animated-translateX technique as
-  // SharesFeedSection.tsx's Recent/Popular/Network control.
-  const [segmentedWidth, setSegmentedWidth] = useState(0);
-  const segmentIndicatorAnim = useRef(new Animated.Value(0)).current;
-  const itemTypeFilterIndex = ITEM_TYPE_FILTERS.indexOf(itemTypeFilter);
-
-  useEffect(() => {
-    if (segmentedWidth === 0) return;
-    const segmentWidth = (segmentedWidth - 6) / ITEM_TYPE_FILTERS.length;
-    Animated.spring(segmentIndicatorAnim, {
-      toValue: itemTypeFilterIndex * segmentWidth,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 80,
-    }).start();
-  }, [itemTypeFilterIndex, segmentedWidth]);
+  // All/Movies/Series is now a single filter icon + dropdown (direct ask —
+  // "all movies ve series tabını kaldırıp filtre butonunda birleştirelim"),
+  // not the old segmented control.
+  const [filterMenuVisible, setFilterMenuVisible] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   const [likeCount, setLikeCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -375,26 +366,71 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
                 </View>
               </View>
 
-              {list.description ? <Text style={styles.description}>{list.description}</Text> : null}
+              {list.description ? (
+                // Same "tap to expand, tap again to collapse" behavior as
+                // Content Detail's own overview text — direct ask ("aynı
+                // detailspageteki overview metni gibi").
+                <Pressable onPress={() => setDescriptionExpanded((e) => !e)}>
+                  <Text style={styles.description} numberOfLines={descriptionExpanded ? undefined : 2} ellipsizeMode="tail">
+                    {list.description}
+                  </Text>
+                </Pressable>
+              ) : null}
 
+              {/* Reordered per direct ask: like, then view, then item count
+                  (was item, like, view) — filter icon pushed to the row's
+                  far right replaces the old All/Movies/Series segmented
+                  control below entirely. */}
               <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Ionicons name="film-outline" size={15} color={colors.placeholder} />
-                  <Text style={styles.statText}>{t("item_count", { count: items.length })}</Text>
-                </View>
                 <Pressable style={styles.statItem} onPress={handleLike} disabled={liking} hitSlop={8}>
                   <Ionicons
                     name={hasLiked ? "heart" : "heart-outline"}
-                    size={15}
+                    size={18}
                     color={hasLiked ? colors.primary : colors.placeholder}
                   />
-                  <Text style={[styles.statText, hasLiked && styles.statTextActive]}>{likeCount}</Text>
+                  <Text style={[styles.statText, styles.likeStatText, hasLiked && styles.statTextActive]}>
+                    {hasLiked ? t("Liked") : t("Like?")} {likeCount}
+                  </Text>
                 </Pressable>
                 <View style={styles.statItem}>
                   <Ionicons name="eye-outline" size={15} color={colors.placeholder} />
                   <Text style={styles.statText}>{t("view_count", { count: list.views ?? 0 })}</Text>
                 </View>
+                <View style={styles.statItem}>
+                  <Ionicons name="film-outline" size={15} color={colors.placeholder} />
+                  <Text style={styles.statText}>{t("item_count", { count: items.length })}</Text>
+                </View>
+                <View style={styles.filterButtonWrap}>
+                  <Pressable onPress={() => setFilterMenuVisible((v) => !v)} hitSlop={8}>
+                    <Ionicons name="filter" size={18} color={itemTypeFilter !== "all" ? colors.primary : colors.placeholder} />
+                  </Pressable>
+                  {filterMenuVisible && (
+                    <>
+                      <Pressable style={styles.filterMenuBackdrop} onPress={() => setFilterMenuVisible(false)} />
+                      <View style={styles.filterMenu}>
+                        {ITEM_TYPE_FILTERS.map((filter, i) => (
+                          <View key={filter}>
+                            {i > 0 && <View style={styles.filterMenuRowDivider} />}
+                            <Pressable
+                              style={styles.filterMenuRow}
+                              onPress={() => {
+                                setItemTypeFilter(filter);
+                                setFilterMenuVisible(false);
+                              }}
+                            >
+                              <Text style={[styles.filterMenuRowText, itemTypeFilter === filter && styles.filterMenuRowTextActive]}>
+                                {filter === "all" ? t("All") : filter === "movie" ? t("Movies") : t("Series")}
+                              </Text>
+                              {itemTypeFilter === filter && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+                            </Pressable>
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  )}
+                </View>
               </View>
+              <View style={styles.statsRowDivider} />
 
               {isOwner && (
                 <View style={styles.ownerActionsRow}>
@@ -416,24 +452,6 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
           )}
 
           {error && <Text style={styles.errorText}>{error}</Text>}
-
-          <View style={styles.segmented} onLayout={(e) => setSegmentedWidth(e.nativeEvent.layout.width)}>
-            {segmentedWidth > 0 && (
-              <Animated.View
-                style={[
-                  styles.segmentIndicator,
-                  { width: (segmentedWidth - 6) / ITEM_TYPE_FILTERS.length, transform: [{ translateX: segmentIndicatorAnim }] },
-                ]}
-              />
-            )}
-            {ITEM_TYPE_FILTERS.map((filter) => (
-              <Pressable key={filter} style={styles.segment} onPress={() => setItemTypeFilter(filter)}>
-                <Text style={[styles.segmentText, itemTypeFilter === filter && styles.segmentTextActive]}>
-                  {filter === "all" ? t("All") : filter === "movie" ? t("Movies") : t("Series")}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
         </View>
       }
       renderItem={({ item, index }) => (

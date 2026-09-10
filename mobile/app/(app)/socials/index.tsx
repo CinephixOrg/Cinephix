@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet } from "react-native";
-import { useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import MessagesSection from "../../../src/components/socials/MessagesSection";
 import CommunitiesSection from "../../../src/components/socials/CommunitiesSection";
@@ -27,8 +27,13 @@ export default function SocialsScreen() {
     [colors]
   );
 
-  const [mainTab, setMainTab] = useState<MainTab>("messages");
-  const [visitedTabs, setVisitedTabs] = useState<Set<MainTab>>(() => new Set(["messages"]));
+  // `?tab=communities` deep-links straight to Community (an official-
+  // account tip's "Group" link uses this) — otherwise defaults to Messages
+  // exactly as before.
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  const initialTab: MainTab = tabParam === "communities" ? "communities" : "messages";
+  const [mainTab, setMainTab] = useState<MainTab>(initialTab);
+  const [visitedTabs, setVisitedTabs] = useState<Set<MainTab>>(() => new Set([initialTab]));
 
   const switchTab = (tab: MainTab) => {
     setMainTab(tab);

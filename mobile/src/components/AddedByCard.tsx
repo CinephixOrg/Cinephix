@@ -19,11 +19,13 @@ interface Props {
 }
 
 // Trending Movies/Series/Friends' Choice rail card — poster, rank badge,
-// title, and an "X added it" line. Used to also show Cinephix's own
-// average-rating stars below the title (StarRatingDisplay, item.content.
-// avgRating) — removed per direct ask; item.content.avgRating itself is
-// untouched in the type/data layer, just no longer rendered here. The
-// add-count line
+// and an "X added it" line, poster-only otherwise now (no title text under
+// the poster, direct ask — "posterlerin altında isim yazmasın, sadece
+// profil bilgisi olsun"). Used to also show a title, then before that
+// Cinephix's own average-rating stars below the title (StarRatingDisplay,
+// item.content.avgRating) — both removed per separate direct asks;
+// item.content.avgRating itself is untouched in the type/data layer, just
+// no longer rendered here. The add-count line
 // always shows when addCount>0 (every item here has one, since that's what
 // ranked it into the list) — avatars layer on top when topAdders resolved,
 // but previously the whole line (count included) was hidden whenever
@@ -35,13 +37,14 @@ export default function AddedByCard({ item, rank }: Props) {
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        // 84 matches PosterRow.tsx's own established rail-poster width
-        // elsewhere in the app (was 120 — notably larger than every other
-        // rail/thumbnail size in the codebase: PosterRow 84, MyListCard 56,
-        // ShareCard's sharePoster 64).
-        card: { width: 84, marginRight: 12 },
+        // Widened + tightened spacing (was 84/marginRight:12) — direct ask,
+        // enough that a 4th card sits about half-visible at the edge of a
+        // normal phone width instead of the rail reading as 3-and-a-sliver.
+        card: { width: 100, marginRight: 8 },
         posterWrap: { position: "relative" },
-        poster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 8, backgroundColor: colors.base200 },
+        // Thin gray border, direct ask — same colors.border every other
+        // plain content-box frame in this app already uses.
+        poster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 8, backgroundColor: colors.base200, borderWidth: 1, borderColor: colors.border },
         posterFallback: { alignItems: "center", justifyContent: "center" },
         posterFallbackText: { color: colors.placeholder, fontSize: 12 },
         rankBadge: {
@@ -57,7 +60,6 @@ export default function AddedByCard({ item, rank }: Props) {
           justifyContent: "center",
         },
         rankBadgeText: { color: "#fff", fontSize: 10, fontFamily: fonts.bold },
-        title: { marginTop: 6, fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
         footer: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
         count: { fontSize: 11, color: colors.placeholder, flexShrink: 1 },
       }),
@@ -79,9 +81,6 @@ export default function AddedByCard({ item, rank }: Props) {
             <Text style={styles.rankBadgeText}>{rank}</Text>
           </View>
         </View>
-        <Text style={styles.title} numberOfLines={2}>
-          {item.content.title}
-        </Text>
       </Pressable>
       {item.addCount > 0 && (
         <View style={styles.footer}>

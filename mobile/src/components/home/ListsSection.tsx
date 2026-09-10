@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { ScrollView, RefreshControl, Text, StyleSheet } from "react-native";
+import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { discoverLists, getPopularLists } from "../../api/listService";
-import DiscoverListCard from "../DiscoverListCard";
+import { getPopularListsPaginated, type ListMode } from "../../api/listService";
+import SearchListCard from "../search/SearchListCard";
+import SlidingUnderlineTabs from "../SlidingUnderlineTabs";
 import { SkeletonRail } from "../Skeleton";
 import type { DiscoverListItem } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts } from "../../theme/typography";
 
-// Lists tab: "Lists from Friends" (discoverLists() already returns a
-// fromFollowing flag per list, mixed with community backfill, so this
-// filters client-side rather than needing a new backend-only-friends mode)
-// plus "Popular Lists" (new — ranked by like count).
+const PAGE_LIMIT = 20;
+
+// Discover's Popular Lists "See all" page — same All/Friends/Liked filter
+// (SlidingUnderlineTabs) and same card (SearchListCard, matching the rail's
+// own design) as every other "See all" page in this app now uses, replacing
+// the old fixed two-section (Friends/Popular, no pagination, a different
+// card) version.
 export default function ListsSection() {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -20,77 +23,88 @@ export default function ListsSection() {
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        container: { paddingVertical: 16, paddingHorizontal: 16, flexGrow: 1 },
-        error: { color: colors.error, textAlign: "center", marginBottom: 8 },
-        sectionTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, marginBottom: 12 },
-        empty: { color: colors.placeholder, fontSize: 13, marginBottom: 20 },
+        container: { flex: 1, backgroundColor: colors.base100 },
+        list: { paddingVertical: 16, paddingBottom: 24 },
+        error: { color: colors.error, textAlign: "center", marginBottom: 8, marginHorizontal: 16 },
+        empty: { color: colors.placeholder, fontSize: 13, textAlign: "center", marginTop: 24 },
+        skeletonWrap: { paddingHorizontal: 16, paddingTop: 16 },
       }),
     [colors]
   );
 
-  const [fromFriends, setFromFriends] = useState<DiscoverListItem[]>([]);
-  const [popular, setPopular] = useState<DiscoverListItem[]>([]);
+  const [mode, setMode] = useState<ListMode>("all");
+  const [lists, setLists] = useState<DiscoverListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [discoverRes, popularRes] = await Promise.all([discoverLists(50), getPopularLists(20)]);
-      setFromFriends(discoverRes.filter((l) => l.fromFollowing));
-      setPopular(popularRes);
+      const res = await getPopularListsPaginated(1, PAGE_LIMIT, undefined, undefined, mode);
+      setLists(res.items);
+      setHasMore(res.hasMore);
+      setPage(1);
       setError(null);
     } catch (e: any) {
       setError(e?.response?.data?.message || t("Failed to load home."));
     }
-  }, []);
+  }, [t, mode]);
 
   useEffect(() => {
     setLoading(true);
     load().finally(() => setLoading(false));
   }, [load]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+  const loadMore = async () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const res = await getPopularListsPaginated(nextPage, PAGE_LIMIT, undefined, undefined, mode);
+      setLists((prev) => [...prev, ...res.items]);
+      setHasMore(res.hasMore);
+      setPage(nextPage);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
-  const openList = (id: string) => router.push(`/home/lists/${id}`);
-
-  if (loading) {
-    return (
-      <ScrollView style={{ backgroundColor: colors.base100 }} contentContainerStyle={styles.container}>
-        <SkeletonRail />
-      </ScrollView>
-    );
-  }
+  const emptyText =
+    mode === "friends" ? t("No public lists from people you follow yet.") : mode === "liked" ? t("You haven't liked any lists yet.") : t("No popular lists yet.");
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.base100 }}
-      contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-    >
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      <Text style={styles.sectionTitle}>{t("Lists from Friends")}</Text>
-      {fromFriends.length === 0 ? (
-        <Text style={styles.empty}>{t("No public lists from people you follow yet.")}</Text>
+    <View style={styles.container}>
+      <SlidingUnderlineTabs
+        tabs={[
+          { key: "all", label: t("All") },
+          { key: "friends", label: t("Friends") },
+          { key: "liked", label: t("Liked") },
+        ]}
+        activeKey={mode}
+        onChange={(key) => setMode(key as ListMode)}
+      />
+      {loading ? (
+        <View style={styles.skeletonWrap}>
+          <SkeletonRail />
+        </View>
       ) : (
-        fromFriends.map((list) => (
-          <DiscoverListCard key={list._id} list={list} onPress={() => openList(list._id)} basePath="/home" />
-        ))
+        <FlatList
+          style={styles.container}
+          data={lists}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
+          renderItem={({ item }) => (
+            <SearchListCard list={item} onPress={() => router.push(`/home/lists/${item._id}` as any)} basePath="/home" />
+          )}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
+          ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}
+        />
       )}
-
-      <Text style={styles.sectionTitle}>{t("Popular Lists")}</Text>
-      {popular.length === 0 ? (
-        <Text style={styles.empty}>{t("No popular lists yet.")}</Text>
-      ) : (
-        popular.map((list) => (
-          <DiscoverListCard key={list._id} list={list} onPress={() => openList(list._id)} basePath="/home" />
-        ))
-      )}
-    </ScrollView>
+    </View>
   );
 }

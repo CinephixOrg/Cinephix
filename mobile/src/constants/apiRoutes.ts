@@ -88,6 +88,7 @@ export const API_ROUTES = {
     GET_FEED: "/shares/feed",
     LIKE: (id: string) => `/shares/${id}/like`,
     VIEW: (id: string) => `/shares/${id}/view`,
+    VOTE: (id: string) => `/shares/${id}/vote`,
     GET_USER_SHARES: (userId: string) => `/shares/user/${userId}`,
     DELETE: (id: string) => `/shares/${id}`,
   },
@@ -100,6 +101,7 @@ export const API_ROUTES = {
     GET_WATCHED_BY_FRIENDS: (type: string, id: string) => `/content/${type}/${id}/watched-by-friends`,
     GET_WATCHED_BY: (type: string, id: string) => `/content/${type}/${id}/watched-by`,
     GET_FAVORITED_BY: (type: string, id: string) => `/content/${type}/${id}/favorited-by`,
+    GET_SIMILAR: (type: string, id: string) => `/content/${type}/${id}/similar`,
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
@@ -122,7 +124,9 @@ export const API_ROUTES = {
     GET_FEED: "/feed",
     LEADERBOARD: "/feed/leaderboard",
     PEOPLE_LEADERBOARD: "/feed/people-leaderboard",
+    MY_PODIUM_PLACEMENTS: "/feed/my-podium-placements",
     ACTIVITY: "/feed/activity",
+    RECOMMENDATIONS: "/feed/recommendations",
   },
   MATCH: {
     FIND: "/match",
@@ -167,5 +171,13 @@ export const STORAGE_KEYS = {
   USER: "cinephix_user",
   LANGUAGE: "cinephix_language",
   THEME: "cinephix_theme",
-  SYNC_INTRO_SEEN: "cinephix_sync_intro_seen",
+  // Bumped to _v2 so every existing install (not just fresh ones) sees the
+  // intro card again under its new placement rules — a deliberate reset,
+  // not a rename; SecureStore has no server-side reach to clear per-device.
+  SYNC_INTRO_SEEN: "cinephix_sync_intro_seen_v2",
+  // Stores "<category>:<rank>" for whichever podium placement was last
+  // actually shown via PodiumNewsModal.tsx — compared on every app launch
+  // so an unchanged placement doesn't re-show the same "you made the
+  // podium!" news every single login, only a genuinely new or improved one.
+  LAST_SHOWN_PODIUM_PLACEMENT: "cinephix_last_shown_podium_placement",
 };

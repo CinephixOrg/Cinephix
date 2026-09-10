@@ -67,6 +67,14 @@ const userSchema = new Schema({
     type: Date,
     default: Date.now
   },
+  // Marks the single official Cinephix account (auto-posts trivia/tips/
+  // polls/etc. to Medya via the officialContentService cron job) — a
+  // separate concern from accountTier (billing/subscription), not
+  // overloaded onto it, so tier-gating logic elsewhere is untouched.
+  isOfficial: {
+    type: Boolean,
+    default: false,
+  },
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
   toWatchList: { type: [WatchItemSchema], default: [] },
 

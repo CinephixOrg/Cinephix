@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import CineGraphSubTabSwitcher from "../profile/CineGraphSubTabSwitcher";
 import CineMatchGenreRing, { MATCH_GENRE_KEYS } from "./CineMatchGenreRing";
+import { useToast } from "../../context/ToastContext";
 import type { CineGraphData, MatchUser } from "../../types";
 import type { MatchFilters } from "../../api/matchService";
 import { useTheme } from "../../context/ThemeContext";
@@ -16,14 +17,22 @@ interface Props {
   onChange: (filters: MatchFilters) => void;
   onSubmit: () => void;
   cineGraph: CineGraphData | null;
-  // Free tier — the whole card is dimmed + non-interactive, nothing below
-  // this can be customized at all.
+  // Free tier — genre selection (the ring, Apply All Genres, Apply All
+  // Filters) is non-functional; tapping any of it shows a toast instead of
+  // either silently doing nothing or jumping straight to the subscription
+  // page (the latter was reported as jarring — direct navigation now lives
+  // only on the dedicated Upgrade badge, match/index.tsx's own). The type
+  // switcher (Movies/Series) stays fully functional regardless — the
+  // server now honors `type` for every tier, only genres/weighting stay
+  // gated. Visually unchanged from the fully-unlocked look (no dimming) —
+  // an earlier version of this dimmed the whole card, reported as making
+  // the CineGraph ring itself look muted, reverted.
   locked: boolean;
-  // Plus tier — the card itself is usable (type/genre), but the
-  // useCount/useAvgRating weighting toggles specifically stay Premium-only;
-  // forced true/true server-side (getSyncCandidates) regardless of what a
-  // client sends, so this just reflects that visually rather than letting
-  // Plus interact with switches that silently wouldn't do anything anyway.
+  // Plus tier — type/genre stay usable, but the useCount/useAvgRating
+  // weighting toggles (and the "Apply All Filters" shortcut, which toggles
+  // the same two) are still forced true/true server-side regardless of
+  // what's sent — tapping them shows the same toast treatment as `locked`,
+  // scoped to just those controls.
   advancedLocked: boolean;
   viewer: MatchUser;
   // True while the ring's own collapse/spin loading animation is running —
@@ -33,6 +42,13 @@ interface Props {
   // see that component's own prop comment for why match/index.tsx needs
   // this real completion signal instead of a guessed-duration timer.
   onSpinComplete?: () => void;
+  // The whole "Upgrade" badge element (match/index.tsx's own), rendered
+  // right below the Sync button — direct ask to move it there instead of
+  // floating as its own separate top-right pill. Built and owned by the
+  // caller (same icon/navigation it always had), just positioned from in
+  // here now since that's the only place that actually sits next to the
+  // Sync button.
+  upgradeButton?: React.ReactNode;
 }
 
 const MATCH_BUTTON_WIDTH = 160;
@@ -67,10 +83,12 @@ export default function MatchFilterStrip({
   viewer,
   loading,
   onSpinComplete,
+  upgradeButton,
 }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const genreKeys = MATCH_GENRE_KEYS[filters.type];
   const allGenresSelected = genreKeys.length > 0 && genreKeys.every((g) => filters.genres.includes(g));
@@ -106,8 +124,8 @@ export default function MatchFilterStrip({
       StyleSheet.create({
         cardWrap: { position: "relative" },
         card: { backgroundColor: colors.base200, borderRadius: 16, paddingVertical: 16, marginHorizontal: 16, marginTop: 8 },
-        locked: { opacity: 0.5 },
-        lockNotice: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12, paddingHorizontal: 16 },
+        restWrap: { position: "relative" },
+        lockNotice: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 4, paddingHorizontal: 16 },
         lockNoticeText: { fontSize: 12, color: colors.placeholder, flex: 1 },
         advancedLockHint: { textAlign: "center", paddingHorizontal: 24, marginTop: 8, textDecorationLine: "underline" },
         switcherWrap: { alignItems: "center" },
@@ -140,98 +158,125 @@ export default function MatchFilterStrip({
         matchButtonDisabled: { opacity: 0.4 },
         matchButtonText: { color: "#fff", fontFamily: fonts.bold, fontSize: 16, letterSpacing: 0.3 },
         disabledReasonText: { color: colors.placeholder, fontSize: 11.5, textAlign: "center", marginTop: 8, paddingHorizontal: 24 },
+        upgradeButtonWrap: { alignSelf: "center", marginTop: 14 },
       }),
     [colors]
   );
 
-  const goToSubscription = () => router.push("/match/subscription" as any);
+  const upgradeFiltersMessage = t("Upgrade to Plus or Premium to customize match filters.");
+  const upgradeAdvancedMessage = t("Upgrade to Premium to weight matches by watch count or average rating.");
 
   return (
     <View>
       <View style={styles.cardWrap}>
-        <View style={[styles.card, locked && styles.locked]} pointerEvents={locked ? "none" : "auto"}>
-          {locked && (
-            <View style={styles.lockNotice}>
-              <Ionicons name="lock-closed" size={14} color={colors.placeholder} />
-              <Text style={styles.lockNoticeText}>{t("Upgrade to Plus or Premium to customize match filters.")}</Text>
-            </View>
-          )}
-
+        <View style={styles.card}>
+          {/* Always interactive, every tier — the server now honors `type`
+              regardless of account tier, only genres/weighting stay gated. */}
           <View style={styles.switcherWrap}>
             <CineGraphSubTabSwitcher activeTab={filters.type} onChange={(type) => onChange({ ...filters, type, genres: [] })} />
           </View>
 
           <Text style={styles.infoNote}>{t("Find your closest match on Cinephix. Tap your whole CineGraph or just the genres you want to filter by.")}</Text>
 
-          <View style={styles.signalsRow}>
-            <View style={[styles.signalUnit, advancedLocked && styles.locked]} pointerEvents={advancedLocked ? "none" : "auto"}>
-              <Text style={styles.signalLabel}>{t("Watched Count")}</Text>
-              {advancedLocked ? (
-                <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
-              ) : (
-                <Switch
-                  value={filters.useCount}
-                  onValueChange={(v) => onChange({ ...filters, useCount: v })}
-                  trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
-                  thumbColor={filters.useCount ? "#fff" : colors.placeholder}
-                />
-              )}
+          <View style={styles.restWrap}>
+            <View style={styles.signalsRow}>
+              <Pressable
+                style={styles.signalUnit}
+                onPress={advancedLocked ? () => showToast(upgradeAdvancedMessage) : undefined}
+              >
+                <Text style={styles.signalLabel}>{t("Watched Count")}</Text>
+                {advancedLocked ? (
+                  <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
+                ) : (
+                  <Switch
+                    value={filters.useCount}
+                    onValueChange={(v) => onChange({ ...filters, useCount: v })}
+                    trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
+                    thumbColor={filters.useCount ? "#fff" : colors.placeholder}
+                  />
+                )}
+              </Pressable>
+              <Pressable
+                style={styles.signalUnit}
+                onPress={advancedLocked ? () => showToast(upgradeAdvancedMessage) : undefined}
+              >
+                <Text style={styles.signalLabel}>{t("Average Rating")}</Text>
+                {advancedLocked ? (
+                  <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
+                ) : (
+                  <Switch
+                    value={filters.useAvgRating}
+                    onValueChange={(v) => onChange({ ...filters, useAvgRating: v })}
+                    trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
+                    thumbColor={filters.useAvgRating ? "#fff" : colors.placeholder}
+                  />
+                )}
+              </Pressable>
             </View>
-            <View style={[styles.signalUnit, advancedLocked && styles.locked]} pointerEvents={advancedLocked ? "none" : "auto"}>
-              <Text style={styles.signalLabel}>{t("Average Rating")}</Text>
-              {advancedLocked ? (
-                <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
-              ) : (
-                <Switch
-                  value={filters.useAvgRating}
-                  onValueChange={(v) => onChange({ ...filters, useAvgRating: v })}
-                  trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
-                  thumbColor={filters.useAvgRating ? "#fff" : colors.placeholder}
-                />
-              )}
+            {advancedLocked && !locked && (
+              <Pressable onPress={() => showToast(upgradeAdvancedMessage)}>
+                <Text style={[styles.lockNoticeText, styles.advancedLockHint]}>{upgradeAdvancedMessage}</Text>
+              </Pressable>
+            )}
+
+            <CineMatchGenreRing
+              stats={stats}
+              type={filters.type}
+              selectedGenres={filters.genres}
+              onToggleGenre={locked ? () => {} : toggleGenre}
+              userId={viewer._id}
+              username={viewer.username}
+              profilePicUrl={viewer.profile_pic_url}
+              loading={!!loading}
+              onSpinComplete={onSpinComplete}
+            />
+
+            <View style={styles.applyRow}>
+              <Pressable style={styles.applyUnit} onPress={locked ? () => showToast(upgradeFiltersMessage) : toggleApplyAllGenres}>
+                <View style={[styles.checkCircle, allGenresSelected && styles.checkCircleActive]}>
+                  {allGenresSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
+                </View>
+                <Text style={styles.applyUnitText}>{t("Apply All Genres")}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.applyUnit}
+                onPress={
+                  locked
+                    ? () => showToast(upgradeFiltersMessage)
+                    : advancedLocked
+                    ? () => showToast(upgradeAdvancedMessage)
+                    : toggleApplyAllFilters
+                }
+              >
+                <View style={[styles.checkCircle, allFiltersSelected && styles.checkCircleActive]}>
+                  {allFiltersSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
+                </View>
+                <Text style={styles.applyUnitText}>{t("Apply All Filters")}</Text>
+              </Pressable>
             </View>
-          </View>
-          {advancedLocked && !locked && (
-            <Pressable onPress={goToSubscription}>
-              <Text style={[styles.lockNoticeText, styles.advancedLockHint]}>{t("Upgrade to Premium to weight matches by watch count or average rating.")}</Text>
-            </Pressable>
-          )}
 
-          <CineMatchGenreRing
-            stats={stats}
-            type={filters.type}
-            selectedGenres={filters.genres}
-            onToggleGenre={toggleGenre}
-            userId={viewer._id}
-            username={viewer.username}
-            profilePicUrl={viewer.profile_pic_url}
-            loading={!!loading}
-            onSpinComplete={onSpinComplete}
-          />
-
-          <View style={styles.applyRow}>
-            <Pressable style={styles.applyUnit} onPress={toggleApplyAllGenres}>
-              <View style={[styles.checkCircle, allGenresSelected && styles.checkCircleActive]}>
-                {allGenresSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
-              </View>
-              <Text style={styles.applyUnitText}>{t("Apply All Genres")}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.applyUnit}
-              onPress={toggleApplyAllFilters}
-              disabled={advancedLocked}
-              pointerEvents={advancedLocked ? "none" : "auto"}
-            >
-              <View style={[styles.checkCircle, allFiltersSelected && styles.checkCircleActive]}>
-                {allFiltersSelected && <Ionicons name="checkmark" size={14} color={colors.baseContent} />}
-              </View>
-              <Text style={styles.applyUnitText}>{t("Apply All Filters")}</Text>
-            </Pressable>
+            {/* Free only — a single tap-catching overlay over the genre
+                ring/apply row (the ring's own ScrollView would otherwise eat
+                a tap before it reaches a wrapping Pressable) so tapping
+                anywhere in this region shows the same toast rather than
+                silently doing nothing. Type switcher above is outside this
+                overlay entirely, and stays real. */}
+            {locked && (
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => showToast(upgradeFiltersMessage)} />
+            )}
           </View>
         </View>
-
-        {locked && <Pressable style={StyleSheet.absoluteFill} onPress={goToSubscription} />}
       </View>
+
+      {/* Moved here from the top of the card, direct ask — sits between
+          Apply Filters (just above) and the Sync button (just below)
+          instead of leading the whole card. */}
+      {locked && (
+        <View style={styles.lockNotice}>
+          <Ionicons name="lock-closed" size={14} color={colors.placeholder} />
+          <Text style={styles.lockNoticeText}>{upgradeFiltersMessage}</Text>
+        </View>
+      )}
 
       {/* Outside the locked/pointerEvents-none wrapper on purpose — Free
           tier can still run a search (the server silently applies its
@@ -255,6 +300,7 @@ export default function MatchFilterStrip({
           <Text style={styles.matchButtonText}>{t("Sync")}</Text>
         </View>
       </Pressable>
+      {upgradeButton && <View style={styles.upgradeButtonWrap}>{upgradeButton}</View>}
       {!locked && !loading && disabledReason && <Text style={styles.disabledReasonText}>{disabledReason}</Text>}
     </View>
   );

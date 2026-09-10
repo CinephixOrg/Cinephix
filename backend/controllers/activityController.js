@@ -5,6 +5,9 @@ import Review from "../models/Review.js";
 import CustomList from "../models/CustomList.js";
 import Group from "../models/Group.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
+import Notification from "../models/Notification.js";
+import Share from "../models/Share.js";
+import { getPeopleThreePodiums } from "./feedController.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
 
@@ -202,7 +205,54 @@ const contentProjection = {
   poster_path: "$_content.poster_path",
   type: "$contentType",
 };
-const actorProjection = { _id: "$_actor._id", username: "$_actor.username", profile_pic_url: "$_actor.profile_pic_url" };
+const actorProjection = {
+  _id: "$_actor._id",
+  username: "$_actor.username",
+  profile_pic_url: "$_actor.profile_pic_url",
+  // actorLookupStages' own $lookup has no field-restricting pipeline, so
+  // the full user doc (accountTier included) was already sitting in $_actor
+  // — this was the only thing missing to drive Discover's Activity rows'
+  // own tier ring/diamond, same as ShareCard.tsx already does for posts.
+  accountTier: "$_actor.accountTier",
+};
+
+// Tier-gated per direct request: only a Plus/Premium *viewer* sees "so-and-
+// so made the podium" news — this checks the requesting user's own tier,
+// unrelated to the podium person's own tier (a Free-following-a-Premium
+// case still shouldn't surface it to that Free viewer). Genuinely a live
+// status check, not a persisted event with its own real timestamp — a
+// podium spot is a ranking that can change on the next request, not a
+// one-time achievement with a natural "moment it happened" the way a
+// rating/review/follow has. Reusing getPeopleThreePodiums (the exact same
+// query PeoplePodium.tsx's own Most Followed/Watched/Reviewed pages show)
+// rather than a second, potentially-drifting copy of that ranking logic —
+// "on the podium" here means literally currently in one of those same top
+// 3s, nothing looser. `createdAt` is stamped "now" each time this runs, so
+// it always surfaces near the top of the feed while genuinely true, and
+// simply stops appearing the moment that person drops out of the top 3 —
+// no stale "so-and-so made the podium" leftover from days ago.
+async function getFollowedPodiumEvents(followingIds) {
+  const followingSet = new Set(followingIds.map((id) => id.toString()));
+  const { mostFollowed, mostWatched, mostReviewed } = await getPeopleThreePodiums(null);
+  const now = new Date();
+  const events = [];
+  const collect = (list, category) => {
+    list.forEach((entry, i) => {
+      if (!followingSet.has(entry.user.id)) return;
+      events.push({
+        type: "podium",
+        actor: { _id: entry.user.id, username: entry.user.username, profile_pic_url: entry.user.profile_pic_url, accountTier: entry.user.accountTier },
+        category,
+        rank: i + 1,
+        createdAt: now,
+      });
+    });
+  };
+  collect(mostFollowed, "followed");
+  collect(mostWatched, "watched");
+  collect(mostReviewed, "reviewed");
+  return events;
+}
 
 export const getNetworkActivity = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -217,6 +267,9 @@ export const getNetworkActivity = asyncHandler(async (req, res) => {
     return sendSuccess(res, { items: [], page, hasMore: false }, "Activity fetched");
   }
 
+  const viewerTier = req.user.accountTier ?? "free";
+  const canSeePodiumNews = viewerTier === "plus" || viewerTier === "premium" || viewerTier === "dev";
+
   // A 30-day window keeps the per-type queries bounded regardless of how
   // many people the caller follows — same cutoff convention getMyActivity
   // already uses, just always "month" here since this is a from-scratch
@@ -224,24 +277,24 @@ export const getNetworkActivity = asyncHandler(async (req, res) => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
 
-  // Four independent, self-contained aggregations (each resolves its own
+  // Independent, self-contained aggregations (each resolves its own
   // actor/content via $lookup) instead of a two-phase shape (fetch events →
   // fetch the content those events reference): that would force a second
   // sequential round trip once content ids were known. Resolving inline
-  // keeps it to one round trip per event type, all four still running in
+  // keeps it to one round trip per event type, all of them still running in
   // parallel via Promise.all.
-  // `list_created` and `watchlist_added` were both dropped from this network
-  // feed entirely (per direct request) — NOT deleted as concepts: `rated`'s
-  // own redesign now covers what watchlist_added covered (in this app,
-  // rating something is the same underlying "I've watched this" signal —
-  // see ContentDetailScreen.tsx's own "Add to Watched List to save" prompt
-  // on rating), and a created-list event was judged not worth a card of its
-  // own. Both event *types* still exist and render correctly elsewhere —
-  // `watchlist_added` still backs ContentWatchedSection.tsx (Content
-  // Detail's "Watched by" list) and `list_created` still backs
-  // getMyActivity's own self-activity feed (untouched, separate function) —
-  // only THIS endpoint's aggregation set changed.
-  const [ratings, reviews, favoriteEvents, listItemEvents] = await Promise.all([
+  // `list_created` was dropped from this network feed entirely (per an
+  // earlier direct request) — NOT deleted as a concept: a created-list
+  // event was judged not worth a card of its own; it still backs
+  // getMyActivity's own self-activity feed (untouched, separate function).
+  // `watchlist_added` (the *Watched* List, `User.watchlist` — this app's
+  // own inverted naming, see mobile README) was ALSO dropped earlier since
+  // `rated` already covers the same "I've watched this" signal — that
+  // reasoning doesn't apply to `towatch_added` below (the real Watchlist
+  // queue, `User.toWatchList`), which is a genuinely distinct action with
+  // no other event standing in for it, so it's added here fresh rather
+  // than un-dropping the wrong one.
+  const [ratings, reviews, favoriteEvents, listItemEvents, toWatchEvents, followNotifs, shares, podiumEvents] = await Promise.all([
     Rating.aggregate([
       { $match: { user: { $in: followingIds }, createdAt: { $gte: cutoff } } },
       { $sort: { createdAt: -1 } },
@@ -303,18 +356,97 @@ export const getNetworkActivity = asyncHandler(async (req, res) => {
         },
       },
     ]),
+    // Real Watchlist (to-watch queue) additions — same unwind-then-lookup
+    // shape as list_item_added just above, on `User.toWatchList` instead of
+    // `CustomList.items`. The actor here *is* the User document itself
+    // (whoever added the item), so no separate actorLookupStages $lookup is
+    // needed — its own username/profile_pic_url/accountTier are already on
+    // the same document being unwound.
+    User.aggregate([
+      { $match: { _id: { $in: followingIds } } },
+      { $project: { username: 1, profile_pic_url: 1, accountTier: 1, toWatchList: 1 } },
+      { $unwind: "$toWatchList" },
+      { $match: { "toWatchList.addedAt": { $gte: cutoff } } },
+      ...contentLookupStages("$toWatchList.itemId", "$toWatchList.itemType", false),
+      { $match: { _content: { $ne: null } } },
+      {
+        $project: {
+          _id: 0,
+          type: { $literal: "towatch_added" },
+          actor: { _id: "$_id", username: "$username", profile_pic_url: "$profile_pic_url", accountTier: "$accountTier" },
+          content: {
+            id: "$toWatchList.itemId",
+            title: { $ifNull: ["$_content.title", "$_content.name"] },
+            poster_path: "$_content.poster_path",
+            type: "$toWatchList.itemType",
+          },
+          createdAt: "$toWatchList.addedAt",
+        },
+      },
+    ]),
+    // Follows — not an aggregation like the others (no per-document content
+    // to $lookup), a plain query against the same Notification record
+    // every follow already creates. Same source feedController.js's own
+    // (dead-from-mobile, kept for reference) getFeed used for its own
+    // "followed" events — the one already-proven way to get a real
+    // timestamp for "when did X follow Y" without adding a new field.
+    Notification.find({ sender: { $in: followingIds }, type: "follow", createdAt: { $gte: cutoff } })
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .populate("sender", "username profile_pic_url accountTier")
+      .populate("user", "username profile_pic_url accountTier")
+      .lean(),
+    // Medya shares — no per-share-type content preview here (a share's own
+    // real content shape varies a lot by type — recommendation/review carry
+    // contentData, list carries listData, analysis carries neither); this
+    // just announces "X shared a Y", the actual post is one tap away in
+    // Medya's own feed. Same actorLookupStages $lookup as every aggregation
+    // above.
+    Share.aggregate([
+      { $match: { user: { $in: followingIds }, createdAt: { $gte: cutoff } } },
+      { $sort: { createdAt: -1 } },
+      { $limit: 200 },
+      ...actorLookupStages("$user"),
+      { $match: { _actor: { $ne: null } } },
+      { $project: { _id: 0, type: { $literal: "shared" }, actor: actorProjection, shareType: "$type", createdAt: 1 } },
+    ]),
+    // Tier-gated — see getFollowedPodiumEvents' own doc comment above for
+    // why this is a live status check rather than a real persisted event.
+    canSeePodiumNews ? getFollowedPodiumEvents(followingIds) : Promise.resolve([]),
   ]);
 
   // toString() every id-ish field — aggregation returns real ObjectId/Date
   // instances, not the strings the old lean()+JS-loop version produced;
-  // downstream (mobile) code expects strings.
-  const events = [...ratings, ...reviews, ...favoriteEvents, ...listItemEvents];
+  // downstream (mobile) code expects strings. followNotifs (a plain
+  // populate(), not an aggregation) needs its own mapping into the same
+  // shape the rest of `events` already uses, plus dropping any record whose
+  // sender/target account was since deleted.
+  const followedEvents = followNotifs
+    .filter((n) => n.sender && n.user)
+    .map((n) => ({
+      type: "followed",
+      actor: { _id: n.sender._id.toString(), username: n.sender.username, profile_pic_url: n.sender.profile_pic_url, accountTier: n.sender.accountTier },
+      targetUser: { _id: n.user._id.toString(), username: n.user.username, profile_pic_url: n.user.profile_pic_url, accountTier: n.user.accountTier },
+      createdAt: n.createdAt,
+    }));
+
+  let events = [...ratings, ...reviews, ...favoriteEvents, ...listItemEvents, ...toWatchEvents, ...followedEvents, ...shares, ...podiumEvents];
   for (const e of events) {
     if (e.actor?._id) e.actor._id = e.actor._id.toString();
     if (e.content?.id) e.content.id = e.content.id.toString();
     if (e.listId) e.listId = e.listId.toString();
   }
   events.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // Discover's Friends' Activity "See all" page's own category filter
+  // (direct ask) — every type-array above is already merged from separate
+  // per-type queries, so filtering down to just one is a plain post-merge
+  // filter rather than re-querying; pagination below naturally recalculates
+  // correctly off the already-filtered array.
+  const category = req.query.category;
+  if (category && category !== "all") {
+    events = events.filter((e) => e.type === category);
+  }
 
   const start = (page - 1) * limit;
   const items = events.slice(start, start + limit);

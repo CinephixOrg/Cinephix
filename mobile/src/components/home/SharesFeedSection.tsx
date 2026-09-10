@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -17,28 +17,15 @@ import { fonts } from "../../theme/typography";
 // stream instead of living in its own persistent section above the feed
 // (moved here from KesfetSection.tsx's Discover tab after the user found a
 // standalone rail there felt like a separate page). `occurrence` is which
-// repeat this is (0, 1, 2, …) — used to rotate through different slices of
-// the same fetched pool so repeat appearances don't show the identical 4
-// people every time.
+// repeat this is (0, 1, 2, …) — SuggestedUsersBox.tsx's own job now to turn
+// that plus the full `suggestions` pool into an actual 4-person slice (was
+// computed here and passed down as an already-sliced array, which meant a
+// fresh array reference on every render and no way for that box to ever be
+// memoized — see that component's own doc comment).
 type FeedRow = { kind: "share"; share: Share } | { kind: "suggested"; occurrence: number };
 const SUGGESTED_INTERVAL = 5;
-const SUGGESTED_GRID_SIZE = 4;
 
 const PAGE_LIMIT = 20;
-
-// getSuggestedUsers (backend) is a real mutual-connection ranking (friends-
-// of-friends, sorted by shared-follow count), hard-capped at 10 — not an
-// arbitrary fixed "always 10" default, and not unlimited either. With only
-// up to 10 real candidates and 4 shown per box, rotating through 4-at-a-
-// time slices (wrapping around) is the honest way to make repeat
-// appearances feel different without inventing fake users past what's
-// actually a real, if small, candidate pool.
-function suggestedSlice(pool: SuggestedUser[], occurrence: number): SuggestedUser[] {
-  if (pool.length <= SUGGESTED_GRID_SIZE) return pool;
-  const start = (occurrence * SUGGESTED_GRID_SIZE) % pool.length;
-  const doubled = [...pool, ...pool];
-  return doubled.slice(start, start + SUGGESTED_GRID_SIZE);
-}
 
 // The Medya feed. Previously had its own Sort (Recent/Popular/Network) +
 // Type filter UI — the user found it cluttered and asked for the same
@@ -54,7 +41,35 @@ function suggestedSlice(pool: SuggestedUser[], occurrence: number): SuggestedUse
 // revival of the old Sort/Type combo, just a hard filter on the exact
 // same ranking ("I sometimes want to see only my friends' posts," not "I
 // want to change how posts are ranked").
-export default function SharesFeedSection() {
+//
+// Wrapped in React.memo — takes zero props, so this is purely about
+// stopping `home/index.tsx`'s own re-renders from cascading down into a
+// full re-render of this entire subtree (a live FlatList of ShareCards
+// plus PeoplePodium) every time. That cascade was already happening on
+// every single tap of the header's Paylaşımlar/Keşfet pill (`switchTab`
+// there calls `setOuterTab`, re-rendering the whole screen) even before
+// any of this session's changes — reported live as new stutter once this
+// subtree got heavier (tier-lock logic in PeoplePodiumCard, the new
+// like-color crossfade in every visible ShareCard), landing at the exact
+// moment the header's own slide animation needs the JS thread free to stay
+// smooth (its pill position isn't native-driven — see CapsuleTabSwitcher's
+// own dragOffsetX plumbing in home/index.tsx).
+interface Props {
+  // Set only by home/index.tsx when arriving from PodiumNewsModal.tsx's own
+  // "you made the podium!" popup — threaded straight through to
+  // PeoplePodium, which is the one that actually knows how to turn this
+  // into a page jump. Optional, `undefined` at every other call site
+  // (there's only ever the one), so this doesn't disturb this component's
+  // own memo() re-render guard in the common case.
+  jumpToPodiumCategory?: string;
+  // Set only by home/index.tsx's own `?scope=following` param (an
+  // official-account tip's "Friends tab" link uses this) — just the
+  // initial value for the existing `scope` state below, same one-shot-seed
+  // idea as jumpToPodiumCategory itself.
+  initialScope?: "all" | "following";
+}
+
+function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
 
@@ -134,15 +149,25 @@ export default function SharesFeedSection() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scope, setScope] = useState<"all" | "following">("all");
+  const [scope, setScope] = useState<"all" | "following">(initialScope || "all");
   const cycleScope = () => setScope((prev) => (prev === "all" ? "following" : "all"));
 
+  // Used to only ever fetch once per mount — since this section stays
+  // mounted for the whole session (React.memo'd, never remounts on tab
+  // switches), a long session kept recycling the exact same 10-person pool
+  // forever, even as the viewer's own mutual-connection graph changed.
+  // Re-fetched on manual pull-to-refresh too now (not a new polling
+  // interval — reusing the one trigger the viewer already has for "give me
+  // anything new").
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
-  useEffect(() => {
+  const loadSuggestions = useCallback(() => {
     getSuggestions(10)
       .then(setSuggestions)
       .catch(() => {});
   }, []);
+  useEffect(() => {
+    loadSuggestions();
+  }, [loadSuggestions]);
 
   // Re-inserts the suggested-users box after every SUGGESTED_INTERVAL
   // posts (not just once) — the user's own ask, so it keeps reappearing as
@@ -163,57 +188,97 @@ export default function SharesFeedSection() {
     return rows;
   }, [items, suggestions]);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await getShareFeed(1, PAGE_LIMIT, scope);
-      setItems(res.items);
-      setHasMore(res.hasMore);
-      setPage(1);
-      setError(null);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to load content."));
-    }
-  }, [t, scope]);
+  // Guards against out-of-order responses — same reasoning as Search's own
+  // fetch-driven components (SearchContentRows.tsx etc.): rapidly toggling
+  // All/Friends, or toggling it while a loadMore is still in flight, used to
+  // have no protection against a slower, now-stale response overwriting (or
+  // getting appended onto) whatever the newer request already loaded.
+  // PeoplePodium.tsx's own fetch already guards this correctly (a plain
+  // `cancelled` flag) — this was the one fetch on this page that didn't.
+  const requestIdRef = useRef(0);
+  const flatListRef = useRef<FlatList>(null);
+
+  const load = useCallback(
+    async (requestId: number) => {
+      try {
+        const res = await getShareFeed(1, PAGE_LIMIT, scope);
+        if (requestIdRef.current !== requestId) return;
+        setItems(res.items);
+        setHasMore(res.hasMore);
+        setPage(1);
+        setError(null);
+      } catch (e: any) {
+        if (requestIdRef.current !== requestId) return;
+        setError(e?.response?.data?.message || t("Failed to load content."));
+      }
+    },
+    [t, scope]
+  );
 
   // Re-runs (via `load`'s own `scope` dependency above) whenever the
   // All/Friends toggle changes, same as the very first mount — no separate
-  // effect needed for the toggle specifically.
+  // effect needed for the toggle specifically. Also scrolls back to the top
+  // on every such change — switching scope used to leave the list at
+  // whatever offset the viewer happened to be scrolled to, which could land
+  // in the middle of (or past the end of) the new, differently-sized list.
   useEffect(() => {
     setLoading(true);
-    load().finally(() => setLoading(false));
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    const requestId = ++requestIdRef.current;
+    load(requestId).finally(() => {
+      if (requestIdRef.current === requestId) setLoading(false);
+    });
   }, [load]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    loadSuggestions();
+    const requestId = ++requestIdRef.current;
+    await load(requestId);
+    if (requestIdRef.current === requestId) setRefreshing(false);
   };
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || loading) return;
+    const requestId = ++requestIdRef.current;
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
       const res = await getShareFeed(nextPage, PAGE_LIMIT, scope);
+      if (requestIdRef.current !== requestId) return;
       setItems((prev) => [...prev, ...res.items]);
       setHasMore(res.hasMore);
       setPage(nextPage);
     } finally {
-      setLoadingMore(false);
+      if (requestIdRef.current === requestId) setLoadingMore(false);
     }
   };
 
-  const handleToggleLike = async (shareId: string) => {
-    const prev = items;
+  // A stable ([]) reference on purpose — passed straight into ShareCard
+  // (itself now React.memo'd, see below) rather than wrapped in a fresh
+  // inline arrow per row every render. The rollback-on-failure used to
+  // read `items` directly from the closure (needing it in a dependency
+  // array, which would recreate this function — and every row's own
+  // ShareCard prop — on every fetch/page-load/like anywhere in the feed);
+  // now captures just the one row's own pre-toggle snapshot inside the
+  // functional setItems updater instead, so this never needs to depend on
+  // `items` at all.
+  const handleToggleLike = useCallback(async (shareId: string) => {
+    let previous: Share | undefined;
     setItems((cur) =>
-      cur.map((s) => (s._id !== shareId ? s : { ...s, liked: !s.liked, likeCount: s.liked ? Math.max(0, s.likeCount - 1) : s.likeCount + 1 }))
+      cur.map((s) => {
+        if (s._id !== shareId) return s;
+        previous = s;
+        return { ...s, liked: !s.liked, likeCount: s.liked ? Math.max(0, s.likeCount - 1) : s.likeCount + 1 };
+      })
     );
     try {
       await toggleShareLike(shareId);
     } catch {
-      setItems(prev);
+      const restored = previous;
+      if (restored) setItems((cur) => cur.map((s) => (s._id === shareId ? restored : s)));
     }
-  };
+  }, []);
 
   return (
     <View style={{ flex: 1 }}>
@@ -231,9 +296,24 @@ export default function SharesFeedSection() {
           PeoplePodium itself, so it mounts once and keeps its own state regardless of
           how this section's own feed load is going. */}
       <FlatList
+        ref={flatListRef}
         style={styles.container}
         data={feedRows}
-        keyExtractor={(row) => (row.kind === "share" ? row.share._id : `suggested-${row.occurrence}`)}
+        // Suffixed with `index` (not just `share._id`) for share rows —
+        // the official Cinephix account's own posts are deliberately
+        // recycled once getShareFeed's fixed-position rotation (see that
+        // function's own comment) runs through its whole pool, which a
+        // small pool (a handful of posts early on) can do within a single
+        // scroll session. The SAME official Share _id then legitimately
+        // occupies two different rows at once, which without the index
+        // suffix is a duplicate FlatList key — React can't tell the two
+        // rows apart while reconciling, which is exactly what the real,
+        // reported "sayfa saçmalıyor, yukarı aşağı zıplıyor" bug was.
+        // Safe to always include the index: `items` only ever grows via
+        // `loadMore`'s append or gets wholesale-replaced by `load`/
+        // `onRefresh` — existing rows never reorder or get spliced out in
+        // place, so a row's own index is as stable as its `_id` here.
+        keyExtractor={(row, index) => (row.kind === "share" ? `${row.share._id}-${index}` : `suggested-${row.occurrence}`)}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -243,7 +323,7 @@ export default function SharesFeedSection() {
               <OnlineFriendsBar />
             </View>
             <View style={styles.podiumInset}>
-              <PeoplePodium />
+              <PeoplePodium jumpToCategory={jumpToPodiumCategory} />
             </View>
             <View style={styles.titleDivider} />
             {/* Title row always renders (not gated behind `loading` like
@@ -272,9 +352,9 @@ export default function SharesFeedSection() {
         }
         renderItem={({ item: row }) =>
           row.kind === "suggested" ? (
-            <SuggestedUsersBox users={suggestedSlice(suggestions, row.occurrence)} />
+            <SuggestedUsersBox pool={suggestions} occurrence={row.occurrence} />
           ) : (
-            <ShareCard share={row.share} basePath="/home" onToggleLike={() => handleToggleLike(row.share._id)} />
+            <ShareCard share={row.share} basePath="/home" onToggleLike={handleToggleLike} />
           )
         }
         onEndReached={loadMore}
@@ -285,3 +365,5 @@ export default function SharesFeedSection() {
     </View>
   );
 }
+
+export default memo(SharesFeedSection);

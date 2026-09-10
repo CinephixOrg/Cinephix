@@ -8,6 +8,7 @@ import {
   getPopularWithFriends,
   getLeaderboard,
   getPeopleLeaderboard,
+  getMyPodiumPlacements,
 } from "../controllers/feedController.js";
 import { getNetworkActivity } from "../controllers/activityController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -21,6 +22,7 @@ router.get("/popular-this-week", authMiddleware, getPopularThisWeek);
 router.get("/popular-with-friends", authMiddleware, getPopularWithFriends);
 router.get("/leaderboard", authMiddleware, getLeaderboard);
 router.get("/people-leaderboard", authMiddleware, getPeopleLeaderboard);
+router.get("/my-podium-placements", authMiddleware, getMyPodiumPlacements);
 router.get("/activity", authMiddleware, getNetworkActivity);
 
 export default router;

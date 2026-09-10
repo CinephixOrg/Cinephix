@@ -1,8 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
-import ContentReviewsSection from "../../../../../../src/components/ContentReviewsSection";
+import ContentReviewsSection, { type ReviewMode } from "../../../../../../src/components/ContentReviewsSection";
 
 export default function ContentReviewsRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  return <ContentReviewsSection contentId={id} />;
+  const { id, mode, reviewId } = useLocalSearchParams<{ id: string; mode?: ReviewMode; reviewId?: string }>();
+  return <ContentReviewsSection contentId={id} initialMode={mode} scrollToReviewId={reviewId} />;
 }
-

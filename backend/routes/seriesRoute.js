@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { buildFuzzyTitleSearchStage, combinedScoreSortStages } from "../utils/atlasSearch.js";
+
+// User text going into a hand-built $regex must be escaped first — same
+// helper as customListRoute.js/reviewController.js/movieRoute.js.
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export default async function (seriesModel) {
   const router = (await import("express")).Router();
@@ -16,59 +21,10 @@ export default async function (seriesModel) {
         });
       }
 
-      const safeQ = q.replace(/[^\w\s]/gi, '');
-      const queryTokens = safeQ.split(/\s+/).filter(w => w);
-      const queryStr = queryTokens.length > 0 ? queryTokens.map(w => `${w}*`).join(" AND ") : "";
-
-      const shouldArray = [
-        {
-          autocomplete: {
-            query: q,
-            path: "name"
-          }
-        },
-        {
-          text: {
-            query: q,
-            path: "name",
-            fuzzy: {
-              maxEdits: 1,
-              prefixLength: 2
-            }
-          }
-        }
-      ];
-
-      if (queryStr) {
-        shouldArray.push({
-          queryString: {
-            defaultPath: "name",
-            query: queryStr
-          }
-        });
-      }
-
       const pipeline = [
-        {
-          $search: {
-            index: "default",
-            compound: {
-              should: shouldArray
-            }
-          }
-        },
+        buildFuzzyTitleSearchStage(q, "name"),
         { $limit: 150 },
-        {
-          $addFields: {
-            combinedScore: {
-              $multiply: [
-                { $meta: "searchScore" },
-                { $add: [{ $ifNull: ["$popularity", 1] }, 1] }
-              ]
-            }
-          }
-        },
-        { $sort: { combinedScore: -1 } },
+        ...combinedScoreSortStages(),
         { $limit: 20 },
         {
           $project: {
@@ -113,47 +69,13 @@ export default async function (seriesModel) {
 
       // 🔹 Atlas Search: fuzzy + autocomplete
       if (query) {
-        const safeTitle = query.replace(/[^\w\s]/gi, '');
-        const titleTokens = safeTitle.split(/\s+/).filter(w => w);
-        const titleQueryStr = titleTokens.length > 0 ? titleTokens.map(w => `${w}*`).join(" AND ") : "";
-
-        const shouldArray = [
-          {
-            autocomplete: {
-              query: query,
-              path: "name"
-            }
-          },
-          {
-            text: {
-              query: query,
-              path: "name",
-              fuzzy: {
-                maxEdits: 1,
-                prefixLength: 2
-              }
-            }
-          }
-        ];
-
-        if (titleQueryStr) {
-          shouldArray.push({
-            queryString: {
-              defaultPath: "name",
-              query: titleQueryStr
-            }
-          });
-        }
-
-        pipeline.push({
-          $search: {
-            index: "default", // your index name
-            compound: {
-              should: shouldArray
-            }
-          }
-        });
-        pipeline.push({ $limit: 200 }); // Fast limit for Atlas Search
+        pipeline.push(buildFuzzyTitleSearchStage(query, "name"));
+        // Real bug this order used to have: years/genres/hasPoster were
+        // $matched *after* this $limit, so a query that fuzzy-matches more
+        // than 200 documents could have valid genre/year matches silently
+        // dropped just because they ranked outside the top 200 by pure text
+        // relevance — filters now apply first, against the full $search
+        // result set, before it's ever truncated.
       }
 
       // 🔹 Ek filtreler
@@ -161,7 +83,7 @@ export default async function (seriesModel) {
       if (years) {
         const yearsArray = years.split(",");
         match.first_air_date = {
-          $in: yearsArray.map((year) => new RegExp(`^${year}`)),
+          $in: yearsArray.map((year) => new RegExp(`^${escapeRegex(year)}`)),
         };
       }
       if (genres) {
@@ -175,17 +97,8 @@ export default async function (seriesModel) {
       if (Object.keys(match).length > 0) pipeline.push({ $match: match });
 
       if (query) {
-        pipeline.push({
-          $addFields: {
-            combinedScore: {
-              $multiply: [
-                { $meta: "searchScore" },
-                { $add: [{ $ifNull: ["$popularity", 1] }, 1] } // Score * Popularity
-              ]
-            }
-          }
-        });
-        pipeline.push({ $sort: { combinedScore: -1 } });
+        pipeline.push({ $limit: 200 }); // Fast limit for Atlas Search, now after filters
+        pipeline.push(...combinedScoreSortStages());
       } else {
         // Sort results by popularity and newest when no search query
         pipeline.push({
@@ -193,8 +106,11 @@ export default async function (seriesModel) {
         });
       }
 
-      // 🔹 Prevent $facet memory issues by capping results to top 2000
-      pipeline.push({ $limit: 2000 });
+      // Real bug this cap used to cause: it ran *before* $facet's own
+      // $count, so `pagination.total`/`pages` were silently capped at 2000
+      // regardless of how many documents actually matched — same fix as
+      // movieRoute.js's own identical cap, removed rather than shrunk;
+      // $facet already runs under `.allowDiskUse(true)` below.
 
       // 🔹 Optimize: Only select needed fields for search results
       pipeline.push({

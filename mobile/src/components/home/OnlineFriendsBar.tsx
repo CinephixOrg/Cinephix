@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { View, Text, Image, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,12 @@ const AVATAR_SIZE = 46;
 // people you follow who currently have a live socket connection. Polled on
 // mount/focus rather than pushed live (Medya isn't a real-time chat
 // surface), matching this app's largely-REST architecture elsewhere.
-export default function OnlineFriendsBar() {
+//
+// Wrapped in React.memo — zero props, same reasoning as
+// SharesFeedSection.tsx's own matching comment: without this, an unrelated
+// re-render of that parent (e.g. its own `loadingMore`/`scope` state
+// changing) re-rendered this too, for nothing.
+function OnlineFriendsBar() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -103,3 +108,5 @@ export default function OnlineFriendsBar() {
     </View>
   );
 }
+
+export default memo(OnlineFriendsBar);

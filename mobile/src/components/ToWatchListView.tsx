@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getToWatchList, removeFromToWatchList } from "../api/toWatchService";
 import { getMovieById, getSeriesById } from "../api/contentService";
 import WatchlistGrid, { type HydratedWatchItem } from "./WatchlistGrid";
+import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import type { ContentType } from "../types";
 
 interface Props {
@@ -24,15 +25,30 @@ interface Props {
 // rating-based filter options.
 export default function ToWatchListView({ ListHeaderComponent, basePath = "/to-watch" }: Props) {
   const { t } = useTranslation();
+  const watchlistGraph = useWatchlistGraph();
   const [items, setItems] = useState<HydratedWatchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
 
+  // Depends on `watchlistGraph.replaceAll` specifically, not the whole
+  // `watchlistGraph` object — that object is a fresh literal every time the
+  // provider re-renders (which this very function causes, by calling
+  // replaceAll), so depending on it here would recreate `load` every time
+  // it runs, which useFocusEffect below would then treat as a reason to
+  // run again — replaceAll itself is a stable useCallback([]) reference
+  // regardless of how often the provider's own state changes.
+  const replaceWatchlistGraph = watchlistGraph.replaceAll;
   const load = useCallback(async () => {
     try {
       const toWatchList = await getToWatchList();
+      // This screen's own focus-triggered refetch is the most authoritative
+      // read of the real list anywhere in the app — reusing it to also
+      // resync WatchlistGraphContext's shared membership set (the same one
+      // ShareCard.tsx's recommendation posts read from) rather than letting
+      // it only ever hear about single adds/removes.
+      replaceWatchlistGraph(toWatchList);
       const hydrated = await Promise.all(
         toWatchList.map(async (w) => {
           const content = w.itemType === "movie" ? await getMovieById(w.itemId) : await getSeriesById(w.itemId);
@@ -44,7 +60,7 @@ export default function ToWatchListView({ ListHeaderComponent, basePath = "/to-w
     } catch (e: any) {
       setError(e?.response?.data?.message || t("Failed to load watchlist."));
     }
-  }, []);
+  }, [replaceWatchlistGraph]);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,6 +79,10 @@ export default function ToWatchListView({ ListHeaderComponent, basePath = "/to-w
     try {
       await removeFromToWatchList(id, type);
       setItems((prev) => prev.filter((i) => !(i.id === id && i.type === type)));
+      // So a recommendation post for this same title (ShareCard.tsx) shows
+      // its "+" again immediately, not just after this screen's own next
+      // focus-triggered reload.
+      watchlistGraph.applyRemove(id, type);
     } catch (e: any) {
       setError(e?.response?.data?.message || t("Failed to remove item."));
     }

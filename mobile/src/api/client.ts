@@ -8,6 +8,20 @@ export const API_BASE_URL =
 
 const API = axios.create({ baseURL: API_BASE_URL });
 
+// Set once by AuthContext (a plain module has no hook access of its own) so
+// a 401 from an *authenticated* request — the token itself is missing/
+// invalid/expired, the only thing authMiddleware.js's 401 ever means — can
+// trigger a real logout instead of leaving the app logged in against a
+// token the server will keep rejecting forever. Without this, anything
+// that polls on a fixed interval while `user` is truthy (e.g.
+// NotificationContext's unread-count poll) kept silently retrying and
+// failing every cycle indefinitely — a real reported "infinite loop" of
+// 401s, once whatever session was active stopped being valid.
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 API.interceptors.request.use(async (req) => {
   const token = await SecureStore.getItemAsync(STORAGE_KEYS.TOKEN);
   if (token) {
@@ -35,6 +49,13 @@ API.interceptors.response.use(
     return res;
   },
   (error) => {
+    // Only for requests that actually carried a token — login's own
+    // "Invalid email or password" also comes back as 401 (userController.js
+    // — a different meaning entirely, not a session problem), and that
+    // request never sets this header in the first place.
+    if (error.response?.status === 401 && error.config?.headers?.Authorization) {
+      onUnauthorized?.();
+    }
     if (!error.response && error.request) {
       // Network-level failure (offline, timeout, unreachable) — no server
       // response at all. Synthesize one so every existing

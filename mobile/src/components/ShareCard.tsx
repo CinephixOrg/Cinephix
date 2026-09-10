@@ -1,5 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Image, Pressable, Animated, Easing, StyleSheet, Modal, ScrollView as RNScrollView, useWindowDimensions } from "react-native";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  Animated,
+  Easing,
+  StyleSheet,
+  Modal,
+  ScrollView as RNScrollView,
+  useWindowDimensions,
+} from "react-native";
+
 // From react-native-gesture-handler, not react-native: ShareCard renders
 // inside SharesFeedSection.tsx's vertical FlatList, itself nested inside
 // home/index.tsx's horizontal gesture-handler pager — the list-post film
@@ -24,19 +36,28 @@ import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
 import StackedAvatars from "./StackedAvatars";
+import TierGradientText from "./TierGradientText";
 import { CASCADE_POSTER_RADIUS } from "./PosterCascade";
 import StarRatingDisplay from "./StarRatingDisplay";
 import FollowButton from "./FollowButton";
-import { registerShareView } from "../api/shareService";
+import { registerShareView, voteOnPoll } from "../api/shareService";
 import { addToToWatchList } from "../api/toWatchService";
-import type { Share } from "../types";
+import type { OfficialContentCategory, PollOption, Share } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
+import { useWatchlistGraph, isInWatchlistGraph } from "../context/WatchlistGraphContext";
 import type { ColorPalette } from "../theme/palettes";
 import { fonts } from "../theme/typography";
 import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
-const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
+// Was w500 (500px wide) — every actual use of this in the file is a small
+// thumbnail (48-64px wide: sharePoster, filmStripPoster, modalPoster), so
+// every post in the feed was downloading/decoding ~7-8x more pixel data
+// than it ever displays. w185 comfortably covers all three at retina
+// density (matches the precedent already set for similarly-sized
+// thumbnails elsewhere, e.g. Search's own SearchContentRow using w154 for
+// a 52px poster).
+const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 // Same 2:3 poster aspect ratio used everywhere else in this app — the
 // list-post box's own "film strip" (see filmStripPoster below).
 const FILM_STRIP_POSTER_WIDTH = 56;
@@ -77,11 +98,25 @@ const REVIEW_COLLAPSED_LINES = 3;
 
 interface Props {
   share: Share;
-  onToggleLike: () => void;
+  // Takes the share's own id rather than being pre-bound to it — lets every
+  // caller pass one stable ([]) function reference instead of a fresh
+  // inline arrow per card, which is what actually lets this component's own
+  // React.memo (below) skip re-rendering an untouched card when a sibling
+  // card's like state changes or an unrelated ancestor re-renders.
+  onToggleLike: (shareId: string) => void;
   basePath: "/home" | "/profile" | `/user/${string}`;
 }
 
-export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: string) => string) {
+const OFFICIAL_CATEGORY_META: Record<OfficialContentCategory, { icon: keyof typeof Ionicons.glyphMap; label: string }> = {
+  trivia: { icon: "sparkles", label: "Trivia" },
+  tip: { icon: "bulb", label: "Tip" },
+  highlight: { icon: "trophy", label: "Highlight" },
+  on_this_day: { icon: "calendar", label: "On This Day" },
+  stats: { icon: "stats-chart", label: "Stats" },
+  announcement: { icon: "megaphone", label: "Announcement" },
+};
+
+export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: string) => string, officialCategory?: OfficialContentCategory) {
   switch (type) {
     case "analysis":
       return { icon: "sparkles" as const, label: t("Analysis"), color: colors.secondary };
@@ -91,6 +126,12 @@ export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: strin
       return { icon: "gift" as const, label: t("Recommendation"), color: colors.warning };
     case "list":
       return { icon: "albums-outline" as const, label: t("List"), color: colors.accent };
+    case "official": {
+      const m = (officialCategory && OFFICIAL_CATEGORY_META[officialCategory]) || OFFICIAL_CATEGORY_META.trivia;
+      return { icon: m.icon, label: t(m.label), color: colors.info };
+    }
+    case "poll":
+      return { icon: "bar-chart" as const, label: t("Poll"), color: colors.secondary };
     // Share["type"] is a compile-time guarantee only — a doc with a bad/
     // missing type field (legacy data, a partially-migrated record) would
     // otherwise fall through to `undefined` here and crash every reader
@@ -119,6 +160,38 @@ function renderRecommendMessage(text: string, linkText: string, style: any, onPr
       {text.slice(idx + linkText.length)}
     </>
   );
+}
+
+// General N-link version of renderRecommendMessage above — official posts
+// need more than one linked word (trivia's same-day-release template links
+// BOTH titles at once), which a single linkText/onPress pair can't express.
+// Kept as a separate function rather than generalizing renderRecommendMessage
+// itself, since that one has its own single-link call site (the
+// recommendation type's "Watchlist" word) that works fine as-is. Words are
+// matched case-insensitively, first occurrence, non-overlapping (a match
+// starting before the previous match's own end is skipped) — good enough
+// for short auto-generated sentences where each linked word appears once.
+function renderTextWithLinks(text: string, links: { word: string; onPress: () => void }[], style: any) {
+  const matches = links
+    .map((l) => ({ ...l, idx: text.toLowerCase().indexOf(l.word.toLowerCase()) }))
+    .filter((l) => l.idx !== -1)
+    .sort((a, b) => a.idx - b.idx);
+  if (matches.length === 0) return text;
+
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  matches.forEach((m, i) => {
+    if (m.idx < cursor) return;
+    nodes.push(text.slice(cursor, m.idx));
+    nodes.push(
+      <Text key={i} style={style} onPress={m.onPress}>
+        {text.slice(m.idx, m.idx + m.word.length)}
+      </Text>
+    );
+    cursor = m.idx + m.word.length;
+  });
+  nodes.push(text.slice(cursor));
+  return <>{nodes}</>;
 }
 
 // Pasted flat onto the page (no card background of its own — same
@@ -156,11 +229,12 @@ function renderRecommendMessage(text: string, linkText: string, style: any, onPr
 // scrolling fast. Premium's inner content box still gets its own separate
 // gold border+glow on top of both (unrelated axis: "flashier post box" vs
 // "who posted it"), unchanged from before.
-export default function ShareCard({ share, onToggleLike, basePath }: Props) {
+function ShareCard({ share, onToggleLike, basePath }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const { showToast } = useToast();
+  const watchlistGraph = useWatchlistGraph();
   const { height: screenHeight } = useWindowDimensions();
 
   const styles = useMemo(
@@ -200,14 +274,20 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
         // marginHorizontal a little past the box's own 12 below it — direct
         // ask to bring it in slightly rather than sit flush with the box's
         // own edge.
-        typeInfoLine: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.placeholder, marginHorizontal: 16, marginBottom: 4 },
         // Username + tier mark share one row — a second, more legible
         // signal alongside UserAvatar's own ring (thin, 1.5px, easy to
         // miss scrolling fast) using the exact same per-tier color, not a
         // fresh one, so the two read as one consistent language rather
         // than two different rules.
         usernameRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-        username: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent },
+        // flexShrink so a long username truncates (numberOfLines={1} on the
+        // Text itself) instead of pushing the type chip off-screen — the
+        // chip now sits inline on this same row (moved off its own line
+        // below, direct ask), so this row now needs to share width between
+        // a variable-length name and a fixed-size chip.
+        username: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent, flexShrink: 1 },
+        // The official account's own display name ("CINEPHIX") only.
+        usernameOfficial: { fontFamily: fonts.boldItalic },
         // Moved here from the footer (where it sat right-aligned opposite
         // like/view) — now occupies the header slot the old tier *badge*
         // used to (a filled "PRO"/"PREMIUM" pill), which itself shrank
@@ -231,17 +311,87 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
           borderRadius: INNER_BOX_RADIUS,
           padding: 14,
         },
-        // Applied conditionally (`!isPremium && styles.contentBoxFrame`) at
-        // each of the 4 content-box render sites below, never baked into
-        // analysisBox/shareBox/listBox themselves — Premium posts already
-        // carry their own gold border+glow (`premiumBorder`, see `isPremium`
-        // below) on the same box, and this thin gray frame would clash
-        // with/sit redundantly under it. Non-Premium posts get this;
-        // Premium ones stay exactly as `premiumBorder` alone renders them.
-        contentBoxFrame: { borderWidth: 1, borderColor: colors.placeholder },
         analysisNickname: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
         analysisSummary: { fontSize: 13, color: colors.baseContent, marginTop: 6, lineHeight: 18 },
         captionLink: { color: colors.primary },
+        // The official Cinephix account's own text-only post box (trivia/
+        // tip/highlight/on-this-day/stats/announcement) — same
+        // colors.base200 "inner content box" convention as analysisBox,
+        // with an optional poster+title row (shareBox's own row shape)
+        // slotted in above the text when a specific title is referenced.
+        // (A dark-metallic gradient version of this box was tried and
+        // reverted the same day, per direct ask — "diğer postlar gibi
+        // olsun" — back to the plain convention every other post type uses.)
+        officialBox: {
+          marginHorizontal: 12,
+          marginTop: 4,
+          marginBottom: 6,
+          backgroundColor: colors.base200,
+          borderRadius: INNER_BOX_RADIUS,
+          padding: 14,
+        },
+        officialContentRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 8 },
+        officialText: { fontSize: 13.5, color: colors.baseContent, lineHeight: 19 },
+        // Trivia and Tip posts specifically (not highlight/on-this-day/
+        // stats/announcement) — direct ask, bold+italic to read as more
+        // distinct/editorial than a plain fact/tip would otherwise.
+        officialTextEmphasis: { fontFamily: fonts.boldItalic },
+        // A poll's own box — same outer convention as officialBox, holding
+        // the question text plus one row per option (tappable buttons
+        // pre-vote, animated percentage bars post-vote).
+        pollBox: {
+          marginHorizontal: 12,
+          marginTop: 4,
+          marginBottom: 6,
+          backgroundColor: colors.base200,
+          borderRadius: INNER_BOX_RADIUS,
+          padding: 14,
+          gap: 10,
+        },
+        pollQuestion: { fontFamily: fonts.boldItalic, fontSize: 14.5, color: colors.baseContent, lineHeight: 20 },
+        // Was gap:8 with 10px vertical padding per row — reported live as
+        // "too chunky," slimmed down to a tighter, more refined stack.
+        pollOptionsCol: { gap: 6 },
+        pollOptionButton: {
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 8,
+          paddingVertical: 7,
+          paddingHorizontal: 12,
+        },
+        pollOptionButtonText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent },
+        // Post-vote: a track (colors.base300) with a fill (colors.primary)
+        // growing to the option's own live percentage, label+voter
+        // avatars+percent overlaid on top — Instagram-style live results.
+        pollResultTrack: {
+          borderRadius: 8,
+          backgroundColor: colors.base300,
+          overflow: "hidden",
+          justifyContent: "center",
+        },
+        pollResultFill: {
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          backgroundColor: colors.primary,
+          opacity: 0.28,
+        },
+        pollResultRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingVertical: 7,
+          paddingHorizontal: 12,
+        },
+        pollResultLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent, flexShrink: 1, marginRight: 6 },
+        pollResultLabelChosen: { fontFamily: fonts.bold },
+        // Groups the voter-avatar preview and the percentage at the row's
+        // own trailing edge — the label above is the only thing that
+        // flex-shrinks, so this pair never gets squeezed by a long option.
+        pollResultTrailing: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 0 },
+        pollResultPercent: { fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
+        pollVoteCountLine: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.placeholder, marginTop: 2 },
         // Just the view row lives here now — like moved out entirely to
         // its own floating corner sticker (see likeSticker below), and the
         // dark grouped-pill background from the previous round is gone
@@ -458,10 +608,29 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
 
   const likeBounce = useRef(new Animated.Value(1)).current;
   const handleLikePress = () => {
-    onToggleLike();
+    onToggleLike(share._id);
     likeBounce.setValue(1.4);
     Animated.spring(likeBounce, { toValue: 1, useNativeDriver: true, friction: 4 }).start();
   };
+
+  // The corner heart's own "coloring in" — reported live as feeling
+  // disconnected from the center double-tap burst, since the fill used to
+  // just snap instantly to red the moment `share.liked` flipped, while the
+  // burst takes a few hundred ms to spring into view; an instant cut next
+  // to a gradual reveal never reads as "at the same time" even when both
+  // technically start on the same frame. Driven off `share.liked` directly
+  // (not the double-tap handler) so it animates the same way whichever path
+  // triggered it — a direct tap on this sticker, or a double-tap on the
+  // content box — rather than only syncing on one of the two.
+  const likeColorAnim = useRef(new Animated.Value(share.liked ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(likeColorAnim, {
+      toValue: share.liked ? 1 : 0,
+      duration: 260,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [share.liked, likeColorAnim]);
 
   // Same tap-bounce as the like sticker, for the watchlist sticker's own
   // "effect" — fires on every tap, not just the first, since it's just a
@@ -485,7 +654,11 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   // removes one (matches Instagram's own behavior), but still plays the
   // burst animation even if already liked — it's feedback for the tap,
   // not just the state change.
-  const DOUBLE_TAP_WINDOW_MS = 250;
+  // 250ms was reported live as too tight — a real, if slightly unhurried,
+  // double-tap often lands its second tap just past that window, which
+  // read as "my double-tap sometimes just navigates away instead." Widened
+  // to 350ms, closer to how these gestures actually land in practice.
+  const DOUBLE_TAP_WINDOW_MS = 350;
   const lastTapAtRef = useRef(0);
   const pendingTapRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showBurst, setShowBurst] = useState(false);
@@ -493,9 +666,39 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   const burstOpacity = useRef(new Animated.Value(0)).current;
   const [fullReviewVisible, setFullReviewVisible] = useState(false);
   const [addedToWatchlist, setAddedToWatchlist] = useState(false);
-  const [addingToWatchlist, setAddingToWatchlist] = useState(false);
   const watchlistOpacity = useRef(new Animated.Value(1)).current;
   const watchlistDismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Real bug this fixes: `addedToWatchlist` used to be a purely local "did
+  // *this* card's own button get tapped" flag, with no idea whether the
+  // content was already in the viewer's Watchlist via some *other* post
+  // recommending the same title. Adding it from one post left every other
+  // already-mounted post for that same title still showing its own live
+  // "+" — tapping it there hit the backend's duplicate-add rejection
+  // (409 "Already in watchlist") and surfaced as a confusing generic error.
+  // watchlistGraph is the shared, app-wide membership set (same shape as
+  // FollowGraphContext) — every card reads from it and writes to it, so
+  // acting on one is reflected on every other instance of the same content.
+  const isInWatchlist =
+    share.contentId && share.contentType ? isInWatchlistGraph(watchlistGraph.itemIds, share.contentId, share.contentType) : false;
+  useEffect(() => {
+    watchlistGraph.ensureLoaded();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    // Only ever moves toward "hidden" — a card whose own tap already
+    // dismissed its sticker has nothing to undo here. No animation for this
+    // path (unlike a real tap on *this* card, see addRecommendedToWatchlist
+    // below) — there's no "just did it" moment to communicate for a card
+    // the viewer never actually touched, it should just already read as
+    // unavailable from the moment this becomes true.
+    if (isInWatchlist && !addedToWatchlist) {
+      setAddedToWatchlist(true);
+      watchlistOpacity.setValue(0);
+      watchlistBounce.setValue(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInWatchlist]);
 
   useEffect(() => {
     return () => {
@@ -526,6 +729,14 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
       if (!share.liked) handleLikePress();
       playBurst();
     } else {
+      // A stale timer from an earlier isolated tap (one that never got a
+      // follow-up within its own window) could otherwise still be sitting
+      // here — clearing it first means at most one pending navigation is
+      // ever in flight, not two firing back to back.
+      if (pendingTapRef.current) {
+        clearTimeout(pendingTapRef.current);
+        pendingTapRef.current = null;
+      }
       lastTapAtRef.current = now;
       if (originalOnPress) {
         pendingTapRef.current = setTimeout(() => {
@@ -551,8 +762,83 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [share._id]);
 
-  const meta = typeMeta(share.type, colors, t);
+  // ── Poll voting ("poll" type only) ──────────────────────────────────
+  // Local optimistic state (mirrors the `share` prop's own shape) rather
+  // than lifting into SharesFeedSection's own list state — the parent only
+  // ever tracks like/liked for its optimistic-toggle rollback, and a poll
+  // vote has no reason to re-sort or otherwise affect the feed list itself.
+  const [pollOptions, setPollOptions] = useState<PollOption[]>(share.pollData?.options ?? []);
+  const [userVoteIndex, setUserVoteIndex] = useState<number | null>(share.userVoteIndex ?? null);
+  const pollTotalVotes = pollOptions.reduce((sum, o) => sum + o.voteCount, 0);
+
+  // No LayoutAnimation here (an earlier round added it, purely for a smooth
+  // button-row -> result-bars transition) — real bug reported live: on a
+  // poll's first-ever vote specifically, the view would visually freeze in
+  // a half-pressed/darkened state and never actually show the result until
+  // the whole app was reloaded, consistently, on every single poll. That
+  // exact "state updates in JS but the native view never repaints until
+  // something else forces a layout" symptom matches a known category of
+  // LayoutAnimation bugs on React Native (particularly combined with a
+  // percentage-based width changing on the very next render, which is
+  // exactly what this transition does). Removed outright rather than
+  // chasing a workaround — the state update itself (setPollOptions/
+  // setUserVoteIndex) is what actually matters; the view just snaps to the
+  // new layout now instead of easing into it, which is a fully acceptable
+  // trade for "the vote result reliably appears."
+  const handleVote = (optionIndex: number) => {
+    if (userVoteIndex === optionIndex) return;
+    const previousOptions = pollOptions;
+    const previousVoteIndex = userVoteIndex;
+    setPollOptions((opts) =>
+      opts.map((o, i) => {
+        if (i === optionIndex) return { ...o, voteCount: o.voteCount + 1 };
+        if (i === previousVoteIndex) return { ...o, voteCount: Math.max(0, o.voteCount - 1) };
+        return o;
+      })
+    );
+    setUserVoteIndex(optionIndex);
+    voteOnPoll(share._id, optionIndex)
+      .then((res) => {
+        setPollOptions(res.options);
+        setUserVoteIndex(res.userVoteIndex);
+      })
+      .catch(() => {
+        setPollOptions(previousOptions);
+        setUserVoteIndex(previousVoteIndex);
+        showToast(t("Something went wrong. Please try again."));
+      });
+  };
+
+  const meta = typeMeta(share.type, colors, t, share.officialCategory);
   const posterUri = share.contentData?.posterUrl ? `${POSTER_BASE}${share.contentData.posterUrl}` : null;
+
+  // "official" type only — turns 0+ words in officialText into tappable
+  // in-app links (tips carry one absolute route; trivia's title-
+  // referencing templates carry one or two content-detail links instead,
+  // resolved against this card's own `basePath` the same way goToContent
+  // already does for the single top-level contentId/contentType fields).
+  // Most official posts have no link at all and this just falls through to
+  // the plain string.
+  const officialTextEl = share.officialLinks?.length
+    ? renderTextWithLinks(
+        share.officialText || "",
+        share.officialLinks.map((link) => ({
+          word: link.word,
+          onPress: () =>
+            router.push((link.href || (link.contentId && link.contentType ? `${basePath}/content/${link.contentType}/${link.contentId}` : "")) as any),
+        })),
+        styles.captionLink
+      )
+    : share.officialText;
+  // All 6 official text categories now get the bold+italic treatment,
+  // each added on direct ask as that category was reviewed in turn.
+  const officialTextIsEmphasized =
+    share.officialCategory === "trivia" ||
+    share.officialCategory === "tip" ||
+    share.officialCategory === "highlight" ||
+    share.officialCategory === "on_this_day" ||
+    share.officialCategory === "stats" ||
+    share.officialCategory === "announcement";
 
   // Premium's inner content box gets the gold border+glow, Pro doesn't —
   // the user's own explicit split after confirming Premium outranks Pro.
@@ -567,6 +853,31 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   // this whole arc, the user's own ask was specifically about these two.
   const tierLabel = share.user.accountTier === "plus" || share.user.accountTier === "premium" ? share.user.accountTier : null;
   const tierMark = tierLabel ? <Ionicons name="diamond" size={12} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
+  // The official Cinephix account's own verified badge — same slot pattern
+  // as tierMark right beside it, shown whenever the poster is the one
+  // reserved official account (officialContentService.js), independent of
+  // its own accountTier. colors.primary (not the earlier colors.info) so it
+  // reads as "on-brand" and stays coordinated with the official avatar's
+  // own gradient (which also runs into colors.primary) across every theme,
+  // rather than a fixed "info blue" that could clash with some palettes.
+  const officialBadge = share.user.isOfficial ? <Ionicons name="checkmark-circle" size={13} color={colors.primary} /> : null;
+  // The official account's own username always renders in caps ("CINEPHIX"),
+  // independent of how it's actually stored/typed elsewhere (login, search,
+  // @mentions, ...) — purely a display convention for this one reserved
+  // account, not a case-normalization of usernames in general.
+  const displayUsername = share.user.isOfficial ? share.user.username.toUpperCase() : share.user.username;
+  // Plus/Premium posters get the same metallic gradient-filled name Discovery's
+  // Popular Lists/Popular Reviews already use (TierGradientText) instead of a
+  // flat tier-colored one — direct ask. Free/dev and the official account (never
+  // plus/premium) fall back to the plain Text below unchanged, official's own
+  // italic styling included.
+  const usernameEl = tierLabel ? (
+    <TierGradientText text={displayUsername} tier={tierLabel} fontSize={14} gradientId={`share-username-${share._id}`} color={colors.baseContent} bold />
+  ) : (
+    <Text style={[styles.username, share.user.isOfficial && styles.usernameOfficial]} numberOfLines={1}>
+      {displayUsername}
+    </Text>
+  );
 
   // Hollow rounded-rect stroke overlaid on the inner box (shareBox or
   // analysisBox), last in paint order so it sits above the box's own
@@ -597,6 +908,34 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     </Svg>
   ) : null;
 
+  // Same hollow rounded-rect stroke technique as premiumBorder above, but
+  // theme-matched instead of gold — for the official Cinephix account's own
+  // post boxes only (officialBox/pollBox, direct ask), reusing the same
+  // neutral->primary pair the official avatar's own gradient already uses
+  // rather than a fixed color, so it stays coordinated with that identity
+  // across every theme. Unique gradient id per share (same reasoning as
+  // every other per-card SVG gradient in this file).
+  const officialBorder = share.user.isOfficial ? (
+    <Svg style={styles.premiumBorderSvg} pointerEvents="none">
+      <Defs>
+        <LinearGradient id={`official-card-gradient-${share._id}`} x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0" stopColor={colors.neutral} />
+          <Stop offset="1" stopColor={colors.primary} />
+        </LinearGradient>
+      </Defs>
+      <Rect
+        x="1%"
+        y="1%"
+        width="98%"
+        height="98%"
+        rx={INNER_BOX_RADIUS - 1}
+        stroke={`url(#official-card-gradient-${share._id})`}
+        strokeWidth={1.5}
+        fill="none"
+      />
+    </Svg>
+  ) : null;
+
   // One combined message now instead of a separate teaser+promo pair — the
   // sharer's own custom note when set, otherwise the existing full
   // "have you watched it yet? so-and-so recommends it" sentence (already
@@ -624,30 +963,58 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   // anywhere in the app) translation keys already present in every locale
   // — "Add to Watchlist" for the button, "Added to Watchlist" for the
   // confirmation toast — no new keys needed.
+  // Optimistic now — reported live as feeling slow, even though the actual
+  // request wasn't: the success state (and its toast) used to wait on
+  // `await addToToWatchList(...)` resolving before showing anything at all,
+  // so the plus sticker just sat there unchanged for the whole round trip.
+  // Same optimistic-then-reconcile shape SharesFeedSection.tsx's own like
+  // toggle already uses — flip to "added" immediately, fire the request in
+  // the background, and roll the visible state back if it actually fails
+  // (rare; a real failure now surfaces as a quick success→error toast flip
+  // rather than a silent no-op, which is the honest trade-off for not
+  // waiting on the network before reacting to the tap).
   const addRecommendedToWatchlist = async () => {
-    if (addingToWatchlist || addedToWatchlist || !share.contentId || !share.contentType) return;
-    setAddingToWatchlist(true);
+    if (addedToWatchlist || !share.contentId || !share.contentType) return;
+    const contentId = share.contentId;
+    const contentType = share.contentType;
+    setAddedToWatchlist(true);
+    watchlistGraph.applyAdd(contentId, contentType);
+    // Plain default toast now, not the "success" (tinted+bordered+icon)
+    // variant — reported live as not fitting here even though the style
+    // itself was liked elsewhere; kept the ToastContext capability for
+    // wherever it does fit, just not this specific call site.
+    showToast(t("Added to Watchlist"));
+    // Let the tap-bounce settle and the colorful plus register for a
+    // beat before it disappears — an instant vanish on success reads as
+    // a glitch, not a confirmation. The toast already carries the "done"
+    // message and addedToWatchlist already blocks repeat taps, so once
+    // this plays out there's nothing left for the sticker itself to
+    // communicate — shrinking it away declutters the post rather than
+    // leaving an inert, unchanging colored shape sitting there.
+    watchlistDismissTimeoutRef.current = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(watchlistOpacity, { toValue: 0, duration: 280, useNativeDriver: true }),
+        Animated.timing(watchlistBounce, { toValue: 0, duration: 280, useNativeDriver: true }),
+      ]).start();
+    }, 500);
     try {
-      await addToToWatchList(share.contentId, share.contentType);
-      setAddedToWatchlist(true);
-      showToast(t("Added to Watchlist"));
-      // Let the tap-bounce settle and the colorful plus register for a
-      // beat before it disappears — an instant vanish on success reads as
-      // a glitch, not a confirmation. The toast already carries the "done"
-      // message and addedToWatchlist already blocks repeat taps, so once
-      // this plays out there's nothing left for the sticker itself to
-      // communicate — shrinking it away declutters the post rather than
-      // leaving an inert, unchanging colored shape sitting there.
-      watchlistDismissTimeoutRef.current = setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(watchlistOpacity, { toValue: 0, duration: 280, useNativeDriver: true }),
-          Animated.timing(watchlistBounce, { toValue: 0, duration: 280, useNativeDriver: true }),
-        ]).start();
-      }, 500);
-    } catch {
-      showToast(t("Something went wrong. Please try again."));
-    } finally {
-      setAddingToWatchlist(false);
+      await addToToWatchList(contentId, contentType);
+    } catch (e: any) {
+      if (watchlistDismissTimeoutRef.current) {
+        clearTimeout(watchlistDismissTimeoutRef.current);
+        watchlistDismissTimeoutRef.current = null;
+      }
+      watchlistOpacity.setValue(1);
+      watchlistBounce.setValue(1);
+      setAddedToWatchlist(false);
+      watchlistGraph.applyRemove(contentId, contentType);
+      // Surfaces the backend's own message (e.g. "Already in watchlist" —
+      // still theoretically reachable in the brief window before this
+      // card's own watchlistGraph.ensureLoaded() call resolves) instead of
+      // a hardcoded generic string that used to hide what actually
+      // happened, same fallback shape useFollowState.ts's own error
+      // handling already uses.
+      showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
     }
   };
 
@@ -701,7 +1068,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     <Animated.View
       style={[styles.watchlistSticker, { opacity: watchlistOpacity, transform: [{ rotate: "10deg" }, { scale: watchlistBounce }] }]}
     >
-      <Pressable onPress={handleWatchlistStickerPress} hitSlop={10} disabled={addingToWatchlist || addedToWatchlist}>
+      <Pressable onPress={handleWatchlistStickerPress} hitSlop={10} disabled={addedToWatchlist}>
         <View style={styles.watchlistStickerWrap}>
           <Svg width={36} height={36} viewBox="0 0 24 24">
             <Defs>
@@ -728,21 +1095,33 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     <Animated.View style={[styles.likeSticker, { transform: [{ rotate: "-12deg" }, { scale: likeBounce }] }]}>
       <Pressable onPress={handleLikePress} hitSlop={10}>
         <View style={[styles.likeStickerHeartWrap, share.liked && styles.likeStickerGlow]}>
+          {/* Gray base heart, always present underneath — the red gradient
+              version crossfades in on top of it (below) rather than the
+              fill snapping between the two, so "coloring in" actually reads
+              as an animation instead of an instant cut. */}
           <Svg width={36} height={36} viewBox="0 0 24 24">
-            <Defs>
-              <LinearGradient id="likeHeartGradient" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0" stopColor={LIKE_RING_HIGHLIGHT} />
-                <Stop offset="1" stopColor={colors.error} />
-              </LinearGradient>
-            </Defs>
-            {/* No frame here either — added to match the watchlist plus
-                sticker, reverted along with it per direct ask; back to
-                just the single filled heart path. */}
             <Path
               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              fill={share.liked ? "url(#likeHeartGradient)" : colors.placeholder}
+              fill={colors.placeholder}
             />
           </Svg>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: likeColorAnim }]}>
+            <Svg width={36} height={36} viewBox="0 0 24 24">
+              <Defs>
+                <LinearGradient id="likeHeartGradient" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor={LIKE_RING_HIGHLIGHT} />
+                  <Stop offset="1" stopColor={colors.error} />
+                </LinearGradient>
+              </Defs>
+              {/* No frame here either — added to match the watchlist plus
+                  sticker, reverted along with it per direct ask; back to
+                  just the single filled heart path. */}
+              <Path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                fill="url(#likeHeartGradient)"
+              />
+            </Svg>
+          </Animated.View>
         </View>
         {/* Always rendered (never conditional) so the count row's own
             height is reserved whether or not it has content — a
@@ -773,19 +1152,35 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     return (
       <View style={styles.card}>
         <View style={styles.headerRow}>
-          <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} tier={share.user.accountTier} />
+          <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} tier={share.user.accountTier} isOfficial={share.user.isOfficial} />
           <View style={styles.headerTextCol}>
             <View style={styles.usernameRow}>
-              <Text style={styles.username}>{share.user.username}</Text>
+              {usernameEl}
               {tierMark}
+              {officialBadge}
             </View>
             {typeChipEl}
           </View>
           <FollowButton targetUserId={share.user._id} size="small" />
         </View>
 
-        <Pressable style={[styles.shareBox, !isPremium && styles.contentBoxFrame]} onPress={handleContentPress(goToContent)}>
-          <View style={styles.sharePoster}>{posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}</View>
+        {/* Recommendation posts are deliberately not a single big tap
+            target — only the poster (navigates to content) and the
+            "Watchlist" word inside the message (navigates to the Watchlist
+            tab) actually do anything; everywhere else in the box (title,
+            the rest of the message, empty padding) is inert on a single
+            tap, per direct ask. `handleContentPress()` called with no
+            `originalOnPress` (same as the analysis box below) means a
+            single tap here is a no-op, while double-tap-to-like still
+            works across the whole box — that gesture wasn't asked to
+            change. The poster is its own nested Pressable so its tap
+            resolves before it ever reaches this box's own handler (same
+            "inner tap wins" pattern as the review box's excerpt Pressable
+            below). */}
+        <Pressable style={styles.shareBox} onPress={handleContentPress()}>
+          <Pressable style={styles.sharePoster} onPress={goToContent}>
+            {posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}
+          </Pressable>
           <View style={styles.shareTextCol}>
             <Text style={styles.shareTitle} numberOfLines={2}>
               {share.contentData.title}
@@ -808,33 +1203,20 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} tier={share.user.accountTier} />
+        <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={38} tier={share.user.accountTier} isOfficial={share.user.isOfficial} />
         <View style={styles.headerTextCol}>
           <View style={styles.usernameRow}>
-            <Text style={styles.username}>{share.user.username}</Text>
+            {usernameEl}
             {tierMark}
+            {officialBadge}
           </View>
           {typeChipEl}
         </View>
         <FollowButton targetUserId={share.user._id} size="small" />
       </View>
 
-      {/* Moved out of list/review's own box per direct ask — a shared
-          "X shared a Y" label sitting between the profile header and the
-          content box, not just list's info line and not inside the box
-          anymore. Deliberately NOT extended to analysis/recommendation:
-          recommendation's own box has no other content once its message is
-          pulled out (its whole point IS that message), and analysis was
-          left out for now by the same direct ask. Plain text again, same
-          reasoning as list's own line already had — no linked username. */}
-      {(share.type === "list" || share.type === "review") && (
-        <Text style={styles.typeInfoLine}>
-          {t(share.type === "list" ? "{{user}} shared a list." : "{{user}} shared a review.", { user: share.user.username })}
-        </Text>
-      )}
-
       {share.type === "analysis" && share.analysisData && (
-        <Pressable style={[styles.analysisBox, !isPremium && styles.contentBoxFrame]} onPress={handleContentPress()}>
+        <Pressable style={styles.analysisBox} onPress={handleContentPress()}>
           {share.analysisData.nickname ? <Text style={styles.analysisNickname}>{share.analysisData.nickname}</Text> : null}
           {share.analysisData.personalitySummary ? (
             <Text style={styles.analysisSummary} numberOfLines={5}>
@@ -847,7 +1229,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
       )}
 
       {share.type === "list" && share.listData && (
-        <GHPressable style={[styles.listBox, !isPremium && styles.contentBoxFrame]} onPress={handleContentPress(goToList)}>
+        <GHPressable style={styles.listBox} onPress={handleContentPress(goToList)}>
           {/* The "shared a list" info line moved one step further out — no
               longer even inside this box, now shared with review's own
               equal line just above the header/box boundary (see there for
@@ -857,7 +1239,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
             {share.listData.name}
           </Text>
           {share.listData.description ? (
-            <Text style={styles.shareMessage} numberOfLines={2}>
+            <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={1}>
               {share.listData.description}
             </Text>
           ) : null}
@@ -885,7 +1267,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
       )}
 
       {share.type === "review" && share.contentData && (
-        <Pressable style={[styles.shareBox, !isPremium && styles.contentBoxFrame]} onPress={handleContentPress(goToContent)}>
+        <Pressable style={styles.shareBox} onPress={handleContentPress(goToContent)}>
           <View style={styles.sharePoster}>{posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}</View>
           <View style={styles.shareTextCol}>
             <Text style={styles.shareTitle} numberOfLines={2}>
@@ -918,6 +1300,76 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
         </Pressable>
       )}
 
+      {share.type === "official" && share.officialText && (
+        <Pressable
+          style={styles.officialBox}
+          onPress={handleContentPress(share.contentId && share.contentType ? goToContent : undefined)}
+        >
+          {share.contentData ? (
+            // No separate title heading here (there used to be one) — every
+            // official post that reaches this branch already names the
+            // title inside its own sentence (e.g. "...right now:
+            // Oppenheimer!"), so a bold "Oppenheimer" heading right above
+            // that same sentence just repeated it. Poster + sentence only.
+            <View style={styles.officialContentRow}>
+              <Pressable style={styles.sharePoster} onPress={goToContent}>
+                {posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}
+              </Pressable>
+              <View style={styles.shareTextCol}>
+                <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+          )}
+          {premiumBorder}
+          {officialBorder}
+          {burstOverlayEl}
+        </Pressable>
+      )}
+
+      {share.type === "poll" && share.pollData && (
+        <View style={styles.pollBox}>
+          {officialBorder}
+          <Text style={styles.pollQuestion}>{share.pollData.question}</Text>
+          <View style={styles.pollOptionsCol}>
+            {pollOptions.map((option, i) => {
+              if (userVoteIndex == null) {
+                return (
+                  // key includes "-btn" so the button->result-bar switch below
+                  // mounts a genuinely NEW Pressable instead of restyling the
+                  // one that's still mid-touch from the tap that just caused
+                  // this switch — reusing the same native instance is what
+                  // let Android's press/ripple state get stuck rendering
+                  // "dark" after the very first vote on a poll (only a full
+                  // reload, which remounts everything, ever cleared it).
+                  <Pressable key={`${i}-btn`} style={styles.pollOptionButton} onPress={() => handleVote(i)}>
+                    <Text style={styles.pollOptionButtonText}>{option.text}</Text>
+                  </Pressable>
+                );
+              }
+              const percent = pollTotalVotes > 0 ? Math.round((option.voteCount / pollTotalVotes) * 100) : 0;
+              const isChosen = userVoteIndex === i;
+              return (
+                <Pressable key={`${i}-result`} style={styles.pollResultTrack} onPress={() => handleVote(i)}>
+                  <View style={[styles.pollResultFill, { width: `${percent}%` }]} />
+                  <View style={styles.pollResultRow}>
+                    <Text style={[styles.pollResultLabel, isChosen && styles.pollResultLabelChosen]} numberOfLines={1}>
+                      {isChosen ? `✓ ${option.text}` : option.text}
+                    </Text>
+                    <View style={styles.pollResultTrailing}>
+                      {option.topVoters && option.topVoters.length > 0 && <StackedAvatars users={option.topVoters} size={16} max={5} />}
+                      <Text style={styles.pollResultPercent}>{percent}%</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.pollVoteCountLine}>{t("vote_count", { count: pollTotalVotes })}</Text>
+        </View>
+      )}
+
       <View style={styles.footer}>{viewRow}</View>
       {likeStickerEl}
 
@@ -934,7 +1386,7 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
                   </Text>
                 </View>
                 <View style={styles.modalReviewerRow}>
-                  <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={26} disabled />
+                  <UserAvatar userId={share.user._id} username={share.user.username} profilePicUrl={share.user.profile_pic_url} size={26} disabled isOfficial={share.user.isOfficial} />
                   <Text style={styles.modalUsername} numberOfLines={1}>
                     {share.user.username}
                   </Text>
@@ -955,3 +1407,15 @@ export default function ShareCard({ share, onToggleLike, basePath }: Props) {
     </View>
   );
 }
+
+// React.memo — SharesFeedSection.tsx's FlatList renders one of these per
+// visible post; without this, liking one post (or any unrelated re-render
+// of an ancestor, e.g. the header's Paylaşımlar/Keşfet pill tap re-rendering
+// home/index.tsx) re-rendered *every* currently-mounted card, not just the
+// one that actually changed. Only pays off because every prop is now
+// actually stable across such re-renders: `share` keeps the same object
+// reference for every row `.map()` passes through untouched (only the
+// toggled item gets a new one), and `onToggleLike` is a `useCallback([])` in
+// the parent rather than a fresh per-row arrow function — see both call
+// sites' own comments.
+export default memo(ShareCard);

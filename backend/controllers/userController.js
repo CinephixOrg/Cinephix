@@ -18,6 +18,36 @@ import FavoriteEvent from "../models/FavoriteEvent.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
+// User text going into a hand-built $regex must be escaped first — an
+// unescaped string lets a caller inject regex metacharacters (at best
+// unintended matches — e.g. "Zach.ry" matching "Zachary" via the literal
+// "." acting as a wildcard, confirmed live — at worst a ReDoS-shaped
+// pattern). Same helper as customListRoute.js/reviewController.js/
+// movieRoute.js/seriesRoute.js already use.
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Blocks registering with the exact reserved name "cinephix" under any
+// case/diacritic disguise (e.g. "CİNEPHİX" with a Turkish dotted İ, which
+// naively lowercases to "ci̇nephi̇x" — an extra combining dot per İ, not a
+// plain "i" — rather than silently slipping past a plain .toLowerCase()
+// check). NFKD-normalizes, strips combining marks, lowercases, then strips
+// non-alphanumerics so spacing/punctuation obfuscation ("cine-phix",
+// "cine_phix") is also caught. Deliberately an exact-match block, not a
+// substring one — real accounts like "cinephix_6gnn" or
+// "cinephix_online_test" must stay registrable; only the bare reserved name
+// itself is off-limits. Leetspeak substitutions (e.g. "c1nephix") are
+// explicitly out of scope — not what was asked, and no such precedent
+// exists elsewhere in this codebase's validation.
+const RESERVED_USERNAME = "cinephix";
+function isReservedUsername(username) {
+  const normalized = username
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "") // strip combining diacritical marks
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  return normalized === RESERVED_USERNAME;
+}
+
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
@@ -46,6 +76,10 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   if (normalizedUsername.length < 3 || normalizedUsername.length > 20) {
     return sendError(res, 'Username must be between 3 and 20 characters', 400);
+  }
+
+  if (isReservedUsername(normalizedUsername)) {
+    return sendError(res, 'This username is reserved', 400);
   }
 
   if (password.length < 6) {
@@ -527,7 +561,7 @@ export const searchUsers = asyncHandler(async (req, res) => {
   const pipeline = [
     {
       $match: {
-        username: { $regex: query, $options: 'i' },
+        username: { $regex: escapeRegex(query), $options: 'i' },
         _id: { $ne: selfId }
       }
     },
@@ -777,6 +811,12 @@ export const updateUserBio = asyncHandler(async (req, res) => {
   if (bio !== undefined) updateData.bio = bio;
 
   if (username) {
+    // Same reserved-name guard as registration — a rename must not be able
+    // to reach "cinephix" (in any case/diacritic disguise) either, or this
+    // endpoint would just be an open bypass of that check.
+    if (isReservedUsername(username)) {
+      return sendError(res, 'This username is reserved', 400);
+    }
     const existingUser = await User.findOne({ username });
     if (existingUser && existingUser._id.toString() !== req.user.id) {
       return sendError(res, 'This username is already taken', 400);

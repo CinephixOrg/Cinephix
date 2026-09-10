@@ -57,10 +57,14 @@ interface Props {
   // own doc comment for why this is a per-bubble pixel-bounded scale, not one
   // flat percentage shared by every rank.
   selectedScale: number;
-  // Tier-gated bubble (Free's #1, or Plus's #4-5) — dimmed with a lock badge
-  // over it instead of its real ring/percentage. Still calls onSelect on tap
-  // (this component doesn't know about tiers or the subscription page) —
-  // MatchResultsCloud's own handler is what routes a locked tap differently.
+  // Tier-gated bubble (Free's #1, or Plus's #4-5) — MatchAvatarRing's own
+  // `locked` prop bakes a real blur into the photo itself (UserAvatar's
+  // `blurRadius`), not a translucent overlay; this component just adds the
+  // small lock badge on top of it. The percentage text below the ring is
+  // untouched either way — still the actual "tease." Still calls onSelect
+  // on tap (this component doesn't know about tiers or the subscription
+  // page) — MatchResultsCloud's own handler is what routes a locked tap
+  // differently.
   locked?: boolean;
 }
 
@@ -151,7 +155,7 @@ function MatchCloudBubble({ candidate, x, y, diameter, rank, bobAnim, lineBobAni
     <Animated.View style={[styles.wrap, { left: x - diameter / 2, top: y - diameter / 2, width: diameter, zIndex: isSelected ? 10 : 0 }]}>
       <Animated.View style={{ transform: [...bobAnim.getTranslateTransform(), { scale: scaleAnim }] }}>
         <Pressable onPress={handlePress} hitSlop={4}>
-          <MatchAvatarRing candidate={candidate} diameter={diameter} rank={rank} dimmed={locked} />
+          <MatchAvatarRing candidate={candidate} diameter={diameter} rank={rank} locked={locked} />
           {locked && (
             <View style={[styles.lockBadge, { top: diameter / 2 - 14, left: diameter / 2 - 14 }]} pointerEvents="none">
               <Ionicons name="lock-closed" size={16} color={colors.placeholder} />

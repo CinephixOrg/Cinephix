@@ -46,6 +46,11 @@ export interface ReviewAuthor {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  // Only populated for getPopularReviews/getReviewsFeed (Discover's own
+  // Reviews tab, ReviewFeedCard.tsx's tier ring/diamond) — not on
+  // getContentReviews/getFriendsReviews' own `.populate()` calls, which
+  // weren't asked to change and still project a plain username+avatar.
+  accountTier?: AccountTier;
 }
 
 export interface Review {
@@ -122,8 +127,32 @@ export type ActivityEvent =
   // same actor has also rated this same content — a bonus enrichment, not
   // guaranteed present.
   | { type: "watchlist_added"; actor: FeedUserRef; content: ActivityContent; rating?: number; createdAt: string }
-  | { type: "favorited"; actor: FeedUserRef; content: ActivityContent; createdAt: string }
-  | { type: "list_item_added"; actor: FeedUserRef; content: ActivityContent; listId: string; listName: string; createdAt: string };
+  // createdAt is genuinely absent (not just optional-but-usually-present)
+  // for anyone who favorited before FavoriteEvent's log started (see its
+  // own model comment) — ActivityRow.tsx renders no time-ago label when
+  // unset rather than lying about when this actually happened. Content
+  // Detail's own "Favorites" stat page (ContentFavoritedSection.tsx) is the
+  // one caller that regularly hits this unset case; the network Activity
+  // feed's own favorited events always have a real one.
+  | { type: "favorited"; actor: FeedUserRef; content: ActivityContent; createdAt?: string }
+  | { type: "list_item_added"; actor: FeedUserRef; content: ActivityContent; listId: string; listName: string; createdAt: string }
+  // The real Watchlist (to-watch queue) — distinct from `watchlist_added`
+  // above, which is actually this app's own inverted-naming "Watched List".
+  | { type: "towatch_added"; actor: FeedUserRef; content: ActivityContent; createdAt: string }
+  // No `content` — a follow isn't about a movie/series. `targetUser` is
+  // absent if that account was since deleted.
+  | { type: "followed"; actor: FeedUserRef; targetUser?: FeedUserRef; createdAt: string }
+  // No content preview here on purpose — a Share's own real content shape
+  // varies too much by `shareType` (recommendation/review carry a poster,
+  // list/analysis don't) for a one-line activity row; the actual post is
+  // one tap away in Medya's own feed.
+  | { type: "shared"; actor: FeedUserRef; shareType: "analysis" | "review" | "recommendation" | "list"; createdAt: string }
+  // Plus/Premium-viewer-only "so-and-so made the podium" news (server
+  // already omits this entirely for a Free viewer, this app never trusts a
+  // client-side check for a paywalled signal) — a live status, not a
+  // persisted event: `createdAt` is stamped "now" by the server on every
+  // request while still true, not a real historical timestamp.
+  | { type: "podium"; actor: FeedUserRef; category: "followed" | "watched" | "reviewed"; rank: 1 | 2 | 3; createdAt: string };
 
 export interface ActivityFeedResult {
   items: ActivityEvent[];
@@ -170,6 +199,10 @@ export interface PublicProfileFull extends PublicProfileBase {
   followers: string[];
   following: string[];
   createdAt: string;
+  // Present because GET /users/profile/:id spreads the full (lean) User
+  // document straight into the response — real schema field, not something
+  // this endpoint had to be taught to expose.
+  isOfficial?: boolean;
 }
 
 export type PublicProfile = PublicProfileFull | PublicProfileMasked;
@@ -616,12 +649,13 @@ export interface PopularThisWeekItem {
   topAdders?: FeedUserRef[]; // up to 3, present on popular-this-week/popular-with-friends
 }
 
-// Discover's Most Favorited/Highest Rated/Most Recommended podium —
-// always exactly 3 entries per list, all-time content signals
-// (GET /feed/leaderboard). Each list carries only its own single metric
-// (no cross-enrichment — an earlier version showed both favorite count and
-// rating on every card regardless of list, simplified back to one metric
-// per page per a follow-up request).
+// Discover's 5-category content podium — always exactly 3 entries per
+// list, all-time content signals (GET /feed/leaderboard). Each list
+// carries only its own single metric (no cross-enrichment — an earlier
+// version showed both favorite count and rating on every card regardless
+// of list, simplified back to one metric per page per a follow-up
+// request). mostWatched/mostReviewed added later, content-side twins of
+// the people podium's own identically-named categories below.
 interface LeaderboardContent {
   id: string;
   title: string;
@@ -641,15 +675,28 @@ export interface RecommendedLeaderboardItem {
   content: LeaderboardContent;
   recommendCount: number;
 }
+export interface WatchedLeaderboardItem {
+  content: LeaderboardContent;
+  watchedCount: number;
+}
+export interface ReviewedLeaderboardItem {
+  content: LeaderboardContent;
+  reviewCount: number;
+}
 export interface LeaderboardResult {
   mostFavorited: FavoritedLeaderboardItem[];
   highestRated: RatedLeaderboardItem[];
   mostRecommended: RecommendedLeaderboardItem[];
+  mostWatched: WatchedLeaderboardItem[];
+  mostReviewed: ReviewedLeaderboardItem[];
 }
 
 // Medya/Shares' own podium — ranks people, not content (GET
 // /feed/people-leaderboard). Only Most Watched has a movie/series
-// dimension; Most Followed/Most Reviewed ignore the optional type filter.
+// dimension; the rest ignore the optional type filter. mostLiked/
+// topRecommenders added later, alongside the content podium's own 2
+// additions above — see PeoplePodium.tsx's own doc comment for why (the
+// 3-way Free/Plus/Premium visibility split needed a round number).
 interface PodiumUser {
   id: string;
   username: string;
@@ -668,10 +715,30 @@ export interface MostReviewedItem {
   user: PodiumUser;
   reviewCount: number;
 }
+export interface MostLikedItem {
+  user: PodiumUser;
+  likeCount: number;
+}
+export interface TopRecommenderItem {
+  user: PodiumUser;
+  recommendCount: number;
+}
 export interface PeopleLeaderboardResult {
   mostFollowed: MostFollowedItem[];
   mostWatched: MostWatchedItem[];
   mostReviewed: MostReviewedItem[];
+  mostLiked: MostLikedItem[];
+  topRecommenders: TopRecommenderItem[];
+}
+
+// GET /feed/my-podium-placements — powers the "you made the podium!" popup
+// (see app/(app)/_layout.tsx). `category` matches PeopleLeaderboardResult's
+// own field names (backend's PODIUM_CATEGORY_KEYS) verbatim, not
+// PeoplePodium.tsx's own shorter CategoryKey union — PodiumNewsModal.tsx
+// maps between the two.
+export interface PodiumPlacement {
+  category: "mostFollowed" | "mostWatched" | "mostReviewed" | "mostLiked" | "topRecommenders";
+  rank: 1 | 2 | 3;
 }
 
 export type FeedActivityType = "rated" | "reviewed" | "watchlisted" | "followed";
@@ -680,10 +747,15 @@ export interface FeedUserRef {
   _id: string;
   username: string;
   profile_pic_url?: string;
-  // Only populated on Share.user (getShareFeed/getUserShares) — drives the
-  // Pro-tier gold card treatment on ShareCard, not present on other
-  // FeedUserRef usages (topViewers, FeedActivityItem.user).
+  // Populated on Share.user (getShareFeed/getUserShares, driving
+  // ShareCard's tier ring/diamond) and ActivityEvent.actor
+  // (getNetworkActivity, driving ActivityRow's own) — not on other
+  // FeedUserRef usages (topViewers, FeedActivityItem.user), which weren't
+  // asked to show a tier signal.
   accountTier?: AccountTier;
+  // Marks the single official Cinephix account (Share.user.isOfficial,
+  // getShareFeed/getUserShares) — drives ShareCard's verified badge.
+  isOfficial?: boolean;
 }
 
 export interface FeedActivityItem {
@@ -738,7 +810,18 @@ export interface PersonalActivityResult {
 // analysis/review/recommendation at the moment it was posted, never a live
 // reference (mirrors how chat's analysis_share/recommendation messages
 // already snapshot instead of referencing).
-export type ShareType = "analysis" | "review" | "recommendation" | "list";
+export type ShareType = "analysis" | "review" | "recommendation" | "list" | "official" | "poll";
+
+export type OfficialContentCategory = "trivia" | "tip" | "highlight" | "on_this_day" | "stats" | "announcement";
+
+export interface PollOption {
+  text: string;
+  voteCount: number;
+  // First up to 5 voters for this option, same shape/purpose as Share's own
+  // topViewers — only populated once results are visible (pre-vote option
+  // objects never carry this).
+  topVoters?: FeedUserRef[];
+}
 
 // Denormalized snapshot of a CustomList at share time — same {itemId,
 // itemType, title, poster_path} shape backend's hydratePreviewItems (also
@@ -763,6 +846,17 @@ export interface Share {
   contentData?: { title: string; posterUrl: string | null; releaseYear?: number }; // "review" | "recommendation"
   listId?: string; // "list" only
   listData?: { name: string; description?: string; itemCount: number; previewItems: ShareListPreviewItem[] }; // "list" only
+  officialCategory?: OfficialContentCategory; // "official" only
+  officialText?: string; // "official" only
+  // "official" only — zero or more words inside officialText rendered as
+  // tappable in-app links. Tip posts carry `href` (an absolute app route,
+  // passed straight to router.push). Trivia's title-referencing templates
+  // instead carry `contentId`/`contentType`, resolved against whichever
+  // stack (`basePath`) the card is rendered in — same as the existing
+  // single contentId/contentType fields' own content-detail navigation.
+  officialLinks?: { word: string; href?: string; contentId?: string; contentType?: ContentType }[];
+  pollData?: { question: string; options: PollOption[] }; // "poll" only
+  userVoteIndex?: number | null; // "poll" only — the caller's own vote, if any
   likeCount: number;
   liked: boolean;
   viewCount: number;
@@ -780,7 +874,9 @@ export interface ShareFeedResult {
 // not the plain string CustomList.owner is typed as, plus fromFollowing.
 export interface DiscoverListItem {
   _id: string;
-  owner: { _id: string; username: string; profile_pic_url?: string };
+  // accountTier drives SearchListCard.tsx's own Premium gold-frame
+  // treatment (both /discover and /popular now project it).
+  owner: { _id: string; username: string; profile_pic_url?: string; accountTier?: AccountTier };
   name: string;
   description: string;
   isPublic: boolean;
@@ -793,4 +889,7 @@ export interface DiscoverListItem {
   // Only present on /discover results — /popular reuses this same shape
   // without a following-relationship concept.
   fromFollowing?: boolean;
+  // Only present on /popular results — the caller's own like state for
+  // this list, needed for SearchListCard.tsx's interactive heart.
+  hasLiked?: boolean;
 }

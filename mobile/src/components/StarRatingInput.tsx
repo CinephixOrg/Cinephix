@@ -112,7 +112,16 @@ export default function StarRatingInput({ value, onChange, disabled, size = 30 }
         const rightValue = i * 2 + 2;
         const fill = displayValue >= rightValue ? "full" : displayValue >= leftValue ? "half" : "empty";
         return (
-          <View key={i} style={styles.starWrap} pointerEvents="none">
+          // key includes `fill`, not just the star's own index — same fix
+          // as ShareCard.tsx's poll buttons (same bug class): react-native-
+          // svg's <ClipPath>/<Rect> can leave a stale clip painted when only
+          // the Rect's own width prop changes between renders (an in-place
+          // half<->full<->empty update on a reused native SVG view), which
+          // is exactly the reported bug — dragging across stars left some
+          // of them showing an old fill state instead of the just-computed
+          // one. Forcing a fresh native view per fill state, instead of
+          // reusing/restyling one in place, guarantees no stale paint.
+          <View key={`${i}-${fill}`} style={styles.starWrap} pointerEvents="none">
             <Star fill={fill} size={size} colors={colors} clipId={`star-half-clip-${i}`} />
           </View>
         );

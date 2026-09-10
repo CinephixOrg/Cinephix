@@ -1,7 +1,23 @@
 import { useMemo } from "react";
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+// From react-native-gesture-handler, not react-native — this card's own
+// film strip now also nests inside ListsSwiper.tsx's outer horizontal
+// pager (same axis), which a plain ScrollView here can't negotiate against
+// — the drag just gets claimed by the outer pager (swipes to the next
+// list) instead of ever scrolling the strip. GHPressable specifically for
+// the card's own outer Pressable (the film strip's direct ancestor) — same
+// reasoning ShareCard.tsx's own list-post box already documents: every
+// Pressable ancestor of a gesture-handler scroller needs to itself be
+// gesture-handler's version, or it can claim the touch before the scroller
+// ever gets a chance to. The individual poster Pressables *inside* the
+// strip stay plain — they're children of the scroller, not ancestors, so
+// they're not part of this same negotiation.
+import { ScrollView, Pressable as GHPressable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
+import UserAvatar from "./UserAvatar";
+import TierGradientText from "./TierGradientText";
 import type { DiscoverListItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -13,6 +29,7 @@ const POSTER_BASE = "https://image.tmdb.org/t/p/w154";
 // list cards should look like that exact strip.
 const FILM_STRIP_POSTER_WIDTH = 56;
 const FILM_STRIP_POSTER_HEIGHT = FILM_STRIP_POSTER_WIDTH * 1.5;
+const CARD_RADIUS = 12;
 
 interface Props {
   list: DiscoverListItem;
@@ -27,15 +44,27 @@ interface Props {
 // Vertical list-preview card, backing both "Lists from Friends" and
 // "Popular Lists" — same design for both, per the user's explicit ask.
 // Owner avatar+username sit top-right (reversed from this card's earlier
-// top-left layout); below that, a flush "film strip" of preview posters —
+// top-left layout); below that, a description (if any, italic — see
+// `description` style) and then a flush "film strip" of preview posters —
 // same look as ShareCard.tsx's own list-post box (zero-gap, square-cornered
 // thumbnails, only the strip's outer ends rounded, thin colors.border
 // frame), reused directly rather than this card's earlier gapped/
-// individually-rounded poster row, per direct ask; description last. The
-// static "Following" badge that used to sit here (marking list.fromFollowing)
-// was removed per direct ask — list.fromFollowing itself is untouched and
-// still drives ListsSection.tsx's own "Lists from Friends" filtering,
-// only this card's own visual badge is gone.
+// individually-rounded poster row, per direct ask. The static "Following"
+// badge that used to sit here (marking list.fromFollowing) was removed per
+// direct ask — list.fromFollowing itself is untouched and still drives
+// ListsSection.tsx's own "Lists from Friends" filtering, only this card's
+// own visual badge is gone.
+// Also now this exact design's the one Discover's ListsSwiper.tsx uses too
+// (was search/SearchListCard.tsx's own different layout — a real correction:
+// "posta benziyo, see alldaki gibi olsun") — direct ask that the two stay
+// visually identical, the one addition being the like/view counts on the
+// bottom row (present here now regardless of caller).
+// Premium/Plus is shown via the owner's avatar ring + a metallic gradient-
+// filled username (TierGradientText, gold/silver off the same
+// TIER_FRAME_STYLES pair the ring itself uses) — NOT the gold card-border
+// SVG treatment ShareCard.tsx's posts use. That box-border stays a post-
+// only signal by direct ask ("sadece postta geçerli olsun") — an earlier
+// round had copied it here too, since undone.
 export default function DiscoverListCard({ list, onPress, basePath }: Props) {
   const { colors } = useTheme();
   const router = useRouter();
@@ -43,44 +72,61 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
   const styles = useMemo(() => StyleSheet.create({
     card: {
       backgroundColor: colors.base200,
-      borderRadius: 12,
+      borderRadius: CARD_RADIUS,
       padding: 12,
       marginBottom: 12,
     },
     topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
     name: { flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
     ownerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-    ownerName: { fontSize: 12, color: colors.placeholder },
-    avatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.base300 },
-    avatarFallback: { alignItems: "center", justifyContent: "center" },
-    avatarFallbackText: { fontFamily: fonts.bold, fontSize: 9, color: colors.primary },
     filmStripContainer: { marginTop: 10, borderRadius: CASCADE_POSTER_RADIUS, borderWidth: 1, borderColor: colors.border, overflow: "hidden" },
     filmStripPoster: { width: FILM_STRIP_POSTER_WIDTH, height: FILM_STRIP_POSTER_HEIGHT, backgroundColor: colors.base300, overflow: "hidden" },
     filmStripFallback: { alignItems: "center", justifyContent: "center" },
     filmStripFallbackText: { color: colors.placeholder, fontSize: 9, textAlign: "center", paddingHorizontal: 3 },
-    description: { fontSize: 12, color: colors.baseContent, marginTop: 10, lineHeight: 16 },
-    count: { fontSize: 11, color: colors.placeholder, marginTop: 8 },
+    // Above the film strip now (was below it) and italic — direct ask;
+    // only rendered at all when a description exists.
+    description: { fontSize: 12, fontStyle: "italic", color: colors.baseContent, marginTop: 10, lineHeight: 16 },
+    // Item count (left) + like/view (right) — was just the plain count on
+    // its own line; direct ask to add engagement counts to this card's
+    // bottom-right, same icons search/SearchListCard.tsx's own footer uses.
+    footerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 },
+    count: { fontSize: 11, color: colors.placeholder },
+    engagementRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    engagementUnit: { flexDirection: "row", alignItems: "center", gap: 4 },
+    engagementText: { fontFamily: fonts.medium, fontSize: 11, color: colors.placeholder },
   }), [colors]);
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <GHPressable style={styles.card} onPress={onPress}>
       <View style={styles.topRow}>
         <Text style={styles.name} numberOfLines={1}>
           {list.name}
         </Text>
         <View style={styles.ownerRow}>
-          <Text style={styles.ownerName} numberOfLines={1}>
-            {list.owner.username}
-          </Text>
-          {list.owner.profile_pic_url ? (
-            <Image source={{ uri: list.owner.profile_pic_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <Text style={styles.avatarFallbackText}>{list.owner.username.slice(0, 2).toUpperCase()}</Text>
-            </View>
-          )}
+          <TierGradientText
+            text={list.owner.username}
+            tier={list.owner.accountTier}
+            fontSize={12}
+            color={colors.placeholder}
+            gradientId={`discoverListOwnerGradient-${list._id}`}
+          />
+          <UserAvatar
+            userId={list.owner._id}
+            username={list.owner.username}
+            profilePicUrl={list.owner.profile_pic_url}
+            size={22}
+            tier={list.owner.accountTier}
+            frameBackgroundColor={colors.base200}
+            disabled
+          />
         </View>
       </View>
+
+      {list.description ? (
+        <Text style={styles.description} numberOfLines={1}>
+          {list.description}
+        </Text>
+      ) : null}
 
       {list.previewItems.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filmStripContainer}>
@@ -104,13 +150,19 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
         </ScrollView>
       )}
 
-      {list.description ? (
-        <Text style={styles.description} numberOfLines={2}>
-          {list.description}
-        </Text>
-      ) : null}
-
-      <Text style={styles.count}>{t("item_count", { count: list.items.length })}</Text>
-    </Pressable>
+      <View style={styles.footerRow}>
+        <Text style={styles.count}>{t("item_count", { count: list.items.length })}</Text>
+        <View style={styles.engagementRow}>
+          <View style={styles.engagementUnit}>
+            <Ionicons name="heart" size={13} color={colors.placeholder} />
+            <Text style={styles.engagementText}>{list.likeCount}</Text>
+          </View>
+          <View style={styles.engagementUnit}>
+            <Ionicons name="eye-outline" size={14} color={colors.placeholder} />
+            <Text style={styles.engagementText}>{list.views}</Text>
+          </View>
+        </View>
+      </View>
+    </GHPressable>
   );
 }

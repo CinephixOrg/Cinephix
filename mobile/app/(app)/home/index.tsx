@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { View, Animated, StyleSheet, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { useNavigation } from "expo-router";
+import { useNavigation, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import SharesFeedSection from "../../../src/components/home/SharesFeedSection";
 import KesfetSection from "../../../src/components/home/KesfetSection";
@@ -31,6 +31,15 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
+  // Set only by PodiumNewsModal.tsx's own "you made the podium!" popup
+  // (`router.push` to `/home?podiumCategory=liked` etc.) — read once below
+  // to force the Paylaşımlar tab and hand the category down to
+  // SharesFeedSection/PeoplePodium, which does the actual page-jump.
+  const {
+    podiumCategory,
+    outerTab: outerTabParam,
+    scope: scopeParam,
+  } = useLocalSearchParams<{ podiumCategory?: string; outerTab?: string; scope?: string }>();
   const { width: screenWidth } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   // Drives CapsuleTabSwitcher's window directly off the pager's own live
@@ -50,6 +59,32 @@ export default function HomeScreen() {
   const [visitedTabs, setVisitedTabs] = useState<Set<OuterTab>>(() => new Set(["shares"]));
 
   const markVisited = (tab: OuterTab) => setVisitedTabs((prev) => (prev.has(tab) ? prev : new Set(prev).add(tab)));
+
+  // Forces Paylaşımlar when arriving with a `podiumCategory` param — covers
+  // the case where this screen was already mounted with Keşfet showing
+  // (outerTab's own default is already "shares", so a *fresh* mount needs
+  // no forcing at all; this only matters if the user had switched tabs
+  // before tapping the podium popup). Not animated — reads as instant
+  // rather than an unrelated slide happening right as the screen appears.
+  useEffect(() => {
+    if (!podiumCategory) return;
+    setOuterTab("shares");
+    markVisited("shares");
+    scrollRef.current?.scrollTo({ x: 0, animated: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [podiumCategory]);
+
+  // Forces Keşfet when arriving with `?outerTab=discover` — an official-
+  // account tip's own "Discover" link uses this. Independent of the
+  // podiumCategory effect above (the two params are never sent together in
+  // practice); not animated, same "reads as instant" reasoning.
+  useEffect(() => {
+    if (outerTabParam !== "discover") return;
+    setOuterTab("discover");
+    markVisited("discover");
+    scrollRef.current?.scrollTo({ x: screenWidth, animated: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outerTabParam]);
 
   // Tap path (from the header pill) — updates state and imperatively
   // scrolls the pager to match, so both interaction paths always agree.
@@ -130,7 +165,11 @@ export default function HomeScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        <View style={styles.page}>{visitedTabs.has("shares") && <SharesFeedSection />}</View>
+        <View style={styles.page}>
+          {visitedTabs.has("shares") && (
+            <SharesFeedSection jumpToPodiumCategory={podiumCategory} initialScope={scopeParam === "following" ? "following" : undefined} />
+          )}
+        </View>
         <View style={styles.page}>{visitedTabs.has("discover") && <KesfetSection isActive={outerTab === "discover"} />}</View>
       </ScrollView>
     </View>

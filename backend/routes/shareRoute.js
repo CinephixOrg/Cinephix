@@ -4,6 +4,7 @@ import {
   getShareFeed,
   toggleShareLike,
   registerShareView,
+  voteOnPoll,
   getUserShares,
   deleteShare,
 } from "../controllers/shareController.js";
@@ -16,6 +17,7 @@ router.get("/user/:userId", authMiddleware, getUserShares);
 router.post("/", authMiddleware, createShare);
 router.post("/:id/like", authMiddleware, toggleShareLike);
 router.post("/:id/view", authMiddleware, registerShareView);
+router.post("/:id/vote", authMiddleware, voteOnPoll);
 router.delete("/:id", authMiddleware, deleteShare);
 
 export default router;

@@ -6,6 +6,7 @@ import { useAuth } from "../../src/context/AuthContext";
 import { useChat } from "../../src/context/ChatContext";
 import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
+import PodiumNewsModal from "../../src/components/PodiumNewsModal";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -34,64 +35,73 @@ export default function AppLayout() {
   // tab-level-only screen's "back" always falls through to "go to the first
   // tab" regardless of which tab you actually came from.
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: { backgroundColor: colors.base200, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.placeholder,
-        tabBarLabelStyle: { fontFamily: fonts.medium },
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{ title: t("Medya"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{ title: t("Search"), tabBarIcon: TabIcon("search", "search-outline") }}
-      />
-      <Tabs.Screen
-        name="watchlist"
-        options={{
-          title: t("Watched List"),
-          tabBarIcon: TabIcon("bookmark", "bookmark-outline"),
-          href: null,
+    <>
+      {/* Checks the current user's own podium placements once — this
+          component only ever mounts once per real login (AppLayout itself
+          only renders once `user` exists, and unmounts on logout), so this
+          naturally reads as "once per app session" without needing any
+          separate persisted "already shown" flag. See its own doc comment
+          for the full "why here" reasoning. */}
+      <PodiumNewsModal />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: false,
+          tabBarStyle: { backgroundColor: colors.base200, borderTopColor: colors.border },
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.placeholder,
+          tabBarLabelStyle: { fontFamily: fonts.medium },
         }}
-      />
-      <Tabs.Screen
-        name="to-watch"
-        options={{
-          title: t("Watchlist"),
-          tabBarIcon: TabIcon("time", "time-outline"),
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="lists"
-        options={{
-          title: t("Lists"),
-          tabBarIcon: TabIcon("list", "list-outline"),
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="match"
-        options={{ title: t("Sync"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
-      />
-      <Tabs.Screen
-        name="socials"
-        options={{
-          title: t("Socials"),
-          tabBarIcon: TabIcon("people", "people-outline"),
-          tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{ title: t("Profile"), tabBarIcon: TabIcon("person-circle", "person-circle-outline") }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="home"
+          options={{ title: t("Medya"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
+        />
+        <Tabs.Screen
+          name="search"
+          options={{ title: t("Search"), tabBarIcon: TabIcon("search", "search-outline") }}
+        />
+        <Tabs.Screen
+          name="watchlist"
+          options={{
+            title: t("Watched List"),
+            tabBarIcon: TabIcon("bookmark", "bookmark-outline"),
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="to-watch"
+          options={{
+            title: t("Watchlist"),
+            tabBarIcon: TabIcon("time", "time-outline"),
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="lists"
+          options={{
+            title: t("Lists"),
+            tabBarIcon: TabIcon("list", "list-outline"),
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="match"
+          options={{ title: t("Sync"), tabBarIcon: TabIcon("sparkles", "sparkles-outline") }}
+        />
+        <Tabs.Screen
+          name="socials"
+          options={{
+            title: t("Socials"),
+            tabBarIcon: TabIcon("people", "people-outline"),
+            tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{ title: t("Profile"), tabBarIcon: TabIcon("person-circle", "person-circle-outline") }}
+        />
+      </Tabs>
+    </>
   );
 }

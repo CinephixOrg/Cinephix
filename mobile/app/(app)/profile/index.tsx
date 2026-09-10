@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
-import { useFocusEffect, useNavigation } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { Drawer } from "react-native-drawer-layout";
 import { useProfile } from "../../../src/context/ProfileContext";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
-import ProfileCategoryTabs from "../../../src/components/profile/ProfileCategoryTabs";
+import ProfileCategoryTabs, { type Category } from "../../../src/components/profile/ProfileCategoryTabs";
 import ProfileDrawerContent from "../../../src/components/profile/ProfileDrawerContent";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import { useTheme } from "../../../src/context/ThemeContext";
@@ -35,6 +35,13 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const { profile, cineGraph, favorites, shareCount, loaded, error, ensureLoaded, refresh } = useProfile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Deep-link support (e.g. official-account tip posts linking a word
+  // straight to "your favorites"/"your CineGraph"/"your analysis") — same
+  // `tab` param name and validation shape as app/user/[id]/index.tsx's own
+  // public-profile equivalent.
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  const VALID_CATEGORIES: Category[] = ["sharings", "favorites", "cinegraph", "analyses"];
+  const initialCategory = VALID_CATEGORIES.includes(tab as Category) ? (tab as Category) : undefined;
 
   useEffect(() => {
     navigation.setOptions({
@@ -97,7 +104,7 @@ export default function ProfileScreen() {
       <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
         <ProfileHeaderInstagram profile={profile} shareCount={shareCount} />
         <View style={styles.tabContent}>
-          <ProfileCategoryTabs favorites={favorites} cineGraph={cineGraph} />
+          <ProfileCategoryTabs favorites={favorites} cineGraph={cineGraph} initialCategory={initialCategory} />
         </View>
       </ScrollView>
     </Drawer>

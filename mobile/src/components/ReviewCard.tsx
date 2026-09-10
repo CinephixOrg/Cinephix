@@ -12,9 +12,16 @@ import { fonts } from "../theme/typography";
 
 interface Props {
   review: Review;
+  // Content Detail's own 3-review preview only — caps the review text at a
+  // few lines instead of showing it in full, and (when `onPress` is also
+  // given) makes the whole card tappable. Every other caller (the full "See
+  // all" list, Search's reviews tab) leaves both unset and gets the
+  // original untruncated, non-interactive card.
+  truncated?: boolean;
+  onPress?: () => void;
 }
 
-export default function ReviewCard({ review }: Props) {
+export default function ReviewCard({ review, truncated, onPress }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => StyleSheet.create({
   card: { backgroundColor: colors.base200, borderRadius: 12, padding: 14, marginBottom: 10 },
@@ -54,7 +61,7 @@ export default function ReviewCard({ review }: Props) {
   };
 
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={onPress}>
       <View style={styles.header}>
         <UserAvatar userId={review.user._id} username={review.user.username} profilePicUrl={review.user.profile_pic_url} size={36} />
         <View style={styles.headerText}>
@@ -79,7 +86,9 @@ export default function ReviewCard({ review }: Props) {
         </Pressable>
       </View>
 
-      <Text style={styles.text}>{review.text}</Text>
-    </View>
+      <Text style={styles.text} numberOfLines={truncated ? 5 : undefined} ellipsizeMode="tail">
+        {review.text}
+      </Text>
+    </Pressable>
   );
 }

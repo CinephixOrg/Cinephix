@@ -9,7 +9,12 @@ const { Schema } = mongoose;
 const shareSchema = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, enum: ["analysis", "review", "recommendation", "list"], required: true },
+    type: { type: String, enum: ["analysis", "review", "recommendation", "list", "official", "poll"], required: true },
+
+    // Denormalized at creation time by officialContentService (the poster
+    // is known to be official right when the doc is created) so getShareFeed
+    // can boost these in its score $addFields without an extra $lookup.
+    isOfficialPost: { type: Boolean, default: false },
 
     // type: "analysis"
     analysisData: { type: Schema.Types.Mixed },
@@ -21,7 +26,9 @@ const shareSchema = new Schema(
     // type: "recommendation"
     note: { type: String, trim: true, maxlength: 300 },
 
-    // type: "review" | "recommendation"
+    // type: "review" | "recommendation" | "official" (trivia/highlight/
+    // on-this-day posts that reference a specific title reuse this same
+    // generic content snapshot rather than a dedicated field set)
     contentId: { type: String },
     contentType: { type: String, enum: ["movie", "series"] },
     contentData: {
@@ -42,6 +49,40 @@ const shareSchema = new Schema(
           itemType: { type: String, enum: ["movie", "series"] },
           title: String,
           poster_path: String,
+        },
+      ],
+    },
+
+    // type: "official" — the official Cinephix account's own auto-posted
+    // content (see backend/services/officialContentService.js)
+    officialCategory: {
+      type: String,
+      enum: ["trivia", "tip", "highlight", "on_this_day", "stats", "announcement"],
+    },
+    officialText: { type: String, maxlength: 500 },
+    // "official" only — zero or more words inside officialText rendered as
+    // tappable in-app links (ShareCard.tsx's renderTextWithLinks). Tips
+    // carry at most one absolute-route link (`href`, mirrors
+    // OfficialContent.linkWord/linkHref, see that model's own comment).
+    // Trivia's title-referencing templates instead carry a `contentId`/
+    // `contentType` pair per link — resolved client-side against whichever
+    // stack (`basePath`) the card happens to be rendered in, same as the
+    // existing single contentId/contentType fields' own goToContent already
+    // does, rather than a hardcoded absolute path. Same-day-release trivia
+    // needs two of these at once (one per title) — an array rather than a
+    // single field pair specifically to support that two-link case.
+    officialLinks: [{ word: String, href: String, contentId: String, contentType: { type: String, enum: ["movie", "series"] } }],
+
+    // type: "poll" — closed-option only (never open-ended/comment-inviting,
+    // since this app has no comment-writing feature); Instagram-style live
+    // percentage results, one vote per user, revoting swaps the vote rather
+    // than adding a second one.
+    pollData: {
+      question: String,
+      options: [
+        {
+          text: String,
+          votes: [{ type: Schema.Types.ObjectId, ref: "User" }],
         },
       ],
     },

@@ -9,21 +9,40 @@ import { timeAgo } from "../utils/timeAgo";
 import type { ActivityEvent } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w92";
+
+// Same icon choices as PersonalActivityRow.tsx's own ICON map (profile's
+// self-activity log) for every type the two share — direct ask to reuse
+// that "nicer" design rather than this file's own previous bare "-outline"
+// glyphs. towatch_added/followed/shared/podium have no equivalent there
+// (Personal doesn't track any of the four), picked fresh in the same
+// solid-glyph style.
+const ICON: Record<ActivityEvent["type"], keyof typeof Ionicons.glyphMap> = {
+  rated: "star",
+  reviewed: "pencil",
+  watchlist_added: "checkmark-done",
+  favorited: "heart",
+  list_item_added: "list",
+  towatch_added: "bookmark",
+  followed: "person-add",
+  shared: "share-social",
+  podium: "trophy",
+};
 
 interface Props {
   event: ActivityEvent;
   basePath: "/home" | "/search";
 }
 
-// One row of network activity — every type here leads with a single icon
-// (matching `reviewed`'s original chatbox glyph), each icon distinct enough
-// to not be confused with another (e.g. `favorited`'s heart vs. `rated`'s
-// half-star), followed by a real, dimmed sentence embedding the title,
-// translated across this app's ~12 languages via the same
-// {{var}}-interpolated-key convention used elsewhere (e.g. "Created list
-// \"{{name}}\"").
+// One row of network activity — every type here leads with a small circular
+// icon badge (`ICON` above, same solid-glyph choices as PersonalActivityRow
+// — this file's own icons used to be bare "-outline" glyphs with no
+// background, changed on direct ask to match that "nicer" design), followed
+// by a real, dimmed sentence embedding the title, translated across this
+// app's ~12 languages via the same {{var}}-interpolated-key convention used
+// elsewhere (e.g. "Created list \"{{name}}\"").
 // `rated` reads "Rated ★★★★☆ for {{title}}" as ONE reflowing `Text` — "Rated"
 // and "for {{title}}" as plain text, the stars as a *plain string*
 // (`ratingStars()`, same 1-10→0.5-5/full-stars/"1/2" logic
@@ -75,9 +94,26 @@ export default function ActivityRow({ event, basePath }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
 
+  // `followed`/`shared`/`podium` have no content — the most useful tap
+  // target for each is a relevant person's profile instead: `followed`
+  // goes to whoever got followed (more interesting than the actor, already
+  // shown by the row's own avatar/username), `shared`/`podium` go to the
+  // actor's own profile (see their Shares tab / confirm the podium spot).
   const goToTarget = () => {
-    router.push(`${basePath}/content/${event.content.type}/${event.content.id}` as any);
+    if ("content" in event) {
+      router.push(`${basePath}/content/${event.content.type}/${event.content.id}` as any);
+    } else if (event.type === "followed") {
+      if (event.targetUser) router.push(`/user/${event.targetUser._id}` as any);
+    } else {
+      router.push(`/user/${event.actor._id}` as any);
+    }
   };
+
+  // Same tier signal as ShareCard.tsx's own posts and ReviewFeedCard.tsx's
+  // own reviewer row — UserAvatar's TierAvatarFrame ring plus an inline
+  // diamond next to the username, both from tierFrames.ts.
+  const tierLabel = event.actor.accountTier === "plus" || event.actor.accountTier === "premium" ? event.actor.accountTier : null;
+  const tierMark = tierLabel ? <Ionicons name="diamond" size={10} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
 
   // Same star-count logic as StarRatingDisplay.tsx (1-10 -> 0.5-5 scale,
   // full stars only, "1/2" for a half) but built as a plain string instead
@@ -94,27 +130,27 @@ export default function ActivityRow({ event, basePath }: Props) {
   };
 
   // Splits an already-*resolved* (post-t()) sentence around one substring
-  // and renders it as ONE reflowing `Text` — before-text, a `Pressable`
-  // (wrapping a small `Text`) for the tappable segment, after-text, all as
-  // children of the same outer Text — rather than a flex-row of separate
-  // pieces. A flex-row version was tried first and, like `rated`'s own
-  // earlier attempts (see that comment above), wrapped too early: flexbox
-  // treats each sibling as an atomic block, so the link+after piece jumped
-  // *entirely* to line 2 the moment it didn't fit next to `before`, rather
-  // than filling the rest of line 1 first. True "fill the line, then wrap"
-  // needs everything inside one Text. Embedding a real `Pressable` inline
-  // inside `Text` was avoided in an earlier round out of caution about
-  // older React Native's inconsistent Android support for that — checked
-  // this app's actual version (React Native 0.86, Expo SDK 57, New
-  // Architecture/Fabric by default) before assuming that old caution still
-  // applies here; inline non-Text content inside Text is far more mature
-  // on this stack. Nested Pressable-in-Pressable (this one inside the row's
-  // own outer Pressable) remains this app's proven mechanism for "the
-  // inner tap target wins, not the ancestor" (ListRailCard.tsx/
-  // ReviewSwipeCard.tsx's `detailsButton` inside `detailsCatcher`) — the
-  // untested part is specifically whether that same priority holds once
-  // the inner Pressable is laid out *inline inside Text* rather than as a
-  // block sibling, which is why this is worth a real on-device check.
+  // and renders it as ONE reflowing `Text` — before-text, the tappable
+  // segment, after-text, all as children of the same outer Text — rather
+  // than a flex-row of separate pieces. A flex-row version was tried first
+  // and, like `rated`'s own earlier attempts (see that comment above),
+  // wrapped too early: flexbox treats each sibling as an atomic block, so
+  // the link+after piece jumped *entirely* to line 2 the moment it didn't
+  // fit next to `before`, rather than filling the rest of line 1 first.
+  // True "fill the line, then wrap" needs everything inside one Text.
+  // The tappable segment used to be a `Pressable` embedded inline inside
+  // Text (with a hand-guessed `top: 2` nudge on its wrapper, ever a genuine
+  // pixel measurement) — reported live as visibly shifted out of position,
+  // confirming the concern this file's own earlier comment already flagged
+  // as unverified. `ShareCard.tsx`'s own inline "watchlist" link had hit
+  // this *exact* problem in an earlier round and settled on a plain nested
+  // `Text` with its own `onPress` instead of a `Pressable` — no wrapper
+  // View sitting inside Text with its own layout quirks to fight, just
+  // another run of text that happens to be tappable, so it shares the
+  // surrounding line's real baseline automatically. Ported that fix here
+  // rather than re-guessing another nudge value. Nested Text-in-Text still
+  // correctly claims its own tap before the row's outer Pressable sees it,
+  // confirmed by that same ShareCard precedent.
   // Also deliberately not the react-i18next `Trans` component (never used
   // anywhere else in this app, and would need every locale's translation
   // re-authored with embedded component tags at the exact right position).
@@ -135,9 +171,9 @@ export default function ActivityRow({ event, basePath }: Props) {
     return (
       <Text style={styles.sentence} numberOfLines={2}>
         {fullText.slice(0, idx)}
-        <Pressable style={styles.inlineLinkWrap} onPress={onLinkPress}>
-          <Text style={styles.link}>{fullText.slice(idx, idx + linkText.length)}</Text>
-        </Pressable>
+        <Text style={styles.link} onPress={onLinkPress}>
+          {fullText.slice(idx, idx + linkText.length)}
+        </Text>
         {fullText.slice(idx + linkText.length)}
       </Text>
     );
@@ -155,6 +191,20 @@ export default function ActivityRow({ event, basePath }: Props) {
         // flex-start (not center) so the icon aligns with the sentence's
         // *first* line when it wraps to 2 lines.
         detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 3 },
+        // Small circular badge around each type's icon — same treatment as
+        // PersonalActivityRow.tsx's own `iconWrap` (colors.base200 chip,
+        // solid glyph in colors.primary), scaled down to fit inline with
+        // the sentence text instead of that file's own bigger row-leading
+        // version (this row already has UserAvatar for "who", the icon here
+        // only ever needs to say "what").
+        iconWrap: {
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: colors.base200,
+          alignItems: "center",
+          justifyContent: "center",
+        },
         sentence: { flex: 1, fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
         // The star-string nested inside `sentence` for `rated` — same
         // filled-star color StarRatingDisplay itself uses. Explicit
@@ -165,29 +215,18 @@ export default function ActivityRow({ event, basePath }: Props) {
         // off-line — same fix `link` below needs for the same reason.
         starsInline: { fontFamily: fonts.medium, fontSize: 13, color: colors.primary },
         // The tappable substring within a sentence (a list name, or the
-        // word "favorites") — same font metrics as `sentence`.
+        // word "favorites") — same font metrics as `sentence`, same reason
+        // as `starsInline` above. A plain nested `Text` with its own
+        // `onPress` (no wrapping Pressable/View) — that wrapper used to be
+        // exactly what threw its vertical position off, per this file's own
+        // `renderLinkedSentence` comment.
         link: { fontFamily: fonts.medium, fontSize: 13, color: colors.primary },
-        // The Pressable wrapping `link`'s Text, embedded inline inside the
-        // sentence Text. Matching font metrics on `link` itself wasn't the
-        // fix for it reading as sitting above the rest of the line — it's
-        // the *View* (Pressable, not Text) that RN's text layout engine
-        // positions differently by default when embedded inline, and this
-        // app's custom fonts (`theme/typography`) likely have different
-        // ascent/descent metrics than whatever generic baseline the layout
-        // engine assumes for an inline View, compounding it. Tried RN's
-        // own `verticalAlign` (the documented mechanism for aligning an
-        // inline image/view within text) first — TypeScript rejects it on
-        // a View/Pressable's style in this RN version (only valid on
-        // Text), so it isn't the supported route here. This is a small,
-        // unverified manual nudge instead — genuinely a best guess without
-        // being able to see it rendered; may need `top` adjusted up or
-        // down based on how it actually looks.
-        inlineLinkWrap: { position: "relative", top: 2 },
         // Secondary line under a sentence's own star rating (rated always;
         // watchlist_added only when the bonus rating is present) — indented
-        // to align under the sentence text rather than the icon, since it's
-        // supplementary detail about the sentence, not its own new row.
-        ratingRow: { marginTop: 3, marginLeft: 18 },
+        // to align under the sentence text rather than the icon (20px badge
+        // + 5px detailRow gap), since it's supplementary detail about the
+        // sentence, not its own new row.
+        ratingRow: { marginTop: 3, marginLeft: 25 },
         poster: { width: 32, height: 48, borderRadius: 5, backgroundColor: colors.base300 },
       }),
     [colors]
@@ -195,18 +234,31 @@ export default function ActivityRow({ event, basePath }: Props) {
 
   return (
     <Pressable style={styles.row} onPress={goToTarget}>
-      <UserAvatar userId={event.actor._id} username={event.actor.username} profilePicUrl={event.actor.profile_pic_url} size={32} />
+      <UserAvatar
+        userId={event.actor._id}
+        username={event.actor.username}
+        profilePicUrl={event.actor.profile_pic_url}
+        size={32}
+        tier={event.actor.accountTier}
+      />
       <View style={styles.textCol}>
         <View style={styles.headerRow}>
           <Text style={styles.username} numberOfLines={1}>
             {event.actor.username}
           </Text>
-          <Text style={styles.time}>{timeAgo(event.createdAt)}</Text>
+          {tierMark}
+          {/* Absent for a `favorited` event whose actor favorited this
+              before FavoriteEvent's log existed (see that type's own
+              comment in types/index.ts) — omitted rather than showing a
+              fake/wrong time. Every other event type always has a real one. */}
+          {event.createdAt && <Text style={styles.time}>{timeAgo(event.createdAt)}</Text>}
         </View>
 
         {event.type === "rated" && (
           <View style={styles.detailRow}>
-            <Ionicons name="star-half-outline" size={13} color={colors.placeholder} />
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.rated} size={11} color={colors.primary} />
+            </View>
             <Text style={styles.sentence} numberOfLines={2}>
               {t("Rated")} <Text style={styles.starsInline}>{ratingStars(event.value)}</Text>{" "}
               {t("for {{title}}", { title: event.content.title })}
@@ -217,7 +269,9 @@ export default function ActivityRow({ event, basePath }: Props) {
         {event.type === "watchlist_added" && (
           <>
             <View style={styles.detailRow}>
-              <Ionicons name="bookmark-outline" size={13} color={colors.placeholder} />
+              <View style={styles.iconWrap}>
+                <Ionicons name={ICON.watchlist_added} size={11} color={colors.primary} />
+              </View>
               <Text style={styles.sentence} numberOfLines={2}>
                 {t("Added {{title}} to their watched list", { title: event.content.title })}
               </Text>
@@ -232,7 +286,9 @@ export default function ActivityRow({ event, basePath }: Props) {
 
         {event.type === "reviewed" && (
           <View style={styles.detailRow}>
-            <Ionicons name="chatbox-outline" size={13} color={colors.placeholder} />
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.reviewed} size={11} color={colors.primary} />
+            </View>
             <Text style={styles.sentence} numberOfLines={2}>
               {t("Wrote a review for {{title}}", { title: event.content.title })}
             </Text>
@@ -249,7 +305,9 @@ export default function ActivityRow({ event, basePath }: Props) {
             const sentence = t("Added {{title}} to their favorites", { title: event.content.title });
             return (
               <View style={styles.detailRow}>
-                <Ionicons name="heart-outline" size={13} color={colors.placeholder} />
+                <View style={styles.iconWrap}>
+                  <Ionicons name={ICON.favorited} size={11} color={colors.primary} />
+                </View>
                 {renderLinkedSentence(sentence, favoritesWord, () =>
                   router.push(`/user/${event.actor._id}?tab=favorites` as any)
                 )}
@@ -259,7 +317,9 @@ export default function ActivityRow({ event, basePath }: Props) {
 
         {event.type === "list_item_added" && (
           <View style={styles.detailRow}>
-            <Ionicons name="albums-outline" size={13} color={colors.placeholder} />
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.list_item_added} size={11} color={colors.primary} />
+            </View>
             {renderLinkedSentence(
               t('Added {{title}} to their list "{{listName}}"', { title: event.content.title, listName: event.listName }),
               event.listName,
@@ -267,12 +327,78 @@ export default function ActivityRow({ event, basePath }: Props) {
             )}
           </View>
         )}
+
+        {event.type === "towatch_added" && (
+          <View style={styles.detailRow}>
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.towatch_added} size={11} color={colors.primary} />
+            </View>
+            <Text style={styles.sentence} numberOfLines={2}>
+              {t("Added {{title}} to their watchlist", { title: event.content.title })}
+            </Text>
+          </View>
+        )}
+
+        {event.type === "followed" && event.targetUser && (
+          <View style={styles.detailRow}>
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.followed} size={11} color={colors.primary} />
+            </View>
+            {renderLinkedSentence(
+              t("Started following {{username}}", { username: event.targetUser.username }),
+              event.targetUser.username,
+              () => router.push(`/user/${event.targetUser!._id}` as any)
+            )}
+          </View>
+        )}
+
+        {event.type === "shared" && (
+          <View style={styles.detailRow}>
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.shared} size={11} color={colors.primary} />
+            </View>
+            <Text style={styles.sentence} numberOfLines={2}>
+              {/* {{medya}} pulls the already-translated "Medya" nav-tab
+                  label (theme/typography's own convention elsewhere in
+                  this file — reuse an existing key for a proper-noun/brand
+                  word rather than re-translating it inside 4 new keys). */}
+              {event.shareType === "review"
+                ? t("Shared a review to {{medya}}", { medya: t("Medya") })
+                : event.shareType === "recommendation"
+                  ? t("Shared a recommendation to {{medya}}", { medya: t("Medya") })
+                  : event.shareType === "list"
+                    ? t("Shared a list to {{medya}}", { medya: t("Medya") })
+                    : t("Shared an analysis to {{medya}}", { medya: t("Medya") })}
+            </Text>
+          </View>
+        )}
+
+        {event.type === "podium" && (
+          <View style={styles.detailRow}>
+            <View style={styles.iconWrap}>
+              <Ionicons name={ICON.podium} size={11} color={colors.primary} />
+            </View>
+            <Text style={styles.sentence} numberOfLines={2}>
+              {/* Reuses PeoplePodium.tsx's own already-translated category
+                  titles ("Most Followed"/"Most Watched"/"Most Reviewed")
+                  via interpolation instead of 3 separate hardcoded
+                  sentences — one new template key covers all 3 categories. */}
+              {t("Made the {{category}} podium — #{{rank}}", {
+                category: t(
+                  event.category === "followed" ? "Most Followed" : event.category === "watched" ? "Most Watched" : "Most Reviewed"
+                ),
+                rank: event.rank,
+              })}
+            </Text>
+          </View>
+        )}
       </View>
-      {event.content.poster_path ? (
-        <Image source={{ uri: `${POSTER_BASE}${event.content.poster_path}` }} style={styles.poster} />
-      ) : (
-        <View style={styles.poster} />
-      )}
+      {"content" in event &&
+        (event.content.poster_path ? (
+          <Image source={{ uri: `${POSTER_BASE}${event.content.poster_path}` }} style={styles.poster} />
+        ) : (
+          <View style={styles.poster} />
+        ))}
     </Pressable>
   );
 }

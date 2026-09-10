@@ -43,6 +43,8 @@ export default function HomeStackLayout() {
       <Stack.Screen name="content/[type]/[id]/lists" options={{ title: t("Lists") }} />
       <Stack.Screen name="content/[type]/[id]/watched" options={{ title: t("Watched") }} />
       <Stack.Screen name="content/[type]/[id]/favorited" options={{ title: t("Favorites") }} />
+      <Stack.Screen name="content/[type]/[id]/write-review" options={{ title: "" }} />
+      <Stack.Screen name="content/[type]/[id]/similar" options={{ title: t("Similar") }} />
       <Stack.Screen name="lists/[id]" options={{ title: t("List") }} />
       <Stack.Screen name="reviews" options={{ title: t("Reviews") }} />
       <Stack.Screen name="lists-discover" options={{ title: t("Lists") }} />

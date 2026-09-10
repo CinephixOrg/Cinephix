@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, FlatList, ActivityIndicator, RefreshControl, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Text, FlatList, ActivityIndicator, RefreshControl, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { getFavoritedBy, type FavoritedByItem } from "../api/contentService";
-import UserAvatar from "./UserAvatar";
-import { SkeletonRow } from "./Skeleton";
-import type { ContentType } from "../types";
+import ActivityRow from "./ActivityRow";
+import { SkeletonActivityLogRow } from "./Skeleton";
+import type { ActivityContent, ActivityEvent, ContentType } from "../types";
 import { useTheme } from "../context/ThemeContext";
-import { fonts } from "../theme/typography";
 
 const PAGE_LIMIT = 20;
 
@@ -18,31 +16,31 @@ interface Props {
 
 // Content Detail's "Favorites" stat button target — everyone who has this
 // favorited, same infinite-scroll shape as the other three stat-button
-// pages. Deliberately a simpler row than ActivityRow (just avatar +
-// username, tap → profile): favorites carry no per-user timestamp at all
-// (favoriteMovies/favoriteSeries are still plain ObjectId arrays, unlike
-// watchlist — see getWatchedBy's own doc comment), so there's no "when"
-// to show, just "who" — a real, different card, not a design choice to
-// reuse ActivityRow's shape without the data it needs.
+// pages. Used to render a simpler avatar+username row instead of
+// ActivityRow's sentence-style card (favorites had no per-user timestamp
+// at all) — reported as inconsistent with the other 3 pages, direct ask to
+// match them. getFavoritedBy now enriches each item with `createdAt` where
+// FavoriteEvent (the network Activity feed's own append-only favorite log)
+// has a matching entry — ActivityRow.tsx quietly omits the time-ago label
+// for the rest (favorited before that log existed), same idea
+// ContentWatchedSection.tsx's own `watchlist_added` events use.
 export default function ContentFavoritedSection({ contentType, contentId }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const router = useRouter();
   const styles = useMemo(
     () =>
       StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.base100 },
         list: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
-        row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
-        username: { fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent },
         empty: { color: colors.placeholder, fontSize: 13, textAlign: "center", marginTop: 24 },
         error: { color: colors.error, textAlign: "center", marginBottom: 8, marginTop: 8 },
-        skeletonWrap: { paddingHorizontal: 16, paddingTop: 16, gap: 14 },
+        skeletonWrap: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
       }),
     [colors]
   );
 
   const [items, setItems] = useState<FavoritedByItem[]>([]);
+  const [content, setContent] = useState<ActivityContent | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -53,6 +51,7 @@ export default function ContentFavoritedSection({ contentType, contentId }: Prop
   const load = useCallback(async () => {
     try {
       const res = await getFavoritedBy(contentType, contentId, 1, PAGE_LIMIT);
+      setContent(res.content);
       setItems(res.items);
       setHasMore(res.hasMore);
       setPage(1);
@@ -91,8 +90,8 @@ export default function ContentFavoritedSection({ contentType, contentId }: Prop
     return (
       <View style={styles.container}>
         <View style={styles.skeletonWrap}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <SkeletonRow key={i} />
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonActivityLogRow key={i} />
           ))}
         </View>
       </View>
@@ -107,14 +106,16 @@ export default function ContentFavoritedSection({ contentType, contentId }: Prop
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
-      renderItem={({ item }) => (
-        <Pressable style={styles.row} onPress={() => router.push(`/user/${item._id}` as any)}>
-          <UserAvatar userId={item._id} username={item.username} profilePicUrl={item.profile_pic_url} size={40} />
-          <Text style={styles.username} numberOfLines={1}>
-            {item.username}
-          </Text>
-        </Pressable>
-      )}
+      renderItem={({ item }) => {
+        if (!content) return null;
+        const event: ActivityEvent = {
+          type: "favorited",
+          actor: { _id: item._id, username: item.username, profile_pic_url: item.profile_pic_url },
+          content,
+          createdAt: item.createdAt ?? undefined,
+        };
+        return <ActivityRow event={event} basePath="/home" />;
+      }}
       onEndReached={loadMore}
       onEndReachedThreshold={0.5}
       ListEmptyComponent={<Text style={styles.empty}>{t("No users found.")}</Text>}

@@ -14,9 +14,10 @@ import { getPopularLists } from "../../api/listService";
 import ContentRail from "../ContentRail";
 import AddedByCard from "../AddedByCard";
 import ReviewsSwiper from "../ReviewsSwiper";
-import ListRailCard, { LIST_RAIL_CARD_HEIGHT } from "../ListRailCard";
+import ListsSwiper from "../ListsSwiper";
 import LeaderboardPodium from "../LeaderboardPodium";
 import ActivitySection from "./ActivitySection";
+import WhatToWatchRail from "./WhatToWatchRail";
 import { SkeletonRail } from "../Skeleton";
 import { PosterRevealProvider } from "../../context/PosterRevealContext";
 import type { PopularThisWeekItem, PopularReview, DiscoverListItem } from "../../types";
@@ -54,12 +55,17 @@ const LISTS_PREVIEW_COUNT = 10;
 // own count cap (10) is now the whole thing, not a lead-in to more).
 // `home/reviews.tsx`/`home/lists-discover.tsx` still exist and still work
 // if ever linked again, just currently unreachable from this page. Lists'
-// preview is a horizontal ContentRail (ListRailCard.tsx) built to match
-// AddedByCard's own poster-forward grammar — ListRailCard is a separate
-// component from DiscoverListCard.tsx (not a redesign of it), that one's
-// still the full-width card `ListsSection.tsx`/`SearchListsSection.tsx`
-// use for their own full browsing pages. Reviews' preview went through
-// that same poster-forward phase too, but got pulled back out of it — a
+// preview used to be a horizontal ContentRail (ListRailCard.tsx, poster-
+// forward, several cards visible side by side, matching AddedByCard's own
+// grammar) — replaced with ListsSwiper.tsx, a real full-width one-card-per-
+// swipe pager (direct ask to match Reviews' own "one at a time" feel
+// instead), rendering SearchListCard.tsx (Search's own Lists tab design,
+// also reused verbatim per direct ask) rather than the old rail card.
+// ListRailCard.tsx itself was deleted once nothing referenced it anymore —
+// `DiscoverListCard.tsx` is a separate, still-used component (unaffected),
+// the full-width card `ListsSection.tsx`/`SearchListsSection.tsx` use for
+// their own full browsing pages. Reviews' preview went through that same
+// poster-forward phase too, but got pulled back out of it earlier — a
 // review's actual value is the written opinion, not a poster, and
 // squeezing it into a narrow rail-card grammar buried the one thing worth
 // reading behind a truncated quote. It's now ReviewsSwiper.tsx +
@@ -67,7 +73,9 @@ const LISTS_PREVIEW_COUNT = 10;
 // visible at once (the partial next card is the only "more to scroll"
 // affordance — no chevron hints), each card a real side-by-side
 // poster+text layout with its own peek/expand interactions (see that
-// component's own doc comment). Activity (previously bundled into the
+// component's own doc comment). Both ReviewSwipeCard.tsx and
+// SearchListCard.tsx now also carry a Premium gold-frame treatment
+// matching ShareCard.tsx's own posts, per direct ask. Activity (previously bundled into the
 // now-deleted ContentTypeSection.tsx, then paused for a while) is back as
 // its own section (ActivitySection.tsx) — a real network-scoped feed
 // (GET /feed/activity, activityController.js's getNetworkActivity), not
@@ -157,8 +165,6 @@ export default function KesfetSection({ isActive }: Props) {
     setRefreshing(false);
   };
 
-  const openList = (id: string) => router.push(`/home/lists/${id}` as any);
-
   if (loading) {
     return (
       <ScrollView style={{ backgroundColor: colors.base100 }} contentContainerStyle={styles.container}>
@@ -196,6 +202,23 @@ export default function KesfetSection({ isActive }: Props) {
       />
       <View style={styles.sectionDivider} />
 
+      {/* Popular Lists/Popular Reviews moved ahead of Friends' Choice —
+          direct ask, new section order top to bottom: podium, trending
+          movies, trending series, popular lists, popular reviews, friends'
+          choice, friends activity, then the new "What to Watch" rail. */}
+      <ListsSwiper lists={listsPreview} basePath="/home" onSeeAllPress={() => router.push("/home/lists-discover" as any)} />
+      <View style={styles.sectionDivider} />
+
+      {/* PosterRevealProvider now scoped to just Reviews — Lists' own card
+          (SearchListCard.tsx) has no poster-reveal mechanism at all (plain
+          tap-through, no peek/expand state), unlike the old ListRailCard.tsx
+          it replaced, which shared this same reveal context with Reviews'
+          own cards. */}
+      <PosterRevealProvider>
+        <ReviewsSwiper reviews={reviewsPreview} basePath="/home" onSeeAllPress={() => router.push("/home/reviews" as any)} />
+      </PosterRevealProvider>
+      <View style={styles.sectionDivider} />
+
       <ContentRail
         title={t("Friends' Choice")}
         data={friendsChoice}
@@ -205,27 +228,10 @@ export default function KesfetSection({ isActive }: Props) {
       />
       <View style={styles.sectionDivider} />
 
-      {/* Shared by both sections below — only one poster's "Detail" pill
-          (a list card's or a review's) is ever open anywhere on Discover
-          at a time, switching in one tap regardless of which section you
-          tap next. See PosterRevealContext.tsx's own doc comment. */}
-      <PosterRevealProvider>
-        <ContentRail
-          title={t("Popular Lists")}
-          data={listsPreview}
-          keyExtractor={(list) => list._id}
-          emptyText={t("No public lists to discover yet.")}
-          renderItem={(list) => <ListRailCard list={list} onPress={() => openList(list._id)} />}
-          height={LIST_RAIL_CARD_HEIGHT}
-          onSeeAllPress={() => router.push("/home/lists-discover" as any)}
-        />
-        <View style={styles.sectionDivider} />
-
-        <ReviewsSwiper reviews={reviewsPreview} basePath="/home" onSeeAllPress={() => router.push("/home/reviews" as any)} />
-      </PosterRevealProvider>
+      <ActivitySection onSeeAllPress={() => router.push("/home/activity" as any)} />
       <View style={styles.sectionDivider} />
 
-      <ActivitySection onSeeAllPress={() => router.push("/home/activity" as any)} />
+      <WhatToWatchRail basePath="/home" />
     </ScrollView>
   );
 }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 import * as authService from "../api/authService";
+import { setUnauthorizedHandler } from "../api/client";
 import { STORAGE_KEYS } from "../constants/apiRoutes";
 import type { User } from "../types";
 
@@ -87,6 +88,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.USER);
     setUser(null);
   };
+
+  // Registered once — client.ts's response interceptor calls this on a 401
+  // from an authenticated request (the token itself is missing/invalid/
+  // expired) so the app actually logs out and stops silently re-hitting an
+  // endpoint that will keep rejecting it forever, instead of e.g.
+  // NotificationContext's 10s unread-count poll failing in an unbounded
+  // loop for as long as the app stays open. Safe as an empty-deps effect —
+  // `logout` itself only closes over the stable `setUser` setter and
+  // SecureStore calls, nothing that goes stale across renders.
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AuthContext.Provider

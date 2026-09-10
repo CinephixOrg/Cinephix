@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, Share, ShareFeedResult } from "../types";
+import type { ContentType, PollOption, Share, ShareFeedResult } from "../types";
 
 export type CreateSharePayload =
   | { type: "analysis"; analysisData: any }
@@ -51,4 +51,11 @@ export async function getUserShares(
 
 export async function deleteShare(shareId: string): Promise<void> {
   await API.delete(API_ROUTES.SHARES.DELETE(shareId));
+}
+
+// "poll" shares only — one vote per user; voting again with a different
+// optionIndex swaps the vote server-side rather than adding a second one.
+export async function voteOnPoll(shareId: string, optionIndex: number): Promise<{ options: PollOption[]; userVoteIndex: number }> {
+  const res = await API.post(API_ROUTES.SHARES.VOTE(shareId), { optionIndex });
+  return res.data;
 }

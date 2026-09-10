@@ -52,17 +52,19 @@ export default function ShareGridTile({ share, size, onPress, style }: Props) {
 
   const posterUri = share.contentData?.posterUrl ? `${POSTER_BASE}${share.contentData.posterUrl}` : null;
 
-  return (
-    <Pressable style={[styles.tile, style]} onPress={onPress}>
-      {share.type === "recommendation" ? (
-        posterUri ? (
-          <Image source={{ uri: posterUri }} style={{ width: size, height: size }} resizeMode="cover" />
-        ) : (
-          <View style={styles.textTile}>
-            <Ionicons name="film-outline" size={22} color={colors.placeholder} />
-          </View>
-        )
-      ) : share.type === "analysis" ? (
+  let body: React.ReactNode;
+  switch (share.type) {
+    case "recommendation":
+      body = posterUri ? (
+        <Image source={{ uri: posterUri }} style={{ width: size, height: size }} resizeMode="cover" />
+      ) : (
+        <View style={styles.textTile}>
+          <Ionicons name="film-outline" size={22} color={colors.placeholder} />
+        </View>
+      );
+      break;
+    case "analysis":
+      body = (
         <View style={styles.textTile}>
           {share.analysisData?.nickname ? (
             <Text style={styles.analysisNickname} numberOfLines={1}>
@@ -75,11 +77,49 @@ export default function ShareGridTile({ share, size, onPress, style }: Props) {
             </Text>
           ) : null}
         </View>
-      ) : (
+      );
+      break;
+    case "list":
+      body = (
+        <View style={styles.textTile}>
+          <Text style={styles.analysisNickname} numberOfLines={2}>
+            {share.listData?.name ?? ""}
+          </Text>
+        </View>
+      );
+      break;
+    case "official":
+      body = (
+        <View style={styles.textTile}>
+          <Text style={styles.reviewQuote} numberOfLines={5}>
+            {share.officialText ?? ""}
+          </Text>
+        </View>
+      );
+      break;
+    case "poll":
+      body = (
+        <View style={styles.textTile}>
+          <Ionicons name="bar-chart" size={18} color={colors.placeholder} style={{ marginBottom: 4 }} />
+          <Text style={styles.analysisNickname} numberOfLines={3}>
+            {share.pollData?.question ?? ""}
+          </Text>
+        </View>
+      );
+      break;
+    case "review":
+    default:
+      body = (
         <View style={styles.textTile}>
           <Text style={styles.reviewQuote} numberOfLines={5}>{`"${share.reviewText ?? ""}"`}</Text>
         </View>
-      )}
+      );
+      break;
+  }
+
+  return (
+    <Pressable style={[styles.tile, style]} onPress={onPress}>
+      {body}
 
       <View style={[styles.badge, { backgroundColor: meta.color }]}>
         <Ionicons name={meta.icon} size={11} color="#fff" />

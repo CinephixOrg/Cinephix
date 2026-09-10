@@ -15,6 +15,7 @@ import { setupChat } from "./sockets/chatSocket.js";
 import { seedGroups } from "./scripts/seedGroups.js";
 import cron from "node-cron";
 import { syncTMDBTrending } from "./services/tmdbSyncService.js";
+import { postOfficialContent } from "./services/officialContentService.js";
 
 dotenv.config();
 const app = express();
@@ -141,6 +142,21 @@ async function start() {
     cron.schedule("0 3 * * *", () => {
       logger.info("Running scheduled TMDB sync...");
       syncTMDBTrending().catch(err => logger.error(`TMDB sync error: ${err.message}`));
+    });
+
+    // Official Cinephix account auto-posting — two daily slots. Slot A
+    // always posts trivia (the ~150-item rich pool laps in ~5 months at this
+    // rate, spiced with occasional DB-native generated facts); slot B cycles
+    // through the other 6 categories one per day, so each posts ~weekly.
+    const OFFICIAL_SLOT_B_CYCLE = ["tip", "highlight", "on_this_day", "poll", "stats", "announcement"];
+    cron.schedule("0 10 * * *", () => {
+      logger.info("Posting official Cinephix content: trivia");
+      postOfficialContent("trivia").catch(err => logger.error(`Official content (trivia) error: ${err.message}`));
+    });
+    cron.schedule("0 19 * * *", () => {
+      const category = OFFICIAL_SLOT_B_CYCLE[new Date().getDay() % OFFICIAL_SLOT_B_CYCLE.length];
+      logger.info(`Posting official Cinephix content: ${category}`);
+      postOfficialContent(category).catch(err => logger.error(`Official content (${category}) error: ${err.message}`));
     });
 
     // Attach Socket.io chat handler

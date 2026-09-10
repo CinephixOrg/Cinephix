@@ -135,7 +135,7 @@ export default function ProfileSharingsTab({ userId = "me", basePath = "/profile
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {selectedShare && <ShareCard share={selectedShare} onToggleLike={() => handleToggleLike(selectedShare._id)} basePath={basePath} />}
+              {selectedShare && <ShareCard share={selectedShare} onToggleLike={handleToggleLike} basePath={basePath} />}
             </ScrollView>
             <Pressable style={styles.modalClose} onPress={() => setSelectedShareId(null)}>
               <Ionicons name="close" size={18} color="#fff" />

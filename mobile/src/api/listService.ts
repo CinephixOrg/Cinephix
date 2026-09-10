@@ -67,9 +67,32 @@ export async function discoverLists(limit = 20): Promise<DiscoverListItem[]> {
   return res.data.lists;
 }
 
-export async function getPopularLists(limit = 20, q?: string): Promise<DiscoverListItem[]> {
-  const res = await API.get(API_ROUTES.LISTS.POPULAR, { params: { limit, q } });
+export type ListSort = "liked" | "items" | "newest";
+export type ListMode = "all" | "friends" | "liked";
+
+export async function getPopularLists(limit = 20, q?: string, sort?: ListSort): Promise<DiscoverListItem[]> {
+  const res = await API.get(API_ROUTES.LISTS.POPULAR, { params: { limit, q, sort } });
   return res.data.lists;
+}
+
+// Same endpoint as getPopularLists, but a real paginated browse rather than
+// a fixed "top N" — the backend now returns `page`/`hasMore` alongside
+// `lists` regardless of caller, this just also reads them. Kept as a
+// separate function instead of adding a `page` param to getPopularLists
+// itself: that one's 3 existing callers (Home's Keşfet/Lists rails) want a
+// bare array and a fixed count, not a page to manage — Search's own infinite
+// scroll and Discover's own Popular Lists "See all" filter page are the
+// only callers that need this shape. `mode` is the same All/Friends/Liked
+// filter reviewController.js's getReviewsFeed also now supports.
+export async function getPopularListsPaginated(
+  page = 1,
+  limit = 20,
+  q?: string,
+  sort?: ListSort,
+  mode?: ListMode
+): Promise<{ items: DiscoverListItem[]; page: number; hasMore: boolean }> {
+  const res = await API.get(API_ROUTES.LISTS.POPULAR, { params: { page, limit, q, sort, mode } });
+  return { items: res.data.lists, page: res.data.page, hasMore: res.data.hasMore };
 }
 
 export async function toggleListLike(id: string): Promise<{ likeCount: number; hasLiked: boolean }> {

@@ -12,12 +12,14 @@ import {
   DMSans_400Regular_Italic,
   DMSans_500Medium,
   DMSans_700Bold,
+  DMSans_700Bold_Italic,
   DMSans_800ExtraBold,
 } from "@expo-google-fonts/dm-sans";
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
 import { NotificationProvider } from "../src/context/NotificationContext";
 import { ChatProvider } from "../src/context/ChatContext";
 import { FollowGraphProvider } from "../src/context/FollowGraphContext";
+import { WatchlistGraphProvider } from "../src/context/WatchlistGraphContext";
 import { ProfileProvider } from "../src/context/ProfileContext";
 import { NetworkProvider } from "../src/context/NetworkContext";
 import { ToastProvider } from "../src/context/ToastContext";
@@ -108,6 +110,7 @@ export default function RootLayout() {
     DMSans_400Regular_Italic,
     DMSans_500Medium,
     DMSans_700Bold,
+    DMSans_700Bold_Italic,
     DMSans_800ExtraBold,
   });
   const [i18nReady, setI18nReady] = useState(false);
@@ -137,13 +140,15 @@ export default function RootLayout() {
             <NetworkProvider>
               <AuthProvider>
                 <FollowGraphProvider>
-                  <ProfileProvider>
-                    <NotificationProvider>
-                      <ChatProvider>
-                        <RootNavigator />
-                      </ChatProvider>
-                    </NotificationProvider>
-                  </ProfileProvider>
+                  <WatchlistGraphProvider>
+                    <ProfileProvider>
+                      <NotificationProvider>
+                        <ChatProvider>
+                          <RootNavigator />
+                        </ChatProvider>
+                      </NotificationProvider>
+                    </ProfileProvider>
+                  </WatchlistGraphProvider>
                 </FollowGraphProvider>
               </AuthProvider>
             </NetworkProvider>

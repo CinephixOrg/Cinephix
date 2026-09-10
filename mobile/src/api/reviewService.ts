@@ -5,7 +5,7 @@ import type { ListResult } from "./contentService";
 
 export async function getContentReviews(
   contentId: string,
-  opts: { sort?: "recent" | "popular"; page?: number; limit?: number } = {}
+  opts: { sort?: "recent" | "popular" | "liked_by_me"; page?: number; limit?: number } = {}
 ): Promise<ListResult<Review>> {
   const { sort = "recent", page = 1, limit = 50 } = opts;
   const res = await API.get(API_ROUTES.REVIEWS.GET_FOR_CONTENT(contentId), {
@@ -20,8 +20,27 @@ export async function getFriendsReviews(contentId: string): Promise<Review[]> {
   return res.data;
 }
 
-export async function getPopularReviews(limit = 10, type?: ContentType, q?: string): Promise<PopularReview[]> {
-  const res = await API.get(API_ROUTES.REVIEWS.GET_POPULAR, { params: { limit, type, q } });
+export type ReviewSort = "liked" | "newest" | "rating";
+
+// Search's Reviews tab is the only caller — safe to shape this as a real
+// paginated result (was a fixed "top N" with no way to reach anything past
+// `limit`, same class of gap fixed on the Lists side, see
+// getPopularListsPaginated). Distinct from getReviewsFeed (Discover's own
+// paginated feed): that one has no q/type/sort/rating filtering at all, it's
+// a plain isFriend+likeCount+createdAt ranking — the two aren't
+// interchangeable.
+export async function getPopularReviews(
+  page = 1,
+  limit = 10,
+  type?: ContentType,
+  q?: string,
+  sort?: ReviewSort,
+  minRating?: number | null,
+  maxRating?: number | null
+): Promise<ReviewsFeedResult> {
+  const res = await API.get(API_ROUTES.REVIEWS.GET_POPULAR, {
+    params: { page, limit, type, q, sort, minRating: minRating ?? undefined, maxRating: maxRating ?? undefined },
+  });
   return res.data;
 }
 
@@ -37,8 +56,8 @@ export async function getReviewsFromFriends(limit = 10, type?: ContentType): Pro
 // (friends' reviews first, then popular, see reviewController.js's
 // getReviewsFeed) replacing a client-side merge of getPopularReviews +
 // getReviewsFromFriends that couldn't paginate correctly.
-export async function getReviewsFeed(page = 1, limit = 15): Promise<ReviewsFeedResult> {
-  const res = await API.get(API_ROUTES.REVIEWS.GET_FEED, { params: { page, limit } });
+export async function getReviewsFeed(page = 1, limit = 15, mode?: "all" | "friends" | "liked"): Promise<ReviewsFeedResult> {
+  const res = await API.get(API_ROUTES.REVIEWS.GET_FEED, { params: { page, limit, mode } });
   return res.data;
 }
 

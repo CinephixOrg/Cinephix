@@ -2,12 +2,14 @@ import { useMemo, type ReactElement } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { LinearGradient } from "expo-linear-gradient";
 import type { UserProfile } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 import TierAvatarFrame from "../TierAvatarFrame";
 
 const AVATAR_SIZE = 84;
+const CINEPHIX_LOGO = require("../../../assets/cinephix_logo.png");
 
 interface Props {
   profile: UserProfile;
@@ -55,6 +57,7 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
         headerRow: { flexDirection: "row", alignItems: "flex-start", gap: 16 },
         avatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
         avatarFallbackText: { fontFamily: fonts.bold, fontSize: 24, color: colors.primary },
+        officialAvatarFill: { alignItems: "center", justifyContent: "center" },
         rightCol: { flex: 1, justifyContent: "flex-start" },
         username: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent },
         // A bit wider than before — three tight stat columns read as
@@ -73,7 +76,16 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
       <View style={styles.headerRow}>
         <TierAvatarFrame tier={profile.accountTier} size={AVATAR_SIZE}>
           {(innerSize) =>
-            profile.profile_pic_url ? (
+            profile.isOfficial ? (
+              <LinearGradient
+                colors={[colors.neutral, colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.officialAvatarFill, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}
+              >
+                <Image source={CINEPHIX_LOGO} style={{ width: innerSize * 0.58, height: innerSize * 0.58 }} resizeMode="contain" />
+              </LinearGradient>
+            ) : profile.profile_pic_url ? (
               <Image
                 source={{ uri: profile.profile_pic_url }}
                 style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
@@ -87,7 +99,7 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
         </TierAvatarFrame>
 
         <View style={styles.rightCol}>
-          <Text style={styles.username}>{profile.username}</Text>
+          <Text style={styles.username}>{profile.isOfficial ? profile.username.toUpperCase() : profile.username}</Text>
           <View style={styles.statsRow}>
             {shareCount != null && (
               <View style={styles.stat}>

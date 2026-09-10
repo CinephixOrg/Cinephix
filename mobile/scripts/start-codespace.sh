@@ -25,6 +25,24 @@ mkdir -p "$LOG_DIR"
 
 echo "== Stopping any previous instances =="
 pkill -f "nodemon server.js" 2>/dev/null || true
+# nodemon's own spawned child runs as a bare "node server.js" (no "nodemon"
+# in its command line at all) — the pattern above only ever matches
+# nodemon's wrapper process, not this child, so a child that outlives its
+# wrapper (nodemon killed/crashed without cleaning up, or one abandoned by
+# an earlier manual run) keeps holding port 5000 as a silent orphan: every
+# *later* nodemon instance then crash-loops behind it with EADDRINUSE,
+# while the orphan (running whatever stale on-disk state existed when *it*
+# started) keeps answering every request. Hit this for real, twice, in one
+# session — once as an immediate EADDRINUSE, once as a much sneakier
+# "everything looks fine, individual requests just fail" a while later,
+# since the stale process was otherwise perfectly healthy. Killing by port
+# rather than by command-line pattern catches this regardless of how the
+# orphan came to exist.
+if command -v fuser >/dev/null 2>&1; then
+  fuser -k 5000/tcp 2>/dev/null || true
+elif command -v lsof >/dev/null 2>&1; then
+  lsof -ti :5000 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+fi
 pkill -f "expo start" 2>/dev/null || true
 pkill -f "@expo/ngrok-bin-linux-x64/ngrok" 2>/dev/null || true
 sleep 1

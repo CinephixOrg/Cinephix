@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, Movie, Series, Pagination, FeedUserRef, ActivityContent } from "../types";
+import type { AccountTier, ContentType, Movie, Series, Pagination, FeedUserRef, ActivityContent } from "../types";
 
 export interface ListResult<T> {
   items: T[];
@@ -81,6 +81,7 @@ export interface WatchedByFriend {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  accountTier?: AccountTier;
   rating: number | null;
 }
 
@@ -112,19 +113,46 @@ export async function getWatchedBy(type: ContentType, id: string, page = 1, limi
 // Content Detail's "Favorites" stat button target — everyone who has this
 // favorited. No per-user timestamp exists for favorites (still a plain
 // ObjectId array on User, unlike watchlist), so unlike watched-by there's
-// no `createdAt` to sort by or show — just who.
+// no `createdAt` to sort by or show — just who. `content` still comes back
+// once (same shape/reasoning as WatchedByResult's own) so the mobile side
+// can build a real `favorited` ActivityEvent per item and reuse
+// ActivityRow.tsx's sentence-style card, same as the other 3 stat pages.
 export interface FavoritedByItem {
   _id: string;
   username: string;
   profile_pic_url?: string;
+  // Enriched from FavoriteEvent where a matching entry exists (favorited
+  // after that log started) — null for anyone who favorited before it did.
+  createdAt: string | null;
 }
 export interface FavoritedByResult {
+  content: ActivityContent;
   items: FavoritedByItem[];
   page: number;
   hasMore: boolean;
 }
 export async function getFavoritedBy(type: ContentType, id: string, page = 1, limit = 20): Promise<FavoritedByResult> {
   const res = await API.get(API_ROUTES.CONTENT.GET_FAVORITED_BY(type, id), { params: { page, limit } });
+  return res.data;
+}
+
+// Content Detail's new "Similar Movies/Series" rail + its own See All grid.
+// Ranked server-side by genre overlap (the strongest signal this app's raw
+// TMDB import actually has — no cast/keywords/original_language field
+// exists on these docs) — see the backend route's own doc comment.
+export interface SimilarContentItem {
+  id: string;
+  title: string;
+  poster_path?: string | null;
+  type: ContentType;
+}
+export interface SimilarContentResult {
+  items: SimilarContentItem[];
+  page: number;
+  hasMore: boolean;
+}
+export async function getSimilarContent(type: ContentType, id: string, page = 1, limit = 20): Promise<SimilarContentResult> {
+  const res = await API.get(API_ROUTES.CONTENT.GET_SIMILAR(type, id), { params: { page, limit } });
   return res.data;
 }
 

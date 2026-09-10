@@ -7,10 +7,22 @@ import Share from "../models/Share.js";
 import Notification from "../models/Notification.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
+import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 
 // ── helpers ──────────────────────────────────────────────────────
 const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
+
+// Reverse of MOVIE_GENRE_MAP/SERIES_GENRE_MAP (id->name) — CineGraph
+// entries (ratingController.js's updateCineGraph) are keyed by genre NAME,
+// not the numeric TMDB id Movie/Series documents actually store in their
+// own genre_ids array, so getRecommendations below needs to convert back.
+// Built per content type since movie and series genre ids/names diverge
+// for the same concept (e.g. movie "Action" is 28, series "Action &
+// Adventure" is 10759) — a single shared name->id map would silently
+// cross-contaminate the two.
+const MOVIE_GENRE_NAME_TO_ID = Object.fromEntries(Object.entries(MOVIE_GENRE_MAP).map(([id, name]) => [name, Number(id)]));
+const SERIES_GENRE_NAME_TO_ID = Object.fromEntries(Object.entries(SERIES_GENRE_MAP).map(([id, name]) => [name, Number(id)]));
 
 
 const ITEMS_PER_SOURCE = 60;
@@ -458,23 +470,31 @@ const LEADERBOARD_MIN_RATING_COUNT = 3;
 const LEADERBOARD_SIZE = 3;
 
 // @route GET /api/feed/leaderboard
-// Discover's Most Favorited / Highest Rated / Most Recommended podium —
-// all-time, content-only signals (complements the This-Week-scoped
-// Trending rails above them on the same page). All 3 default to combined
-// movie+series rankings (matching how Friends' Choice already mixes types
-// in one rail), but accept an optional ?type=movie|series to scope all 3
-// lists to one content type at once — the podium's own mode toggle, same
-// "ignore anything not exactly movie/series" validation as
-// getPopularWithFriends's own type param. Each list carries only its own
-// metric (no cross-enrichment) — an earlier version showed both favorite
-// count and rating on every card regardless of list, but the user's own
-// follow-up simplified the podium back to one metric per page, so the
-// heavier "fetch every rating ever given" query that cross-enrichment
-// needed is gone too, not just unused on the client.
-export const getLeaderboard = asyncHandler(async (req, res) => {
-  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
-
-  const [movieFavStats, seriesFavStats, ratingStats, recommendStats] = await Promise.all([
+// Discover's 5-category content podium — all-time, content-only signals
+// (complements the This-Week-scoped Trending rails above them on the same
+// page). Most Favorited / Highest Rated / Most Recommended were the
+// original 3; Most Watched (watchlist size, mirroring the people podium's
+// own identical category below) and Most Reviewed (review count) were
+// added later, per direct ask, once the 3-way Free/Plus/Premium visibility
+// split (see LeaderboardPodium.tsx's own doc comment) made "5 is an
+// optimal round number" a real design goal, not just an incidental count.
+// All 5 default to combined movie+series rankings (matching how Friends'
+// Choice already mixes types in one rail), but accept an optional
+// ?type=movie|series to scope all 5 lists to one content type at once —
+// the podium's own mode toggle, same "ignore anything not exactly
+// movie/series" validation as getPopularWithFriends's own type param. Each
+// list carries only its own metric (no cross-enrichment) — an earlier
+// version showed both favorite count and rating on every card regardless
+// of list, but the user's own follow-up simplified the podium back to one
+// metric per page, so the heavier "fetch every rating ever given" query
+// that cross-enrichment needed is gone too, not just unused on the client.
+// Extracted from the getLeaderboard route handler so
+// officialContentService's own "highlight" post generator can reuse the
+// exact same ranking data (not a second, potentially-drifting copy) — same
+// reasoning getPeopleThreePodiums below already documents for its own
+// extraction.
+export async function computeLeaderboard(type) {
+  const [movieFavStats, seriesFavStats, ratingStats, recommendStats, watchedStats, reviewedStats] = await Promise.all([
     type && type !== "movie"
       ? []
       : User.aggregate([
@@ -502,6 +522,24 @@ export const getLeaderboard = asyncHandler(async (req, res) => {
       { $sort: { recommendCount: -1 } },
       { $limit: LEADERBOARD_SIZE },
     ]),
+    // Same shape as getPeopleThreePodiums' own Most Watched below, just
+    // grouped by content instead of by user — how many watchlists a title
+    // sits in, all-time.
+    User.aggregate([
+      { $unwind: "$watchlist" },
+      ...(type ? [{ $match: { "watchlist.itemType": type } }] : []),
+      { $group: { _id: { itemId: "$watchlist.itemId", itemType: "$watchlist.itemType" }, watchedCount: { $sum: 1 } } },
+      { $sort: { watchedCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]).allowDiskUse(true),
+    // Content-side twin of getPeopleThreePodiums' own Most Reviewed —
+    // review count per title instead of per reviewer.
+    Review.aggregate([
+      ...(type ? [{ $match: { contentType: type } }] : []),
+      { $group: { _id: { itemId: "$contentId", itemType: "$contentType" }, reviewCount: { $sum: 1 } } },
+      { $sort: { reviewCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]),
   ]);
 
   const mostFavoritedEntries = [
@@ -524,14 +562,56 @@ export const getLeaderboard = asyncHandler(async (req, res) => {
     recommendCount: r.recommendCount,
   }));
 
-  const [mostFavorited, highestRated, mostRecommended] = await Promise.all([
+  const mostWatchedEntries = watchedStats.map((w) => ({
+    itemId: w._id.itemId,
+    itemType: w._id.itemType,
+    watchedCount: w.watchedCount,
+  }));
+
+  const mostReviewedEntries = reviewedStats.map((r) => ({
+    itemId: r._id.itemId,
+    itemType: r._id.itemType,
+    reviewCount: r.reviewCount,
+  }));
+
+  const [mostFavorited, highestRated, mostRecommended, mostWatched, mostReviewed] = await Promise.all([
     hydrateLeaderboardEntries(mostFavoritedEntries),
     hydrateLeaderboardEntries(highestRatedEntries),
     hydrateLeaderboardEntries(mostRecommendedEntries),
+    hydrateLeaderboardEntries(mostWatchedEntries),
+    hydrateLeaderboardEntries(mostReviewedEntries),
   ]);
 
-  sendSuccess(res, { mostFavorited, highestRated, mostRecommended }, "Leaderboard fetched");
+  return { mostFavorited, highestRated, mostRecommended, mostWatched, mostReviewed };
+}
+
+export const getLeaderboard = asyncHandler(async (req, res) => {
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+  const result = await computeLeaderboard(type);
+  sendSuccess(res, result, "Leaderboard fetched");
 });
+
+// A raw {_id, <metricKey>} aggregate result (Review/Share group-by-user
+// output — everything here except followedRaw/watchedRaw above, which
+// already project user fields directly) only carries the user's _id, not
+// their identity — bulk-hydrate it in one lookup, same "bulk lookup, drop
+// anything missing" shape used for every one of these lists. `metricKey`
+// is copied onto the returned `user`-shaped entry alongside `user` itself.
+async function hydratePeopleEntries(raw, metricKey) {
+  const users = await User.find({ _id: { $in: raw.map((r) => r._id) } })
+    .select("username profile_pic_url accountTier")
+    .lean();
+  const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+  return raw
+    .filter((r) => userMap.has(r._id.toString()))
+    .map((r) => {
+      const u = userMap.get(r._id.toString());
+      return {
+        user: { id: u._id.toString(), username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
+        [metricKey]: r[metricKey],
+      };
+    });
+}
 
 // @route GET /api/feed/people-leaderboard
 // Medya/Shares' own podium — ranks people, not content, so it lives on
@@ -541,21 +621,50 @@ export const getLeaderboard = asyncHandler(async (req, res) => {
 // Followed (social reach), Most Watched (consumption volume, from the
 // `watchlist` field — the *already-watched* list, not `toWatchList`),
 // Most Reviewed (contribution — a real, already-existing signal with
-// built-in gaming resistance since a review takes real effort). Only Most
-// Watched has a movie/series dimension, so `?type=` only actually changes
-// that one list — Most Followed/Most Reviewed ignore it, same as how
-// Most Favorited/Highest Rated above already behave under `getLeaderboard`.
-export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
-  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+// built-in gaming resistance since a review takes real effort). Most Liked
+// (total likes received across a user's own Shares — a "most popular
+// poster" signal) and Top Recommenders (count of type:"recommendation"
+// Shares sent — "most active recommender") were added later, per direct
+// ask, once the 3-way Free/Plus/Premium visibility split (see
+// PeoplePodium.tsx's own doc comment) made "5 is an optimal round number"
+// a real design goal, not just an incidental count. Only Most Watched has
+// a movie/series dimension, so `?type=` only actually changes that one
+// list — the other 4 ignore it, same as how Most Favorited/Highest Rated
+// already behave under `getLeaderboard`.
+// Extracted so activityController.js's own "so-and-so made the podium"
+// activity items (see its own doc comment) can check the *exact* same
+// current top-3s this podium itself shows, rather than a second,
+// potentially-drifting copy of this same ranking logic.
+export async function getPeopleThreePodiums(type) {
+  // The official Cinephix account (isOfficial:true) is deliberately excluded
+  // from every single one of these 5 rankings — it auto-posts on a fixed
+  // schedule and would otherwise game Most Reviewed/Most Recommended purely
+  // by volume, and its follower count isn't a "most popular person" signal
+  // in the sense this podium means. User.aggregate's own two pipelines
+  // (followedRaw/watchedRaw) exclude it directly via `isOfficial`; Review/
+  // Share are grouped by a raw `user` ObjectId with no such field on those
+  // collections, so those three resolve the official account's own _id once
+  // and exclude by id instead.
+  const officialUser = await User.findOne({ isOfficial: true }).select("_id").lean();
+  const officialUserId = officialUser?._id;
+  const excludeOfficialAuthor = officialUserId ? [{ $match: { user: { $ne: officialUserId } } }] : [];
 
-  const [followedRaw, watchedRaw, reviewedRaw] = await Promise.all([
+  // followerCount/watchedCount are computed per-request over every user
+  // document (no index can back a $sort on either) — genuinely free at
+  // this collection's current real size (live-checked: 97 users) but the
+  // same "silently breaks past 100MB in-memory sort" risk as
+  // getShareFeed's own identical situation above in shareController.js.
+  // .allowDiskUse(true) added defensively for the same reason.
+  const [followedRaw, watchedRaw, reviewedRaw, likedRaw, recommendersRaw] = await Promise.all([
     User.aggregate([
+      { $match: { isOfficial: { $ne: true } } },
       { $project: { username: 1, profile_pic_url: 1, accountTier: 1, followerCount: { $size: { $ifNull: ["$followers", []] } } } },
       { $match: { followerCount: { $gte: 1 } } },
       { $sort: { followerCount: -1 } },
       { $limit: LEADERBOARD_SIZE },
-    ]),
+    ]).allowDiskUse(true),
     User.aggregate([
+      { $match: { isOfficial: { $ne: true } } },
       {
         $project: {
           username: 1,
@@ -569,21 +678,34 @@ export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
       { $match: { watchedCount: { $gte: 1 } } },
       { $sort: { watchedCount: -1 } },
       { $limit: LEADERBOARD_SIZE },
-    ]),
+    ]).allowDiskUse(true),
     Review.aggregate([
+      ...excludeOfficialAuthor,
       { $group: { _id: "$user", reviewCount: { $sum: 1 } } },
       { $sort: { reviewCount: -1 } },
       { $limit: LEADERBOARD_SIZE },
-    ]),
+    ]).allowDiskUse(true),
+    Share.aggregate([
+      ...excludeOfficialAuthor,
+      { $group: { _id: "$user", likeCount: { $sum: "$likeCount" } } },
+      { $match: { likeCount: { $gte: 1 } } },
+      { $sort: { likeCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]).allowDiskUse(true),
+    Share.aggregate([
+      { $match: { type: "recommendation" } },
+      ...excludeOfficialAuthor,
+      { $group: { _id: "$user", recommendCount: { $sum: 1 } } },
+      { $sort: { recommendCount: -1 } },
+      { $limit: LEADERBOARD_SIZE },
+    ]).allowDiskUse(true),
   ]);
 
-  // mostReviewed only carries {_id, reviewCount} off the Review collection
-  // — bulk-hydrate user identity, same "bulk lookup, drop anything
-  // missing" shape as hydrateLeaderboardEntries above.
-  const reviewedUsers = await User.find({ _id: { $in: reviewedRaw.map((r) => r._id) } })
-    .select("username profile_pic_url accountTier")
-    .lean();
-  const reviewedUserMap = new Map(reviewedUsers.map((u) => [u._id.toString(), u]));
+  const [mostReviewed, mostLiked, topRecommenders] = await Promise.all([
+    hydratePeopleEntries(reviewedRaw, "reviewCount"),
+    hydratePeopleEntries(likedRaw, "likeCount"),
+    hydratePeopleEntries(recommendersRaw, "recommendCount"),
+  ]);
 
   const mostFollowed = followedRaw.map((d) => ({
     user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
@@ -593,17 +715,48 @@ export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
     user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
     watchedCount: d.watchedCount,
   }));
-  const mostReviewed = reviewedRaw
-    .filter((r) => reviewedUserMap.has(r._id.toString()))
-    .map((r) => {
-      const u = reviewedUserMap.get(r._id.toString());
-      return {
-        user: { id: u._id.toString(), username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
-        reviewCount: r.reviewCount,
-      };
-    });
 
-  sendSuccess(res, { mostFollowed, mostWatched, mostReviewed }, "People leaderboard fetched");
+  return { mostFollowed, mostWatched, mostReviewed, mostLiked, topRecommenders };
+}
+
+export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
+  const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
+  const result = await getPeopleThreePodiums(type);
+  sendSuccess(res, result, "People leaderboard fetched");
+});
+
+// Canonical category order for getMyPodiumPlacements below — also the
+// order PeoplePodium.tsx's own CATEGORY_KEYS array uses, so a returned
+// `category` string maps 1:1 onto that file's own CategoryKey type
+// (mostFollowed→"followed", mostWatched→"watched", etc.) without the
+// client needing its own separate mapping table.
+const PODIUM_CATEGORY_KEYS = ["mostFollowed", "mostWatched", "mostReviewed", "mostLiked", "topRecommenders"];
+
+// @route GET /api/feed/my-podium-placements
+// Powers the "you made the podium!" popup shown once per app open (see
+// app/(app)/_layout.tsx) — checks the *current* user's own rank across all
+// 5 of the people podium's categories (movie/series `?type=` doesn't apply
+// here; Most Watched's own type-scoped ranking isn't what this checks,
+// deliberately the untyped, combined one, matching what a Free/Plus viewer
+// would actually land on after tapping through). Reuses
+// `getPeopleThreePodiums` — the *exact* same ranking this podium itself
+// shows, not a second, potentially-drifting copy (same reasoning
+// activityController.js's own getFollowedPodiumEvents already documents
+// for why it does the same). A user can rank on more than one podium at
+// once — every placement is returned, not just the first found, so the
+// client can pick which one to feature (currently: the single best rank).
+export const getMyPodiumPlacements = asyncHandler(async (req, res) => {
+  const result = await getPeopleThreePodiums(null);
+  const userId = req.user.id;
+
+  const placements = [];
+  for (const key of PODIUM_CATEGORY_KEYS) {
+    const list = result[key] || [];
+    const rankIndex = list.findIndex((entry) => entry.user.id === userId);
+    if (rankIndex !== -1) placements.push({ category: key, rank: rankIndex + 1 });
+  }
+
+  sendSuccess(res, { placements }, "Podium placements fetched");
 });
 
 export const getRecommendations = asyncHandler(async (req, res) => {
@@ -620,25 +773,37 @@ export const getRecommendations = asyncHandler(async (req, res) => {
     ...(user.toWatchList || []).map((w) => w.itemId.toString()),
   ];
 
-  // Build genre scores: { genreId → score }
-  const genreScore = {};
-  const addGenres = (cineGraph) => {
-    if (!cineGraph) return;
+  // Real fix, not a pre-existing behavior kept as-is: CineGraph entries are
+  // keyed by genre NAME (ratingController.js's updateCineGraph stores them
+  // that way — see MOVIE_GENRE_NAME_TO_ID's own comment above), not the
+  // numeric TMDB id Movie/Series documents actually store in their own
+  // genre_ids array. The old version here used the raw CineGraph key
+  // directly as if it already were that numeric id — `Number("Drama")` is
+  // NaN, so `genre_ids: { $in: topGenreIds } }` could never match a single
+  // real document, and this endpoint always silently returned an empty
+  // recommendation list. Movie/series genre ids are also kept SEPARATE
+  // now, not one shared list for both — the same genre name can map to a
+  // different numeric id per type (movie "Action"=28 vs series "Action &
+  // Adventure"=10759), so a single combined list would misfire against
+  // whichever collection didn't originate a given id.
+  function topGenreIdsFor(cineGraph, nameToId) {
+    if (!cineGraph) return [];
     const entries = cineGraph instanceof Map ? cineGraph.entries() : Object.entries(cineGraph);
-    for (const [gid, stats] of entries) {
-      const score = (stats.count || 0) * (stats.avgRating || 5);
-      genreScore[gid] = (genreScore[gid] || 0) + score;
+    const scored = [];
+    for (const [name, stats] of entries) {
+      const id = nameToId[name];
+      if (id == null) continue;
+      scored.push([id, (stats.count || 0) * (stats.avgRating || 5)]);
     }
-  };
-  if (contentType !== "series") addGenres(user.movieCineGraph);
-  if (contentType !== "movie") addGenres(user.seriesCineGraph);
+    return scored
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([id]) => id);
+  }
 
-  const topGenreIds = Object.entries(genreScore)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([id]) => Number(id));
-
-  const hasGenres = topGenreIds.length > 0;
+  const movieGenreIds = contentType !== "series" ? topGenreIdsFor(user.movieCineGraph, MOVIE_GENRE_NAME_TO_ID) : [];
+  const seriesGenreIds = contentType !== "movie" ? topGenreIdsFor(user.seriesCineGraph, SERIES_GENRE_NAME_TO_ID) : [];
+  const hasGenres = movieGenreIds.length > 0 || seriesGenreIds.length > 0;
 
   const baseQuery = {
     _id: { $nin: watchedIds },
@@ -647,11 +812,9 @@ export const getRecommendations = asyncHandler(async (req, res) => {
     vote_average: { $gte: 5.5 },
   };
 
-  const genreQuery = hasGenres ? { ...baseQuery, genre_ids: { $in: topGenreIds } } : baseQuery;
-
-  const fetchContent = async (model, query) =>
+  const fetchContent = async (model, genreIds) =>
     model
-      .find(query)
+      .find(genreIds.length > 0 ? { ...baseQuery, genre_ids: { $in: genreIds } } : baseQuery)
       .select("_id title name poster_path genre_ids vote_average release_date first_air_date")
       .sort({ vote_average: -1, vote_count: -1 })
       .limit(limit)
@@ -661,10 +824,10 @@ export const getRecommendations = asyncHandler(async (req, res) => {
   let series = [];
 
   if (contentType !== "series") {
-    movies = await fetchContent(getMovie(), genreQuery);
+    movies = await fetchContent(getMovie(), movieGenreIds);
   }
   if (contentType !== "movie") {
-    series = await fetchContent(getSeries(), genreQuery);
+    series = await fetchContent(getSeries(), seriesGenreIds);
   }
 
   // Interleave movies and series
@@ -675,5 +838,9 @@ export const getRecommendations = asyncHandler(async (req, res) => {
     if (series[i] && results.length < limit) results.push({ ...series[i], contentType: "series" });
   }
 
-  sendSuccess(res, { recommendations: results, topGenreIds, hasPersonalization: hasGenres }, "Recommendations fetched");
+  sendSuccess(
+    res,
+    { recommendations: results, topGenreIds: [...movieGenreIds, ...seriesGenreIds], hasPersonalization: hasGenres },
+    "Recommendations fetched"
+  );
 });

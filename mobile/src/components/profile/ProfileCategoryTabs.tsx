@@ -15,7 +15,7 @@ import { updateFavorites } from "../../api/favoriteService";
 import type { CineGraphData, ContentType, Favorites, ProfileAnalysis } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 
-type Category = "sharings" | "favorites" | "cinegraph" | "analyses";
+export type Category = "sharings" | "favorites" | "cinegraph" | "analyses";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -44,6 +44,11 @@ function buildSlots(items: FavItem[], editing: boolean): FavSlot[] {
 interface Props {
   favorites: Favorites | null;
   cineGraph: CineGraphData | null;
+  // Lets a deep link (e.g. an official-account tip's own linked word) land
+  // straight on a specific tab instead of always defaulting to Sharings —
+  // same prop/pattern PublicProfileCategoryTabs.tsx's own initialCategory
+  // already established for the public-profile equivalent.
+  initialCategory?: Category;
 }
 
 const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
@@ -53,7 +58,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
   analyses: { active: "document-text", inactive: "document-text-outline" },
 };
 
-export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
+export default function ProfileCategoryTabs({ favorites, cineGraph, initialCategory }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -79,7 +84,7 @@ export default function ProfileCategoryTabs({ favorites, cineGraph }: Props) {
     [colors]
   );
 
-  const [category, setCategory] = useState<Category>("sharings");
+  const [category, setCategory] = useState<Category>(initialCategory || "sharings");
   const [cinegraphSubTab, setCinegraphSubTab] = useState<CineGraphSubTab>("movie");
 
   const [localFavorites, setLocalFavorites] = useState(favorites);

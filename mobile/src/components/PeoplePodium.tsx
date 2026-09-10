@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Easing,
   StyleSheet,
+  Image,
   useWindowDimensions,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
@@ -20,11 +21,32 @@ import {
 import { ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import PeoplePodiumCard from "./PeoplePodiumCard";
+import PodiumSkeletonSlot from "./PodiumSkeletonSlot";
 import { getPeopleLeaderboard } from "../api/feedService";
+import { useAuth } from "../context/AuthContext";
 import type { ContentType, PeopleLeaderboardResult } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+
+const CINEPHIX_LOGO = require("../../assets/cinephix_logo.png");
+
+// Bigger than an earlier round's own 44/34/34 (direct ask: "podyum
+// çerçevesini biraz büyüt") — matches LeaderboardPodium.tsx's own
+// TEASER_POSTER_WIDTH reasoning exactly.
+const TEASER_AVATAR_SIZE = { 1: 56, 2: 44, 3: 44 } as const;
+// Reserved height at the bottom of `adPage` for the upgrade button, kept
+// out of the frame row's own centering calculation — see LeaderboardPodium
+// .tsx's own `adPage` doc comment for the full reasoning (same design).
+const AD_BUTTON_ZONE = 36;
+// How often the ad page's whole skeleton row (frames + metric icon
+// together) cross-fades to the next teased category — when there are more
+// than 2 teased categories (Free's own 4), the banner text in `titleRow`
+// cycles in lockstep with this too, same as LeaderboardPodium.tsx's own
+// identical pattern.
+const TEASER_CYCLE_MS = 2200;
+const TEASER_FADE_MS = 280;
 
 const MODE_CYCLE: ContentType[] = ["movie", "series"];
 
@@ -40,10 +62,6 @@ const HINT_BOB_DISTANCE = 5;
 // anchored in this box — that dead space was the real cause of the podium
 // reading as "too far from its own title", not the titleRow spacing).
 const PODIUM_HEIGHT = 156;
-const PAGE_COUNT = 3;
-// Most Watched is the only one of the 3 pages with a movie/series
-// dimension — the toggle only renders while this page is showing.
-const WATCHED_PAGE_INDEX = 1;
 
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace("#", "");
@@ -66,19 +84,85 @@ function toPodiumOrder<T>(items: T[]): { item: T; rank: 1 | 2 | 3 }[] {
   ];
 }
 
-// Medya/Shares' own podium — Most Followed / Most Watched / Most Reviewed,
-// person-based signals that belong on the social tab rather than Discover
-// (Discover's own podium, LeaderboardPodium.tsx, is deliberately
-// content-only — ranking people doesn't help anyone find something to
-// watch). Structurally a copy of LeaderboardPodium.tsx's own shape (owns
-// its own fetch, pagingEnabled horizontal ScrollView, both-direction
-// bob-loop arrow hints) — the one real difference is the movie/series mode
-// toggle only renders on the Most Watched page, since Most Followed/Most
-// Reviewed have no type dimension at all.
-export default function PeoplePodium() {
+// The podium's 5 categories, in one fixed canonical order — Most Liked/Top
+// Recommenders are the 2 later additions, appended rather than interleaved
+// so Premium/dev's own page order stays exactly what it always was for the
+// original 3. Icons are only ever shown on the ad page's own skeleton
+// frames, reusing the exact same icon PeoplePodiumCard.tsx's own metricRow
+// uses for that same metric so the teaser and the real card read as the
+// same signal.
+const CATEGORY_KEYS = ["followed", "watched", "reviewed", "liked", "recommended"] as const;
+type CategoryKey = (typeof CATEGORY_KEYS)[number];
+
+// Which categories are fully open (real, unlocked) per tier — the
+// remainder are teased together on one ad page. Same 3-way split as
+// LeaderboardPodium.tsx's own (see that file's own doc comment for the
+// full "why 5, why this particular 3" reasoning) — Followed/Watched/
+// Reviewed are the more "everyday app-usage stats" trio kept for Plus,
+// while Liked/Recommended (who's most *popular*, who's most *influential*
+// — the more socially exclusive signals) stay Premium-only.
+const OPEN_KEYS_BY_TIER: Record<"free" | "plus" | "full", CategoryKey[]> = {
+  free: ["reviewed"],
+  plus: ["reviewed", "watched", "followed"],
+  full: [...CATEGORY_KEYS],
+};
+
+type PodiumPage = { type: "real"; key: CategoryKey } | { type: "ad"; lockedKeys: CategoryKey[] };
+
+// Medya/Shares' own podium — person-based signals that belong on the
+// social tab rather than Discover (Discover's own podium,
+// LeaderboardPodium.tsx, is deliberately content-only — ranking people
+// doesn't help anyone find something to watch). Structurally the same
+// shape as that file (own fetch, pagingEnabled horizontal ScrollView,
+// both-direction bob-loop arrow hints, the same tier-driven `pages` array
+// — see that file's own doc comment for the full mechanics, identical
+// here). Only Most Watched has a movie/series dimension, so the mode
+// toggle only ever shows while a *real* Most Watched page is active.
+//
+// Free-tier gated — not with a blur (an earlier version blurred each
+// card's photo while its name/count stayed fully readable underneath,
+// which a direct report called out as pointless). Locked categories are
+// merged into one shared ad page per viewer, same design as
+// LeaderboardPodium.tsx's own — every slot on that page is always a blank
+// `PodiumSkeletonSlot` frame, full stop, regardless of who's viewing it.
+// An earlier version rendered a real `PeoplePodiumCard` instead whenever a
+// slot happened to be the *viewer's own* entry — reverted on direct
+// correction ("reklam kartı görünüşü fixed olacak, hiçbir durumda
+// bozma"): the ad page's whole appeal is that it's a fixed, empty
+// silhouette of the podium, never real data, and a self-highlight broke
+// that consistency more than it was worth.
+//
+// Wrapped in React.memo — the one prop it does take (`jumpToCategory`,
+// see below) is `undefined` at every render except the one right after
+// PodiumNewsModal.tsx's own popup is tapped, so this still only re-renders
+// from its own internal state the overwhelming rest of the time, never
+// because SharesFeedSection or home/index.tsx above it happened to
+// re-render for an unrelated reason (e.g. every tap of the header's
+// Paylaşımlar/Keşfet pill) — see SharesFeedSection.tsx's own matching
+// comment for the full reasoning.
+interface Props {
+  // A backend PeopleLeaderboardResult field name lowercased down to this
+  // file's own shorter CategoryKey (e.g. "mostLiked" → "liked") — set by
+  // PodiumNewsModal.tsx via a `?podiumCategory=` param threaded through
+  // home/index.tsx → SharesFeedSection.tsx. On first receiving a real
+  // value, jumps straight to that category's own page — its real page if
+  // the viewer's own tier has it open, or the shared (always-fixed, never
+  // self-highlighted — see the component doc comment above) ad page
+  // otherwise, so tapping "you made the podium!" always lands on the right
+  // category, even if that category's own real ranking isn't something
+  // this viewer's tier can browse.
+  jumpToCategory?: string;
+}
+
+function PeoplePodium({ jumpToCategory }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
+  // Free/Plus/Premium/dev — same 3-way split as LeaderboardPodium.tsx's own.
+  const viewerTier = user?.accountTier ?? "free";
+  const tierLevel: "free" | "plus" | "full" = viewerTier === "premium" || viewerTier === "dev" ? "full" : viewerTier === "plus" ? "plus" : "free";
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
   const [mode, setMode] = useState<ContentType>("movie");
@@ -130,6 +214,29 @@ export default function PeoplePodium() {
     return () => loop.stop();
   }, [bobAnim]);
 
+  const openKeys = OPEN_KEYS_BY_TIER[tierLevel];
+  const lockedKeys = CATEGORY_KEYS.filter((k) => !openKeys.includes(k));
+  const hasAdPage = lockedKeys.length > 0;
+
+  // Ad page only — same technique as LeaderboardPodium.tsx's own teaser:
+  // the whole skeleton row (frames + metric icon together) cross-fades
+  // between the locked categories on a timer, independent of page-swipe.
+  const [adCategoryIndex, setAdCategoryIndex] = useState(0);
+  const teaserFadeAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!hasAdPage) return;
+    setAdCategoryIndex(0);
+    if (lockedKeys.length < 2) return;
+    const interval = setInterval(() => {
+      Animated.timing(teaserFadeAnim, { toValue: 0, duration: TEASER_FADE_MS, useNativeDriver: true }).start(() => {
+        setAdCategoryIndex((i) => (i + 1) % lockedKeys.length);
+        Animated.timing(teaserFadeAnim, { toValue: 1, duration: TEASER_FADE_MS, useNativeDriver: true }).start();
+      });
+    }, TEASER_CYCLE_MS);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAdPage, lockedKeys.length, teaserFadeAnim]);
+
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
     if (next !== page) setPage(next);
@@ -141,7 +248,13 @@ export default function PeoplePodium() {
     () =>
       StyleSheet.create({
         section: { marginBottom: 24 },
-        titleRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, marginBottom: 2 },
+        // minHeight reserves enough room for the ad page's own up-to-
+        // 2-line banner sentence regardless of which page is showing — see
+        // LeaderboardPodium.tsx's own identical `titleRow` comment for the
+        // full reasoning (real bug this fixes: swapping between the short
+        // title and the long banner used to change this row's own height,
+        // pushing the next section's own divider down while on the ad page).
+        titleRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, marginBottom: 2, minHeight: 46 },
         title: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent },
         modeToggle: {
           flexDirection: "row",
@@ -155,6 +268,22 @@ export default function PeoplePodium() {
           borderColor: colors.border,
         },
         modeToggleHidden: { opacity: 0 },
+        // Ad page (and any real page besides Most Watched) only, alongside
+        // modeToggleHidden — the hidden toggle is invisible but, left as a
+        // normal flex sibling, still reserves its own width on the row's
+        // right side, which centers adBannerTitle's own text within a
+        // narrower, off-center box instead of the row's true full width —
+        // a real reported bug ("sharesteki podyumun reklam metnini tam
+        // ortalayamadın"), the exact same one LeaderboardPodium.tsx's own
+        // toggle already needed this fix for; this file just didn't carry
+        // it over when the toggle came back for the Most Watched category
+        // in the 5-category rewrite. Pulling it out of flex flow via
+        // position:"absolute" (still mounted, still invisible, just no
+        // longer sized/laid-out as a sibling) fixes it without touching
+        // the toggle's own real Most-Watched-page layout, and without ever
+        // unmounting it (unmounting is what caused a real vertical-jump
+        // bug this "always mounted" pattern was already built to avoid).
+        modeToggleAbsolute: { position: "absolute", right: 0 },
         podiumWrap: { position: "relative" },
         loadingWrap: { height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center" },
         refetchOverlay: {
@@ -199,6 +328,33 @@ export default function PeoplePodium() {
           alignItems: "center",
           justifyContent: "center",
         },
+        // Ad page only — same design as LeaderboardPodium.tsx's own
+        // identical ad page (see that file's own `adPage` doc comment for
+        // the full "why paddingBottom + AD_BUTTON_ZONE, not a plain
+        // centered block" reasoning — same technique here). PODIUM_HEIGHT
+        // is 156px here — see this file's own comment on that constant for
+        // why it's snug.
+        adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingBottom: AD_BUTTON_ZONE, position: "relative" },
+        adFrameRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12 },
+        adButtonWrap: { position: "absolute", left: 0, right: 0, bottom: 6, alignItems: "center" },
+        // Sits inside titleRow, replacing the plain category title while
+        // the ad page is showing — direct ask ("başlık hizasında reklam
+        // metni olacak"). This file's own mode toggle *is* a sibling here
+        // too (for the Most Watched category) — modeToggleAbsolute above
+        // keeps it from reserving flex width while hidden, the same fix
+        // LeaderboardPodium.tsx's own toggle already needed.
+        adBannerTitle: { flex: 1, fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.baseContent, textAlign: "center" },
+        upgradeButton: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          borderRadius: 18,
+          backgroundColor: colors.primary,
+        },
+        upgradeButtonText: { fontFamily: fonts.bold, fontSize: 12, color: colors.primaryContent },
+        upgradeButtonIcon: { width: 13, height: 13 },
       }),
     [colors, screenWidth]
   );
@@ -206,27 +362,109 @@ export default function PeoplePodium() {
   const followedPodium = toPodiumOrder(data?.mostFollowed ?? []);
   const watchedPodium = toPodiumOrder(data?.mostWatched ?? []);
   const reviewedPodium = toPodiumOrder(data?.mostReviewed ?? []);
+  const likedPodium = toPodiumOrder(data?.mostLiked ?? []);
+  const recommendedPodium = toPodiumOrder(data?.topRecommenders ?? []);
 
-  const titles = [t("Most Followed"), t("Most Watched"), t("Most Reviewed")];
+  const categoryMeta: Record<CategoryKey, { title: string; icon: keyof typeof Ionicons.glyphMap }> = {
+    followed: { title: t("Most Followed"), icon: "people-outline" },
+    watched: { title: t("Most Watched"), icon: "eye-outline" },
+    reviewed: { title: t("Most Reviewed"), icon: "pencil" },
+    liked: { title: t("Most Liked"), icon: "heart" },
+    recommended: { title: t("Top Recommenders"), icon: "gift" },
+  };
+  const podiumByKey: Record<CategoryKey, ReturnType<typeof toPodiumOrder<any>>> = {
+    followed: followedPodium,
+    watched: watchedPodium,
+    reviewed: reviewedPodium,
+    liked: likedPodium,
+    recommended: recommendedPodium,
+  };
+
+  function renderRealCard(key: CategoryKey, rank: 1 | 2 | 3, item: any) {
+    const common = { key: item.user.id as string, rank, user: item.user, locked: false as const };
+    switch (key) {
+      case "followed":
+        return <PeoplePodiumCard {...common} metric={{ kind: "followed", count: item.followerCount }} />;
+      case "watched":
+        return <PeoplePodiumCard {...common} metric={{ kind: "watched", count: item.watchedCount }} />;
+      case "reviewed":
+        return <PeoplePodiumCard {...common} metric={{ kind: "reviewed", count: item.reviewCount }} />;
+      case "liked":
+        return <PeoplePodiumCard {...common} metric={{ kind: "liked", count: item.likeCount }} />;
+      case "recommended":
+        return <PeoplePodiumCard {...common} metric={{ kind: "recommended", count: item.recommendCount }} />;
+    }
+  }
+
+  // Direct correction: an earlier version rendered a real card here
+  // instead of a blank frame whenever the slot happened to be the
+  // *viewer's own* entry — reverted. The ad page's whole appeal was
+  // "fixed, empty rank-medal frames, nothing real ever shown here" (see
+  // PodiumSkeletonSlot.tsx's own doc comment); a real photo+name breaking
+  // that consistency was worse than the self-highlight was worth,
+  // regardless of whether the viewer happens to be that entry — "reklam
+  // kartı görünüşü fixed olacak, hiçbir durumda bozma."
+  function renderAdSlot(key: CategoryKey, rank: 1 | 2 | 3, _item: any) {
+    return <PodiumSkeletonSlot key={rank} rank={rank} shape="circle" size={TEASER_AVATAR_SIZE[rank]} metricIcon={categoryMeta[key].icon} />;
+  }
+
+  const pages: PodiumPage[] = [
+    ...openKeys.map((key): PodiumPage => ({ type: "real", key })),
+    ...(hasAdPage ? ([{ type: "ad", lockedKeys }] as PodiumPage[]) : []),
+  ];
+  const activePage = pages[page];
+  const activeIsWatched = activePage?.type === "real" && activePage.key === "watched";
+
+  // Jump-to-category, once — real page if this viewer's own tier has that
+  // category open, else the shared ad page (whichever page has it in its
+  // own `lockedKeys`). Guarded on `loading` since the ScrollView (and
+  // `scrollRef`) doesn't exist yet during the spinner state; `jumpedRef`
+  // stops this from re-firing on every re-render once it's already run —
+  // `jumpToCategory` itself only ever changes value once per tap anyway
+  // (see this component's own Props doc comment), but re-jumping on
+  // unrelated re-renders (a mode toggle, a refetch) would fight whatever
+  // page the viewer has since swiped to themselves.
+  const jumpedRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!jumpToCategory || loading || jumpedRef.current === jumpToCategory) return;
+    jumpedRef.current = jumpToCategory;
+    const realIndex = pages.findIndex((p) => p.type === "real" && p.key === jumpToCategory);
+    const targetIndex = realIndex !== -1 ? realIndex : pages.findIndex((p) => p.type === "ad" && p.lockedKeys.includes(jumpToCategory as CategoryKey));
+    if (targetIndex !== -1) goToPage(targetIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpToCategory, loading]);
+
+  const adBannerText =
+    lockedKeys.length >= 3
+      ? t("Upgrade to Plus or Premium to see {{category}}", { category: categoryMeta[lockedKeys[adCategoryIndex % lockedKeys.length]].title })
+      : t("Upgrade to Plus or Premium to see {{first}} and {{second}}", {
+          first: categoryMeta[lockedKeys[0]]?.title ?? "",
+          second: categoryMeta[lockedKeys[1]]?.title ?? "",
+        });
 
   return (
     <View style={styles.section}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>{titles[page]}</Text>
+        {activePage?.type === "real" ? (
+          <Text style={styles.title}>{categoryMeta[activePage.key].title}</Text>
+        ) : (
+          <Text style={styles.adBannerTitle}>{adBannerText}</Text>
+        )}
         {/* Always rendered (never conditionally mounted) so titleRow's own
             height never changes as `page` updates mid-swipe — a
-            conditional {page === WATCHED_PAGE_INDEX && <Pressable/>} here
-            previously made the toggle pop in/out during the scroll gesture
-            itself (handleScroll updates `page` continuously, not just on
-            settle), which changed titleRow's height and shifted the whole
-            podium vertically underneath it — the exact "sayfa dikeyde
-            hafif kayıyor" the user hit. opacity+pointerEvents hide it
-            without ever changing layout. */}
+            conditional mount here previously made the toggle pop in/out
+            during the scroll gesture itself (handleScroll updates `page`
+            continuously, not just on settle), which changed titleRow's
+            height and shifted the whole podium vertically underneath it —
+            the exact "sayfa dikeyde hafif kayıyor" the user hit.
+            opacity+pointerEvents hide it without ever changing layout.
+            Only Most Watched has a movie/series dimension, so this only
+            ever becomes usable while that specific real page is active. */}
         <Pressable
-          style={[styles.modeToggle, page !== WATCHED_PAGE_INDEX && styles.modeToggleHidden]}
+          style={[styles.modeToggle, !activeIsWatched && [styles.modeToggleHidden, styles.modeToggleAbsolute]]}
           onPress={cycleMode}
           hitSlop={8}
-          pointerEvents={page === WATCHED_PAGE_INDEX ? "auto" : "none"}
+          pointerEvents={activeIsWatched ? "auto" : "none"}
         >
           <Ionicons name="film-outline" size={16} color={mode === "movie" ? colors.primary : colors.placeholder} />
           <Ionicons name="tv-outline" size={16} color={mode === "series" ? colors.primary : colors.placeholder} />
@@ -239,32 +477,31 @@ export default function PeoplePodium() {
         </View>
       ) : (
         <View style={styles.podiumWrap}>
-          <ScrollView
-            ref={scrollRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            <View style={styles.page}>
-              {followedPodium.map(({ item, rank }) => (
-                <PeoplePodiumCard key={item.user.id} rank={rank} user={item.user} metric={{ kind: "followed", count: item.followerCount }} />
-              ))}
-            </View>
-            <View style={styles.page}>
-              {watchedPodium.map(({ item, rank }) => (
-                <PeoplePodiumCard key={item.user.id} rank={rank} user={item.user} metric={{ kind: "watched", count: item.watchedCount }} />
-              ))}
-            </View>
-            <View style={styles.page}>
-              {reviewedPodium.map(({ item, rank }) => (
-                <PeoplePodiumCard key={item.user.id} rank={rank} user={item.user} metric={{ kind: "reviewed", count: item.reviewCount }} />
-              ))}
-            </View>
+          <ScrollView ref={scrollRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={handleScroll} scrollEventThrottle={16}>
+            {pages.map((p) =>
+              p.type === "real" ? (
+                <View key={p.key} style={styles.page}>
+                  {podiumByKey[p.key].map(({ item, rank }) => renderRealCard(p.key, rank, item))}
+                </View>
+              ) : (
+                <View key="ad" style={styles.adPage}>
+                  <Animated.View style={[styles.adFrameRow, { opacity: teaserFadeAnim }]}>
+                    {podiumByKey[p.lockedKeys[adCategoryIndex % p.lockedKeys.length]].map(({ item, rank }) =>
+                      renderAdSlot(p.lockedKeys[adCategoryIndex % p.lockedKeys.length], rank, item)
+                    )}
+                  </Animated.View>
+                  <View style={styles.adButtonWrap}>
+                    <Pressable style={styles.upgradeButton} onPress={() => router.push("/match/subscription" as any)}>
+                      <Image source={CINEPHIX_LOGO} style={styles.upgradeButtonIcon} resizeMode="contain" />
+                      <Text style={styles.upgradeButtonText}>{t("Upgrade Now")}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )
+            )}
           </ScrollView>
 
-          {page < PAGE_COUNT - 1 && (
+          {page < pages.length - 1 && (
             <Animated.View
               style={[styles.arrowHintRight, { transform: [{ translateX: bobAnim.interpolate({ inputRange: [0, 1], outputRange: [0, HINT_BOB_DISTANCE] }) }] }]}
             >
@@ -293,3 +530,5 @@ export default function PeoplePodium() {
     </View>
   );
 }
+
+export default memo(PeoplePodium);

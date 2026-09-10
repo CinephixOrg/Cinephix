@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, View, Text, Pressable, ScrollView, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
+import { Animated, Easing, View, Text, Pressable, ScrollView, RefreshControl, StyleSheet, Image, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as SecureStore from "expo-secure-store";
@@ -9,12 +9,15 @@ import { useAuth } from "../../../src/context/AuthContext";
 import { getSyncCandidates, type MatchFilters } from "../../../src/api/matchService";
 import { getCineGraph } from "../../../src/api/userService";
 import MatchFilterStrip from "../../../src/components/match/MatchFilterStrip";
+import { MATCH_GENRE_KEYS } from "../../../src/components/match/CineMatchGenreRing";
 import MatchResultsCloud from "../../../src/components/match/MatchResultsCloud";
 import SyncIntroCard from "../../../src/components/match/SyncIntroCard";
 import type { CineGraphData, SyncCandidate } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 import { STORAGE_KEYS } from "../../../src/constants/apiRoutes";
+
+const CINEPHIX_LOGO = require("../../../assets/cinephix_logo.png");
 
 // Nothing selected by default — the previous round's live-apply/auto-
 // refetch model is gone; the filter panel's own "Find Your Match" button is
@@ -90,6 +93,23 @@ export default function MatchScreen() {
     if (canUseAdvancedMatchFilters) return;
     setFilters((prev) => (prev.useCount && prev.useAvgRating ? prev : { ...prev, useCount: true, useAvgRating: true }));
   }, [canUseAdvancedMatchFilters]);
+
+  // Same reasoning, for genres — Free can't toggle genre selection either
+  // (MatchFilterStrip's own `locked` treatment), and the server ignores
+  // whatever's sent there anyway (forced to DEFAULT_MATCH_FILTERS.genres,
+  // i.e. no restriction — every genre, in effect). Forced to the *full*
+  // genre list here (not left empty) so "Apply All Genres" shows checked
+  // too, consistent with the useCount/useAvgRating fix above. Re-applies on
+  // a type switch too, so Movies<->Series while locked refills with that
+  // type's own genre keys instead of leaving the other type's stale ones.
+  useEffect(() => {
+    if (canUseMatchFilters) return;
+    const allGenres = MATCH_GENRE_KEYS[filters.type];
+    setFilters((prev) => {
+      const alreadyAll = allGenres.length === prev.genres.length && allGenres.every((g) => prev.genres.includes(g));
+      return alreadyAll ? prev : { ...prev, genres: allGenres };
+    });
+  }, [canUseMatchFilters, filters.type]);
 
   const [cineGraph, setCineGraph] = useState<CineGraphData | null>(null);
   const [candidates, setCandidates] = useState<SyncCandidate[]>([]);
@@ -238,9 +258,38 @@ export default function MatchScreen() {
           alignItems: "center",
           justifyContent: "center",
         },
+        // No longer position:"absolute" — moved to sit right below the Sync
+        // button (MatchFilterStrip's own upgradeButtonWrap) instead of
+        // floating as a separate top-right pill, direct ask.
+        upgradeBadge: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 5,
+          backgroundColor: colors.primary,
+          borderRadius: 999,
+          paddingHorizontal: 12,
+          paddingVertical: 7,
+        },
+        upgradeBadgeText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 12.5 },
+        upgradeBadgeIcon: { width: 13, height: 13 },
       }),
     [colors, screenWidth, insets.top]
   );
+
+  // Free/Plus only — the one direct entry point to the subscription page
+  // from this screen now; every locked control inside MatchFilterStrip
+  // shows a toast instead of navigating away on tap (reported as jarring),
+  // so there needs to be an obvious, deliberate way to actually get to the
+  // plans page. Passed into MatchFilterStrip itself (upgradeButton prop)
+  // rather than rendered here as its own floating badge — direct ask to
+  // move it right next to the Sync button.
+  const upgradeButtonEl =
+    tier === "free" || tier === "plus" ? (
+      <Pressable style={styles.upgradeBadge} onPress={() => router.push("/match/subscription" as any)}>
+        <Image source={CINEPHIX_LOGO} style={styles.upgradeBadgeIcon} resizeMode="contain" />
+        <Text style={styles.upgradeBadgeText}>{t("Upgrade")}</Text>
+      </Pressable>
+    ) : null;
 
   return (
     <View style={styles.container}>
@@ -265,14 +314,18 @@ export default function MatchScreen() {
                       locked={!canUseMatchFilters}
                       advancedLocked={!canUseAdvancedMatchFilters}
                       viewer={user}
+                      upgradeButton={upgradeButtonEl}
                     />
                   )}
 
-                  {!hasSearched && (
-                    <View style={styles.center}>
-                      <Text style={styles.centerText}>{t("Set your filters above, then tap Sync.")}</Text>
-                    </View>
-                  )}
+                  {/* Return visits (showIntro already false, since the
+                      one-time card above was already dismissed): the same
+                      Sync pitch card that a first-time visitor sees blocking
+                      the whole page instead lives here, in the space below
+                      the filters/Sync button, once there's nothing else to
+                      show yet — keeps the pitch around for repeat visits
+                      without it getting in the way every single time. */}
+                  {!hasSearched && <SyncIntroCard onStart={() => {}} showButton={false} />}
                 </>
               )}
             </ScrollView>
