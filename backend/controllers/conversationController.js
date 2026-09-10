@@ -8,16 +8,29 @@ import User from "../models/User.js";
 import Group from "../models/Group.js";
 import Notification from "../models/Notification.js";
 
+// How many messages ship alongside a conversation from
+// getOrCreateConversation. Matches the client's own default page size, so
+// the seeded page and a later "load older" fetch line up.
+const INITIAL_MESSAGE_PAGE = 50;
+
 // GET /api/conversations
 // Returns all conversations (DMs) and groups for the current user, sorted by most recent message.
 export const getConversations = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  // Get all 1-on-1 DM conversations
-  const conversations = await Conversation.find({ participants: userId })
-    .populate("participants", "username profile_pic_url accountTier")
-    .sort({ lastMessageAt: -1 })
-    .lean();
+  // DMs and groups have nothing to do with each other, so they're fetched
+  // together rather than as two sequential round trips — this endpoint is on
+  // the critical path for opening the Socials tab.
+  const [conversations, groups] = await Promise.all([
+    Conversation.find({ participants: userId })
+      .populate("participants", "username profile_pic_url accountTier")
+      .sort({ lastMessageAt: -1 })
+      .lean(),
+    Group.find({ "members.user": userId })
+      .populate("lastMessageSenderId", "username")
+      .sort({ lastMessageAt: -1 })
+      .lean(),
+  ]);
 
   // Attach unread count and the "other" participant for each conversation
   const dmResults = conversations.map((conv) => ({
@@ -28,14 +41,6 @@ export const getConversations = asyncHandler(async (req, res) => {
     ),
     unreadCount: conv.unreadCounts?.[userId.toString()] ?? 0,
   }));
-
-  // Get all groups the user is a member of
-  const groups = await Group.find({
-    "members.user": userId,
-  })
-    .populate("lastMessageSenderId", "username")
-    .sort({ lastMessageAt: -1 })
-    .lean();
 
   const groupResults = groups.map((group) => ({
     ...group,
@@ -71,6 +76,10 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
     participants: { $all: [userId, participantId], $size: 2 },
   }).populate("participants", "username profile_pic_url accountTier");
 
+  // Tracked explicitly rather than read off the document: the create branch
+  // re-fetches through findById, so the result is a loaded document whose
+  // own `isNew` is always false by the time we'd look at it.
+  const justCreated = !conversation;
   if (!conversation) {
     // Sort IDs for a consistent order in the document
     const sorted = [userId.toString(), participantId.toString()].sort();
@@ -84,12 +93,34 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
     );
   }
 
+  // The first page of messages ships with the conversation.
+  //
+  // Opening a DM from a profile used to be two sequential round trips —
+  // find-or-create the conversation, then go back for its messages — with
+  // the chat sitting on a skeleton for both. The client can't ask for
+  // messages until it knows the conversation id, so the only way to collapse
+  // that is from this end. A brand-new conversation has none, and skipping
+  // the query for that case costs nothing to check.
+  const messages = justCreated
+    ? []
+    : (
+        await Message.find({ roomType: "dm", roomId: conversation._id })
+          .populate("sender", "username profile_pic_url accountTier")
+          .sort({ createdAt: -1 })
+          .limit(INITIAL_MESSAGE_PAGE + 1)
+          .lean()
+      );
+  const hasMore = messages.length > INITIAL_MESSAGE_PAGE;
+
   const result = {
     ...conversation.toObject(),
     otherUser: conversation.participants.find(
       (p) => p._id.toString() !== userId.toString()
     ),
     unreadCount: conversation.unreadCounts?.get?.(userId.toString()) ?? 0,
+    // Oldest-first, matching what GET /:id/messages returns.
+    messages: messages.slice(0, INITIAL_MESSAGE_PAGE).reverse(),
+    messagesPagination: { hasMore, limit: INITIAL_MESSAGE_PAGE, before: null },
   };
 
   sendSuccess(res, result, "Conversation ready");
@@ -102,10 +133,22 @@ export const getMessages = asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
   const before = req.query.before ? new Date(req.query.before) : null;
 
-  // Try to find as a DM conversation first
-  let conversation = await Conversation.findById(id)
-    .select("participants")
-    .lean();
+  // The membership check and the message fetch are fired together rather
+  // than one after the other. They don't depend on each other's data, only
+  // on the check's *outcome* — so a rejected read just discards work that
+  // was already in flight, while every legitimate read (the overwhelming
+  // majority) stops paying for two sequential round trips.
+  const dmQuery = { roomType: "dm", roomId: id };
+  if (before) dmQuery.createdAt = { $lt: before };
+
+  let [conversation, dmMessages] = await Promise.all([
+    Conversation.findById(id).select("participants").lean(),
+    Message.find(dmQuery)
+      .populate("sender", "username profile_pic_url accountTier")
+      .sort({ createdAt: -1 })
+      .limit(limit + 1)
+      .lean(),
+  ]);
 
   if (conversation) {
     // It's a DM
@@ -114,18 +157,7 @@ export const getMessages = asyncHandler(async (req, res) => {
     );
     if (!isParticipant) return sendError(res, "Not a participant", 403);
 
-    const query = {
-      roomType: "dm",
-      roomId: conversation._id,
-    };
-
-    if (before) query.createdAt = { $lt: before };
-
-    const messages = await Message.find(query)
-      .populate("sender", "username profile_pic_url accountTier")
-      .sort({ createdAt: -1 })
-      .limit(limit + 1)
-      .lean();
+    const messages = dmMessages;
 
     const hasMore = messages.length > limit;
     const result = messages.slice(0, limit).reverse();
@@ -200,7 +232,7 @@ export const markAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/conversations/:id/messages  (REST fallback)
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { text, type = "text", contentId, contentType, contentData, analysisData } = req.body;
+  const { text, type = "text", contentId, contentType, contentData, analysisData, profileData } = req.body;
 
   // Validate message based on type
   if (type === "recommendation") {
@@ -210,6 +242,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
       return sendError(res, "Invalid recommendation data", 400);
   } else if (type === "analysis_share") {
     if (!analysisData) return sendError(res, "Missing analysis data", 400);
+  } else if (type === "profile_share") {
+    if (!profileData?.userId || !profileData?.username)
+      return sendError(res, "Missing profile data", 400);
   } else {
     // text message
     if (!text?.trim() || text.length > 1000)
@@ -251,6 +286,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
     }
   } else if (type === "analysis_share") {
     messageData.analysisData = analysisData;
+  } else if (type === "profile_share") {
+    messageData.profileData = {
+      userId: profileData.userId,
+      username: profileData.username,
+      profile_pic_url: profileData.profile_pic_url || null,
+      accountTier: profileData.accountTier || null,
+    };
   }
 
   const message = await Message.create(messageData);

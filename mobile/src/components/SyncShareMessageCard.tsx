@@ -18,7 +18,7 @@ interface Props {
 }
 
 // The chat-bubble preview for a Sync share (MatchCoverCard.tsx's own Share
-// button, or CineGraphCompatibilityCard's) — two fainter, slightly rotated
+// button, or SyncScoreCard's) — two fainter, slightly rotated
 // rectangles behind the front card hint there's a whole card-paged deck
 // behind this one preview (matching what MatchAnalysisPanel.tsx's real
 // results deck actually is), rather than a bare "tap to see" text bubble.

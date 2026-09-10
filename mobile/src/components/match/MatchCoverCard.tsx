@@ -24,7 +24,7 @@ interface Props {
 // — reusing AnalyzeModal.tsx's own exact send flow
 // (getOrCreateConversation -> sendRichMessage -> refreshConversations)
 // rather than a second implementation of it. AnalyzeModal itself already
-// has this Share button (wired from CineGraphCompatibilityCard on public
+// has this Share button (wired from SyncScoreCard on public
 // profiles), but the rebuilt Sync results deck never had its own — this is
 // that gap filled, in the deck's own idiom (a card, not a modal button row).
 export default function MatchCoverCard({ candidate, analysis }: Props) {

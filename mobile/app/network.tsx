@@ -11,6 +11,7 @@ import {
   rejectFollowRequest,
   removeFollower,
 } from "../src/api/userService";
+import { getCachedConnections, invalidateConnections, setCachedConnections } from "../src/api/connectionsCache";
 import { useAuth } from "../src/context/AuthContext";
 import FollowButton from "../src/components/FollowButton";
 import ContentRail from "../src/components/ContentRail";
@@ -104,21 +105,16 @@ export default function NetworkScreen() {
     navigation.setOptions({ title: params.username || (isOwn ? user?.username : "") || "" });
   }, [navigation, params.username, isOwn, user?.username]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!targetId) return;
-      getFollowers(1, 1, params.userId)
-        .then(({ pagination }) => {
-          if (pagination) setFollowersCount(pagination.total);
-        })
-        .catch(() => {});
-      getFollowing(1, 1, params.userId)
-        .then(({ pagination }) => {
-          if (pagination) setFollowingCount(pagination.total);
-        })
-        .catch(() => {});
-    }, [targetId, params.userId])
-  );
+  // The two tab labels' counts used to cost two dedicated round trips —
+  // getFollowers(1, 1) and getFollowing(1, 1) — whose whole purpose was to
+  // read one number out of each pagination envelope, on top of the request
+  // that actually fetches the visible list. Both lists now report both
+  // totals, so the list request below fills these in for free.
+  const applyCounts = useCallback((counts?: { followers: number; following: number }) => {
+    if (!counts) return;
+    setFollowersCount(counts.followers);
+    setFollowingCount(counts.following);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -134,31 +130,71 @@ export default function NetworkScreen() {
   );
 
   const load = useCallback(
-    async (pageNum: number, currentTab: Tab, append: boolean) => {
+    // `render: false` fetches purely to fill the tab counts and warm the
+    // cache — used from the Requests tab, which shows no list of its own and
+    // must not have one written into its state.
+    async (pageNum: number, currentTab: Tab, append: boolean, render = true) => {
       if (currentTab === "requests" || !targetId) return;
       try {
         const fetcher = currentTab === "followers" ? getFollowers : getFollowing;
-        const { items: newItems, pagination } = await fetcher(pageNum, 20, params.userId);
-        setItems((prev) => (append ? [...prev, ...newItems] : newItems));
-        setHasMore(pagination ? pageNum < pagination.pages : newItems.length > 0);
-        setError(null);
+        const { items: newItems, pagination, counts } = await fetcher(pageNum, 20, params.userId);
+        const more = pagination ? pageNum < pagination.pages : newItems.length > 0;
+        if (render) {
+          setItems((prev) => (append ? [...prev, ...newItems] : newItems));
+          setHasMore(more);
+          setError(null);
+        }
+        applyCounts(counts);
+        // Only page 1 is cached: it's what a return visit needs to render
+        // instantly, and holding every page someone scrolled through would
+        // grow without bound for no benefit.
+        if (!append && targetId) {
+          setCachedConnections(targetId, currentTab, { items: newItems, hasMore: more, counts });
+        }
       } catch (e: any) {
-        setError(e?.response?.data?.message || t("Failed to load list."));
+        if (render) setError(e?.response?.data?.message || t("Failed to load list."));
       }
     },
-    [targetId, params.userId]
+    [targetId, params.userId, applyCounts]
   );
 
+  // Renders the last known page immediately and refreshes behind it.
+  //
+  // This used to blank the list and show a full-screen spinner on every
+  // focus — so tapping someone, looking at their profile and coming back
+  // meant watching the whole list load again from nothing, even though it
+  // had been on screen a second earlier. The spinner is now only for a list
+  // this session has never shown.
   useFocusEffect(
     useCallback(() => {
-      if (tab === "requests") {
+      if (!targetId) {
         setLoading(false);
         return;
       }
-      setLoading(true);
+      // The Requests tab has no list of its own to show, but the two tab
+      // labels beside it still need their counts — which now arrive with a
+      // list response rather than from dedicated count requests. Fetching
+      // the followers page here supplies them and warms the cache, so
+      // switching to that tab afterwards is instant.
+      if (tab === "requests") {
+        setLoading(false);
+        applyCounts(getCachedConnections(targetId, "followers")?.counts);
+        load(1, "followers", false, false);
+        return;
+      }
+      const cached = getCachedConnections(targetId, tab);
+      if (cached) {
+        setItems(cached.items);
+        setHasMore(cached.hasMore);
+        applyCounts(cached.counts);
+        setLoading(false);
+      } else {
+        setItems([]);
+        setLoading(true);
+      }
       setPage(1);
       load(1, tab, false).finally(() => setLoading(false));
-    }, [tab, load])
+    }, [tab, load, targetId, applyCounts])
   );
 
   const loadMore = async () => {
@@ -173,6 +209,9 @@ export default function NetworkScreen() {
   const handleRemove = async (followerId: string) => {
     setItems((prev) => prev.filter((it) => it._id !== followerId));
     setFollowersCount((prev) => (prev != null ? prev - 1 : prev));
+    // The optimistic removal above is only in this screen's state — without
+    // this the cached page would put them back on the next visit.
+    if (targetId) invalidateConnections(targetId);
     try {
       await removeFollower(followerId);
     } catch {
@@ -261,20 +300,22 @@ export default function NetworkScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={styles.row}>
-              <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
-                {(innerSize) =>
-                  item.profile_pic_url ? (
-                    <Image
-                      source={{ uri: item.profile_pic_url }}
-                      style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
-                    />
-                  ) : (
-                    <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                      <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
-                    </View>
-                  )
-                }
-              </TierAvatarFrame>
+              <Pressable onPress={() => router.push(`/user/${item._id}`)}>
+                <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
+                  {(innerSize) =>
+                    item.profile_pic_url ? (
+                      <Image
+                        source={{ uri: item.profile_pic_url }}
+                        style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                      />
+                    ) : (
+                      <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                        <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
+                      </View>
+                    )
+                  }
+                </TierAvatarFrame>
+              </Pressable>
               <Pressable style={styles.rowText} onPress={() => router.push(`/user/${item._id}`)}>
                 <Text style={styles.username}>{item.username}</Text>
                 {item.bio ? (
@@ -313,20 +354,22 @@ export default function NetworkScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={styles.row}>
-              <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
-                {(innerSize) =>
-                  item.profile_pic_url ? (
-                    <Image
-                      source={{ uri: item.profile_pic_url }}
-                      style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
-                    />
-                  ) : (
-                    <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                      <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
-                    </View>
-                  )
-                }
-              </TierAvatarFrame>
+              <Pressable onPress={() => router.push(`/user/${item._id}`)}>
+                <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
+                  {(innerSize) =>
+                    item.profile_pic_url ? (
+                      <Image
+                        source={{ uri: item.profile_pic_url }}
+                        style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                      />
+                    ) : (
+                      <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                        <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
+                      </View>
+                    )
+                  }
+                </TierAvatarFrame>
+              </Pressable>
               <Pressable style={styles.rowText} onPress={() => router.push(`/user/${item._id}`)}>
                 <Text style={styles.username}>{item.username}</Text>
               </Pressable>

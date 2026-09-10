@@ -4,7 +4,7 @@ import Review from "../models/Review.js";
 import Rating from "../models/Rating.js";
 import User from "../models/User.js";
 import CustomList from "../models/CustomList.js";
-import { hydratePreviewItems } from "../routes/customListRoute.js";
+import { hydratePreviewItems } from "../utils/listPreview.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 
@@ -12,6 +12,9 @@ const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
 
 const MAX_LIMIT = 50;
+// How many viewer avatars a share card actually shows. Also the number the
+// query reads back — see getUserShares.
+const TOP_VIEWERS_COUNT = 5;
 
 // Anti-spam cooldown for re-sharing a review of the SAME title — direct ask
 // after a real concern was raised: nothing stopped someone from editing
@@ -649,12 +652,23 @@ export const getUserShares = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
 
+  const requesterId = req.user.id;
   const query = { user: targetUserId };
   const [items, total] = await Promise.all([
     Share.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
+      // Only the handful of viewers actually rendered are read back. This
+      // used to populate the FULL views array of every share on the page —
+      // one User document per person who ever opened it — and then throw
+      // all but the first five away, which on a well-viewed share meant
+      // fetching hundreds of documents to display five avatars.
+      .slice("views", TOP_VIEWERS_COUNT)
+      // Likewise: `likes` is only read to answer "did I like this?", so ask
+      // the database that question instead of hauling the whole array back.
+      // likeCount is denormalized on the document, so the count is unaffected.
+      .slice("likes", 0)
       // accountTier included here so Profile's own shares grid can drive
       // TierAvatarFrame — getShareFeed above uses a $lookup-based
       // aggregation instead of populate() and already selects
@@ -677,10 +691,23 @@ export const getUserShares = asyncHandler(async (req, res) => {
   const voters = allVoterIds.size ? await User.find({ _id: { $in: [...allVoterIds] } }).select("username profile_pic_url").lean() : [];
   const voterMap = new Map(voters.map((u) => [u._id.toString(), u]));
 
-  const requesterId = req.user.id;
+  // One id-only query for the whole page, rather than trusting an in-memory
+  // `likes` array — the query above already caps it to 0 elements
+  // (.slice("likes", 0)), so reading it directly would always report
+  // liked:false regardless of the real state.
+  const likedIds = new Set(
+    (
+      await Share.find({ _id: { $in: items.map((s) => s._id) }, likes: requesterId })
+        .select("_id")
+        .lean()
+    ).map((s) => s._id.toString())
+  );
+
   const withMeta = items.map((s) => {
-    const liked = (s.likes || []).some((id) => id.toString() === requesterId.toString());
-    const topViewers = (s.views || []).slice(0, 5);
+    const liked = likedIds.has(s._id.toString());
+    // Also capped here: the $slice above is an optimization, and this
+    // keeps the response shape identical regardless of whether it applied.
+    const topViewers = (s.views || []).slice(0, TOP_VIEWERS_COUNT);
     let pollData = s.pollData;
     let userVoteIndex = null;
     if (s.type === "poll" && pollData) {

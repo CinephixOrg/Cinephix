@@ -28,6 +28,7 @@ import {
   // --- NEW ADDITIONS (For ProfilePage) ---
   getUserProfile,
   getUserFavorites,
+  getUserCollections,
   updateUserBio,
   getUserRatings,
   getUserCineGraph,
@@ -157,6 +158,10 @@ router.get("/search", authMiddleware, searchUsers);
 // Get user profile and related data
 router.get("/profile/:id", authMiddleware, getUserProfile);
 router.get("/favorites/:id", authMiddleware, getUserFavorites);
+
+// Lists + watched list + watchlist in one call, for the public profile's
+// Lists tab. Private accounts get the same masked-empty shape favorites does.
+router.get("/collections/:id", authMiddleware, getUserCollections);
 
 router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchemas.updateProfile), updateUserBio);
 router.patch("/me/visibility", authMiddleware, updateVisibility);

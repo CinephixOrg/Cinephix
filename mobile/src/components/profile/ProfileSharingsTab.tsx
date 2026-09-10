@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable, Modal, ScrollView, StyleSheet, useWindowDimensions, type LayoutChangeEvent } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { getUserShares, toggleShareLike } from "../../api/shareService";
+import { getUserShares, toggleShareLike, SHARES_PREVIEW_LIMIT } from "../../api/shareService";
 import ShareCard from "../ShareCard";
 import ShareGridTile from "./ShareGridTile";
 import type { Share } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 
-const PREVIEW_LIMIT = 30;
+
+// How long a fetched share list is treated as current when this tab is
+// brought back into view. Short, because posting a share is exactly the
+// thing a user does right before coming here to look at it.
+const REVALIDATE_TTL_MS = 15_000;
 const SHARINGS_COLUMNS = 3;
 const SHARINGS_GAP = 6;
 const SHARINGS_PADDING = 16;
@@ -26,15 +30,28 @@ const SHARINGS_PADDING = 16;
 interface Props {
   userId?: string;
   basePath?: "/home" | "/profile" | `/user/${string}`;
+  // Whether this tab is the one currently on screen. Only the own-profile
+  // caller keeps it mounted while hidden, so everywhere else this stays
+  // true and the revalidation below is a no-op.
+  active?: boolean;
+  // Shares already fetched by the caller. The public profile pulls these in
+  // the same round trip as the rest of its bundle, so this tab — the default
+  // one — has content on its first frame instead of mounting, firing its own
+  // request, and showing a spinner after the profile had already loaded.
+  initialShares?: Share[];
 }
 
-export default function ProfileSharingsTab({ userId = "me", basePath = "/profile" }: Props) {
+function ProfileSharingsTab({ userId = "me", basePath = "/profile", active = true, initialShares }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
-  const [shares, setShares] = useState<Share[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [shares, setShares] = useState<Share[]>(initialShares ?? []);
+  const [loading, setLoading] = useState(!initialShares);
   const [selectedShareId, setSelectedShareId] = useState<string | null>(null);
+  // Pre-seeded shares count as freshly fetched — they came from the caller's
+  // own request moments ago, so the revalidation below shouldn't immediately
+  // repeat it.
+  const lastFetchedRef = useRef(initialShares ? Date.now() : 0);
 
   // Measured off the grid's own onLayout rather than assumed from
   // useWindowDimensions — the grid's actual available width can end up
@@ -77,20 +94,49 @@ export default function ProfileSharingsTab({ userId = "me", basePath = "/profile
     [colors]
   );
 
+  const load = useCallback(
+    (withSpinner: boolean) => {
+      if (withSpinner) setLoading(true);
+      let cancelled = false;
+      getUserShares(userId, 1, SHARES_PREVIEW_LIMIT)
+        .then((res) => {
+          if (cancelled) return;
+          setShares(res.items);
+          lastFetchedRef.current = Date.now();
+        })
+        .finally(() => {
+          if (!cancelled && withSpinner) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    },
+    [userId]
+  );
+
+  // Skipped entirely when the caller handed us shares: there's nothing to
+  // wait for, and the revalidate-on-active effect below keeps them current.
+  const seededRef = useRef(Boolean(initialShares));
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getUserShares(userId, 1, PREVIEW_LIMIT)
-      .then((res) => {
-        if (!cancelled) setShares(res.items);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+    if (seededRef.current) {
+      seededRef.current = false;
+      return;
+    }
+    return load(true);
+  }, [load]);
+
+  // This tab stays mounted once visited (ProfileCategoryTabs keeps it alive
+  // so switching back is instant), which means the one fetch above would
+  // otherwise be the only one for the whole session — a share posted in the
+  // meantime would never show up here. Revalidating when the tab is brought
+  // back gives the freshness the old remount-every-time behaviour had, minus
+  // its cost: no spinner and no cleared list, because there's already
+  // something correct on screen to keep showing while the request runs.
+  useEffect(() => {
+    if (!active) return;
+    if (Date.now() - lastFetchedRef.current < REVALIDATE_TTL_MS) return;
+    return load(false);
+  }, [active, load]);
 
   const handleToggleLike = async (shareId: string) => {
     const prev = shares;
@@ -146,3 +192,8 @@ export default function ProfileSharingsTab({ userId = "me", basePath = "/profile
     </View>
   );
 }
+
+// Memoized for the same reason as the CineGraph tab: it stays mounted after
+// its first visit, and re-rendering its whole share grid on every unrelated
+// profile-screen render would give back what keeping it mounted just saved.
+export default memo(ProfileSharingsTab);

@@ -23,6 +23,17 @@ interface AnalysisSharePayload {
   analysisData: unknown;
 }
 
+interface ProfileSharePayload {
+  text: string;
+  type: "profile_share";
+  profileData: {
+    userId: string;
+    username: string;
+    profile_pic_url?: string | null;
+    accountTier?: string | null;
+  };
+}
+
 // GET /conversations returns BOTH dm and group rows merged — split by type
 // here rather than discarding groups, so the Messages inbox can show both
 // while every DM-only consumer (RecipientPickerModal, etc.) keeps reading
@@ -72,12 +83,13 @@ export async function sendMessageRest(conversationId: string, text: string): Pro
   return res.data;
 }
 
-// Recommendation/analysis-share sends are one-off actions triggered outside
-// any open chat room (a gift-icon picker, AnalyzeModal's Share button) — REST
-// only, no socket path, matching how web itself sends both these types.
+// Recommendation/analysis-share/profile-share sends are one-off actions
+// triggered outside any open chat room (a gift-icon picker, AnalyzeModal's
+// Share button, Public Profile's photo-viewer Share action) — REST only, no
+// socket path, matching how web itself sends these types.
 export async function sendRichMessage(
   conversationId: string,
-  payload: RecommendationPayload | AnalysisSharePayload
+  payload: RecommendationPayload | AnalysisSharePayload | ProfileSharePayload
 ): Promise<Message> {
   const res = await API.post(API_ROUTES.CONVERSATIONS.SEND_MESSAGE(conversationId), payload);
   return res.data;

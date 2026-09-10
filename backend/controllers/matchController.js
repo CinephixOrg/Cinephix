@@ -23,6 +23,7 @@ import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { formatForLLM } from "../services/llmFormatterService.js";
 import { sanitizeForLLM } from "../services/llmSanitizerService.js";
 import { callLLM } from "../services/llmAdapter.js";
+import { createTtlCache } from "../utils/ttlCache.js";
 import { getTierLimits, DEFAULT_MATCH_FILTERS } from "../config/tiers.js";
 
 // Mirrors mobile's supported UI languages (mobile/src/locales/index.ts) — the
@@ -1216,6 +1217,19 @@ const computeMatchBreakdown = (
  * POST /api/match/user/:targetUserId
  * Calculate compatibility with a specific user
  */
+// The score is derived from both users' ratings and CineGraphs, so it does
+// change — just not within the time it takes to open a profile, glance at
+// the number, tab away and come back, which is exactly the pattern that was
+// re-running four queries and the whole breakdown computation each time.
+// Short enough that a rating made now shows up almost immediately.
+const MATCH_SCORE_TTL_MS = 60 * 1000;
+const matchScoreCache = createTtlCache({ ttlMs: MATCH_SCORE_TTL_MS, limit: 1000 });
+
+// Filters are part of the key: the same pair scores differently under a
+// genre filter or with the count/rating weights toggled.
+const matchScoreKey = (meId, targetUserId, { type, genres, useCount, useAvgRating }) =>
+  [meId, targetUserId, type, [...(genres || [])].sort().join(","), useCount, useAvgRating].join("|");
+
 export const getMatchWithUser = asyncHandler(async (req, res) => {
   const meId = req.user.id;
   const { targetUserId } = req.params;
@@ -1234,19 +1248,28 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     return sendError(res, 'Cannot match with yourself', 400);
   }
 
+  const cacheKey = matchScoreKey(meId, targetUserId, { type, genres, useCount, useAvgRating });
+  const cached = matchScoreCache.get(cacheKey);
+  if (cached) {
+    return sendSuccess(res, cached, 'Match calculated successfully (cached)');
+  }
+
   const cineKey = type === "movie" ? "movieCineGraph" : "seriesCineGraph";
 
-  // Get my data
-  const me = await User.findById(meId).lean();
+  // Both sides projected to exactly what computeMatchBreakdown reads. `me`
+  // used to be fetched whole: an unprojected User document drags along the
+  // full watchlist and toWatchList subdocument arrays (hundreds of entries
+  // for an active account) plus the other type's CineGraph, all of it
+  // decoded and then discarded here.
+  const projection = `username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`;
+  const [me, target] = await Promise.all([
+    User.findById(meId).select(projection).lean(),
+    User.findById(targetUserId).select(projection).lean(),
+  ]);
+
   if (!me || !me[cineKey]) {
     return sendError(res, 'Your CineGraph data not found', 400);
   }
-
-  // Get target user data
-  const target = await User.findById(targetUserId)
-    .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`)
-    .lean();
-
   if (!target || !target[cineKey]) {
     return sendError(res, 'Target user or their CineGraph data not found', 404);
   }
@@ -1263,7 +1286,7 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
     const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]);
 
-    const { matchPercentage, breakdown, favorites1, favorites2 } = computeMatchBreakdown(
+    const { matchPercentage, breakdown } = computeMatchBreakdown(
       me,
       target,
       cineKey,
@@ -1271,26 +1294,15 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
       { recentRatings: { me: myRecentRatings, target: targetRecentRatings }, favoriteGenreIds }
     );
 
-    const llmInput = formatForLLM({
-      schema_version: "1.0",
-      requester: { _id: me._id, username: me.username },
-      target: { _id: target._id, username: target.username, profile_pic_url: target.profile_pic_url },
-      type,
-      cineKey,
-      matchPercentage,
-      breakdown,
-      myGraph: me[cineKey],
-      targetGraph: target[cineKey],
-      favorites: {
-        me: favorites1.map((x) => x.toString && x.toString()).slice(0, 50),
-        target: favorites2.map((x) => x.toString && x.toString()).slice(0, 50),
-      },
-    });
-
-    // Sanitize LLM payload before returning/sending to external services
-    const sanitizedLLMInput = sanitizeForLLM(llmInput, { redactUsernames: false, redactProfilePic: true });
-
-    sendSuccess(res, {
+    // No llmInput in this response any more. It used to build the entire
+    // LLM payload here — both users' full CineGraphs plus 50 favorite ids
+    // each, formatted and then sanitized — and ship it to the client on
+    // every call. Nothing ever read it: this endpoint backs the Sync Score
+    // card, which needs the percentage, the target's identity and the
+    // breakdown. /analyze builds its own payload independently, so the work
+    // was pure serialization and transfer cost on the one request the user
+    // is actually waiting on.
+    const payload = {
       matchPercentage,
       targetUser: {
         _id: target._id,
@@ -1298,8 +1310,9 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
         profile_pic_url: target.profile_pic_url,
       },
       breakdown,
-      llmInput: sanitizedLLMInput,
-    }, 'Match calculated successfully');
+    };
+    matchScoreCache.set(cacheKey, payload);
+    sendSuccess(res, payload, 'Match calculated successfully');
 
   } catch (error) {
     return sendError(res, 'Error calculating match', 500);
@@ -1347,8 +1360,13 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
 
   const cineKey = type === 'movie' ? 'movieCineGraph' : 'seriesCineGraph';
 
-  const me = await User.findById(meId).lean();
-  const target = await User.findById(targetUserId).select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`).lean();
+  // Projected and parallel, same as getMatchWithUser — an unprojected `me`
+  // drags the whole watchlist/toWatchList along for data this never reads.
+  const projection = `username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries`;
+  const [me, target] = await Promise.all([
+    User.findById(meId).select(projection).lean(),
+    User.findById(targetUserId).select(projection).lean(),
+  ]);
 
   if (!me || !me[cineKey] || !target || !target[cineKey]) return sendError(res, 'Required data not found', 404);
 

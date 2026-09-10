@@ -11,8 +11,18 @@ import { fonts } from "../theme/typography";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 
+// Rendered by two routes: /profile/genre/... (your own) and
+// /user/[id]/genre/... (someone else's). The `id` param is present only on
+// the latter, and that's what tells the two apart — everything below keys
+// off it rather than assuming "me".
 export default function GenreDetailScreen() {
-  const { type, genre } = useLocalSearchParams<{ type: "movie" | "series"; genre: string }>();
+  const { type, genre, id } = useLocalSearchParams<{ type: "movie" | "series"; genre: string; id?: string }>();
+  // Whose genre breakdown this is. Hardcoding "me" here meant opening a
+  // genre from someone else's CineGraph showed YOUR titles under their name.
+  const targetUserId = id || "me";
+  // Content pushed from this screen has to stay inside whichever stack this
+  // screen belongs to, or its own back button lands somewhere else entirely.
+  const basePath = id ? `/user/${id}` : "/profile";
   const navigation = useNavigation();
   const router = useRouter();
   const { colors } = useTheme();
@@ -59,7 +69,7 @@ export default function GenreDetailScreen() {
       navigation.setOptions({ title: genre });
       let cancelled = false;
       setLoading(true);
-      getGenreDetail("me", type, genre)
+      getGenreDetail(targetUserId, type, genre)
         .then((res) => {
           if (!cancelled) setData(res);
         })
@@ -69,7 +79,7 @@ export default function GenreDetailScreen() {
       return () => {
         cancelled = true;
       };
-    }, [type, genre])
+    }, [type, genre, targetUserId])
   );
 
   if (loading) {
@@ -121,7 +131,7 @@ export default function GenreDetailScreen() {
         renderItem={({ item }) => (
           <Pressable
             style={styles.row}
-            onPress={() => router.push(`/profile/content/${type}/${item.contentId}` as any)}
+            onPress={() => router.push(`${basePath}/content/${type}/${item.contentId}` as any)}
           >
             {item.posterPath ? (
               <Image source={{ uri: `${POSTER_BASE}${item.posterPath}` }} style={styles.poster} />

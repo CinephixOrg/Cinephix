@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import type { UserProfile } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 import TierAvatarFrame from "../TierAvatarFrame";
+import ProfilePhotoViewerModal, { type PhotoViewerAction } from "./ProfilePhotoViewerModal";
 
 const AVATAR_SIZE = 84;
 const CINEPHIX_LOGO = require("../../../assets/cinephix_logo.png");
@@ -22,9 +23,17 @@ interface Props {
   // whatever category-tab row the caller renders next.
   actionsSlot?: ReactElement | null;
   // Own-profile only — Instagram-style 3rd stat (Posts/Followers/Following).
-  // Not interactive (no dedicated "all shares" screen to route to beyond
-  // the Your Sharings category tab, which already lives one scroll away).
+  // Tapping it jumps to the Sharings category tab below (see
+  // profile/index.tsx) — omit this prop to render the stat inert instead
+  // (e.g. if a future caller shows shareCount without that tab existing).
   shareCount?: number;
+  onSharesPress?: () => void;
+  // Action row shown under the enlarged photo when the avatar is tapped —
+  // omit on your own profile (nothing useful to put there yet); Public
+  // Profile passes Follow + Share Profile. The viewer itself lives here
+  // (not in each page) so both pages get it for free from this one shared
+  // header instead of wiring the tap+modal twice.
+  photoViewerActions?: PhotoViewerAction[];
 }
 
 // Instagram-style header: avatar left, username + follower/following stats
@@ -32,10 +41,18 @@ interface Props {
 // column's natural stacked height (username line + stats row), so the
 // stats block's bottom lands a few px above the avatar's own bottom with
 // no absolute-position math — stays correct across font-scaling too.
-export default function ProfileHeaderInstagram({ profile, targetUserId, actionsSlot, shareCount }: Props) {
+export default function ProfileHeaderInstagram({
+  profile,
+  targetUserId,
+  actionsSlot,
+  shareCount,
+  onSharesPress,
+  photoViewerActions,
+}: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
+  const [photoViewerVisible, setPhotoViewerVisible] = useState(false);
 
   const goToNetwork = (tab: "followers" | "following") => {
     if (targetUserId) {
@@ -74,38 +91,43 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <TierAvatarFrame tier={profile.accountTier} size={AVATAR_SIZE}>
-          {(innerSize) =>
-            profile.isOfficial ? (
-              <LinearGradient
-                colors={[colors.neutral, colors.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.officialAvatarFill, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}
-              >
-                <Image source={CINEPHIX_LOGO} style={{ width: innerSize * 0.58, height: innerSize * 0.58 }} resizeMode="contain" />
-              </LinearGradient>
-            ) : profile.profile_pic_url ? (
-              <Image
-                source={{ uri: profile.profile_pic_url }}
-                style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
-              />
-            ) : (
-              <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                <Text style={styles.avatarFallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
-              </View>
-            )
-          }
-        </TierAvatarFrame>
+        {/* Official account: not wrapped in the photo-viewer Pressable —
+            there's no real photo to enlarge, just a generated gradient
+            logo, so tapping it stays inert same as before this merge. */}
+        <Pressable onPress={profile.isOfficial ? undefined : () => setPhotoViewerVisible(true)}>
+          <TierAvatarFrame tier={profile.accountTier} size={AVATAR_SIZE}>
+            {(innerSize) =>
+              profile.isOfficial ? (
+                <LinearGradient
+                  colors={[colors.neutral, colors.primary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.officialAvatarFill, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}
+                >
+                  <Image source={CINEPHIX_LOGO} style={{ width: innerSize * 0.58, height: innerSize * 0.58 }} resizeMode="contain" />
+                </LinearGradient>
+              ) : profile.profile_pic_url ? (
+                <Image
+                  source={{ uri: profile.profile_pic_url }}
+                  style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                />
+              ) : (
+                <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                  <Text style={styles.avatarFallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
+                </View>
+              )
+            }
+          </TierAvatarFrame>
+        </Pressable>
 
         <View style={styles.rightCol}>
           <Text style={styles.username}>{profile.isOfficial ? profile.username.toUpperCase() : profile.username}</Text>
           <View style={styles.statsRow}>
             {shareCount != null && (
-              <View style={styles.stat}>
+              <Pressable style={styles.stat} onPress={onSharesPress} disabled={!onSharesPress}>
                 <Text style={styles.statValue}>{shareCount}</Text>
                 <Text style={styles.statLabel}>{t("Shares")}</Text>
-              </View>
+              </Pressable>
             )}
             <Pressable style={styles.stat} onPress={() => goToNetwork("followers")}>
               <Text style={styles.statValue}>{profile.followers?.length ?? 0}</Text>
@@ -122,6 +144,14 @@ export default function ProfileHeaderInstagram({ profile, targetUserId, actionsS
       {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
       {actionsSlot}
+
+      <ProfilePhotoViewerModal
+        visible={photoViewerVisible}
+        onClose={() => setPhotoViewerVisible(false)}
+        imageUri={profile.profile_pic_url}
+        fallbackText={profile.username.slice(0, 2).toUpperCase()}
+        actions={photoViewerActions}
+      />
     </View>
   );
 }

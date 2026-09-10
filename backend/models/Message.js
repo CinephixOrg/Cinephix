@@ -32,7 +32,7 @@ const messageSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["text", "recommendation", "analysis_share"],
+      enum: ["text", "recommendation", "analysis_share", "profile_share"],
       default: "text",
     },
     // For recommendation messages
@@ -55,6 +55,16 @@ const messageSchema = new Schema(
     },
     // For analysis sharing
     analysisData: Schema.Types.Mixed,
+    // For profile sharing ("hey, do you know this person?") — denormalized
+    // like contentData above rather than just an ObjectId ref, so a shared
+    // profile still renders correctly (username/avatar/tier at share time)
+    // even if the user later changes their username or avatar.
+    profileData: {
+      userId: { type: Schema.Types.ObjectId, ref: "User" },
+      username: String,
+      profile_pic_url: String,
+      accountTier: String,
+    },
   },
   { timestamps: true }
 );
