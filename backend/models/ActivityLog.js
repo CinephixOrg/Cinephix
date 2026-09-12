@@ -9,7 +9,9 @@ const activityLogSchema = new Schema({
   },
   actionType: {
     type: String,
-    enum: ['IMPORT_TVTIME', 'IMPORT_LETTERBOXD', 'RATE', 'ADD_WATCHLIST'],
+    // IMPORT is what the unified importer writes; the two per-platform
+    // values remain so historical rows still validate and stay revertible.
+    enum: ['IMPORT', 'IMPORT_TVTIME', 'IMPORT_LETTERBOXD', 'RATE', 'ADD_WATCHLIST'],
     required: true
   },
   details: {
@@ -20,6 +22,9 @@ const activityLogSchema = new Schema({
     default: false
   },
   payload: {
+    // Which platform an IMPORT came from. Unknown paths are stripped by
+    // Mongoose's strict mode, so this has to be declared to survive.
+    source: { type: String },
     addedWatchlistIds: [{ type: String }],
     addedRatingIds: [{ type: Schema.Types.ObjectId, ref: 'Rating' }],
     updatedCineGraph: { type: Boolean, default: false }

@@ -27,6 +27,8 @@ function getLogMeta(actionType: ActivityLogActionType): {
       return { icon: "star", label: i18n.t("Rated content") };
     case "ADD_WATCHLIST":
       return { icon: "bookmark", label: i18n.t("Added to Watched List") };
+    case "IMPORT":
+      return { icon: "cloud-upload", label: i18n.t("Imported a library") };
     case "IMPORT_TVTIME":
       return { icon: "cloud-upload", label: i18n.t("Imported from TV Time") };
     case "IMPORT_LETTERBOXD":

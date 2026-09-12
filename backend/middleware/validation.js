@@ -180,13 +180,18 @@ export const validateMongoId = (id) => {
 /**
  * Validation schemas for common use cases
  */
+// Mirrors the User model's own `bio.maxlength`. The model is what actually
+// stores the field, so a looser limit here only lets a request through to
+// fail later inside Mongoose with a less helpful error.
+const BIO_MAX_LENGTH = 250;
+
 export const validationSchemas = {
   // User Authentication
   registerUser: {
     username: { required: true, type: 'string', minLength: 3, maxLength: 20 },
     email: { required: true, type: 'string', email: true },
     password: { required: true, type: 'string', minLength: 6 },
-    bio: { type: 'string', maxLength: 500 },
+    bio: { type: 'string', maxLength: BIO_MAX_LENGTH },
   },
 
   loginUser: {
@@ -196,7 +201,7 @@ export const validationSchemas = {
 
   updateProfile: {
     username: { type: 'string', minLength: 3, maxLength: 20 },
-    bio: { type: 'string', maxLength: 500 },
+    bio: { type: 'string', maxLength: BIO_MAX_LENGTH },
     favoriteGenres: { type: 'array' },
   },
 
@@ -250,7 +255,7 @@ export const validationSchemas = {
   // Update user bio with ID
   updateUserBioWithId: {
     id: { required: true, mongoId: true },
-    bio: { required: true, type: 'string', maxLength: 500 },
+    bio: { required: true, type: 'string', maxLength: BIO_MAX_LENGTH },
   },
 
   // FindMatches

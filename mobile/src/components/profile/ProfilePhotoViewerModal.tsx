@@ -14,6 +14,7 @@ import {
   GestureHandlerRootView,
   PinchGestureHandler,
   State,
+  type PinchGestureHandlerGestureEvent,
   type PinchGestureHandlerStateChangeEvent,
 } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -64,7 +65,16 @@ export default function ProfilePhotoViewerModal({ visible, onClose, imageUri, fa
   // "committed," so there's no stuck-zoomed state to reset elsewhere.
   const scale = useRef(new Animated.Value(1)).current;
 
-  const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], { useNativeDriver: true });
+  // A plain callback, not Animated.event: with useNativeDriver that returns
+  // an AnimatedEvent *object*, which only Animated components know how to
+  // attach. Passing it to a gesture handler's onGestureEvent makes Fabric
+  // throw "Expected onGestureHandlerEvent listener to be a function,
+  // instead got a value of object type" the moment a pinch begins.
+  // setValue still writes through to the native node, so the magnifier
+  // stays native-driven.
+  const onPinchEvent = (event: PinchGestureHandlerGestureEvent) => {
+    scale.setValue(event.nativeEvent.scale);
+  };
 
   const onPinchStateChange = (event: PinchGestureHandlerStateChangeEvent) => {
     if (event.nativeEvent.oldState === State.ACTIVE) {

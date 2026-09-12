@@ -1,13 +1,7 @@
-// TEMP: analysisCooldownHours is 0 for every tier below (Profile Analysis
-// only — matchAnalysisCooldownMinutes is untouched) while the Analyses
-// subtab UI is being iterated on, so it can be re-run back-to-back during
-// testing. Restore the real per-tier values (free 24, plus 6, premium 1)
-// once that's done — dev already has no cooldown, so this makes every
-// tier temporarily behave like dev for this one limit.
 export const TIER_LIMITS = {
   free: {
     maxMatches: 5,
-    analysisCooldownHours: 0, // was 24
+    analysisCooldownHours: 24,
 
     // Separate from analysisCooldownHours (Profile Analysis's own cooldown,
     // re-running your *own* profile) — CineMatch's "Analyze" button targets
@@ -39,7 +33,7 @@ export const TIER_LIMITS = {
   },
   plus: {
     maxMatches: 30,
-    analysisCooldownHours: 0, // was 6
+    analysisCooldownHours: 6,
 
     matchAnalysisCooldownMinutes: 15,
     analysisSchema: 'rich',
@@ -51,7 +45,7 @@ export const TIER_LIMITS = {
   },
   premium: {
     maxMatches: 100,
-    analysisCooldownHours: 0, // was 1
+    analysisCooldownHours: 1,
 
     matchAnalysisCooldownMinutes: 5,
     analysisSchema: 'rich',
