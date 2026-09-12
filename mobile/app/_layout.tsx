@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
-import { useEffect, useState } from "react";
-import { Stack } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -45,6 +45,29 @@ function RootNavigator() {
   const { loading } = useAuth();
   const { colors } = useTheme();
 
+  // React Navigation paints every screen and stack container with its own
+  // theme's background — and with no theme provided it falls back to the
+  // light default, rgb(242, 242, 242). contentStyle only covered this root
+  // stack, so every nested tab stack (Profile, Home, Search...) showed that
+  // light grey for the length of each back transition: the "white flash"
+  // when leaving Settings. Feeding the palette in here fixes every
+  // navigator at once and follows theme changes.
+  const navigationTheme = useMemo(
+    () => ({
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        primary: colors.primary,
+        background: colors.base100,
+        card: colors.base200,
+        text: colors.baseContent,
+        border: colors.border,
+        notification: colors.error,
+      },
+    }),
+    [colors]
+  );
+
   if (loading) {
     return (
       <View
@@ -61,7 +84,8 @@ function RootNavigator() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <NavigationThemeProvider value={navigationTheme}>
+    <View style={{ flex: 1, backgroundColor: colors.base100 }}>
       <StatusBar style="light" />
       <OfflineBanner />
       <Stack
@@ -99,6 +123,7 @@ function RootNavigator() {
       </Stack>
       <Toast />
     </View>
+    </NavigationThemeProvider>
   );
 }
 

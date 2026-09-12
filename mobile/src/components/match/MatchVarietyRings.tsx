@@ -15,6 +15,7 @@ import type { CineGraphStats, SyncCandidate } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { fonts } from "../../theme/typography";
+import { localeUpper } from "../../utils/text";
 
 // Same wrapping PosterCoverflow.tsx already needs and explains in its own
 // comment — gesture-handler's ScrollView isn't itself an Animated component,
@@ -532,7 +533,7 @@ export default function MatchVarietyRings({ candidate, activeGenres, shouldLoad,
         divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginTop: 12, marginBottom: 10 },
         detailRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24, marginTop: 6 },
         detailColumn: { alignItems: "center", gap: 6, maxWidth: "45%" },
-        detailName: { fontFamily: fonts.bold, fontSize: 14, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5 },
+        detailName: { fontFamily: fonts.bold, fontSize: 14, textAlign: "center", letterSpacing: 0.5 },
         // Smaller and muted — per direct feedback this read as too big/
         // prominent next to detailName above it, which is meant to be the
         // one bold, attention-getting line in this pair.
@@ -587,7 +588,7 @@ export default function MatchVarietyRings({ candidate, activeGenres, shouldLoad,
           <View style={styles.detailRow}>
             <View style={styles.detailColumn}>
               <Text style={[styles.detailName, { color: currentColor }]} numberOfLines={1}>
-                {t("You")}
+                {localeUpper(t("You"))}
               </Text>
               <Text style={styles.detailText}>
                 {myCount} {unitLabel}
@@ -596,7 +597,7 @@ export default function MatchVarietyRings({ candidate, activeGenres, shouldLoad,
             </View>
             <View style={styles.detailColumn}>
               <Text style={[styles.detailName, { color: currentColor }]} numberOfLines={1} ellipsizeMode="tail">
-                {candidate.user.username}
+                {localeUpper(candidate.user.username)}
               </Text>
               <Text style={styles.detailText}>
                 {theirCount} {unitLabel}

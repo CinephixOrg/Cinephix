@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Message, MatchAnalysis } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { localeUpper } from "../utils/text";
 
 const CARD_WIDTH = 168;
 const CARD_HEIGHT = 92;
@@ -74,7 +75,6 @@ export default function SyncShareMessageCard({ message, isOwn, onPress }: Props)
           fontSize: 10.5,
           color: colors.primaryContent,
           opacity: 0.85,
-          textTransform: "uppercase",
           letterSpacing: 1.2,
         },
       }),
@@ -93,7 +93,7 @@ export default function SyncShareMessageCard({ message, isOwn, onPress }: Props)
         <View style={styles.stackLayer1} />
         <View style={styles.front}>
           {pct != null && <Text style={styles.pct}>{pct}%</Text>}
-          <Text style={styles.label}>{t("Sync")}</Text>
+          <Text style={styles.label}>{localeUpper(t("Sync"))}</Text>
         </View>
       </View>
     </Pressable>

@@ -44,11 +44,10 @@ import {
   getOnlineFriends,
   getProfileAnalysis,
   getProfileAnalysisHistory,
-  importTVTimeData,
-  importLetterboxdData,
   updateVisibility,
   setOwnAccountTier
 } from "../controllers/userController.js";
+import { getImportSources, runImport } from "../controllers/importController.js";
 import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
 import { getMyActivity } from "../controllers/activityController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -63,6 +62,31 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
 });
+
+// Library exports are much larger than a profile picture — a Letterboxd
+// archive for a heavy user runs to several MB, and Trakt's JSON more — so
+// imports get their own limit rather than sharing the 5MB avatar cap.
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 32 * 1024 * 1024, files: 1 },
+});
+
+// The field name differs between the generic endpoint ("file") and the two
+// legacy ones ("zipFile"), so accept whichever arrived.
+const singleUpload = (req, res, next) =>
+  importUpload.any()(req, res, (err) => {
+    if (err) return next(err);
+    req.file = req.files?.[0];
+    next();
+  });
+
+// The legacy per-platform routes are the generic one with the source filled
+// in, so an app build from before the unified importer keeps working.
+const withSource = (source) => (req, res, next) => {
+  req.body = req.body || {};
+  req.body.source = source;
+  next();
+};
 
 // --- Authentication Routes ---
 router.post("/register", authRateLimiter, validateRequest(validationSchemas.registerUser), registerUser);
@@ -175,8 +199,11 @@ router.get("/:id/genre-detail", authMiddleware, getUserGenreDetail);
 router.post("/matches", authMiddleware, validateRequest(validationSchemas.findMatches), findMatches);
 router.put("/profile/password", authMiddleware, validateRequest(validationSchemas.updatePassword), updatePassword);
 router.delete("/profile", authMiddleware, deleteAccount);
-router.post("/import-tvtime", authMiddleware, upload.single("zipFile"), importTVTimeData);
-router.post("/import-letterboxd", authMiddleware, upload.single("zipFile"), importLetterboxdData);
+// Import
+router.get("/import/sources", authMiddleware, getImportSources);
+router.post("/import", authMiddleware, singleUpload, runImport);
+router.post("/import-tvtime", authMiddleware, singleUpload, withSource("tvtime"), runImport);
+router.post("/import-letterboxd", authMiddleware, singleUpload, withSource("letterboxd"), runImport);
 
 // Logs & Reset
 router.get("/me/activity", authMiddleware, getMyActivity);

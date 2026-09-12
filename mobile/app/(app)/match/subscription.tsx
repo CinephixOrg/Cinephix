@@ -8,6 +8,7 @@ import { setOwnAccountTier } from "../../../src/api/userService";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 import type { AccountTier } from "../../../src/types";
+import { localeUpper } from "../../../src/utils/text";
 
 // Sync-specific plan comparison — the rest of the app's tier gates
 // (Profile Analysis schema/history/cooldown) aren't shown here, this page
@@ -118,7 +119,7 @@ export default function SubscriptionScreen() {
           paddingHorizontal: 10,
           paddingVertical: 3,
         },
-        currentBadgeText: { fontFamily: fonts.bold, fontSize: 10.5, color: colors.primaryContent, textTransform: "uppercase" },
+        currentBadgeText: { fontFamily: fonts.bold, fontSize: 10.5, color: colors.primaryContent },
         featureRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
         featureText: { fontSize: 13, color: colors.baseContent, flex: 1 },
         featureTextLocked: { color: colors.placeholder },
@@ -156,7 +157,7 @@ export default function SubscriptionScreen() {
               </Text>
               {isCurrent && (
                 <View style={styles.currentBadge}>
-                  <Text style={styles.currentBadgeText}>{t("Current")}</Text>
+                  <Text style={styles.currentBadgeText}>{localeUpper(t("Current"))}</Text>
                 </View>
               )}
             </View>

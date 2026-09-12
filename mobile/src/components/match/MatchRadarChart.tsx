@@ -7,6 +7,7 @@ import { useRevealAnimation } from "../../hooks/useRevealAnimation";
 import type { MatchBreakdown } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { localeUpper } from "../../utils/text";
 
 const SIZE = 240;
 const LABEL_PAD = 38;
@@ -169,7 +170,6 @@ export default function MatchRadarChart({ breakdown, candidateId }: Props) {
           fontSize: 13,
           marginBottom: 6,
           textAlign: "center",
-          textTransform: "uppercase",
           letterSpacing: 0.6,
         },
         detailDesc: { color: colors.baseContent, fontSize: 12.5, lineHeight: 18, textAlign: "center" },
@@ -245,7 +245,7 @@ export default function MatchRadarChart({ breakdown, candidateId }: Props) {
             ]}
           >
             <Text style={[styles.detailTitle, { color: categoryMeta(activeCategory, colors, t).color }]}>
-              {categoryMeta(activeCategory, colors, t).label}
+              {localeUpper(categoryMeta(activeCategory, colors, t).label)}
             </Text>
             <Text style={styles.detailDesc}>{categoryMeta(activeCategory, colors, t).desc}</Text>
             <Text style={styles.detailScore}>{Math.round(breakdown[activeCategory])}%</Text>

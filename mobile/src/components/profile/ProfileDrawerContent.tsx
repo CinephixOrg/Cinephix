@@ -24,6 +24,11 @@ const ITEMS: MenuItem[] = [
   { key: "watched", label: "Watched List", icon: "checkmark-done-outline", route: "/watchlist" },
   { key: "lists", label: "Lists", icon: "list-outline", route: "/lists" },
   { key: "watchlist", label: "Watchlist", icon: "bookmark-outline", route: "/to-watch" },
+  // Promoted out of Settings: bringing a library over from another service is
+  // a first-run task, and burying it two levels deep meant most people never
+  // found it. It sits with the other library destinations rather than with
+  // account preferences.
+  { key: "import", label: "Import", icon: "cloud-download-outline", route: "/profile/import" },
   { key: "notifications", label: "Notifications", icon: "notifications-outline", route: "/notifications" },
   { key: "settings", label: "Settings", icon: "settings-outline", route: "/profile/settings" },
 ];

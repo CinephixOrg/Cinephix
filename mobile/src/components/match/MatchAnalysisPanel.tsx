@@ -35,6 +35,7 @@ import type { SyncCandidate, MatchAnalysis, Connection } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { fonts } from "../../theme/typography";
+import { localeUpper } from "../../utils/text";
 
 interface Props {
   candidate: SyncCandidate;
@@ -465,7 +466,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
         // The single biggest text in each card — every other label/value
         // inside a card (category names, descriptions, scores) reads one
         // level down from this.
-        sectionTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.placeholder, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.4 },
+        sectionTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.placeholder, marginBottom: 10, letterSpacing: 0.4 },
         // A single always-on genre "carousel" — a centered pill showing the
         // current genre, with an arrow on each side — instead of a chip row,
         // which gets crowded once a long-time user's match has 10+ shared
@@ -521,7 +522,6 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
           fontFamily: fonts.bold,
           fontSize: 14,
           textAlign: "center",
-          textTransform: "uppercase",
           letterSpacing: 0.5,
         },
         ratingUnit: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -762,7 +762,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
                         <View style={styles.posterDetailRatingsRow}>
                           <View style={styles.ratingColumn}>
                             <Text style={[styles.ratingName, { color: currentColor }]} numberOfLines={1} ellipsizeMode="tail">
-                              {t("You")}
+                              {localeUpper(t("You"))}
                             </Text>
                             {selectedItem?.myRating != null ? (
                               <Animated.View style={[styles.ratingUnit, { opacity: valueOpacity, transform: [{ translateY: valueTranslateY }] }]}>
@@ -779,7 +779,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
                           </View>
                           <View style={styles.ratingColumn}>
                             <Text style={[styles.ratingName, { color: currentColor }]} numberOfLines={1} ellipsizeMode="tail">
-                              {candidate.user.username}
+                              {localeUpper(candidate.user.username)}
                             </Text>
                             {selectedItem?.targetRating != null ? (
                               <Animated.View style={[styles.ratingUnit, { opacity: valueOpacity, transform: [{ translateY: valueTranslateY }] }]}>
@@ -977,7 +977,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
         >
           {cards.map((card) => (
             <View key={card.key} style={[styles.card, { width: cardWidth, height: cardHeight }]}>
-              {card.key !== "ai-summary" && <Text style={styles.sectionTitle}>{card.title}</Text>}
+              {card.key !== "ai-summary" && <Text style={styles.sectionTitle}>{localeUpper(card.title)}</Text>}
               <ScrollView
                 style={styles.cardScroll}
                 showsVerticalScrollIndicator={false}

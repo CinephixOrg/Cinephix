@@ -595,7 +595,14 @@ export interface Notification {
   createdAt: string;
 }
 
-export type ActivityLogActionType = "RATE" | "ADD_WATCHLIST" | "IMPORT_TVTIME" | "IMPORT_LETTERBOXD";
+// IMPORT is what the unified importer writes. The two per-platform values
+// remain because rows written before it still exist and still render.
+export type ActivityLogActionType =
+  | "RATE"
+  | "ADD_WATCHLIST"
+  | "IMPORT"
+  | "IMPORT_TVTIME"
+  | "IMPORT_LETTERBOXD";
 
 export interface ActivityLogPayload {
   addedWatchlistIds?: string[];
@@ -616,16 +623,87 @@ export interface ActivityLog {
   updatedAt: string;
 }
 
-export type ImportSource = "tvtime" | "letterboxd";
+// The platforms the generic import pipeline accepts. Mirrors
+// backend/utils/import/sources.js — the server is the source of truth and
+// returns the catalogue at runtime; this union is what gives the client
+// compile-time safety over it.
+export type ImportSourceId =
+  | "letterboxd"
+  | "tvtime"
+  | "trakt"
+  | "imdb"
+  | "simkl"
+  | "plex"
+  | "jellyfin"
+  | "kodi"
+  | "myanimelist"
+  | "anilist"
+  | "kitsu"
+  | "generic";
 
-// Models the backend's two SSE completion payloads exactly — importedEpisodes
-// is TV-Time-only, Letterboxd's completion event never includes the key.
-export interface ImportResult {
-  status: "completed" | "error";
-  importedMovies?: number;
-  importedEpisodes?: number;
-  message?: string;
+export interface ImportSourceInfo {
+  id: ImportSourceId;
+  label: string;
+  /** File extensions the picker should accept, e.g. [".zip", ".csv"]. */
+  accepts: string[];
+  kinds: ("movie" | "series")[];
 }
+
+/** One SSE progress block. Progress blocks never carry a `status`. */
+export interface ImportProgress {
+  phase: "extract" | "normalize" | "match" | "lookup" | "save";
+  text: string;
+  current?: number;
+  total?: number;
+}
+
+export interface ImportUnmatchedSample {
+  title: string;
+  year: number | null;
+  type: "movie" | "series";
+}
+
+/** The final SSE block on success. */
+export interface ImportSummary {
+  status: "completed";
+  source: ImportSourceId;
+  sourceLabel: string;
+  durationMs: number;
+  parsed: {
+    files: number;
+    rows: number;
+    titles: number;
+    movies: number;
+    series: number;
+    ratingScale: number;
+  };
+  matched: {
+    total: number;
+    unmatched: number;
+    skipped: number;
+    /** Counts keyed by the rule that resolved them: imdb, title+year, tmdb… */
+    byRule: Record<string, number>;
+    samples: ImportUnmatchedSample[];
+  };
+  added: {
+    watched: number;
+    watchlist: number;
+    favorites: number;
+    ratings: number;
+    episodes: number;
+    alreadyHad: number;
+    fromTmdb: number;
+  };
+  /** True when the server recognised a re-submitted file and replayed it. */
+  replayed?: boolean;
+}
+
+export interface ImportFailure {
+  status: "error";
+  message: string;
+}
+
+export type ImportResult = ImportSummary | ImportFailure;
 
 export type RoomType = "dm" | "group";
 
