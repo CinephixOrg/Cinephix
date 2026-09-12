@@ -11,10 +11,9 @@ import { updateBio, uploadAvatar } from "../../api/userService";
 import SettingsField from "./SettingsField";
 import SettingsNotice from "./SettingsNotice";
 
-// The effective limits, not the advertised ones. The request validator
-// accepts a bio up to 500 characters but the User model caps the field at
-// 250, so anything between the two passes validation and then fails on save
-// with an opaque error. 250 is the number that actually works.
+// Mirror the server's limits (backend/middleware/validation.js and the User
+// model), so a too-long bio or bad username is caught while the user is
+// still looking at the field instead of after a round trip.
 const BIO_MAX = 250;
 const USERNAME_MIN = 3;
 const USERNAME_MAX = 20;
