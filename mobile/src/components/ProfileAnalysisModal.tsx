@@ -10,8 +10,8 @@ import ProfileAnalysisCardDeck, {
   createAnalysisDeckState,
   type AnalysisDeckState,
 } from "./profile/ProfileAnalysisCardDeck";
-import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
-import { sendGroupRichMessage } from "../api/groupService";
+import { getOrCreateConversation, sendMessageRest, sendRichMessage } from "../api/conversationService";
+import { sendGroupMessageRest, sendGroupRichMessage } from "../api/groupService";
 import { createShare } from "../api/shareService";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
@@ -102,6 +102,11 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
     setSending(true);
     try {
       const text = t("{{user}} is sharing their profile analysis with you.", { user: user.username });
+      // Same "card first, then a separate plain-text caption message"
+      // pattern as the Sync share (AnalyzeModal.tsx/MatchCoverCard.tsx),
+      // direct ask to keep the two designs consistent end to end, not just
+      // the card itself.
+      const caption = t("Check out my profile analyse!");
       await Promise.all([
         ...userIds.map(async (userId) => {
           const conv = await getOrCreateConversation(userId);
@@ -110,14 +115,16 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
             type: "analysis_share",
             analysisData: { ...data, type: "profile" },
           });
+          await sendMessageRest(conv._id, caption);
         }),
-        ...groupIds.map((groupId) =>
-          sendGroupRichMessage(groupId, {
+        ...groupIds.map(async (groupId) => {
+          await sendGroupRichMessage(groupId, {
             text,
             type: "analysis_share",
             analysisData: { ...data, type: "profile" },
-          })
-        ),
+          });
+          await sendGroupMessageRest(groupId, caption);
+        }),
       ]);
       await refreshConversations();
       setPickerVisible(false);

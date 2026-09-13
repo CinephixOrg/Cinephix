@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ActivityBadgeResponse, GenreBadgesResponse, VolumeBadgesResponse } from "../types";
+import type { ActivityBadgeResponse, AllBadgesResponse, GenreBadgesResponse, VolumeBadgesResponse } from "../types";
 
 export async function getGenreBadges(): Promise<GenreBadgesResponse> {
   const res = await API.get(API_ROUTES.BADGES.GET_GENRE_BADGES);
@@ -104,5 +104,15 @@ export async function getHalloweenViewerBadge(): Promise<ActivityBadgeResponse> 
 
 export async function getNewYearViewerBadge(): Promise<ActivityBadgeResponse> {
   const res = await API.get(API_ROUTES.BADGES.GET_NEW_YEAR_VIEWER_BADGE);
+  return res.data;
+}
+
+// Public-profile Badges tab only — one bulk request for all 20 families
+// instead of ProfileBadgesTab's own-profile 20-separate-calls path. See
+// AllBadgesResponse's own doc comment (types/index.ts) for why this exists
+// as a separate endpoint rather than widening the 20 above with an
+// optional userId each.
+export async function getAllBadgesForUser(userId: string): Promise<AllBadgesResponse> {
+  const res = await API.get(API_ROUTES.BADGES.GET_ALL_FOR_USER(userId));
   return res.data;
 }

@@ -177,6 +177,7 @@ export const API_ROUTES = {
     GET_POLL_PARTICIPANT_BADGE: "/badges/poll-participant",
     GET_HALLOWEEN_VIEWER_BADGE: "/badges/halloween-viewer",
     GET_NEW_YEAR_VIEWER_BADGE: "/badges/new-year-viewer",
+    GET_ALL_FOR_USER: (userId: string) => `/badges/user/${userId}`,
   },
   GROUPS: {
     GET_ALL: "/groups",

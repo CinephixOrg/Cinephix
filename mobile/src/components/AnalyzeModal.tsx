@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, Modal, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
+import { getOrCreateConversation, sendMessageRest, sendRichMessage } from "../api/conversationService";
 import { useChat } from "../context/ChatContext";
 import { useToast } from "../context/ToastContext";
 import type { MatchAnalysis } from "../types";
@@ -117,6 +117,12 @@ export default function AnalyzeModal({ visible, onClose, data, shareTargetUserId
         type: "analysis_share",
         analysisData: data,
       });
+      // Sent as a second, separate plain-text message right after the card
+      // — direct ask ("bu kartı önce göndericek. sonra da altında yeni bir
+      // mesaj kutucuğu olarak... bir metin olsun") — rather than folded
+      // into the card's own text, since the card's own caption already
+      // carries the "tap to see details" instruction.
+      await sendMessageRest(conv._id, t("Check out our sync analyse!"));
       await refreshConversations();
       setShared(true);
     } catch {

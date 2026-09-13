@@ -19,6 +19,7 @@ import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
 import SyncShareMessageCard from "./SyncShareMessageCard";
 import ProfileShareMessageCard from "./ProfileShareMessageCard";
+import ProfileAnalysisShareMessageCard from "./ProfileAnalysisShareMessageCard";
 
 const AVATAR_SIZE = 28;
 import AnalyzeModal from "./AnalyzeModal";
@@ -269,22 +270,15 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, initial
                   ) : item.type === "profile_share" ? (
                     <ProfileShareMessageCard message={item} isOwn={isOwn} />
                   ) : item.type === "analysis_share" && (item.analysisData as any)?.type === "profile" ? (
-                    // Profile-analysis shares (SyncScoreCard's
-                    // own, unrelated feature) keep the original plain bubble
-                    // — only the Sync/Cinematch variant below gets the
-                    // richer deck-preview treatment.
-                    <Pressable
-                      style={[
-                        styles.bubble,
-                        isOwn ? styles.bubbleOwn : styles.bubbleOther,
-                        item.status === "pending" && styles.bubblePending,
-                      ]}
+                    // Profile-analysis shares — same deck-preview treatment
+                    // as the Sync/Cinematch variant below, direct ask to
+                    // make the two designs consistent instead of this one
+                    // staying a plain text bubble.
+                    <ProfileAnalysisShareMessageCard
+                      message={item}
+                      isOwn={isOwn}
                       onPress={() => setViewingProfileAnalysis((item.analysisData as ProfileAnalysis) ?? null)}
-                    >
-                      <Text style={isOwn ? styles.bubbleTextOwn : styles.bubbleTextOther}>
-                        {t("📊 Shared their profile analysis")}
-                      </Text>
-                    </Pressable>
+                    />
                   ) : item.type === "analysis_share" ? (
                     <SyncShareMessageCard
                       message={item}

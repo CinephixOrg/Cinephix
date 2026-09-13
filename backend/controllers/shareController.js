@@ -107,6 +107,13 @@ const TOP_VIEWERS_COUNT = 5;
 // purely about how often a brand-new review Share can be created per title.
 const REVIEW_SHARE_COOLDOWN_MS = 60 * 60 * 1000;
 
+// Same reasoning as REVIEW_SHARE_COOLDOWN_MS above, for repeat-recommending
+// the same title to Medya — see the "recommendation" branch of createShare
+// below for the direct ask this exists to satisfy (independent per-target
+// cooldowns: Medya/person/group don't block each other, only the exact
+// same target does).
+const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
+
 async function hydrateContentData(contentId, contentType) {
   const model = contentType === "movie" ? getMovie() : getSeries();
   const doc = await model.findById(contentId).select("title name poster_path release_date first_air_date").lean();
@@ -183,6 +190,30 @@ export const createShare = asyncHandler(async (req, res) => {
     if (!contentId || !["movie", "series"].includes(contentType)) {
       return sendError(res, "contentId and a valid contentType are required", 400);
     }
+
+    // Same anti-spam shape as REVIEW_SHARE_COOLDOWN_MS above, applied to
+    // repeat-recommending the SAME title to Medya — direct ask: recommending
+    // to Medya, a person, and a group in the same sitting must all still
+    // work (independent targets), only re-recommending the exact same
+    // title to the SAME target within the window is blocked. The person/
+    // group equivalents of this check live in conversationController.js's/
+    // groupController.js's own sendMessage, scoped to their own room
+    // instead of Medya.
+    const recentRecommendationOfSameTitle = await Share.findOne({
+      user: userId,
+      type: "recommendation",
+      contentId,
+      contentType,
+      createdAt: { $gte: new Date(Date.now() - RECOMMENDATION_COOLDOWN_MS) },
+    })
+      .sort({ createdAt: -1 })
+      .select("createdAt")
+      .lean();
+    if (recentRecommendationOfSameTitle) {
+      const retryAfterMs = recentRecommendationOfSameTitle.createdAt.getTime() + RECOMMENDATION_COOLDOWN_MS - Date.now();
+      return sendError(res, "You just recommended this to Medya. Try again later.", 429, { retryAfterMs });
+    }
+
     const contentData = await hydrateContentData(contentId, contentType);
     if (!contentData) return sendError(res, "Content not found", 404);
 

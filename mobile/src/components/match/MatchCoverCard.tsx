@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import MatchTierRow from "./MatchTierRow";
 import MatchGradientTitle from "./MatchGradientTitle";
 import { CATEGORY_KEYS, categoryMeta } from "./matchCategoryMeta";
-import { getOrCreateConversation, sendRichMessage } from "../../api/conversationService";
+import { getOrCreateConversation, sendMessageRest, sendRichMessage } from "../../api/conversationService";
 import { useChat } from "../../context/ChatContext";
 import { useToast } from "../../context/ToastContext";
 import type { SyncCandidate, MatchAnalysis } from "../../types";
@@ -66,6 +66,9 @@ export default function MatchCoverCard({ candidate, analysis }: Props) {
         type: "analysis_share",
         analysisData: { provider, matchPercentage, breakdown, parsed },
       });
+      // Sent as a second, separate plain-text message right after the card
+      // — same direct ask AnalyzeModal.tsx's own handleShare satisfies.
+      await sendMessageRest(conv._id, t("Check out our sync analyse!"));
       await refreshConversations();
       setShared(true);
     } catch {

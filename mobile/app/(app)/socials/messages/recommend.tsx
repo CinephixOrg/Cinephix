@@ -126,7 +126,11 @@ export default function RecommendScreen() {
         overview: picked.overview,
         rating: picked.rating,
       };
-      await Promise.all([
+      // allSettled, not all — see ContentDetailScreen.tsx's own
+      // handleSendRecommendation for why: each recipient/group has its own
+      // independent cooldown, so one already-recommended target shouldn't
+      // sink the send to everyone else picked in the same batch.
+      const results = await Promise.allSettled([
         ...userIds.map(async (userId) => {
           const conv = await getOrCreateConversation(userId);
           await sendRichMessage(conv._id, {
@@ -147,6 +151,11 @@ export default function RecommendScreen() {
           })
         ),
       ]);
+      const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (failures.length > 0 && failures.length === results.length) {
+        showToast(failures[0].reason?.response?.data?.message || t("Something went wrong. Please try again."));
+        return;
+      }
       await refreshConversations();
       router.back();
     } catch {

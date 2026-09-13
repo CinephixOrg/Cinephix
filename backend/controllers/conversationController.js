@@ -13,6 +13,13 @@ import Notification from "../models/Notification.js";
 // the seeded page and a later "load older" fetch line up.
 const INITIAL_MESSAGE_PAGE = 50;
 
+// Same value/reasoning as shareController.js's own RECOMMENDATION_COOLDOWN_MS
+// (Medya) and groupController.js's own copy (group chat) — kept as 3
+// independent per-file constants rather than one shared import, matching
+// this codebase's existing convention for cooldown constants (see
+// shareController.js's REVIEW_SHARE_COOLDOWN_MS).
+const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
+
 // GET /api/conversations
 // Returns all conversations (DMs) and groups for the current user, sorted by most recent message.
 export const getConversations = asyncHandler(async (req, res) => {
@@ -261,6 +268,31 @@ export const sendMessage = asyncHandler(async (req, res) => {
     (p) => p.toString() === userId
   );
   if (!isParticipant) return sendError(res, "Not a participant", 403);
+
+  // Anti-spam cooldown, same shape/window as shareController.js's own
+  // RECOMMENDATION_COOLDOWN_MS for a Medya recommendation — direct ask:
+  // recommending the same title to Medya, a person, and a group in one
+  // sitting must all still work independently, only re-recommending the
+  // SAME title to this SAME conversation within the window is blocked.
+  if (type === "recommendation") {
+    const recentRecommendationInThisConversation = await Message.findOne({
+      roomType: "dm",
+      roomId: conversation._id,
+      sender: userId,
+      type: "recommendation",
+      contentId,
+      contentType,
+      createdAt: { $gte: new Date(Date.now() - RECOMMENDATION_COOLDOWN_MS) },
+    })
+      .sort({ createdAt: -1 })
+      .select("createdAt")
+      .lean();
+    if (recentRecommendationInThisConversation) {
+      const retryAfterMs =
+        recentRecommendationInThisConversation.createdAt.getTime() + RECOMMENDATION_COOLDOWN_MS - Date.now();
+      return sendError(res, "You just recommended this to this person. Try again later.", 429, { retryAfterMs });
+    }
+  }
 
   // Create message with optional recommendation fields
   const messageData = {

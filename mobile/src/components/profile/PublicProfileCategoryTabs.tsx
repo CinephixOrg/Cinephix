@@ -5,6 +5,7 @@ import ContentRail from "../ContentRail";
 import FavoriteCard from "./FavoriteCard";
 import ProfileSharingsTab from "./ProfileSharingsTab";
 import ProfileCinegraphsTab from "./ProfileCinegraphsTab";
+import ProfileBadgesTab from "./ProfileBadgesTab";
 import SyncScoreCard from "./SyncScoreCard";
 import PublicListsTab from "./PublicListsTab";
 import CineGraphSubTabSwitcher, { type CineGraphSubTab } from "./CineGraphSubTabSwitcher";
@@ -12,7 +13,7 @@ import type { CineGraphData, Favorites, Share, UserCollections } from "../../typ
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
 
-export type Category = "sharings" | "favorites" | "lists" | "cinegraph";
+export type Category = "sharings" | "favorites" | "lists" | "cinegraph" | "badges";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -42,16 +43,19 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
   favorites: { active: "heart", inactive: "heart-outline" },
   lists: { active: "list", inactive: "list-outline" },
   cinegraph: { active: "pie-chart", inactive: "pie-chart-outline" },
+  badges: { active: "ribbon", inactive: "ribbon-outline" },
 };
 
-// Public-profile counterpart to ProfileCategoryTabs.tsx — same Sharings/
-// Favorites/CineGraph 3 tabs as the own-profile version, minus Analyses
-// (no public equivalent of WatchedList/Lists/Analyses/Activity — all
-// current-user-scoped or backend-unsupported for an arbitrary userId).
-// CineMatch/Analyze used to be standalone buttons above these tabs; now
-// they live as SyncScoreCard at the top of the CineGraph tab
-// body instead, since that's the only place a compatibility score is
-// actually relevant.
+// Public-profile counterpart to ProfileCategoryTabs.tsx — Sharings/
+// Favorites/Lists/CineGraph/Badges, minus Analyses (no public equivalent
+// of Analyses/Activity — both current-user-scoped or backend-unsupported
+// for an arbitrary userId). CineMatch/Analyze used to be standalone
+// buttons above these tabs; now they live as SyncScoreCard at the top of
+// the CineGraph tab body instead, since that's the only place a
+// compatibility score is actually relevant. Badges reuses
+// ProfileBadgesTab.tsx wholesale (passing `userId`) rather than a parallel
+// component — see that file's own `userId` prop comment for why one
+// component serves both profiles.
 export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory, initialShares, collections }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -189,6 +193,12 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
         {hasVisited("cinegraph") && (
           <View style={visibility("cinegraph")}>
             <ProfileCinegraphsTab cineGraph={cineGraph} subTab={cinegraphSubTab} basePath={`/user/${userId}`} />
+          </View>
+        )}
+
+        {hasVisited("badges") && (
+          <View style={visibility("badges")}>
+            <ProfileBadgesTab userId={userId} active={category === "badges"} />
           </View>
         )}
       </View>

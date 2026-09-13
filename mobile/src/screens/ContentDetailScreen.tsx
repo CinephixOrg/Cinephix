@@ -726,7 +726,12 @@ export default function ContentDetailScreen() {
         overview,
         rating: content?.vote_average,
       };
-      await Promise.all([
+      // allSettled, not all — each recipient/group has its own independent
+      // cooldown (backend: conversationController.js's/groupController.js's
+      // own RECOMMENDATION_COOLDOWN_MS, one per room), so one recipient
+      // who already got this exact recommendation recently shouldn't sink
+      // the send to everyone else picked in the same batch.
+      const results = await Promise.allSettled([
         ...userIds.map(async (uid) => {
           const conv = await getOrCreateConversation(uid);
           await sendRichMessage(conv._id, { text, type: "recommendation", contentId: id, contentType: type, contentData });
@@ -736,9 +741,23 @@ export default function ContentDetailScreen() {
         ),
       ]);
       setRecommendPickerVisible(false);
-      showToast(t("Recommendation sent"));
-    } catch {
-      showToast(t("Something went wrong. Please try again."));
+      const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (failures.length === results.length) {
+        // Every send failed — surface the specific reason (e.g. the
+        // backend's own cooldown message, "You just recommended this to
+        // this person...") rather than a generic failure, same reasoning
+        // ReviewWriteScreen.tsx's own Save-and-Share error handling
+        // already established. All rejections share the same reason often
+        // enough (the whole batch re-sending one already-recommended
+        // title) that showing just the first one reads fine either way.
+        showToast(failures[0].reason?.response?.data?.message || t("Something went wrong. Please try again."));
+      } else {
+        // Fully or partially sent — same "something worked" toast either
+        // way, rather than a second string for the partial case: the
+        // specific per-recipient cooldown reason isn't worth surfacing
+        // when at least one send actually went through.
+        showToast(t("Recommendation sent"));
+      }
     } finally {
       setSendingRecommendation(false);
     }
@@ -750,8 +769,11 @@ export default function ContentDetailScreen() {
       await createShare({ type: "recommendation", contentId: id, contentType: type });
       setGiftMenuVisible(false);
       showToast(t("Shared to Medya"));
-    } catch {
-      showToast(t("Something went wrong. Please try again."));
+    } catch (e: any) {
+      // Surfaces the backend's own cooldown message ("You just recommended
+      // this to Medya...") when that's the reason, same convention
+      // ReviewWriteScreen.tsx's own Save-and-Share error handling uses.
+      showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
     } finally {
       setSharingRecommendation(false);
     }

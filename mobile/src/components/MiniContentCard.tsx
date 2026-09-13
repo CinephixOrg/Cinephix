@@ -36,7 +36,18 @@ export default function MiniContentCard({ id, type, posterPath, title, basePath,
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        poster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 4, backgroundColor: colors.base200 },
+        // Thin gray border, direct ask — matches the same colors.border
+        // frame AddedByCard.tsx's own poster already uses (Trending/
+        // Friends' Choice), so all of Discover's poster cards read as one
+        // consistent design rather than this one being the odd one out.
+        poster: {
+          width: "100%",
+          aspectRatio: 2 / 3,
+          borderRadius: 4,
+          backgroundColor: colors.base200,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
         removeButton: {
           position: "absolute",
           top: 2,

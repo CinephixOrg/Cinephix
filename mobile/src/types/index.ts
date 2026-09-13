@@ -378,6 +378,43 @@ export interface ActivityBadgeResponse {
   tiers: { tier: ActivityTier | StreakTier; threshold: number }[];
 }
 
+// The public-profile Badges tab's own bulk shape — GET /api/badges/user/:id
+// (badgeRoute.js's getAllBadgesForUser) computes all 20 families in one
+// request instead of ProfileBadgesTab.tsx's own-profile 20-separate-calls
+// path, since firing 20 requests for a profile that isn't the viewer's own
+// would be wasteful. `authorized` mirrors every other public-profile
+// surface's own isAuthorized flag (favorites, CineGraph, genre detail) —
+// false for a private profile the viewer doesn't follow, in which case
+// every other field is absent.
+export type AllBadgesResponse =
+  | { authorized: false }
+  | ({
+      authorized: true;
+      genre: GenreBadgesResponse;
+      volume: VolumeBadgesResponse;
+    } & Record<
+      | "ratingCount"
+      | "reviewCount"
+      | "listCount"
+      | "followers"
+      | "influencer"
+      | "podium"
+      | "firstSync"
+      | "highMatch"
+      | "syncExplorer"
+      | "founding"
+      | "membership"
+      | "streak"
+      | "timeTraveler"
+      | "eclecticTaste"
+      | "dayOneViewer"
+      | "hiddenGem"
+      | "pollParticipant"
+      | "halloweenViewer"
+      | "newYearViewer",
+      ActivityBadgeResponse
+    >);
+
 export interface GenreDetailItem {
   contentId: string;
   title: string;

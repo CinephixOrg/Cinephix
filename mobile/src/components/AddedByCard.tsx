@@ -43,8 +43,12 @@ export default function AddedByCard({ item, rank }: Props) {
         card: { width: 100, marginRight: 8 },
         posterWrap: { position: "relative" },
         // Thin gray border, direct ask — same colors.border every other
-        // plain content-box frame in this app already uses.
-        poster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 8, backgroundColor: colors.base200, borderWidth: 1, borderColor: colors.border },
+        // plain content-box frame in this app already uses. Radius matched
+        // to MiniContentCard.tsx's own poster (4, not this card's previous
+        // 8) — direct ask to make Trending/Friends' Choice's card chrome
+        // read identically to What to Watch's, no inconsistency between
+        // Discover's own rails.
+        poster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 4, backgroundColor: colors.base200, borderWidth: 1, borderColor: colors.border },
         posterFallback: { alignItems: "center", justifyContent: "center" },
         posterFallbackText: { color: colors.placeholder, fontSize: 12 },
         rankBadge: {

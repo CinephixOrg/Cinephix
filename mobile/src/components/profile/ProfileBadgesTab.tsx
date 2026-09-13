@@ -24,6 +24,7 @@ import {
   getPollParticipantBadge,
   getHalloweenViewerBadge,
   getNewYearViewerBadge,
+  getAllBadgesForUser,
 } from "../../api/badgeService";
 import { GENRE_BADGE_DEFINITIONS } from "../../data/genreBadgeDefinitions";
 import { VOLUME_BADGE_DEFINITIONS, VOLUME_TIER_ORDER } from "../../data/volumeBadgeDefinitions";
@@ -40,7 +41,7 @@ import {
 import { SEASONAL_BADGE_DEFINITIONS } from "../../data/seasonalBadgeDefinitions";
 import { SPECIAL_BADGE_DEFINITIONS } from "../../data/specialBadgeDefinitions";
 import BadgeDetailModal, { type BadgeDetailData, type BadgeTierOption } from "./BadgeDetailModal";
-import type { ActivityBadgeResponse, GenreBadge, VolumeBadge, VolumeTier } from "../../types";
+import type { ActivityBadgeResponse, GenreBadge, GenreBadgesResponse, VolumeBadge, VolumeBadgesResponse, VolumeTier } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
@@ -303,6 +304,14 @@ interface Props {
   // which category was already selected — combining the two is what
   // actually catches this specific real-world path.
   screenFocused?: boolean;
+  // When set, this is the public-profile Badges tab for that user instead
+  // of the viewer's own — everything below renders identically either way
+  // (same tiles, same tap-to-open detail popup), only `load()` changes:
+  // one bulk `getAllBadgesForUser` request instead of the 20 separate
+  // own-profile calls (see badgeService.ts's own comment on why that's a
+  // dedicated endpoint). PublicProfileCategoryTabs passes this straight
+  // through; there is no own-profile behavior change when omitted.
+  userId?: string;
 }
 
 // Three badge shapes share this one tab: genre badges (2-tier, shown as
@@ -315,7 +324,7 @@ interface Props {
 // tier counts and rank words). All fetch independently and all feed the
 // same BadgeDetailModal, just building different title/description
 // strings for it via the shared buildLadderTile helper above.
-function ProfileBadgesTab({ active = true, screenFocused = true }: Props) {
+function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -333,93 +342,139 @@ function ProfileBadgesTab({ active = true, screenFocused = true }: Props) {
   const [selectedTile, setSelectedTile] = useState<BadgeDetailData | null>(null);
   const lastFetchedRef = useRef(0);
 
-  const load = useCallback((withSpinner: boolean) => {
-    let cancelled = false;
-    if (withSpinner) setLoading(true);
-    Promise.all([
-      getGenreBadges(),
-      getVolumeBadges(),
-      getRatingCountBadge(),
-      getReviewCountBadge(),
-      getListCountBadge(),
-      getFollowersBadge(),
-      getInfluencerBadge(),
-      getPodiumBadge(),
-      getFirstSyncBadge(),
-      getHighMatchBadge(),
-      getSyncExplorerBadge(),
-      getFoundingCinephileBadge(),
-      getMembershipBadge(),
-      getStreakBadge(),
-      getTimeTravelerBadge(),
-      getEclecticTasteBadge(),
-      getDayOneViewerBadge(),
-      getHiddenGemBadge(),
-      getPollParticipantBadge(),
-      getHalloweenViewerBadge(),
-      getNewYearViewerBadge(),
-    ])
-      .then(
-        ([
-          genreRes,
-          volumeRes,
-          ratingRes,
-          reviewRes,
-          listRes,
-          followersRes,
-          influencerRes,
-          podiumRes,
-          firstSyncRes,
-          highMatchRes,
-          syncExplorerRes,
-          foundingRes,
-          membershipRes,
-          streakRes,
-          timeTravelerRes,
-          eclecticTasteRes,
-          dayOneViewerRes,
-          hiddenGemRes,
-          pollParticipantRes,
-          halloweenViewerRes,
-          newYearViewerRes,
-        ]) => {
-        if (cancelled) return;
-        const genreMap: Record<string, GenreBadge> = {};
-        genreRes.badges.forEach((b) => {
-          genreMap[b.key] = b;
-        });
-        setGenreBadgesByKey(genreMap);
-        setThresholds({ devotee: genreRes.devoteeThreshold, master: genreRes.masterThreshold });
-
-        const volumeMap: Record<string, VolumeBadge> = {};
-        volumeRes.badges.forEach((b) => {
-          volumeMap[b.key] = b;
-        });
-        setVolumeBadgesByKey(volumeMap);
-        setVolumeTiers(volumeRes.tiers);
-
-        setActivityData({ ratingCount: ratingRes, reviewCount: reviewRes, listCount: listRes });
-        setSocialData({ followers: followersRes, influencer: influencerRes, podium: podiumRes });
-        setSyncData({ firstSync: firstSyncRes, highMatch: highMatchRes, syncExplorer: syncExplorerRes });
-        setLoyaltyData({ founding: foundingRes, membership: membershipRes, streak: streakRes });
-        setSeasonalData({ halloweenViewer: halloweenViewerRes, newYearViewer: newYearViewerRes });
-        setSpecialData({
-          timeTraveler: timeTravelerRes,
-          eclecticTaste: eclecticTasteRes,
-          dayOneViewer: dayOneViewerRes,
-          hiddenGem: hiddenGemRes,
-          pollParticipant: pollParticipantRes,
-        });
-
-        lastFetchedRef.current = Date.now();
-      })
-      .finally(() => {
-        if (!cancelled && withSpinner) setLoading(false);
+  // Shared by both fetch paths below — same 8 setState calls regardless of
+  // whether the 20 fields came from 20 own-profile requests or one bulk
+  // public-profile response.
+  const applyResults = useCallback(
+    (
+      genreRes: GenreBadgesResponse,
+      volumeRes: VolumeBadgesResponse,
+      ratingRes: ActivityBadgeResponse,
+      reviewRes: ActivityBadgeResponse,
+      listRes: ActivityBadgeResponse,
+      followersRes: ActivityBadgeResponse,
+      influencerRes: ActivityBadgeResponse,
+      podiumRes: ActivityBadgeResponse,
+      firstSyncRes: ActivityBadgeResponse,
+      highMatchRes: ActivityBadgeResponse,
+      syncExplorerRes: ActivityBadgeResponse,
+      foundingRes: ActivityBadgeResponse,
+      membershipRes: ActivityBadgeResponse,
+      streakRes: ActivityBadgeResponse,
+      timeTravelerRes: ActivityBadgeResponse,
+      eclecticTasteRes: ActivityBadgeResponse,
+      dayOneViewerRes: ActivityBadgeResponse,
+      hiddenGemRes: ActivityBadgeResponse,
+      pollParticipantRes: ActivityBadgeResponse,
+      halloweenViewerRes: ActivityBadgeResponse,
+      newYearViewerRes: ActivityBadgeResponse
+    ) => {
+      const genreMap: Record<string, GenreBadge> = {};
+      genreRes.badges.forEach((b) => {
+        genreMap[b.key] = b;
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      setGenreBadgesByKey(genreMap);
+      setThresholds({ devotee: genreRes.devoteeThreshold, master: genreRes.masterThreshold });
+
+      const volumeMap: Record<string, VolumeBadge> = {};
+      volumeRes.badges.forEach((b) => {
+        volumeMap[b.key] = b;
+      });
+      setVolumeBadgesByKey(volumeMap);
+      setVolumeTiers(volumeRes.tiers);
+
+      setActivityData({ ratingCount: ratingRes, reviewCount: reviewRes, listCount: listRes });
+      setSocialData({ followers: followersRes, influencer: influencerRes, podium: podiumRes });
+      setSyncData({ firstSync: firstSyncRes, highMatch: highMatchRes, syncExplorer: syncExplorerRes });
+      setLoyaltyData({ founding: foundingRes, membership: membershipRes, streak: streakRes });
+      setSeasonalData({ halloweenViewer: halloweenViewerRes, newYearViewer: newYearViewerRes });
+      setSpecialData({
+        timeTraveler: timeTravelerRes,
+        eclecticTaste: eclecticTasteRes,
+        dayOneViewer: dayOneViewerRes,
+        hiddenGem: hiddenGemRes,
+        pollParticipant: pollParticipantRes,
+      });
+
+      lastFetchedRef.current = Date.now();
+    },
+    []
+  );
+
+  const load = useCallback(
+    (withSpinner: boolean) => {
+      let cancelled = false;
+      if (withSpinner) setLoading(true);
+
+      const request = userId
+        ? getAllBadgesForUser(userId).then((res) => {
+            // Defensive only — PublicProfileCategoryTabs' own caller
+            // (app/user/[id]/index.tsx) already gates the whole screen on
+            // profile.isAuthorized before this tab can ever mount, so this
+            // branch isn't expected to be reached in practice.
+            if (!res.authorized) return null;
+            return [
+              res.genre,
+              res.volume,
+              res.ratingCount,
+              res.reviewCount,
+              res.listCount,
+              res.followers,
+              res.influencer,
+              res.podium,
+              res.firstSync,
+              res.highMatch,
+              res.syncExplorer,
+              res.founding,
+              res.membership,
+              res.streak,
+              res.timeTraveler,
+              res.eclecticTaste,
+              res.dayOneViewer,
+              res.hiddenGem,
+              res.pollParticipant,
+              res.halloweenViewer,
+              res.newYearViewer,
+            ] as const;
+          })
+        : Promise.all([
+            getGenreBadges(),
+            getVolumeBadges(),
+            getRatingCountBadge(),
+            getReviewCountBadge(),
+            getListCountBadge(),
+            getFollowersBadge(),
+            getInfluencerBadge(),
+            getPodiumBadge(),
+            getFirstSyncBadge(),
+            getHighMatchBadge(),
+            getSyncExplorerBadge(),
+            getFoundingCinephileBadge(),
+            getMembershipBadge(),
+            getStreakBadge(),
+            getTimeTravelerBadge(),
+            getEclecticTasteBadge(),
+            getDayOneViewerBadge(),
+            getHiddenGemBadge(),
+            getPollParticipantBadge(),
+            getHalloweenViewerBadge(),
+            getNewYearViewerBadge(),
+          ] as const);
+
+      request
+        .then((results) => {
+          if (cancelled || !results) return;
+          applyResults(...results);
+        })
+        .finally(() => {
+          if (!cancelled && withSpinner) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
+    },
+    [userId, applyResults]
+  );
 
   useEffect(() => load(true), [load]);
 

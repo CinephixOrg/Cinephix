@@ -5,6 +5,14 @@ import { roomKey } from "../sockets/chatSocket.js";
 import Group from "../models/Group.js";
 import Message from "../models/Message.js";
 
+// Same value/reasoning as shareController.js's own RECOMMENDATION_COOLDOWN_MS
+// (Medya) and conversationController.js's own copy (DMs) — see
+// sendGroupMessage's own recommendation branch below for the direct ask
+// this satisfies. Kept as 3 independent per-file constants rather than one
+// shared import, matching this codebase's existing convention for cooldown
+// constants (see shareController.js's REVIEW_SHARE_COOLDOWN_MS).
+const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
+
 // GET /api/groups
 export const getAllGroups = asyncHandler(async (req, res) => {
   const groups = await Group.find({})
@@ -192,6 +200,31 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     (m) => m.user.toString() === req.user._id.toString()
   );
   if (!isMember) return sendError(res, "Not a member of this group", 403);
+
+  // Anti-spam cooldown, same shape/window as shareController.js's own
+  // RECOMMENDATION_COOLDOWN_MS for a Medya recommendation and
+  // conversationController.js's own copy for a DM — direct ask:
+  // recommending the same title to Medya, a person, and a group in one
+  // sitting must all still work independently, only re-recommending the
+  // SAME title to this SAME group within the window is blocked.
+  if (type === "recommendation") {
+    const recentRecommendationInThisGroup = await Message.findOne({
+      roomType: "group",
+      roomId: group._id,
+      sender: req.user._id,
+      type: "recommendation",
+      contentId,
+      contentType,
+      createdAt: { $gte: new Date(Date.now() - RECOMMENDATION_COOLDOWN_MS) },
+    })
+      .sort({ createdAt: -1 })
+      .select("createdAt")
+      .lean();
+    if (recentRecommendationInThisGroup) {
+      const retryAfterMs = recentRecommendationInThisGroup.createdAt.getTime() + RECOMMENDATION_COOLDOWN_MS - Date.now();
+      return sendError(res, "You just recommended this to this group. Try again later.", 429, { retryAfterMs });
+    }
+  }
 
   // Create message with optional recommendation fields
   const messageData = {
