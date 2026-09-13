@@ -7,6 +7,17 @@ import { createMovieModel } from "../models/Movie.js";
 import { createSeriesModel } from "../models/Series.js";
 import Rating from "../models/Rating.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
+import {
+  GENRE_BADGES,
+  DEVOTEE_THRESHOLD,
+  MASTER_THRESHOLD,
+  crossedThresholdTier,
+  countGenreBadgesFromWatchlist,
+  crossedVolumeTier,
+  countVolumeBadgesFromWatchlist,
+  VOLUME_TIERS,
+  bumpStreak,
+} from "../controllers/badgeController.js";
 
 const Movie = createMovieModel(conn);
 const Series = createSeriesModel(conn);
@@ -57,9 +68,60 @@ router.post("/watchlist", authMiddleware, async (req, res) => {
     });
     // --- END NEW LOGIC ---
 
+    // Badge popup detection — this add is the actual event that moves both
+    // a genre badge's count and a volume badge's count (Watched-List
+    // membership, not rating — see countGenreBadgesFromWatchlist's own
+    // comment), so this is the one real place either family can be newly
+    // earned, not addOrUpdateRating (rating something already requires it
+    // to already be on the watched list, so by rating time these counts
+    // have already moved). Each entry carries its own `family` so the
+    // client's single BadgeEarnedModal/badge-share flow knows which
+    // definitions table (genre vs volume) to resolve art/labels from,
+    // without needing two separate notification pipelines.
+    let newlyEarnedBadges = [];
+
+    // Streak — unconditional, same reasoning every other engagement
+    // endpoint's own identical call already has: adding to the watched
+    // list is real evidence of showing up today.
+    const streakBadge = await bumpStreak(userId);
+    if (streakBadge) newlyEarnedBadges.push(streakBadge);
+
+    // Genre half — scoped to just the badge keys this content's own
+    // genres actually touch (usually 1-2 of the 8) rather than
+    // recomputing+checking all 8 on every add.
+    if (genres.length > 0) {
+      const affectedKeys = new Set(
+        GENRE_BADGES.filter((b) => (contentType === "movie" ? b.movieGenres : b.seriesGenres).some((g) => genres.includes(g))).map(
+          (b) => b.key
+        )
+      );
+      if (affectedKeys.size > 0) {
+        const counts = await countGenreBadgesFromWatchlist(user.watchlist);
+        newlyEarnedBadges.push(
+          ...counts
+            .filter((c) => affectedKeys.has(c.key))
+            .map((c) => ({ family: "genre", key: c.key, count: c.count, tier: crossedThresholdTier(c.count) }))
+            .filter((c) => c.tier !== null)
+            .map((c) => ({ ...c, threshold: c.tier === "master" ? MASTER_THRESHOLD : DEVOTEE_THRESHOLD }))
+        );
+      }
+    }
+
+    // Volume half — only the ladder for the type just added can possibly
+    // have moved (adding a movie can never change the series count).
+    {
+      const volumeCounts = await countVolumeBadgesFromWatchlist(user.watchlist);
+      const relevant = volumeCounts.find((c) => c.key === (contentType === "movie" ? "movies" : "series"));
+      const crossedTier = relevant ? crossedVolumeTier(relevant.count) : null;
+      if (crossedTier) {
+        const threshold = VOLUME_TIERS.find((t) => t.tier === crossedTier).threshold;
+        newlyEarnedBadges.push({ family: "volume", key: relevant.key, count: relevant.count, tier: crossedTier, threshold });
+      }
+    }
+
     await user.save();
 
-    return res.status(201).json({ message: "Added", watchlist: user.watchlist });
+    return res.status(201).json({ message: "Added", watchlist: user.watchlist, newlyEarnedBadges });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }

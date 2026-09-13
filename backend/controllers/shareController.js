@@ -7,6 +7,86 @@ import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
+import {
+  computeGenreBadgeCounts,
+  DEVOTEE_THRESHOLD,
+  MASTER_THRESHOLD,
+  computeVolumeBadgeCounts,
+  VOLUME_TIERS,
+  computeRatingCountBadge,
+  RATING_COUNT_TIERS,
+  computeReviewCountBadge,
+  REVIEW_COUNT_TIERS,
+  computeListCountBadge,
+  LIST_COUNT_TIERS,
+  computeFollowersBadge,
+  FOLLOWERS_TIERS,
+  computeInfluencerBadge,
+  INFLUENCER_TIERS,
+  computeFirstSyncBadge,
+  FIRST_SYNC_TIERS,
+  computeHighMatchBadge,
+  HIGH_MATCH_TIERS,
+  computeSyncExplorerBadge,
+  SYNC_EXPLORER_TIERS,
+  computeFoundingCinephileBadge,
+  FOUNDING_TIERS,
+  computeMembershipBadge,
+  MEMBERSHIP_TIERS,
+  computeStreakBadge,
+  STREAK_TIERS,
+  computeTimeTravelerBadge,
+  TIME_TRAVELER_TIERS,
+  computeEclecticTasteBadge,
+  ECLECTIC_TASTE_TIERS,
+  computeDayOneViewerBadge,
+  DAY_ONE_VIEWER_TIERS,
+  computeHiddenGemBadge,
+  HIDDEN_GEM_TIERS,
+  computePollParticipantBadge,
+  POLL_PARTICIPANT_TIERS,
+  computeHalloweenViewerBadge,
+  HALLOWEEN_VIEWER_TIERS,
+  computeNewYearViewerBadge,
+  NEW_YEAR_VIEWER_TIERS,
+} from "./badgeController.js";
+// "podium" is the one family whose compute function lives in
+// feedController.js, not badgeController.js — see computePodiumBadge's
+// own doc comment there for why (it's built out of that file's own
+// podium ranking; importing it the other way would be circular).
+import { computePodiumBadge, PODIUM_TIERS } from "./feedController.js";
+
+// One dispatch entry per badge family — `compute` always returns the same
+// {key,count,tier}[] shape (even the single-metric families below wrap
+// their one result in a 1-item array), so the "badge" branch of
+// createShare can resolve/verify/threshold-lookup identically regardless
+// of family, instead of a growing if/else per family. `thresholdFor`
+// exists only for genre, whose two thresholds (DEVOTEE_THRESHOLD/
+// MASTER_THRESHOLD) aren't a `{tier,threshold}[]` array like every other
+// family's `tiers` already is.
+const BADGE_FAMILIES = {
+  genre: { compute: computeGenreBadgeCounts, thresholdFor: (tier) => (tier === "master" ? MASTER_THRESHOLD : DEVOTEE_THRESHOLD) },
+  volume: { compute: computeVolumeBadgeCounts, tiers: VOLUME_TIERS },
+  ratingCount: { compute: computeRatingCountBadge, tiers: RATING_COUNT_TIERS },
+  reviewCount: { compute: computeReviewCountBadge, tiers: REVIEW_COUNT_TIERS },
+  listCount: { compute: computeListCountBadge, tiers: LIST_COUNT_TIERS },
+  followers: { compute: computeFollowersBadge, tiers: FOLLOWERS_TIERS },
+  influencer: { compute: computeInfluencerBadge, tiers: INFLUENCER_TIERS },
+  podium: { compute: computePodiumBadge, tiers: PODIUM_TIERS },
+  firstSync: { compute: computeFirstSyncBadge, tiers: FIRST_SYNC_TIERS },
+  highMatch: { compute: computeHighMatchBadge, tiers: HIGH_MATCH_TIERS },
+  syncExplorer: { compute: computeSyncExplorerBadge, tiers: SYNC_EXPLORER_TIERS },
+  founding: { compute: computeFoundingCinephileBadge, tiers: FOUNDING_TIERS },
+  membership: { compute: computeMembershipBadge, tiers: MEMBERSHIP_TIERS },
+  streak: { compute: computeStreakBadge, tiers: STREAK_TIERS },
+  timeTraveler: { compute: computeTimeTravelerBadge, tiers: TIME_TRAVELER_TIERS },
+  eclecticTaste: { compute: computeEclecticTasteBadge, tiers: ECLECTIC_TASTE_TIERS },
+  dayOneViewer: { compute: computeDayOneViewerBadge, tiers: DAY_ONE_VIEWER_TIERS },
+  hiddenGem: { compute: computeHiddenGemBadge, tiers: HIDDEN_GEM_TIERS },
+  pollParticipant: { compute: computePollParticipantBadge, tiers: POLL_PARTICIPANT_TIERS },
+  halloweenViewer: { compute: computeHalloweenViewerBadge, tiers: HALLOWEEN_VIEWER_TIERS },
+  newYearViewer: { compute: computeNewYearViewerBadge, tiers: NEW_YEAR_VIEWER_TIERS },
+};
 
 const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
@@ -141,7 +221,35 @@ export const createShare = asyncHandler(async (req, res) => {
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
-  return sendError(res, 'type must be "analysis", "review", "recommendation", or "list"', 400);
+  if (type === "badge") {
+    // Re-verified server-side, never trusted from the client (unlike
+    // "analysis" above, which is the user's own already-generated content
+    // with no persisted source to check against) — a badge IS a
+    // persisted, checkable fact, so there's no reason to let a stale or
+    // tampered client claim a tier it doesn't actually have. `badgeFamily`
+    // picks which computation/threshold table to verify against — `key`
+    // alone isn't guaranteed unique across families.
+    const { badgeFamily, badgeKey } = req.body;
+    const config = BADGE_FAMILIES[badgeFamily];
+    if (!config || !badgeKey) {
+      return sendError(res, "A valid badgeFamily and badgeKey are required", 400);
+    }
+
+    const counts = await config.compute(userId);
+    const found = counts.find((c) => c.key === badgeKey);
+    if (!found || !found.tier) return sendError(res, "Badge not earned", 400);
+
+    const threshold = config.thresholdFor ? config.thresholdFor(found.tier) : config.tiers.find((t) => t.tier === found.tier).threshold;
+
+    const share = await Share.create({
+      user: userId,
+      type: "badge",
+      badgeData: { family: badgeFamily, key: found.key, tier: found.tier, count: found.count, threshold },
+    });
+    return sendSuccess(res, share, "Shared to Medya", 201);
+  }
+
+  return sendError(res, 'type must be "analysis", "review", "recommendation", "list", or "badge"', 400);
 });
 
 // A like is worth ~20h of recency, following the author ~53h — real enough
@@ -350,6 +458,7 @@ const shareHydrationStages = (userId) => [
       officialLinks: 1,
       pollData: 1,
       userVoteIndex: 1,
+      badgeData: 1,
       likeCount: 1,
       viewCount: 1,
       createdAt: 1,

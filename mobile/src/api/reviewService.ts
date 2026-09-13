@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, PopularReview, Review, ReviewsFeedResult } from "../types";
+import type { ContentType, NewlyEarnedBadge, PopularReview, Review, ReviewsFeedResult } from "../types";
 import type { ListResult } from "./contentService";
 
 export async function getContentReviews(
@@ -62,12 +62,15 @@ export async function getReviewsFeed(page = 1, limit = 15, mode?: "all" | "frien
 }
 
 // POST /reviews upserts — same call for both create and edit, no separate
-// update endpoint exists on the backend.
+// update endpoint exists on the backend. `newlyEarnedBadges` is spread
+// alongside the review's own fields, only ever non-empty for the
+// reviewCount activity badge (only a genuinely NEW review, never an edit,
+// can cross a threshold).
 export async function saveReview(
   contentId: string,
   contentType: ContentType,
   text: string
-): Promise<Review> {
+): Promise<Review & { newlyEarnedBadges: NewlyEarnedBadge[] }> {
   const res = await API.post(API_ROUTES.REVIEWS.CREATE_OR_UPDATE, { contentId, contentType, text });
   return res.data;
 }

@@ -124,8 +124,6 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
           padding: 6,
         },
         contentTitle: { color: "#fff", fontFamily: fonts.bold, fontSize: 12, textAlign: "center" },
-        overlayLikeRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 6 },
-        overlayLikeText: { color: "#fff", fontFamily: fonts.medium, fontSize: 11 },
         // No background — the whole point of hiding the overlay is to see
         // the bare poster underneath, same as ListRailCard's own
         // detailsCatcher. An earlier version reused `overlay` (dark) here
@@ -142,7 +140,13 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
         detailsButton: { backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12 },
         detailsButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 11 },
         textCol: { flex: 1 },
-        headerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+        headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 },
+        // flexShrink so a long username truncates via TierGradientText's
+        // own layout instead of pushing likeRow off the card's right edge.
+        headerIdentity: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+        likeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+        likeRowText: { fontSize: 11, color: colors.placeholder },
+        likeRowTextActive: { color: colors.primary, fontFamily: fonts.medium },
         rating: { marginTop: 6 },
         quote: { marginTop: 8, fontFamily: fonts.italic, fontSize: 13, lineHeight: 18, color: colors.baseContent },
       }),
@@ -154,14 +158,18 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
       <View style={styles.posterWrap}>
         {review.content.poster_path && <Image source={{ uri: `${POSTER_BASE}${review.content.poster_path}` }} style={styles.poster} />}
         {!isRevealed ? (
+          // Title only now — the like row that briefly lived here moved to
+          // the top-right of headerRow below, next to the reviewer's own
+          // name, matching where ReviewFeedCard.tsx's "See all" page puts
+          // it (top-right, aligned with its own title row). This poster
+          // overlay has no title row of its own to align against — the
+          // content title lives here on the poster instead — so headerRow,
+          // this card's own topmost row in the text column, is the direct
+          // equivalent slot.
           <Pressable style={styles.overlay} onPress={reveal}>
             <Text style={styles.contentTitle} numberOfLines={2}>
               {review.content.title}
             </Text>
-            <View style={styles.overlayLikeRow}>
-              <Ionicons name="heart" size={11} color="#fff" />
-              <Text style={styles.overlayLikeText}>{review.likeCount}</Text>
-            </View>
           </Pressable>
         ) : (
           <Pressable style={styles.detailsCatcher} onPress={close}>
@@ -173,25 +181,41 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
       </View>
 
       <View style={styles.textCol}>
-        <Pressable style={styles.headerRow} onPress={close}>
-          <UserAvatar
-            userId={review.user._id}
-            username={review.user.username}
-            profilePicUrl={review.user.profile_pic_url}
-            size={24}
-            tier={review.user.accountTier}
-            frameBackgroundColor={colors.base200}
-            disabled
-          />
-          <TierGradientText
-            text={review.user.username}
-            tier={review.user.accountTier}
-            fontSize={13}
-            bold
-            color={colors.baseContent}
-            gradientId={`reviewSwipeUsernameGradient-${review._id}`}
-          />
-        </Pressable>
+        <View style={styles.headerRow}>
+          <Pressable style={styles.headerIdentity} onPress={close}>
+            <UserAvatar
+              userId={review.user._id}
+              username={review.user.username}
+              profilePicUrl={review.user.profile_pic_url}
+              size={24}
+              tier={review.user.accountTier}
+              frameBackgroundColor={colors.base200}
+              disabled
+            />
+            <TierGradientText
+              text={review.user.username}
+              tier={review.user.accountTier}
+              fontSize={13}
+              bold
+              color={colors.baseContent}
+              gradientId={`reviewSwipeUsernameGradient-${review._id}`}
+            />
+          </Pressable>
+          {/* Moved here from the poster overlay, direct ask — top-right,
+              aligned with this card's own topmost text-column row, same
+              slot ReviewFeedCard.tsx's "See all" page uses (its own title
+              row, the direct equivalent of this row since this card's
+              title lives on the poster instead). Its own nested Pressable,
+              "inner tap wins" over nothing here (headerRow itself is no
+              longer a Pressable), same Like?/Liked wording everywhere else
+              in this app. */}
+          <Pressable style={styles.likeRow} onPress={handleToggleLike} disabled={liking} hitSlop={8}>
+            <Ionicons name={hasLiked ? "heart" : "heart-outline"} size={13} color={hasLiked ? colors.primary : colors.placeholder} />
+            <Text style={[styles.likeRowText, hasLiked && styles.likeRowTextActive]}>
+              {hasLiked ? t("Liked") : t("Like?")} {likeCount}
+            </Text>
+          </Pressable>
+        </View>
         {review.rating != null && (
           <Pressable style={styles.rating} onPress={close}>
             <StarRatingDisplay value={review.rating} size={12} />

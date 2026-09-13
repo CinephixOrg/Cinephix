@@ -10,6 +10,16 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+// Only the deck's own top-level card pager needs this — same same-axis
+// nesting fix as AnalysisPosterRow's own ScrollView (see its own comment):
+// this deck now also renders embedded inside ShareCard's feed row, itself
+// nested inside home/index.tsx's horizontal Shares/Discover gesture-handler
+// pager, so the card pager has to participate in GH's own pan arbitration
+// or the outer pager simply eats every horizontal drag before it reaches
+// this component. Harmless in ProfileAnalysisModal's Modal context too,
+// which already mounts its own GestureHandlerRootView for AnalysisPosterRow's
+// identical need.
+import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import MatchGradientTitle from "../match/MatchGradientTitle";
@@ -32,6 +42,8 @@ import type {
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
+
+const AnimatedGHScrollView = Animated.createAnimatedComponent(GHScrollView);
 
 const CARD_GAP = 12;
 const HORIZONTAL_PADDING = 18;
@@ -1168,7 +1180,7 @@ export default function ProfileAnalysisCardDeck({
           it natively. A plain ScrollView would forward that object as the
           literal onScroll prop and call it — an "Object is not a function"
           crash on every scroll frame. */}
-      <Animated.ScrollView
+      <AnimatedGHScrollView
         ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -1190,12 +1202,19 @@ export default function ProfileAnalysisCardDeck({
                 <Text style={styles.sectionTitle}>{card.title.toUpperCase()}</Text>
               </View>
             )}
-            <ScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
+            {/* Gesture-handler's ScrollView here too, not plain RN's — this
+                deck now also renders inside ProfileAnalysisModal when opened
+                from a Shares feed post (ShareCard's own cover card), and
+                while that's still just a Modal (no outer same-axis
+                competitor, same as this component's original Profile-tab
+                use), keeping every nested scroller in this file GH-based is
+                one less thing to re-audit if that ever changes. */}
+            <GHScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
               {card.render(revealedKeys.includes(card.key))}
-            </ScrollView>
+            </GHScrollView>
           </View>
         ))}
-      </Animated.ScrollView>
+      </AnimatedGHScrollView>
 
       {cards.length > 1 && (
         <View style={styles.dotsRow}>

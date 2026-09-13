@@ -389,6 +389,10 @@ export default function SettingsScreen() {
         <Text style={styles.rowLabel}>{t("Terms of Service")}</Text>
       </Pressable>
 
+      <Pressable style={styles.row} onPress={() => router.push("/profile/credits")}>
+        <Text style={styles.rowLabel}>{t("Credits")}</Text>
+      </Pressable>
+
       {!user?.isOAuthUser && (
         <>
           <Text style={styles.sectionTitle}>{t("Change Password")}</Text>

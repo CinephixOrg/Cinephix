@@ -112,8 +112,21 @@ seriesCineGraph: {
     avgRating: Number
   },
   default: {}
-}
+},
   // --- BİTİŞ ---
+
+  // Daily-engagement streak, for the "streak" loyalty badge
+  // (badgeController.js's bumpStreak/computeStreakBadge). `lastStreakDate`
+  // is always truncated to a UTC calendar day (never a real timestamp) so
+  // "was the user active yesterday vs. today" is a clean day-difference,
+  // not a fragile <24h-elapsed check that a late-night vs. early-morning
+  // action could break. `currentStreak` is only ever trusted after
+  // checking `lastStreakDate` is today or yesterday — a streak with no
+  // qualifying activity in the last 2 days has effectively decayed to 0,
+  // but the stored number itself is only ever corrected lazily, on the
+  // user's own next action, not by a cron job.
+  currentStreak: { type: Number, default: 0 },
+  lastStreakDate: { type: Date },
 
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
 

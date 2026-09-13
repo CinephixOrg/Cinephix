@@ -43,6 +43,7 @@ import { useMyReview } from "../hooks/useMyReview";
 import type { ContentType, CustomList, Movie, Review, Series } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
+import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import { fonts } from "../theme/typography";
 
@@ -244,6 +245,7 @@ export default function ContentDetailScreen() {
   const { type, id } = useLocalSearchParams<{ type: ContentType; id: string }>();
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { reportEarnedBadges } = useBadgeEarned();
   const watchlistGraph = useWatchlistGraph();
   const router = useRouter();
   // This screen is duplicated into every tab (content/[type]/[id].tsx under
@@ -483,9 +485,10 @@ export default function ContentDetailScreen() {
 
     setSavingRating(true);
     try {
-      await rateContent(id, type, value);
+      const result = await rateContent(id, type, value);
       setRatingSaved(true);
       refreshRatings();
+      reportEarnedBadges(result.newlyEarnedBadges);
     } catch (e) {
       setMyRating(previous);
       showToast(t("Something went wrong. Please try again."));
@@ -514,16 +517,23 @@ export default function ContentDetailScreen() {
         setRatingSaved(false);
         refreshRatings();
       } else {
-        await addToWatchlist(id, type);
+        const { newlyEarnedBadges } = await addToWatchlist(id, type);
         setInWatchlist(true);
+        reportEarnedBadges(newlyEarnedBadges);
         // Mirrors web's handleAddToList: if a rating was chosen before this
         // item was ever on the watched list, it was held locally only
         // (handleRate's gate) — save it now that the invariant is satisfied.
+        // This save CAN still earn its own badge (unlike genre/volume,
+        // which count Watched-List membership via the addToWatchlist call
+        // just above): the ratingCount activity badge counts real Rating
+        // documents, so a genuinely new rating here is exactly the kind of
+        // event that can cross its threshold.
         if (myRating > 0 && !ratingSaved) {
           rateContent(id, type, myRating)
-            .then(() => {
+            .then((result) => {
               setRatingSaved(true);
               refreshRatings();
+              reportEarnedBadges(result.newlyEarnedBadges);
             })
             .catch(() => {});
         }
@@ -599,12 +609,14 @@ export default function ContentDetailScreen() {
     if (!inWatchlist) {
       setInWatchlist(true);
       addToWatchlist(id, type)
-        .then(() => {
+        .then(({ newlyEarnedBadges }) => {
+          reportEarnedBadges(newlyEarnedBadges);
           if (myRating > 0 && !ratingSaved) {
             rateContent(id, type, myRating)
-              .then(() => {
+              .then((result) => {
                 setRatingSaved(true);
                 refreshRatings();
+                reportEarnedBadges(result.newlyEarnedBadges);
               })
               .catch(() => {});
           }
@@ -650,7 +662,8 @@ export default function ContentDetailScreen() {
   const handleCreateAndAdd = async () => {
     setCreatingList(true);
     try {
-      const list = await createList({ name: newListName.trim() });
+      const { list, newlyEarnedBadges } = await createList({ name: newListName.trim() });
+      reportEarnedBadges(newlyEarnedBadges);
       const updated = await addItemToList(list._id, id, type);
       setMyLists((prev) => [updated, ...prev]);
       setNewListName("");

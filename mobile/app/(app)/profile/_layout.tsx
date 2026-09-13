@@ -39,6 +39,7 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="about" options={{ title: t("About") }} />
       <Stack.Screen name="privacy" options={{ title: t("Privacy Policy") }} />
       <Stack.Screen name="terms" options={{ title: t("Terms of Service") }} />
+      <Stack.Screen name="credits" options={{ title: t("Credits") }} />
     </Stack>
   );
 }

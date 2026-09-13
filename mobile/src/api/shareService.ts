@@ -11,7 +11,33 @@ export type CreateSharePayload =
   | { type: "analysis"; analysisData: any }
   | { type: "review"; reviewId: string }
   | { type: "recommendation"; contentId: string; contentType: ContentType; note?: string }
-  | { type: "list"; listId: string };
+  | { type: "list"; listId: string }
+  | {
+      type: "badge";
+      badgeFamily:
+        | "genre"
+        | "volume"
+        | "ratingCount"
+        | "reviewCount"
+        | "listCount"
+        | "followers"
+        | "influencer"
+        | "podium"
+        | "firstSync"
+        | "highMatch"
+        | "syncExplorer"
+        | "founding"
+        | "membership"
+        | "streak"
+        | "timeTraveler"
+        | "eclecticTaste"
+        | "dayOneViewer"
+        | "hiddenGem"
+        | "pollParticipant"
+        | "halloweenViewer"
+        | "newYearViewer";
+      badgeKey: string;
+    };
 
 export async function createShare(payload: CreateSharePayload): Promise<Share> {
   const res = await API.post(API_ROUTES.SHARES.CREATE, payload);

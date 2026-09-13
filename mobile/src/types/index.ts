@@ -41,6 +41,33 @@ export interface Rating {
   value: number;
 }
 
+// Present on whichever call actually moved a badge's real count exactly
+// onto a threshold (backend's crossedThresholdTier/crossedVolumeTier/
+// crossedActivityTier, badgeController.js) — empty on every other call.
+// WHICH call carries this depends entirely on what the family actually
+// counts, not one fixed endpoint: genre/volume count Watched-List
+// membership, so they live on addToWatchlist()'s response (rating
+// something already requires it to already be on the watched list, so by
+// rating time that count's already-decided change already happened at the
+// watchlist-add step); ratingCount/reviewCount/listCount count real
+// Rating/Review/CustomList documents, so THEY live on rateContent()/
+// saveReview()/createList()'s own responses instead — each lives wherever
+// its own count can actually change, not on one shared endpoint by
+// convention. followers/influencer/podium never actually populate this —
+// each crosses its threshold from someone ELSE's action or a ranking
+// shift, not the viewer's own (see badgeController.js's/feedController.
+// js's own doc comments) — included in the union anyway for completeness
+// since Share.badgeData can still carry them. `family` says which
+// definitions table `key`/`tier` resolve against — `key` alone isn't
+// guaranteed unique across families as more get added.
+export interface NewlyEarnedBadge {
+  family: "genre" | "volume" | "ratingCount" | "reviewCount" | "listCount" | "followers" | "influencer" | "podium" | "firstSync" | "highMatch" | "syncExplorer" | "founding" | "membership" | "streak" | "timeTraveler" | "eclecticTaste" | "dayOneViewer" | "hiddenGem" | "pollParticipant" | "halloweenViewer" | "newYearViewer";
+  key: string;
+  count: number;
+  tier: "devotee" | "master" | VolumeTier | ActivityTier | StreakTier;
+  threshold: number;
+}
+
 // Reviewer is populated with 'username profile_pic_url' only — never bio/email.
 export interface ReviewAuthor {
   _id: string;
@@ -278,6 +305,77 @@ export interface CineGraphData {
   movieGenreRatings: CineGraphRatings;
   seriesGenreRatings: CineGraphRatings;
   isAuthorized: boolean;
+}
+
+// One of GENRE_BADGES's 8 keys (badgeController.js) — "action" | "comedy" |
+// "drama" | "horror" | "romance" | "thriller" | "scifi" | "documentary".
+// Kept as a plain string here rather than a union: the badge key set is a
+// backend-owned list that's expected to grow, and re-syncing a literal
+// union on every addition isn't worth it for a value only ever used to
+// look up a local asset/label table (badgeDefinitions.ts).
+export interface GenreBadge {
+  key: string;
+  count: number;
+  tier: "devotee" | "master" | null;
+}
+
+export interface GenreBadgesResponse {
+  badges: GenreBadge[];
+  devoteeThreshold: number;
+  masterThreshold: number;
+}
+
+// The 5-rung volume ladder (movies/series watched) — bronze through
+// diamond, badgeController.js's own VOLUME_TIERS order. Shown as one slot
+// per key with a level-dot indicator (ProfileBadgesTab.tsx) rather than 5
+// separate tiles like genre badges get — see that file's own comment on
+// why a 2-tier and a 5-tier badge ladder are shown differently. The actual
+// ordered array (VOLUME_TIER_ORDER) lives in volumeBadgeDefinitions.ts,
+// not here — this file is types only, runtime values belong there.
+export type VolumeTier = "bronze" | "silver" | "gold" | "platinum" | "diamond";
+
+export interface VolumeBadge {
+  key: string; // "movies" | "series"
+  count: number;
+  tier: VolumeTier | null;
+}
+
+export interface VolumeBadgesResponse {
+  badges: VolumeBadge[];
+  tiers: { tier: VolumeTier; threshold: number }[];
+}
+
+// The 3 "activity" badges (rating count, review count, list count) —
+// unlike volume's movies/series, each is its own single-metric ladder
+// (badgeController.js's RATING_COUNT_TIERS/REVIEW_COUNT_TIERS/
+// LIST_COUNT_TIERS), so `badges` only ever has one entry per response.
+// `tier` values are deliberately neutral ("tier1".."tier5", not invented
+// words) — same reasoning volume's own art-file naming already
+// established; real display names (Newcomer/Rookie/Organizer/...) are a
+// mobile-side-only concern, see activityBadgeDefinitions.ts.
+export type ActivityTier = "tier1" | "tier2" | "tier3" | "tier4" | "tier5";
+
+// The streak loyalty badge's own tier values are deliberately real,
+// fixed day-counts — not generic "tier1".."tierN" — since they're genuine
+// well-known milestones (also already reflected in the badge art's own
+// file names, badge_streak_7day/30day/100day.png), the one other
+// exception to the neutral-tier convention besides genre's own
+// devotee/master. See loyaltyBadgeDefinitions.ts.
+export type StreakTier = "7day" | "30day" | "100day";
+
+// Reused as-is for the streak endpoint too (ActivityBadgeResponse below),
+// not a parallel type — the shape is identical, `tier` just widens to
+// also allow StreakTier's own real-day-count values alongside every other
+// family's neutral tier1..tierN.
+export interface ActivityBadge {
+  key: string; // "ratings" | "reviews" | "lists" | "followers" | "likes" | "podium" | "founding" | "membership" | "streak" | ...
+  count: number;
+  tier: ActivityTier | StreakTier | null;
+}
+
+export interface ActivityBadgeResponse {
+  badges: ActivityBadge[];
+  tiers: { tier: ActivityTier | StreakTier; threshold: number }[];
 }
 
 export interface GenreDetailItem {
@@ -883,12 +981,21 @@ export interface TopRecommenderItem {
   user: PodiumUser;
   recommendCount: number;
 }
+// Total badge count across BOTH badge families (genre + volume) — see
+// computeAllUsersBadgeCounts's own doc comment in the backend's
+// badgeController.js for how one comparable number is derived from two
+// differently-shaped badge systems.
+export interface MostBadgesItem {
+  user: PodiumUser;
+  badgeCount: number;
+}
 export interface PeopleLeaderboardResult {
   mostFollowed: MostFollowedItem[];
   mostWatched: MostWatchedItem[];
   mostReviewed: MostReviewedItem[];
   mostLiked: MostLikedItem[];
   topRecommenders: TopRecommenderItem[];
+  mostBadges: MostBadgesItem[];
 }
 
 // GET /feed/my-podium-placements — powers the "you made the podium!" popup
@@ -897,7 +1004,7 @@ export interface PeopleLeaderboardResult {
 // PeoplePodium.tsx's own shorter CategoryKey union — PodiumNewsModal.tsx
 // maps between the two.
 export interface PodiumPlacement {
-  category: "mostFollowed" | "mostWatched" | "mostReviewed" | "mostLiked" | "topRecommenders";
+  category: "mostFollowed" | "mostWatched" | "mostReviewed" | "mostLiked" | "topRecommenders" | "mostBadges";
   rank: 1 | 2 | 3;
 }
 
@@ -970,7 +1077,7 @@ export interface PersonalActivityResult {
 // analysis/review/recommendation at the moment it was posted, never a live
 // reference (mirrors how chat's analysis_share/recommendation messages
 // already snapshot instead of referencing).
-export type ShareType = "analysis" | "review" | "recommendation" | "list" | "official" | "poll";
+export type ShareType = "analysis" | "review" | "recommendation" | "list" | "official" | "poll" | "badge";
 
 export type OfficialContentCategory = "trivia" | "tip" | "highlight" | "on_this_day" | "stats" | "announcement";
 
@@ -1017,6 +1124,18 @@ export interface Share {
   officialLinks?: { word: string; href?: string; contentId?: string; contentType?: ContentType }[];
   pollData?: { question: string; options: PollOption[] }; // "poll" only
   userVoteIndex?: number | null; // "poll" only — the caller's own vote, if any
+  // "badge" only — server-verified at share time (createShare re-checks
+  // the badge is actually earned via compute{Genre,Volume}BadgeCounts,
+  // never trusts a client-supplied tier/count). `family` + `key` together
+  // resolve the actual art/label client-side (GENRE_BADGE_DEFINITIONS or
+  // volumeBadgeDefinitions, same tables ProfileBadgesTab uses).
+  badgeData?: {
+    family: "genre" | "volume" | "ratingCount" | "reviewCount" | "listCount" | "followers" | "influencer" | "podium" | "firstSync" | "highMatch" | "syncExplorer" | "founding" | "membership" | "streak" | "timeTraveler" | "eclecticTaste" | "dayOneViewer" | "hiddenGem" | "pollParticipant" | "halloweenViewer" | "newYearViewer";
+    key: string;
+    tier: "devotee" | "master" | VolumeTier | ActivityTier | StreakTier;
+    count: number;
+    threshold: number;
+  };
   likeCount: number;
   liked: boolean;
   viewCount: number;

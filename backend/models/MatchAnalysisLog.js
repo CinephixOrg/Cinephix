@@ -19,6 +19,13 @@ const matchAnalysisLogSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   targetUser: { type: Schema.Types.ObjectId, ref: "User", required: true },
   createdAt: { type: Date, default: Date.now },
+  // Snapshotted matchPercentage (0-100) at analyze time — added for the
+  // "High Match" badge (badgeController.js), which needs to know the best
+  // score a user has EVER reached, not just their most recent one. Optional
+  // and absent on every log row created before this field existed; the
+  // badge's own compute function treats a missing score the same as any
+  // other row that didn't clear the threshold, not an error.
+  score: { type: Number, min: 0, max: 100 },
 });
 
 // "Most recent analysis of this exact pair" is the only query this model

@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, CustomList, CustomListDetail, DiscoverListItem } from "../types";
+import type { ContentType, CustomList, CustomListDetail, DiscoverListItem, NewlyEarnedBadge } from "../types";
 
 // Reads res.data.lists / res.data.list directly rather than relying on the
 // generic envelope-unwrap — works the same whether or not this endpoint
@@ -12,13 +12,16 @@ export async function getMyLists(): Promise<CustomList[]> {
   return res.data.lists;
 }
 
+// Every call here creates a genuinely new list (no upsert on this
+// endpoint), so `newlyEarnedBadges` (the listCount activity badge) never
+// needs an "was this an edit" guard the way rating/review counts do.
 export async function createList(fields: {
   name: string;
   description?: string;
   isPublic?: boolean;
-}): Promise<CustomList> {
+}): Promise<{ list: CustomList; newlyEarnedBadges: NewlyEarnedBadge[] }> {
   const res = await API.post(API_ROUTES.LISTS.CREATE, fields);
-  return res.data.list;
+  return { list: res.data.list, newlyEarnedBadges: res.data.newlyEarnedBadges };
 }
 
 export async function getListById(

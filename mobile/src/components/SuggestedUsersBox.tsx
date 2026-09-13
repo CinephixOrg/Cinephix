@@ -76,7 +76,14 @@ function SuggestedUsersBox({ pool, occurrence }: Props) {
       <View style={styles.row}>
         {users.map((u) => (
           <Pressable key={u._id} style={styles.cell} onPress={() => router.push(`/user/${u._id}`)}>
-            <UserAvatar userId={u._id} username={u.username} profilePicUrl={u.profile_pic_url} tier={u.accountTier} size={48} disabled />
+            {/* No `tier` prop here (no ring) — same reasoning as
+                PeoplePodiumCard.tsx's own avatar: in a compact, multi-
+                avatar-per-row layout like this one, the inline diamond
+                mark right below is this box's one tier signal, not a
+                second copy of a ring that would otherwise crowd 4 tight
+                48px avatars side by side. Direct ask, for consistency with
+                Podium's already-established diamond-only precedent. */}
+            <UserAvatar userId={u._id} username={u.username} profilePicUrl={u.profile_pic_url} size={48} disabled />
             <View style={styles.usernameRow}>
               {(u.accountTier === "plus" || u.accountTier === "premium") && (
                 <Ionicons name="diamond" size={10} color={TIER_FRAME_STYLES[u.accountTier]?.glowColor} />

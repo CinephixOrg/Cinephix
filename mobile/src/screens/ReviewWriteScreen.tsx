@@ -9,6 +9,7 @@ import { useMyReview } from "../hooks/useMyReview";
 import { saveReview, deleteReview } from "../api/reviewService";
 import { createShare } from "../api/shareService";
 import { useToast } from "../context/ToastContext";
+import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import type { ContentType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -49,6 +50,7 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
   const navigation = useNavigation();
   const router = useRouter();
   const { showToast } = useToast();
+  const { reportEarnedBadges } = useBadgeEarned();
   const insets = useSafeAreaInsets();
   const { myReview, myReviewLoading } = useMyReview(contentId, user?._id);
 
@@ -82,6 +84,7 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
     setError(null);
     try {
       const saved = await saveReview(contentId, contentType, trimmed);
+      reportEarnedBadges(saved.newlyEarnedBadges);
       if (alsoShare) {
         try {
           await createShare({ type: "review", reviewId: saved._id });

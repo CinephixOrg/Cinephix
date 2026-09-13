@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 // From react-native-gesture-handler, not react-native — this card's own
 // film strip now also nests inside ListsSwiper.tsx's outer horizontal
@@ -18,8 +18,10 @@ import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
 import TierGradientText from "./TierGradientText";
+import { toggleListLike } from "../api/listService";
 import type { DiscoverListItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
 import { fonts } from "../theme/typography";
 import { CASCADE_POSTER_RADIUS } from "./PosterCascade";
 
@@ -54,11 +56,16 @@ interface Props {
 // direct ask — list.fromFollowing itself is untouched and still drives
 // ListsSection.tsx's own "Lists from Friends" filtering, only this card's
 // own visual badge is gone.
-// Also now this exact design's the one Discover's ListsSwiper.tsx uses too
-// (was search/SearchListCard.tsx's own different layout — a real correction:
-// "posta benziyo, see alldaki gibi olsun") — direct ask that the two stay
-// visually identical, the one addition being the like/view counts on the
-// bottom row (present here now regardless of caller).
+// Also now this exact design's the one Discover's ListsSwiper.tsx AND
+// ListsSection.tsx (the "See all" page) both use — a real bug caught live:
+// ListsSection.tsx had drifted onto search/SearchListCard.tsx instead
+// (Search's own, differently-designed result card) despite ListsSwiper.tsx's
+// own comment claiming they already matched. Fixed by pointing
+// ListsSection.tsx back at this component. The like/view counts on the
+// bottom row are a real tappable heart now (was static, no onPress) — same
+// Like?/Liked + count pattern SearchListCard.tsx's own footer already used,
+// direct ask that this card's engagement row actually work everywhere it
+// renders, not just where SearchListCard happened to.
 // Premium/Plus is shown via the owner's avatar ring + a metallic gradient-
 // filled username (TierGradientText, gold/silver off the same
 // TIER_FRAME_STYLES pair the ring itself uses) — NOT the gold card-border
@@ -69,6 +76,36 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
   const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
+  const { showToast } = useToast();
+  // Real tappable heart now (was a static heart+count, no onPress at all) —
+  // same Like?/Liked + count wording and toggleListLike call SearchListCard.tsx's
+  // own engagement row already used, direct ask that this card's footer match
+  // that pattern instead of being purely decorative. `hasLiked` is optional on
+  // DiscoverListItem (only /popular results carry it) — `!!list.hasLiked`
+  // defaults an unknown state to false, same fallback SearchListCard.tsx uses.
+  const [hasLiked, setHasLiked] = useState(!!list.hasLiked);
+  const [likeCount, setLikeCount] = useState(list.likeCount);
+  const [liking, setLiking] = useState(false);
+
+  const handleToggleLike = async () => {
+    if (liking) return;
+    const prevLiked = hasLiked;
+    const prevCount = likeCount;
+    setHasLiked(!prevLiked);
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
+    setLiking(true);
+    try {
+      const result = await toggleListLike(list._id);
+      setHasLiked(result.hasLiked);
+      setLikeCount(result.likeCount);
+    } catch {
+      setHasLiked(prevLiked);
+      setLikeCount(prevCount);
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setLiking(false);
+    }
+  };
   const styles = useMemo(() => StyleSheet.create({
     card: {
       backgroundColor: colors.base200,
@@ -94,6 +131,7 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
     engagementRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     engagementUnit: { flexDirection: "row", alignItems: "center", gap: 4 },
     engagementText: { fontFamily: fonts.medium, fontSize: 11, color: colors.placeholder },
+    engagementTextActive: { color: colors.primary },
   }), [colors]);
 
   return (
@@ -153,10 +191,16 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
       <View style={styles.footerRow}>
         <Text style={styles.count}>{t("item_count", { count: list.items.length })}</Text>
         <View style={styles.engagementRow}>
-          <View style={styles.engagementUnit}>
-            <Ionicons name="heart" size={13} color={colors.placeholder} />
-            <Text style={styles.engagementText}>{list.likeCount}</Text>
-          </View>
+          {/* Its own nested Pressable — "inner tap wins" over the card's
+              own onPress, so liking doesn't also trigger navigation. Same
+              Like?/Liked + count wording every other like button in this
+              app uses (SearchListCard.tsx, List Detail, Reviews). */}
+          <Pressable style={styles.engagementUnit} onPress={handleToggleLike} disabled={liking} hitSlop={6}>
+            <Ionicons name={hasLiked ? "heart" : "heart-outline"} size={13} color={hasLiked ? colors.primary : colors.placeholder} />
+            <Text style={[styles.engagementText, hasLiked && styles.engagementTextActive]}>
+              {hasLiked ? t("Liked") : t("Like?")} {likeCount}
+            </Text>
+          </Pressable>
           <View style={styles.engagementUnit}>
             <Ionicons name="eye-outline" size={14} color={colors.placeholder} />
             <Text style={styles.engagementText}>{list.views}</Text>

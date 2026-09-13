@@ -3,6 +3,7 @@ import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
+import { LIST_COUNT_TIERS, crossedActivityTier, bumpStreak } from "../controllers/badgeController.js";
 
 const router = express.Router();
 
@@ -273,7 +274,21 @@ router.post("/", authMiddleware, async (req, res) => {
       order,
     });
 
-    return res.status(201).json({ list });
+    // List-count badge crossing — every call here creates a genuinely new
+    // list (no upsert on this endpoint), so no "was this an edit" guard is
+    // needed the way rating/review counts need one.
+    const newlyEarnedBadges = [];
+    const streakBadge = await bumpStreak(req.user._id);
+    if (streakBadge) newlyEarnedBadges.push(streakBadge);
+
+    const listCount = await CustomList.countDocuments({ owner: req.user._id });
+    const crossedTier = crossedActivityTier(listCount, LIST_COUNT_TIERS);
+    if (crossedTier) {
+      const threshold = LIST_COUNT_TIERS.find((t) => t.tier === crossedTier).threshold;
+      newlyEarnedBadges.push({ family: "listCount", key: "lists", count: listCount, tier: crossedTier, threshold });
+    }
+
+    return res.status(201).json({ list, newlyEarnedBadges });
   } catch {
     return res.status(500).json({ message: "Server error" });
   }

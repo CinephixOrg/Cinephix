@@ -22,6 +22,7 @@ const CATEGORY_INFO: Record<PodiumPlacement["category"], { key: string; titleKey
   mostReviewed: { key: "reviewed", titleKey: "Most Reviewed" },
   mostLiked: { key: "liked", titleKey: "Most Liked" },
   topRecommenders: { key: "recommended", titleKey: "Top Recommenders" },
+  mostBadges: { key: "badges", titleKey: "Most Decorated" },
 };
 
 // The "you made the podium!" popup — checked once per app session (this

@@ -1481,7 +1481,7 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   // Best-effort — a transient write failure here shouldn't fail an otherwise-
   // successful analysis the user is about to receive; it would just mean this
   // one call doesn't count toward the pair's cooldown.
-  MatchAnalysisLog.create({ user: meId, targetUser: targetUserId }).catch((err) =>
+  MatchAnalysisLog.create({ user: meId, targetUser: targetUserId, score: matchPercentage }).catch((err) =>
     console.error("Failed to record MatchAnalysisLog entry:", err.message)
   );
 

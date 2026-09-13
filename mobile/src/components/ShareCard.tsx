@@ -36,19 +36,27 @@ import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
 import StackedAvatars from "./StackedAvatars";
-import TierGradientText from "./TierGradientText";
 import { CASCADE_POSTER_RADIUS } from "./PosterCascade";
 import StarRatingDisplay from "./StarRatingDisplay";
 import FollowButton from "./FollowButton";
+import ProfileAnalysisModal from "./ProfileAnalysisModal";
+import MatchGradientTitle from "./match/MatchGradientTitle";
+import { GENRE_BADGE_DEFINITIONS } from "../data/genreBadgeDefinitions";
+import { VOLUME_BADGE_DEFINITIONS } from "../data/volumeBadgeDefinitions";
+import { ACTIVITY_BADGE_DEFINITIONS } from "../data/activityBadgeDefinitions";
+import { SOCIAL_BADGE_DEFINITIONS } from "../data/socialBadgeDefinitions";
+import { SYNC_BADGE_DEFINITIONS } from "../data/syncBadgeDefinitions";
+import { FOUNDING_CINEPHILE_DEFINITION, MEMBERSHIP_BADGE_DEFINITION, STREAK_BADGE_DEFINITION } from "../data/loyaltyBadgeDefinitions";
+import { SEASONAL_BADGE_DEFINITIONS } from "../data/seasonalBadgeDefinitions";
+import { SPECIAL_BADGE_DEFINITIONS } from "../data/specialBadgeDefinitions";
 import { registerShareView, voteOnPoll } from "../api/shareService";
 import { addToToWatchList } from "../api/toWatchService";
-import type { OfficialContentCategory, PollOption, Share } from "../types";
+import type { ActivityTier, OfficialContentCategory, PollOption, ProfileAnalysis, Share, StreakTier, VolumeTier } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { useWatchlistGraph, isInWatchlistGraph } from "../context/WatchlistGraphContext";
 import type { ColorPalette } from "../theme/palettes";
 import { fonts } from "../theme/typography";
-import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
 // Was w500 (500px wide) — every actual use of this in the file is a small
 // thumbnail (48-64px wide: sharePoster, filmStripPoster, modalPoster), so
@@ -67,9 +75,9 @@ const FILM_STRIP_POSTER_HEIGHT = FILM_STRIP_POSTER_WIDTH * 1.5;
 // badge (MatchAvatarRing.tsx) — reused here rather than picked fresh, so
 // "gold" reads consistently as this app's one "special" accent color.
 // Premium-only glowing box (Pro doesn't get it) — unrelated to tier
-// *identity* now that that's shown via UserAvatar's own TierAvatarFrame
-// ring + the inline tierMark below, both colored per-tier from
-// tierFrames.ts rather than this gold.
+// *identity*, which is UserAvatar's own TierAvatarFrame ring alone now
+// (tierFrames.ts) — this box border is deliberately a second, distinct
+// signal ("this post gets Premium's own flourish"), not a repeat of it.
 const TIER_GOLD = "#FFC94A";
 const TIER_GOLD_HIGHLIGHT = "#FFF3C4";
 // Same highlight-+-base gradient pairing idea as the gold pair above, just
@@ -95,6 +103,17 @@ const INNER_BOX_RADIUS = 12;
 // regardless of review length — a long review is truncated with an
 // ellipsis at this many lines; tapping it opens the full text in a Modal.
 const REVIEW_COLLAPSED_LINES = 3;
+
+// Same tier->label-key map ProfileBadgesTab.tsx/BadgeEarnedModal.tsx use
+// for their own volume tiles — duplicated rather than shared since it's a
+// 5-entry literal, not worth an import for.
+const VOLUME_TIER_LABEL_KEY: Record<VolumeTier, string> = {
+  bronze: "Amateur",
+  silver: "Enthusiast",
+  gold: "Aficionado",
+  platinum: "Connoisseur",
+  diamond: "Cinephile",
+};
 
 interface Props {
   share: Share;
@@ -132,6 +151,8 @@ export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: strin
     }
     case "poll":
       return { icon: "bar-chart" as const, label: t("Poll"), color: colors.secondary };
+    case "badge":
+      return { icon: "ribbon" as const, label: t("Badge"), color: colors.warning };
     // Share["type"] is a compile-time guarantee only — a doc with a bad/
     // missing type field (legacy data, a partially-migrated record) would
     // otherwise fall through to `undefined` here and crash every reader
@@ -139,6 +160,98 @@ export function typeMeta(type: Share["type"], colors: ColorPalette, t: (k: strin
     default:
       return { icon: "help-circle" as const, label: t("Share"), color: colors.placeholder };
   }
+}
+
+// The 7 data-driven card icons from ProfileAnalysisCardDeck.tsx's own card
+// list (same order), minus the LLM persona card (this cover's headline
+// already stands in for it) and minus premium-tease's lock (an absence
+// marker, not a real section) — every icon here always exists in the full
+// deck regardless of viewer tier. Hardcoded rather than imported from the
+// deck's own `cards` builder: that list is assembled from live `data`/
+// `viewerTier`, and this cover teases the full analysis's shape before any
+// of that is even fetched for viewing.
+const ANALYSIS_COVER_RAIL_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
+  "pie-chart-outline", // Genre Breakdown
+  "trending-up-outline", // Recent Taste (30 Days)
+  "heart-outline", // Favorite Genres
+  "stats-chart-outline", // Your All Time Stats
+  "calendar-number-outline", // Your Monthly Stats
+  "analytics-outline", // Rating Curve
+  "calendar-outline", // Watch Timeline
+];
+const RAIL_ICON_SLOT = 40;
+const RAIL_WIDTH = 180;
+const RAIL_SEQUENCE_WIDTH = ANALYSIS_COVER_RAIL_ICONS.length * RAIL_ICON_SLOT;
+// Repeated enough times that the visible window never runs out of content
+// between a translateX of 0 and -RAIL_SEQUENCE_WIDTH (see the loop effect
+// below) — 3 repeats' worth of runway past the one sequence actually being
+// animated across is generous headroom, cheap either way at 28 icons total.
+const RAIL_ICONS_REPEATED = Array.from({ length: 4 }, () => ANALYSIS_COVER_RAIL_ICONS).flat();
+const RAIL_LOOP_DURATION_MS = 9000;
+// How far (in px) from dead center an icon can be before it's faded down
+// to its floor opacity — a bit over one slot width, so the crossfade
+// between a departing and an arriving icon overlaps instead of leaving a
+// visible gap of near-invisible icons in between.
+const RAIL_FADE_RADIUS = RAIL_ICON_SLOT * 1.4;
+
+// Auto-scrolling "table of contents" for the analysis cover — direct ask:
+// all 7 of the real deck's own section icons, laid out on a self-driving
+// rail (never touched by the viewer) since they don't fit in one row at
+// this card's width. Built the same way ProfileAnalysisCardDeck.tsx's own
+// DeckDot animates its page indicator: one shared Animated.Value drives a
+// native-thread translateX, and each icon derives its OWN opacity from
+// that same shared value via Animated.add + interpolate — a per-icon
+// center-relative "spotlight" crossfade rather than a static edge mask,
+// entirely on the native driver (zero JS-thread cost per frame once
+// mounted). A local component (not inlined in ShareCard's own render)
+// specifically because it owns real hook state (the loop's Animated.Value
+// + its start/stop effect) that a conditional branch inside a bigger
+// render can't hold.
+function AnalysisCoverIconRail() {
+  const { colors } = useTheme();
+  const railX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(railX, {
+        toValue: -RAIL_SEQUENCE_WIDTH,
+        duration: RAIL_LOOP_DURATION_MS,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [railX]);
+
+  const center = RAIL_WIDTH / 2;
+
+  return (
+    <View style={{ width: RAIL_WIDTH, height: RAIL_ICON_SLOT, overflow: "hidden", alignSelf: "center" }}>
+      <Animated.View style={{ flexDirection: "row", transform: [{ translateX: railX }] }}>
+        {RAIL_ICONS_REPEATED.map((iconName, i) => {
+          // This icon's own live on-screen x (its slot's fixed layout
+          // position plus the shared animated offset) — compared against
+          // the rail's own fixed viewport center to derive "how close to
+          // dead-center is this specific icon right now."
+          const liveX = Animated.add(railX, i * RAIL_ICON_SLOT + RAIL_ICON_SLOT / 2);
+          const opacity = liveX.interpolate({
+            inputRange: [center - RAIL_FADE_RADIUS, center, center + RAIL_FADE_RADIUS],
+            outputRange: [0.12, 1, 0.12],
+            extrapolate: "clamp",
+          });
+          return (
+            <Animated.View
+              key={i}
+              style={{ width: RAIL_ICON_SLOT, height: RAIL_ICON_SLOT, alignItems: "center", justifyContent: "center", opacity }}
+            >
+              <Ionicons name={iconName} size={20} color={colors.primary} />
+            </Animated.View>
+          );
+        })}
+      </Animated.View>
+    </View>
+  );
 }
 
 // Links just the one word "watchlist" inline within the recommendation
@@ -216,19 +329,18 @@ function renderTextWithLinks(text: string, links: { word: string; onPress: () =>
 // vertical stack (name, description/fallback, a horizontal poster strip)
 // since a list's preview is inherently multiple posters, not one — always
 // the owner's own public list, snapshotted at share time (see
-// ListDetailScreen.tsx's handleShareToMedia). Analysis uses its own
-// nickname+summary `analysisBox`, styled the same way for consistency.
-// Tier shows two ways, both sourced from the same tierFrames.ts colors so
-// they read as one consistent language rather than two competing rules:
-// UserAvatar's own TierAvatarFrame ring (silver/blue/purple per tier, a
-// teammate's own component — always passed now, not gated behind a
-// showTierFrame flag, so it renders the same in Home's feed and Profile's)
-// plus this card's own inline `tierMark` diamond next to the username, in
-// that same tier's color — a second, more legible copy of the same signal
-// since the ring itself is a thin 1.5px border easy to miss while
-// scrolling fast. Premium's inner content box still gets its own separate
-// gold border+glow on top of both (unrelated axis: "flashier post box" vs
-// "who posted it"), unchanged from before.
+// ListDetailScreen.tsx's handleShareToMedia). Analysis gets its own poster-
+// style `analysisCover` (see its own render block) — a tap-through to the
+// real card deck rather than a boxed preview like the others.
+// Tier shows exactly one way now: UserAvatar's own TierAvatarFrame ring
+// (silver/blue/purple per tier, tierFrames.ts, a teammate's own component —
+// always passed, not gated behind a flag, so it renders the same in Home's
+// feed and Profile's). The inline diamond mark and the gradient-fill
+// username that used to sit alongside it are gone — reported as too much
+// of the same signal stacked on one post (ring + diamond + gradient name +
+// Premium's own gold box border, direct ask to simplify). Premium's inner
+// content box still gets its own separate gold border+glow (unrelated
+// axis: "flashier post box" vs "who posted it"), unchanged.
 function ShareCard({ share, onToggleLike, basePath }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -236,6 +348,15 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
   const { showToast } = useToast();
   const watchlistGraph = useWatchlistGraph();
   const { height: screenHeight } = useWindowDimensions();
+
+  // Opens the exact same full-size card deck the owner sees on their own
+  // Profile (ProfileAnalysisModal), same as ChatRoom.tsx's own analysis-
+  // share bubble — neither `shareable` nor `navigable` passed, matching
+  // that precedent exactly: viewing someone else's shared analysis here
+  // isn't a re-share decision, and a poster tap inside the deck has no
+  // sensible destination from this basePath (ProfileAnalysisModal's own
+  // onOpenItem is hardcoded to the `/profile` stack).
+  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
 
   const styles = useMemo(
     () =>
@@ -303,17 +424,53 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           borderRadius: 8,
         },
         typeChipText: { fontFamily: fonts.bold, fontSize: 10, color: "#fff", letterSpacing: 0.3 },
-        analysisBox: {
+        // A cover, not the full deck — tapping it opens the exact same
+        // ProfileAnalysisCardDeck full-size in a Modal (ProfileAnalysisModal,
+        // rendered below) instead of embedding it inline, same "compact
+        // preview, full thing behind a tap" shape shareBox/listBox already
+        // use. `overflow:"hidden"` clips the gradient-fill Svg background
+        // and the watermark icon to the box's own rounded corners; no
+        // separate background/border here since the Svg IS the fill (see
+        // analysisCoverBg below) — this file's own established technique
+        // for premiumBorder/officialBorder, reused for a fill instead of a
+        // stroke so there's no second gradient library/import to mix in.
+        analysisCover: {
           marginHorizontal: 12,
           marginTop: 4,
           marginBottom: 6,
+          borderRadius: INNER_BOX_RADIUS + 4,
+          overflow: "hidden",
+          padding: 16,
+        },
+        analysisCoverWatermark: { position: "absolute", right: -10, bottom: -12, opacity: 0.07 },
+        // Just vertical spacing around AnalysisCoverIconRail — the rail's
+        // own width/centering is fixed (RAIL_WIDTH, alignSelf:"center"),
+        // defined once at that component rather than duplicated here.
+        analysisCoverRailWrap: { marginTop: 16 },
+        analysisCoverFooter: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 16 },
+        analysisCoverCta: { color: colors.primary, fontFamily: fonts.bold, fontSize: 12 },
+        captionLink: { color: colors.primary },
+        // "badge" post box — a genre achievement share, same colors.base200
+        // "inner content box" convention as every other post type's own
+        // box, just centered content instead of a poster+text row (there's
+        // no associated title to link to, unlike review/recommendation).
+        badgeBox: {
+          alignItems: "center",
+          marginHorizontal: 12,
+          marginTop: 4,
+          marginBottom: 6,
+          padding: 18,
           backgroundColor: colors.base200,
           borderRadius: INNER_BOX_RADIUS,
-          padding: 14,
+          overflow: "hidden",
         },
-        analysisNickname: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
-        analysisSummary: { fontSize: 13, color: colors.baseContent, marginTop: 6, lineHeight: 18 },
-        captionLink: { color: colors.primary },
+        // Same low-opacity decorative-icon technique as analysisCover's own
+        // watermark (ShareCard's analysis cover), top-right here instead of
+        // bottom-right — direct ask to bring the same touch to this box.
+        badgeBoxWatermark: { position: "absolute", right: -10, top: -12, opacity: 0.07 },
+        badgeBoxImage: { width: 72, height: 72, marginBottom: 10 },
+        badgeBoxTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
+        badgeBoxCaption: { fontSize: 12, color: colors.placeholder, marginTop: 4, textAlign: "center" },
         // The official Cinephix account's own text-only post box (trivia/
         // tip/highlight/on-this-day/stats/announcement) — same
         // colors.base200 "inner content box" convention as analysisBox,
@@ -842,38 +999,33 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
   // Premium's inner content box gets the gold border+glow, Pro doesn't —
   // the user's own explicit split after confirming Premium outranks Pro.
-  // Who-posted-this tier itself is shown two ways now: UserAvatar's own
-  // TierAvatarFrame ring, and this inline mark next to the username — same
-  // diamond shape for both tiers (only the ring's own per-tier color
-  // changes), a second, more legible copy of the same signal since the
-  // ring itself is a thin 1.5px border easy to miss while scrolling.
+  // Who-posted-this tier is now shown exactly ONE way in a post: UserAvatar's
+  // own TierAvatarFrame ring. The inline diamond mark and the gradient-fill
+  // username (TierGradientText) that used to sit alongside it were removed
+  // per direct ask — reported as too much of the same signal repeated at
+  // once (ring + diamond + gradient name + Premium's own gold box border,
+  // all saying "tiered" on one post). The ring stays because it's this
+  // app's one consistent identity signal everywhere a user is shown
+  // (Profile, search, comments, ...), not just here; Premium's gold box
+  // border stays because it's genuinely post-specific chrome, not a repeat
+  // of the identity signal. Two distinct signals now instead of four
+  // overlapping ones: "who this is" (ring, everywhere) and "this post gets
+  // Premium's own extra flourish" (the box border, posts only).
   const isPremium = share.user.accountTier === "premium";
-  // Pro/Premium only (not dev, even though tierFrames.ts defines a color
-  // for it too) — matches the original tier-badge's own scope from before
-  // this whole arc, the user's own ask was specifically about these two.
-  const tierLabel = share.user.accountTier === "plus" || share.user.accountTier === "premium" ? share.user.accountTier : null;
-  const tierMark = tierLabel ? <Ionicons name="diamond" size={12} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
-  // The official Cinephix account's own verified badge — same slot pattern
-  // as tierMark right beside it, shown whenever the poster is the one
-  // reserved official account (officialContentService.js), independent of
-  // its own accountTier. colors.primary (not the earlier colors.info) so it
-  // reads as "on-brand" and stays coordinated with the official avatar's
-  // own gradient (which also runs into colors.primary) across every theme,
-  // rather than a fixed "info blue" that could clash with some palettes.
+  // The official Cinephix account's own verified badge, independent of its
+  // own accountTier — shown whenever the poster is the one reserved
+  // official account (officialContentService.js). colors.primary (not the
+  // earlier colors.info) so it reads as "on-brand" and stays coordinated
+  // with the official avatar's own gradient (which also runs into
+  // colors.primary) across every theme, rather than a fixed "info blue"
+  // that could clash with some palettes.
   const officialBadge = share.user.isOfficial ? <Ionicons name="checkmark-circle" size={13} color={colors.primary} /> : null;
   // The official account's own username always renders in caps ("CINEPHIX"),
   // independent of how it's actually stored/typed elsewhere (login, search,
   // @mentions, ...) — purely a display convention for this one reserved
   // account, not a case-normalization of usernames in general.
   const displayUsername = share.user.isOfficial ? share.user.username.toUpperCase() : share.user.username;
-  // Plus/Premium posters get the same metallic gradient-filled name Discovery's
-  // Popular Lists/Popular Reviews already use (TierGradientText) instead of a
-  // flat tier-colored one — direct ask. Free/dev and the official account (never
-  // plus/premium) fall back to the plain Text below unchanged, official's own
-  // italic styling included.
-  const usernameEl = tierLabel ? (
-    <TierGradientText text={displayUsername} tier={tierLabel} fontSize={14} gradientId={`share-username-${share._id}`} color={colors.baseContent} bold />
-  ) : (
+  const usernameEl = (
     <Text style={[styles.username, share.user.isOfficial && styles.usernameOfficial]} numberOfLines={1}>
       {displayUsername}
     </Text>
@@ -1156,7 +1308,6 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           <View style={styles.headerTextCol}>
             <View style={styles.usernameRow}>
               {usernameEl}
-              {tierMark}
               {officialBadge}
             </View>
             {typeChipEl}
@@ -1207,7 +1358,6 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         <View style={styles.headerTextCol}>
           <View style={styles.usernameRow}>
             {usernameEl}
-            {tierMark}
             {officialBadge}
           </View>
           {typeChipEl}
@@ -1216,15 +1366,46 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
       </View>
 
       {share.type === "analysis" && share.analysisData && (
-        <Pressable style={styles.analysisBox} onPress={handleContentPress()}>
-          {share.analysisData.nickname ? <Text style={styles.analysisNickname}>{share.analysisData.nickname}</Text> : null}
-          {share.analysisData.personalitySummary ? (
-            <Text style={styles.analysisSummary} numberOfLines={5}>
-              {share.analysisData.personalitySummary}
-            </Text>
-          ) : null}
+        // A poster-style cover, not the full deck inline — tapping it opens
+        // the exact same ProfileAnalysisCardDeck the owner sees on their own
+        // Profile, full-size, in a Modal (ProfileAnalysisModal below). The
+        // "shared their profile analysis" meaning that used to sit in its
+        // own line above this box is carried by the header's own "ANALYSIS"
+        // type chip instead — no eyebrow label, no tasteCategory subtitle,
+        // just the nickname headline leading the card on its own. In place
+        // of the description that used to sit under it: an auto-scrolling
+        // rail of the real deck's own 7 section icons (AnalysisCoverIconRail
+        // above) — a wordless, self-animating teaser of everything actually
+        // inside, rather than a sentence that only ever repeats what the
+        // headline+chip already said.
+        <Pressable style={styles.analysisCover} onPress={() => setAnalysisModalVisible(true)}>
+          <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Defs>
+              <LinearGradient id={`analysisCoverBg-${share._id}`} x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={colors.base200} />
+                <Stop offset="1" stopColor={colors.base300} />
+              </LinearGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill={`url(#analysisCoverBg-${share._id})`} />
+          </Svg>
+          <Ionicons name="film-outline" size={76} color={colors.baseContent} style={styles.analysisCoverWatermark} />
+
+          <MatchGradientTitle
+            text={share.analysisData.nickname || t("Silent Observer")}
+            gradientId={`analysisCoverTitle-${share._id}`}
+            fontSize={22}
+          />
+
+          <View style={styles.analysisCoverRailWrap}>
+            <AnalysisCoverIconRail />
+          </View>
+
+          <View style={styles.analysisCoverFooter}>
+            <Text style={styles.analysisCoverCta}>{t("Tap to view full analysis")}</Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          </View>
+
           {premiumBorder}
-          {burstOverlayEl}
         </Pressable>
       )}
 
@@ -1370,6 +1551,204 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         </View>
       )}
 
+      {share.type === "badge" &&
+        share.badgeData &&
+        (() => {
+          const data = share.badgeData!;
+          if (
+            data.family === "timeTraveler" ||
+            data.family === "eclecticTaste" ||
+            data.family === "dayOneViewer" ||
+            data.family === "hiddenGem" ||
+            data.family === "pollParticipant" ||
+            data.family === "halloweenViewer" ||
+            data.family === "newYearViewer"
+          ) {
+            const def =
+              SPECIAL_BADGE_DEFINITIONS.find((d) => d.family === data.family) ??
+              SEASONAL_BADGE_DEFINITIONS.find((d) => d.family === data.family);
+            if (!def) return null;
+            const title = t(def.titleKey);
+            let caption: string;
+            switch (data.family) {
+              case "timeTraveler":
+                caption = t("You watched something from before 1970 — a true classic!");
+                break;
+              case "eclecticTaste":
+                caption = t("You've explored {{count}} different genres — your taste knows no bounds!", { count: data.count });
+                break;
+              case "dayOneViewer":
+                caption = t("You watched something the very day it came out!");
+                break;
+              case "hiddenGem":
+                caption = t("You rated a title highly that almost nobody else has watched — a true hidden gem!");
+                break;
+              case "pollParticipant":
+                caption = t("You voted in a Cinephix poll!");
+                break;
+              case "halloweenViewer":
+                caption = t("You watched a Horror movie in October — spooky season done right!");
+                break;
+              default:
+                caption = t("You watched something right as the New Year arrived!");
+            }
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={def.image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>{title}</Text>
+                <Text style={styles.badgeBoxCaption}>{caption}</Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          if (data.family === "founding") {
+            const title = t(FOUNDING_CINEPHILE_DEFINITION.titleKey);
+            const caption = t("You're one of Cinephix's first {{count}} members!", { count: data.threshold });
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={FOUNDING_CINEPHILE_DEFINITION.image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>{title}</Text>
+                <Text style={styles.badgeBoxCaption}>{caption}</Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          if (data.family === "membership") {
+            const tier = data.tier as ActivityTier;
+            const image = MEMBERSHIP_BADGE_DEFINITION.tierImages[tier];
+            if (!image) return null;
+            const label = t(MEMBERSHIP_BADGE_DEFINITION.label);
+            const tierWord = t(MEMBERSHIP_BADGE_DEFINITION.tierLabelKeys[tier]);
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>
+                  {tierWord} {label}
+                </Text>
+                <Text style={styles.badgeBoxCaption}>
+                  {t("I earned a new badge with {{count}} {{label}}!", { count: data.count, label })}
+                </Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          if (data.family === "streak") {
+            const tier = data.tier as StreakTier;
+            const image = STREAK_BADGE_DEFINITION.tierImages[tier];
+            if (!image) return null;
+            const title = t("{{days}}-Day Streak", { days: data.threshold });
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>{title}</Text>
+                <Text style={styles.badgeBoxCaption}>{t("You've earned the {{tier}} badge!", { tier: title })}</Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          if (data.family === "firstSync" || data.family === "highMatch" || data.family === "syncExplorer") {
+            const def = SYNC_BADGE_DEFINITIONS.find((d) => d.family === data.family);
+            if (!def) return null;
+            const title = t(def.titleKey);
+            const caption =
+              data.family === "firstSync"
+                ? t("You've completed your first Sync analysis!")
+                : data.family === "highMatch"
+                  ? t("You reached a {{count}}% match with someone — an incredible connection!", { count: data.count })
+                  : t("You've run Sync analyses with {{count}} different people!", { count: data.count });
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={def.image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>{title}</Text>
+                <Text style={styles.badgeBoxCaption}>{caption}</Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          if (
+            data.family === "ratingCount" ||
+            data.family === "reviewCount" ||
+            data.family === "listCount" ||
+            data.family === "followers" ||
+            data.family === "influencer" ||
+            data.family === "podium"
+          ) {
+            const def =
+              ACTIVITY_BADGE_DEFINITIONS.find((d) => d.family === data.family) ??
+              SOCIAL_BADGE_DEFINITIONS.find((d) => d.family === data.family);
+            if (!def) return null;
+            const tier = data.tier as ActivityTier;
+            const image = def.tierImages[tier];
+            if (!image) return null;
+            const label = t(def.label);
+            const tierWord = t(def.tierLabelKeys[tier]!);
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>
+                  {tierWord} {label}
+                </Text>
+                <Text style={styles.badgeBoxCaption}>
+                  {t("I earned a new badge with {{count}} {{label}}!", { count: data.count, label })}
+                </Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          if (data.family === "volume") {
+            const def = VOLUME_BADGE_DEFINITIONS.find((d) => d.key === data.key);
+            if (!def) return null;
+            const tier = data.tier as VolumeTier;
+            const image = def.tiers[tier];
+            const label = t(def.label);
+            const tierWord = t(VOLUME_TIER_LABEL_KEY[tier]);
+            return (
+              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                <Text style={styles.badgeBoxTitle}>
+                  {tierWord} {label}
+                </Text>
+                <Text style={styles.badgeBoxCaption}>
+                  {t("I earned a new badge by watching {{count}} {{label}}!", { count: data.count, label })}
+                </Text>
+                {premiumBorder}
+                {burstOverlayEl}
+              </Pressable>
+            );
+          }
+          const def = GENRE_BADGE_DEFINITIONS.find((d) => d.key === data.key);
+          if (!def) return null;
+          const image = data.tier === "master" ? def.master : def.devotee;
+          const tierWord = data.tier === "master" ? t("Master") : t("Devotee");
+          return (
+            <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
+              <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+              <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+              <Text style={styles.badgeBoxTitle}>
+                {def.label} {tierWord}
+              </Text>
+              <Text style={styles.badgeBoxCaption}>
+                {t("I earned a new badge by watching {{count}} {{genre}} titles!", { count: data.count, genre: def.label })}
+              </Text>
+              {premiumBorder}
+              {burstOverlayEl}
+            </Pressable>
+          );
+        })()}
+
       <View style={styles.footer}>{viewRow}</View>
       {likeStickerEl}
 
@@ -1403,6 +1782,14 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             </View>
           </View>
         </Modal>
+      )}
+
+      {share.type === "analysis" && share.analysisData && (
+        <ProfileAnalysisModal
+          visible={analysisModalVisible}
+          onClose={() => setAnalysisModalVisible(false)}
+          data={share.analysisData as ProfileAnalysis}
+        />
       )}
     </View>
   );

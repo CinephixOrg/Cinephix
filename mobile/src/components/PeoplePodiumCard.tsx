@@ -45,7 +45,8 @@ type PeopleMetric =
   | { kind: "watched"; count: number }
   | { kind: "reviewed"; count: number }
   | { kind: "liked"; count: number }
-  | { kind: "recommended"; count: number };
+  | { kind: "recommended"; count: number }
+  | { kind: "badges"; count: number };
 
 interface Props {
   rank: 1 | 2 | 3;
@@ -215,6 +216,12 @@ export default function PeoplePodiumCard({ rank, user, metric, locked }: Props) 
       {metric.kind === "recommended" && (
         <View style={styles.metricRow}>
           <Ionicons name="gift" size={12} color={colors.warning} />
+          <Text style={styles.metricText}>{metric.count}</Text>
+        </View>
+      )}
+      {metric.kind === "badges" && (
+        <View style={styles.metricRow}>
+          <Ionicons name="ribbon" size={12} color={colors.warning} />
           <Text style={styles.metricText}>{metric.count}</Text>
         </View>
       )}

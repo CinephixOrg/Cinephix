@@ -7,6 +7,7 @@ import FavoriteCard from "./FavoriteCard";
 import EmptyFavoriteSlot from "./EmptyFavoriteSlot";
 import ProfileCinegraphsTab from "./ProfileCinegraphsTab";
 import ProfileAnalysesTab from "./ProfileAnalysesTab";
+import ProfileBadgesTab from "./ProfileBadgesTab";
 import ProfileSharingsTab from "./ProfileSharingsTab";
 import ProfileAnalysisModal from "../ProfileAnalysisModal";
 import CineGraphSubTabSwitcher, { type CineGraphSubTab } from "./CineGraphSubTabSwitcher";
@@ -15,7 +16,7 @@ import { updateFavorites } from "../../api/favoriteService";
 import type { CineGraphData, ContentType, Favorites, ProfileAnalysis } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 
-export type Category = "sharings" | "favorites" | "cinegraph" | "analyses";
+export type Category = "sharings" | "favorites" | "cinegraph" | "analyses" | "badges";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -66,6 +67,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
   favorites: { active: "heart", inactive: "heart-outline" },
   cinegraph: { active: "pie-chart", inactive: "pie-chart-outline" },
   analyses: { active: "document-text", inactive: "document-text-outline" },
+  badges: { active: "ribbon", inactive: "ribbon-outline" },
 };
 
 export default function ProfileCategoryTabs({ favorites, cineGraph, category, onCategoryChange, screenFocused }: Props) {
@@ -359,6 +361,12 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
         {hasVisited("analyses") && (
           <View style={visibility("analyses")}>
             <ProfileAnalysesTab onViewAnalysis={handleViewAnalysis} />
+          </View>
+        )}
+
+        {hasVisited("badges") && (
+          <View style={visibility("badges")}>
+            <ProfileBadgesTab active={category === "badges"} screenFocused={screenFocused} />
           </View>
         )}
       </Animated.View>

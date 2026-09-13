@@ -40,7 +40,7 @@ export default function ProfileScreen() {
   // `tab` param name and validation shape as app/user/[id]/index.tsx's own
   // public-profile equivalent.
   const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const VALID_CATEGORIES: Category[] = ["sharings", "favorites", "cinegraph", "analyses"];
+  const VALID_CATEGORIES: Category[] = ["sharings", "favorites", "cinegraph", "analyses", "badges"];
   const initialCategory = VALID_CATEGORIES.includes(tab as Category) ? (tab as Category) : undefined;
 
   // Category lives here (not inside ProfileCategoryTabs) so the header's
@@ -57,6 +57,24 @@ export default function ProfileScreen() {
   const [category, setCategory] = useState<Category>(initialCategory || "sharings");
   const [tabsY, setTabsY] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+
+  // Deep-link seeding above only ever runs once, at this screen's own
+  // first mount — a real gap for a bottom-tab screen like this one, which
+  // typically stays mounted for the rest of the session: BadgeEarnedModal's
+  // own "Tap to see your badge" does `router.navigate("/profile?tab=badges")`
+  // on an ALREADY-mounted Profile, and without this, that new `tab` param
+  // would land here silently ignored — the screen would just keep showing
+  // whatever category was already selected instead of actually switching
+  // to Badges. Deliberately compares against the currently-selected
+  // category rather than unconditionally re-applying on every param
+  // change, so tapping a different category tab by hand isn't fighting a
+  // stale `tab` param still sitting in the URL.
+  useEffect(() => {
+    if (initialCategory && initialCategory !== category) {
+      setCategory(initialCategory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCategory]);
 
   // Lets AddFavoriteModal (opened from ProfileCategoryTabs' favorites edit
   // mode) hide itself while its own "view this result's detail page" tap

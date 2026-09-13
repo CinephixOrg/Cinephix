@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, Rating } from "../types";
+import type { ContentType, NewlyEarnedBadge, Rating } from "../types";
 
 export async function getMyRating(contentId: string): Promise<Rating | null> {
   const res = await API.get(API_ROUTES.RATINGS.GET_MY_RATING(contentId));
@@ -27,11 +27,17 @@ export async function getUserRatings(
   return res.data;
 }
 
+// `newlyEarnedBadges` is spread alongside the rating's own fields (not a
+// wrapper object) — only ever non-empty for the ratingCount activity badge
+// (genre/volume count Watched-List membership, not ratings, so THEY report
+// through addToWatchlist() instead; see NewlyEarnedBadge's own doc comment
+// in types/index.ts for the full "which badge lives on which endpoint"
+// reasoning).
 export async function rateContent(
   contentId: string,
   contentType: ContentType,
   value: number
-): Promise<Rating> {
+): Promise<Rating & { newlyEarnedBadges: NewlyEarnedBadge[] }> {
   const res = await API.post(API_ROUTES.RATINGS.CREATE_OR_UPDATE, {
     contentId,
     contentType,

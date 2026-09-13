@@ -11,6 +11,7 @@ import { createSeriesModel } from "../models/Series.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
+import { RATING_COUNT_TIERS, crossedActivityTier, bumpStreak } from "./badgeController.js";
 
 const Movie = createMovieModel(conn);
 const Series = createSeriesModel(conn);
@@ -124,7 +125,30 @@ export const addOrUpdateRating = asyncHandler(async (req, res) => {
     oldValue: existingRating ? existingRating.value : null,
   });
 
+  // Rating-count badge crossing — this is the one legitimate place to
+  // detect it: unlike genre/volume badges (which count Watched-List
+  // membership and moved to userWatchlistRoute.js's add handler for that
+  // reason), a rating-count badge counts real Rating documents, and this
+  // IS the endpoint that creates them. Only a genuinely NEW rating (never
+  // an edit of an existing one) can move the count, same "did this
+  // specific action just cross a threshold" question crossedThresholdTier/
+  // crossedVolumeTier already answer for their own families.
+  let newlyEarnedBadges = [];
+  // Streak — unconditional, unlike the rating-count check right below:
+  // even editing an already-existing rating is real evidence the user
+  // showed up today, which is all a daily-presence streak cares about
+  // (see bumpStreak's own doc comment in badgeController.js).
+  const streakBadge = await bumpStreak(userId);
+  if (streakBadge) newlyEarnedBadges.push(streakBadge);
+
   if (!existingRating) {
+    const ratingCount = await Rating.countDocuments({ user: userId });
+    const crossedTier = crossedActivityTier(ratingCount, RATING_COUNT_TIERS);
+    if (crossedTier) {
+      const threshold = RATING_COUNT_TIERS.find((t) => t.tier === crossedTier).threshold;
+      newlyEarnedBadges.push({ family: "ratingCount", key: "ratings", count: ratingCount, tier: crossedTier, threshold });
+    }
+
     await ActivityLog.create({
       userId,
       actionType: 'RATE',
@@ -136,7 +160,7 @@ export const addOrUpdateRating = asyncHandler(async (req, res) => {
     });
   }
 
-  sendSuccess(res, newRating, 'Rating saved successfully', 200);
+  sendSuccess(res, { ...newRating, newlyEarnedBadges }, 'Rating saved successfully', 200);
 });
 
 /* ---------- GET MY RATING ---------- */

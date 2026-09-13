@@ -23,6 +23,7 @@ import { WatchlistGraphProvider } from "../src/context/WatchlistGraphContext";
 import { ProfileProvider } from "../src/context/ProfileContext";
 import { NetworkProvider } from "../src/context/NetworkContext";
 import { ToastProvider } from "../src/context/ToastContext";
+import { BadgeEarnedProvider } from "../src/context/BadgeEarnedContext";
 import { ThemeProvider, useTheme, resolveInitialTheme } from "../src/context/ThemeContext";
 import type { ThemeName } from "../src/theme/palettes";
 import { PALETTES, DEFAULT_THEME } from "../src/theme/palettes";
@@ -137,21 +138,23 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider initialTheme={initialTheme}>
           <ToastProvider>
-            <NetworkProvider>
-              <AuthProvider>
-                <FollowGraphProvider>
-                  <WatchlistGraphProvider>
-                    <ProfileProvider>
-                      <NotificationProvider>
-                        <ChatProvider>
-                          <RootNavigator />
-                        </ChatProvider>
-                      </NotificationProvider>
-                    </ProfileProvider>
-                  </WatchlistGraphProvider>
-                </FollowGraphProvider>
-              </AuthProvider>
-            </NetworkProvider>
+            <BadgeEarnedProvider>
+              <NetworkProvider>
+                <AuthProvider>
+                  <FollowGraphProvider>
+                    <WatchlistGraphProvider>
+                      <ProfileProvider>
+                        <NotificationProvider>
+                          <ChatProvider>
+                            <RootNavigator />
+                          </ChatProvider>
+                        </NotificationProvider>
+                      </ProfileProvider>
+                    </WatchlistGraphProvider>
+                  </FollowGraphProvider>
+                </AuthProvider>
+              </NetworkProvider>
+            </BadgeEarnedProvider>
           </ToastProvider>
         </ThemeProvider>
       </SafeAreaProvider>

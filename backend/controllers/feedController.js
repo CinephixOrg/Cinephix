@@ -8,6 +8,7 @@ import Notification from "../models/Notification.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
+import { computeAllUsersBadgeCounts, tierForCount } from "./badgeController.js";
 
 // ── helpers ──────────────────────────────────────────────────────
 const getMovie = () => mongoose.connection.model("Movie");
@@ -627,10 +628,15 @@ async function hydratePeopleEntries(raw, metricKey) {
 // Shares sent — "most active recommender") were added later, per direct
 // ask, once the 3-way Free/Plus/Premium visibility split (see
 // PeoplePodium.tsx's own doc comment) made "5 is an optimal round number"
-// a real design goal, not just an incidental count. Only Most Watched has
-// a movie/series dimension, so `?type=` only actually changes that one
-// list — the other 4 ignore it, same as how Most Favorited/Highest Rated
-// already behave under `getLeaderboard`.
+// a real design goal, not just an incidental count. Most Badges (total
+// badge count across BOTH genre and volume families — see
+// computeAllUsersBadgeCounts's own doc comment in badgeController.js for
+// how one comparable number is derived from two differently-shaped badge
+// systems) was added later still, once the badge feature itself existed.
+// Only Most Watched has a movie/series dimension, so `?type=` only
+// actually changes that one list — the other categories ignore it, same
+// as how Most Favorited/Highest Rated already behave under
+// `getLeaderboard`.
 // Extracted so activityController.js's own "so-and-so made the podium"
 // activity items (see its own doc comment) can check the *exact* same
 // current top-3s this podium itself shows, rather than a second,
@@ -655,6 +661,19 @@ export async function getPeopleThreePodiums(type) {
   // same "silently breaks past 100MB in-memory sort" risk as
   // getShareFeed's own identical situation above in shareController.js.
   // .allowDiskUse(true) added defensively for the same reason.
+  // Most Badges' own raw fetch — unlike the other 4 people-rankings above,
+  // there's no persisted field or single-field aggregate to $sort on (a
+  // badge count is computed, not stored), so this pulls every non-official
+  // user's own `watchlist` into memory once and hands it to
+  // computeAllUsersBadgeCounts (badgeController.js), which batches the
+  // Movie/Series genre_ids lookups across ALL of them in one pair of
+  // queries rather than per-user. Same "genuinely free at this app's
+  // current real size (97 users), watch for scale" caveat as the two
+  // aggregates above.
+  const badgeUsersRaw = await User.find({ isOfficial: { $ne: true } })
+    .select("username profile_pic_url accountTier watchlist followers createdAt currentStreak lastStreakDate")
+    .lean();
+
   const [followedRaw, watchedRaw, reviewedRaw, likedRaw, recommendersRaw] = await Promise.all([
     User.aggregate([
       { $match: { isOfficial: { $ne: true } } },
@@ -716,7 +735,21 @@ export async function getPeopleThreePodiums(type) {
     watchedCount: d.watchedCount,
   }));
 
-  return { mostFollowed, mostWatched, mostReviewed, mostLiked, topRecommenders };
+  // Most Badges — no $sort-able field to aggregate on (a badge count is
+  // computed, never stored), so this ranks the already-fetched
+  // `badgeUsersRaw` set in memory instead of a 6th Mongo aggregate.
+  const badgeCounts = await computeAllUsersBadgeCounts(badgeUsersRaw);
+  const badgeCountById = new Map(badgeCounts.map((b) => [b._id.toString(), b.badgeCount]));
+  const mostBadges = badgeUsersRaw
+    .map((d) => ({
+      user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
+      badgeCount: badgeCountById.get(d._id.toString()) || 0,
+    }))
+    .filter((e) => e.badgeCount >= 1)
+    .sort((a, b) => b.badgeCount - a.badgeCount)
+    .slice(0, LEADERBOARD_SIZE);
+
+  return { mostFollowed, mostWatched, mostReviewed, mostLiked, topRecommenders, mostBadges };
 }
 
 export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
@@ -730,7 +763,7 @@ export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
 // `category` string maps 1:1 onto that file's own CategoryKey type
 // (mostFollowed→"followed", mostWatched→"watched", etc.) without the
 // client needing its own separate mapping table.
-const PODIUM_CATEGORY_KEYS = ["mostFollowed", "mostWatched", "mostReviewed", "mostLiked", "topRecommenders"];
+const PODIUM_CATEGORY_KEYS = ["mostFollowed", "mostWatched", "mostReviewed", "mostLiked", "topRecommenders", "mostBadges"];
 
 // @route GET /api/feed/my-podium-placements
 // Powers the "you made the podium!" popup shown once per app open (see
@@ -757,6 +790,47 @@ export const getMyPodiumPlacements = asyncHandler(async (req, res) => {
   }
 
   sendSuccess(res, { placements }, "Podium placements fetched");
+});
+
+// "Podium" badge — how many of the people-podium's own 6 categories
+// (PODIUM_CATEGORY_KEYS, `mostBadges` included) this user CURRENTLY ranks
+// top-3 in. Lives here rather than badgeController.js because it's built
+// entirely out of this file's own getPeopleThreePodiums — reusing it (the
+// exact same ranking the podium itself shows, same reasoning
+// getMyPodiumPlacements above and activityController.js's own
+// getFollowedPodiumEvents already document) from badgeController.js would
+// mean badgeController.js importing feedController.js while
+// feedController.js already imports badgeController.js's own
+// computeAllUsersBadgeCounts — a real circular import, not just an
+// awkward one. Keeping this one function on the side of the dependency
+// that actually needs the ranking avoids that entirely.
+//
+// No persisted podium history exists anywhere in this app (confirmed
+// directly — getFollowedPodiumEvents's own doc comment already says as
+// much: "a live status check, not a persisted event with its own real
+// timestamp"), so this can only ever answer "how many podiums are you on
+// RIGHT NOW," not "how many have you ever been on" — same live-computed-
+// on-every-fetch model every other badge here already uses, just with no
+// event to hook a live "you just earned it!" popup off of (rankings shift
+// from everyone else's activity too, not just your own, so there's no
+// single action that could ever trigger one). Deliberately excluded from
+// badgeController.js's own "Most Badges" total — see totalBadgeCount's
+// own doc comment for why counting it there would be self-referential.
+export const PODIUM_TIERS = [
+  { tier: "tier1", threshold: 1 },
+  { tier: "tier2", threshold: 2 },
+  { tier: "tier3", threshold: 3 },
+];
+
+export async function computePodiumBadge(userId) {
+  const result = await getPeopleThreePodiums(null);
+  const placementCount = PODIUM_CATEGORY_KEYS.filter((key) => (result[key] || []).some((entry) => entry.user.id === userId)).length;
+  return [{ key: "podium", count: placementCount, tier: tierForCount(placementCount, PODIUM_TIERS) }];
+}
+
+export const getPodiumBadge = asyncHandler(async (req, res) => {
+  const badges = await computePodiumBadge(req.user.id);
+  sendSuccess(res, { badges, tiers: PODIUM_TIERS }, "Podium badge fetched", 200);
 });
 
 export const getRecommendations = asyncHandler(async (req, res) => {

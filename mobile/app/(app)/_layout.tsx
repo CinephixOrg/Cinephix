@@ -7,6 +7,7 @@ import { useChat } from "../../src/context/ChatContext";
 import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
 import PodiumNewsModal from "../../src/components/PodiumNewsModal";
+import BadgeEarnedModal from "../../src/components/BadgeEarnedModal";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -43,6 +44,11 @@ export default function AppLayout() {
           separate persisted "already shown" flag. See its own doc comment
           for the full "why here" reasoning. */}
       <PodiumNewsModal />
+      {/* Live off BadgeEarnedContext, not a mount-time check like
+          PodiumNewsModal above — a badge popup has to fire the instant the
+          rating that actually crosses a threshold lands (rateContent()'s
+          own callers report it), not on the next app open. */}
+      <BadgeEarnedModal />
       <Tabs
         screenOptions={{
           headerShown: false,

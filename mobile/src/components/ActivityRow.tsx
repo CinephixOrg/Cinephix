@@ -4,12 +4,12 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
+import TierGradientText from "./TierGradientText";
 import StarRatingDisplay from "./StarRatingDisplay";
 import { timeAgo } from "../utils/timeAgo";
 import type { ActivityEvent } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
-import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w92";
 
@@ -109,11 +109,13 @@ export default function ActivityRow({ event, basePath }: Props) {
     }
   };
 
-  // Same tier signal as ShareCard.tsx's own posts and ReviewFeedCard.tsx's
-  // own reviewer row — UserAvatar's TierAvatarFrame ring plus an inline
-  // diamond next to the username, both from tierFrames.ts.
-  const tierLabel = event.actor.accountTier === "plus" || event.actor.accountTier === "premium" ? event.actor.accountTier : null;
-  const tierMark = tierLabel ? <Ionicons name="diamond" size={10} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
+  // Same tier signal as ShareCard.tsx's own posts and ReviewFeedCard.tsx's/
+  // ReviewSwipeCard.tsx's own reviewer rows now: UserAvatar's TierAvatarFrame
+  // ring plus a gradient-filled username (TierGradientText) — no separate
+  // diamond mark, direct ask to bring this row in line with every other
+  // single-avatar-per-row context in the app (one avatar, room for a name,
+  // as opposed to Podium/Suggested Users' tight multi-avatar rows, which
+  // keep the diamond-only treatment on purpose).
 
   // Same star-count logic as StarRatingDisplay.tsx (1-10 -> 0.5-5 scale,
   // full stars only, "1/2" for a half) but built as a plain string instead
@@ -186,7 +188,6 @@ export default function ActivityRow({ event, basePath }: Props) {
         avatarWrap: {},
         textCol: { flex: 1 },
         headerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-        username: { fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
         time: { fontSize: 11, color: colors.placeholder },
         // flex-start (not center) so the icon aligns with the sentence's
         // *first* line when it wraps to 2 lines.
@@ -243,10 +244,14 @@ export default function ActivityRow({ event, basePath }: Props) {
       />
       <View style={styles.textCol}>
         <View style={styles.headerRow}>
-          <Text style={styles.username} numberOfLines={1}>
-            {event.actor.username}
-          </Text>
-          {tierMark}
+          <TierGradientText
+            text={event.actor.username}
+            tier={event.actor.accountTier}
+            fontSize={13}
+            bold
+            color={colors.baseContent}
+            gradientId={`activityRowUsernameGradient-${event.actor._id}-${event.createdAt}`}
+          />
           {/* Absent for a `favorited` event whose actor favorited this
               before FavoriteEvent's log existed (see that type's own
               comment in types/index.ts) — omitted rather than showing a

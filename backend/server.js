@@ -71,6 +71,7 @@ import groupRoute from "./routes/groupRoute.js";
 import conversationRoute from "./routes/conversationRoute.js";
 import notificationRoute from "./routes/notificationRoute.js";
 import shareRoute from "./routes/shareRoute.js";
+import badgeRoute from "./routes/badgeRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -88,6 +89,7 @@ app.use("/api/groups", groupRoute);
 app.use("/api/conversations", conversationRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/shares", shareRoute);
+app.use("/api/badges", badgeRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);

@@ -7,6 +7,7 @@ import User from '../models/User.js';
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { buildFuzzyTitleSearchStage } from "../utils/atlasSearch.js";
+import { REVIEW_COUNT_TIERS, crossedActivityTier, bumpStreak } from "./badgeController.js";
 
 const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
@@ -513,10 +514,30 @@ export const addOrUpdateReview = asyncHandler(async (req, res) => {
     { new: true, upsert: true, runValidators: true }
   ).populate('user', 'username profile_pic_url');
 
+  // Review-count badge crossing — only a genuinely NEW review (never an
+  // edit of an existing one's text) can move the count, same reasoning
+  // ratingController.js's own identical check just got for rating-count.
+  let newlyEarnedBadges = [];
+  // Streak — unconditional, same reasoning ratingController.js's own
+  // identical call just got: editing an existing review is still real
+  // evidence of showing up today.
+  const streakBadge = await bumpStreak(userId);
+  if (streakBadge) newlyEarnedBadges.push(streakBadge);
+
+  if (!existingReview) {
+    const reviewCount = await Review.countDocuments({ user: userId });
+    const crossedTier = crossedActivityTier(reviewCount, REVIEW_COUNT_TIERS);
+    if (crossedTier) {
+      const threshold = REVIEW_COUNT_TIERS.find((t) => t.tier === crossedTier).threshold;
+      newlyEarnedBadges.push({ family: "reviewCount", key: "reviews", count: reviewCount, tier: crossedTier, threshold });
+    }
+  }
+
   const statusCode = existingReview ? 200 : 201;
   const result = review.toObject();
   result.likeCount = result.likes?.length || 0;
   result.hasLiked = false;
+  result.newlyEarnedBadges = newlyEarnedBadges;
   sendSuccess(res, result, 'Review saved successfully', statusCode);
 });
 

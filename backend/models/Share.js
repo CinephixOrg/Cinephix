@@ -9,7 +9,7 @@ const { Schema } = mongoose;
 const shareSchema = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, enum: ["analysis", "review", "recommendation", "list", "official", "poll"], required: true },
+    type: { type: String, enum: ["analysis", "review", "recommendation", "list", "official", "poll", "badge"], required: true },
 
     // Denormalized at creation time by officialContentService (the poster
     // is known to be official right when the doc is created) so getShareFeed
@@ -85,6 +85,66 @@ const shareSchema = new Schema(
           votes: [{ type: Schema.Types.ObjectId, ref: "User" }],
         },
       ],
+    },
+
+    // type: "badge" — an achievement badge (badgeController.js), snapshotted
+    // at share time. `tier`/`count`/`threshold` are the server's own
+    // compute*BadgeCounts result at creation, never trusted from the client
+    // — createShare re-verifies the badge is actually earned before
+    // allowing this share to be created at all. `family` + `key` together
+    // resolve the actual art/label client-side (GENRE_BADGE_DEFINITIONS or
+    // volumeBadgeDefinitions, same tables the Profile badges tab uses) —
+    // `key` alone isn't guaranteed unique across families as more get added.
+    badgeData: {
+      family: {
+        type: String,
+        enum: [
+          "genre",
+          "volume",
+          "ratingCount",
+          "reviewCount",
+          "listCount",
+          "followers",
+          "influencer",
+          "podium",
+          "firstSync",
+          "highMatch",
+          "syncExplorer",
+          "founding",
+          "membership",
+          "streak",
+          "timeTraveler",
+          "eclecticTaste",
+          "dayOneViewer",
+          "hiddenGem",
+          "pollParticipant",
+          "halloweenViewer",
+          "newYearViewer",
+        ],
+      },
+      key: String,
+      tier: {
+        type: String,
+        enum: [
+          "devotee",
+          "master",
+          "bronze",
+          "silver",
+          "gold",
+          "platinum",
+          "diamond",
+          "tier1",
+          "tier2",
+          "tier3",
+          "tier4",
+          "tier5",
+          "7day",
+          "30day",
+          "100day",
+        ],
+      },
+      count: Number,
+      threshold: Number,
     },
 
     // Instagram-style single like, not a multi-emoji reaction. Cached count

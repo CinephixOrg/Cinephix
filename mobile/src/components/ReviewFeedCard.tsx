@@ -3,6 +3,7 @@ import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
+import TierGradientText from "./TierGradientText";
 import StarRatingDisplay from "./StarRatingDisplay";
 import ReviewFullTextModal from "./ReviewFullTextModal";
 import { toggleReviewLike } from "../api/reviewService";
@@ -11,7 +12,6 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { useTranslation } from "react-i18next";
 import { fonts } from "../theme/typography";
-import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 
@@ -61,7 +61,6 @@ export default function ReviewFeedCard({ review, basePath }: Props) {
         titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
         title: { flex: 1, fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
         reviewerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-        reviewerName: { fontSize: 12, color: colors.baseContent, fontFamily: fonts.medium, flexShrink: 1 },
         ratingRow: { marginTop: 3 },
         excerpt: { fontSize: 12, color: colors.baseContent, marginTop: 4, lineHeight: 16 },
         likeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
@@ -70,14 +69,6 @@ export default function ReviewFeedCard({ review, basePath }: Props) {
       }),
     [colors]
   );
-
-  // Same tier signal as ShareCard.tsx's own posts: UserAvatar's
-  // TierAvatarFrame ring (tier-colored, via its own `tier` prop) plus this
-  // inline diamond next to the username, both sourced from the same
-  // tierFrames.ts colors so a Plus/Premium reviewer reads the same way here
-  // as everywhere else in the app.
-  const tierLabel = review.user.accountTier === "plus" || review.user.accountTier === "premium" ? review.user.accountTier : null;
-  const tierMark = tierLabel ? <Ionicons name="diamond" size={10} color={TIER_FRAME_STYLES[tierLabel]?.glowColor} /> : null;
 
   const handleLike = async () => {
     if (liking) return;
@@ -137,10 +128,22 @@ export default function ReviewFeedCard({ review, basePath }: Props) {
               size={20}
               tier={review.user.accountTier}
             />
-            <Text style={styles.reviewerName} numberOfLines={1}>
-              {review.user.username}
-            </Text>
-            {tierMark}
+            {/* TierGradientText, not a plain Text + diamond mark — same
+                ring+gradient-fill-only tier treatment ReviewSwipeCard.tsx's
+                own Discover rail card already uses (this card backs that
+                rail's "See all" page). Direct ask after this card was
+                found stacking a ring AND a diamond with a plain username,
+                inconsistent with the rail card right next to it in the
+                same flow. Free/dev tiers fall back to this same plain
+                color automatically — TierGradientText's own documented
+                behavior, not a conditional needed here. */}
+            <TierGradientText
+              text={review.user.username}
+              tier={review.user.accountTier}
+              fontSize={12}
+              color={colors.baseContent}
+              gradientId={`reviewFeedUsernameGradient-${review._id}`}
+            />
           </Pressable>
 
           {review.rating != null && (

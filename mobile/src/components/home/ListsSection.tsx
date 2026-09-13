@@ -3,7 +3,7 @@ import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-nativ
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { getPopularListsPaginated, type ListMode } from "../../api/listService";
-import SearchListCard from "../search/SearchListCard";
+import DiscoverListCard from "../DiscoverListCard";
 import SlidingUnderlineTabs from "../SlidingUnderlineTabs";
 import { SkeletonRail } from "../Skeleton";
 import type { DiscoverListItem } from "../../types";
@@ -12,10 +12,15 @@ import { useTheme } from "../../context/ThemeContext";
 const PAGE_LIMIT = 20;
 
 // Discover's Popular Lists "See all" page — same All/Friends/Liked filter
-// (SlidingUnderlineTabs) and same card (SearchListCard, matching the rail's
-// own design) as every other "See all" page in this app now uses, replacing
-// the old fixed two-section (Friends/Popular, no pagination, a different
-// card) version.
+// (SlidingUnderlineTabs) as every other "See all" page in this app now
+// uses, replacing the old fixed two-section (Friends/Popular, no
+// pagination, a different card) version. Card is DiscoverListCard now (was
+// SearchListCard, a real mismatch caught live — SearchListCard is Search's
+// own result card: no tier ring/gradient username, a Shares-style Premium
+// gold box border that's supposed to be post-only, owner row above the
+// title rather than beside it. DiscoverListCard is what ListsSwiper.tsx's
+// own home-page rail already uses; swapping to it here is what actually
+// makes this page match that rail, direct ask).
 export default function ListsSection() {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -24,8 +29,12 @@ export default function ListsSection() {
     () =>
       StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.base100 },
-        list: { paddingVertical: 16, paddingBottom: 24 },
-        error: { color: colors.error, textAlign: "center", marginBottom: 8, marginHorizontal: 16 },
+        // DiscoverListCard has no side margin of its own (ListsSwiper.tsx's
+        // own comment on it — its usual homes supply that from outside),
+        // unlike SearchListCard's self-contained marginHorizontal — this
+        // page's own ScrollView/FlatList padding is that outside source.
+        list: { paddingVertical: 16, paddingBottom: 24, paddingHorizontal: 16 },
+        error: { color: colors.error, textAlign: "center", marginBottom: 8 },
         empty: { color: colors.placeholder, fontSize: 13, textAlign: "center", marginTop: 24 },
         skeletonWrap: { paddingHorizontal: 16, paddingTop: 16 },
       }),
@@ -97,7 +106,7 @@ export default function ListsSection() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
           renderItem={({ item }) => (
-            <SearchListCard list={item} onPress={() => router.push(`/home/lists/${item._id}` as any)} basePath="/home" />
+            <DiscoverListCard list={item} onPress={() => router.push(`/home/lists/${item._id}` as any)} basePath="/home" />
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}

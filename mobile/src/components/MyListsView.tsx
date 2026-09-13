@@ -19,6 +19,7 @@ import { SkeletonListRow } from "./Skeleton";
 import MyListCard from "./MyListCard";
 import type { CustomList } from "../types";
 import { useTheme } from "../context/ThemeContext";
+import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { fonts } from "../theme/typography";
 
 interface Props {
@@ -100,6 +101,7 @@ export default function MyListsView({ ListHeaderComponent }: Props) {
 }), [colors]);
   const { t } = useTranslation();
   const router = useRouter();
+  const { reportEarnedBadges } = useBadgeEarned();
   const [lists, setLists] = useState<CustomList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +133,8 @@ export default function MyListsView({ ListHeaderComponent }: Props) {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      const list = await createList({ name: name.trim(), description: description.trim(), isPublic });
+      const { list, newlyEarnedBadges } = await createList({ name: name.trim(), description: description.trim(), isPublic });
+      reportEarnedBadges(newlyEarnedBadges);
       setModalVisible(false);
       setName("");
       setDescription("");

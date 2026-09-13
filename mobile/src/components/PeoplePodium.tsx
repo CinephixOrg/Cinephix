@@ -91,7 +91,11 @@ function toPodiumOrder<T>(items: T[]): { item: T; rank: 1 | 2 | 3 }[] {
 // frames, reusing the exact same icon PeoplePodiumCard.tsx's own metricRow
 // uses for that same metric so the teaser and the real card read as the
 // same signal.
-const CATEGORY_KEYS = ["followed", "watched", "reviewed", "liked", "recommended"] as const;
+// "badges" (Most Decorated — total badge count across both badge families)
+// was added later still, once the badge feature itself existed; grouped
+// with Liked/Recommended under Premium below for the same reason (a fun,
+// socially-exclusive signal rather than an everyday usage stat).
+const CATEGORY_KEYS = ["followed", "watched", "reviewed", "liked", "recommended", "badges"] as const;
 type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
 // Which categories are fully open (real, unlocked) per tier — the
@@ -364,6 +368,7 @@ function PeoplePodium({ jumpToCategory }: Props) {
   const reviewedPodium = toPodiumOrder(data?.mostReviewed ?? []);
   const likedPodium = toPodiumOrder(data?.mostLiked ?? []);
   const recommendedPodium = toPodiumOrder(data?.topRecommenders ?? []);
+  const badgesPodium = toPodiumOrder(data?.mostBadges ?? []);
 
   const categoryMeta: Record<CategoryKey, { title: string; icon: keyof typeof Ionicons.glyphMap }> = {
     followed: { title: t("Most Followed"), icon: "people-outline" },
@@ -371,6 +376,7 @@ function PeoplePodium({ jumpToCategory }: Props) {
     reviewed: { title: t("Most Reviewed"), icon: "pencil" },
     liked: { title: t("Most Liked"), icon: "heart" },
     recommended: { title: t("Top Recommenders"), icon: "gift" },
+    badges: { title: t("Most Decorated"), icon: "ribbon" },
   };
   const podiumByKey: Record<CategoryKey, ReturnType<typeof toPodiumOrder<any>>> = {
     followed: followedPodium,
@@ -378,6 +384,7 @@ function PeoplePodium({ jumpToCategory }: Props) {
     reviewed: reviewedPodium,
     liked: likedPodium,
     recommended: recommendedPodium,
+    badges: badgesPodium,
   };
 
   function renderRealCard(key: CategoryKey, rank: 1 | 2 | 3, item: any) {
@@ -393,6 +400,8 @@ function PeoplePodium({ jumpToCategory }: Props) {
         return <PeoplePodiumCard {...common} metric={{ kind: "liked", count: item.likeCount }} />;
       case "recommended":
         return <PeoplePodiumCard {...common} metric={{ kind: "recommended", count: item.recommendCount }} />;
+      case "badges":
+        return <PeoplePodiumCard {...common} metric={{ kind: "badges", count: item.badgeCount }} />;
     }
   }
 
