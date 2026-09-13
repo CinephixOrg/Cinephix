@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { GenreOption } from "../constants/contentGenreIds";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { localeUpper } from "../utils/text";
 
 interface Props {
   genreOptions: GenreOption[];
@@ -50,7 +51,6 @@ export default function ContentFilterPanel({
       fontSize: 11,
       color: colors.placeholder,
       textAlign: "center",
-      textTransform: "uppercase",
       letterSpacing: 0.6,
       marginBottom: 8,
     },
@@ -86,7 +86,7 @@ export default function ContentFilterPanel({
     <View style={styles.panel}>
       <View style={styles.columnsRow}>
         <View style={{ width: YEAR_BOX_WIDTH }}>
-          <Text style={styles.label}>{t("Years")}</Text>
+          <Text style={styles.label}>{localeUpper(t("Years"))}</Text>
           <ScrollView style={styles.box} nestedScrollEnabled>
             {years.map((year, i) => {
               const active = selectedYears.includes(year);
@@ -109,7 +109,7 @@ export default function ContentFilterPanel({
         </View>
 
         <View style={{ width: genreBoxWidth }}>
-          <Text style={styles.label}>{t("Genres")}</Text>
+          <Text style={styles.label}>{localeUpper(t("Genres"))}</Text>
           <ScrollView style={styles.box} nestedScrollEnabled>
             {genreOptions.map((genre, i) => {
               const active = selectedGenres.includes(genre.id);

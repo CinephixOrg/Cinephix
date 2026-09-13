@@ -1,510 +1,265 @@
-import { useEffect, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Image,
-  Pressable,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-  Modal,
-  FlatList,
-  StyleSheet,
-} from "react-native";
-import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../src/context/AuthContext";
-import {
-  deleteAccount,
-  getUserProfile,
-  setOwnAccountTier,
-  updateBio,
-  updatePassword,
-  uploadAvatar,
-} from "../../../src/api/userService";
-import { changeLanguage } from "../../../src/i18n";
 import { useTheme } from "../../../src/context/ThemeContext";
-import { PALETTES, THEME_NAMES } from "../../../src/theme/palettes";
 import { fonts } from "../../../src/theme/typography";
-import type { AccountTier } from "../../../src/types";
+import { useProfile } from "../../../src/context/ProfileContext";
+import SettingsSection from "../../../src/components/settings/SettingsSection";
+import SettingsRow from "../../../src/components/settings/SettingsRow";
+import SettingsNotice from "../../../src/components/settings/SettingsNotice";
+import AccountSection from "../../../src/components/settings/AccountSection";
+import SecuritySection from "../../../src/components/settings/SecuritySection";
+import DevToolsSection from "../../../src/components/settings/DevToolsSection";
+import DangerZoneSection from "../../../src/components/settings/DangerZoneSection";
+import ThemePicker from "../../../src/components/settings/ThemePicker";
+import LanguageSheet, { languageLabel } from "../../../src/components/settings/LanguageSheet";
+import ConfirmDialog from "../../../src/components/settings/ConfirmDialog";
 
-const TIER_OPTIONS: AccountTier[] = ["free", "plus", "premium", "dev"];
+// expo-router re-exports React Navigation's hooks, but the project has no
+// direct @react-navigation dependency to import the event type from. This
+// declares exactly the shape the guard below reads, which is better than
+// `any` and doesn't add a dependency for one type.
+type NavigationAction = { type: string; payload?: object; source?: string; target?: string };
+type BeforeRemoveEvent = {
+  preventDefault: () => void;
+  data: { action: NavigationAction };
+};
 
-// Native names — proper nouns, not translated (matches web's LanguageSwitcher.jsx).
-const LANGUAGES: { code: string; name: string }[] = [
-  { code: "en", name: "English" },
-  { code: "tr", name: "Türkçe" },
-  { code: "ru", name: "Русский" },
-  { code: "ja", name: "日本語" },
-  { code: "zh", name: "中文" },
-  { code: "fr", name: "Français" },
-  { code: "ko", name: "한국어" },
-  { code: "ar", name: "العربية" },
-  { code: "it", name: "Italiano" },
-  { code: "es", name: "Español" },
-  { code: "de", name: "Deutsch" },
-  { code: "pt", name: "Português" },
-];
-
+// Settings.
+//
+// The screen itself holds almost no state and fetches nothing of its own. Every
+// section owns its own, which is what keeps a keystroke in the bio field
+// from re-rendering the theme strip and what lets each section be read on
+// its own terms.
 export default function SettingsScreen() {
   const { colors } = useTheme();
-  const styles = useMemo(() => StyleSheet.create({
-  container: { padding: 20, backgroundColor: colors.base100, flexGrow: 1 },
-  sectionTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: colors.baseContent,
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  dangerTitle: { color: colors.error },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  rowLabel: { fontSize: 15, color: colors.baseContent },
-  rowValue: { fontSize: 15, color: colors.placeholder },
-  avatarWrap: { alignItems: "center", marginBottom: 8 },
-  avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { color: colors.placeholder, fontSize: 12 },
-  changePhoto: { color: colors.secondary, fontFamily: fonts.medium, marginTop: 8 },
-  fieldLabel: { color: colors.placeholder, fontSize: 13, marginBottom: 6, marginTop: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: colors.baseContent,
-    marginBottom: 10,
-  },
-  bioInput: { minHeight: 90, textAlignVertical: "top" },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  buttonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 16 },
-  logoutButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 28,
-  },
-  logoutButtonText: { color: colors.baseContent, fontFamily: fonts.medium, fontSize: 16 },
-  deleteButton: {
-    borderWidth: 1,
-    borderColor: colors.error,
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-  },
-  deleteButtonText: { color: colors.error, fontFamily: fonts.bold, fontSize: 16 },
-  error: { color: colors.error, marginBottom: 12 },
-  success: { color: colors.primary, marginBottom: 12 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 24 },
-  modalCard: { backgroundColor: colors.base200, borderRadius: 12, padding: 16, maxHeight: "70%" },
-  modalTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent, marginBottom: 10 },
-  languageRow: { paddingVertical: 12, paddingHorizontal: 4 },
-  languageRowText: { fontSize: 15, color: colors.baseContent },
-  languageRowTextActive: { color: colors.primary, fontFamily: fonts.bold },
-  themeGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  themeCard: {
-    width: "48%",
-    borderWidth: 1,
-    borderColor: colors.base300,
-    backgroundColor: colors.base200,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-  },
-  themeCardActive: { borderColor: colors.primary, backgroundColor: colors.base300 },
-  themeCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  themeCardName: { fontFamily: fonts.medium, fontSize: 14, color: colors.baseContent, textTransform: "capitalize" },
-  themeBadge: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  themeBadgeText: { fontSize: 10, fontFamily: fonts.bold, color: colors.primaryContent },
-  themeDots: { flexDirection: "row", gap: 6, marginTop: 8 },
-  themeDot: { width: 12, height: 12, borderRadius: 6 },
-  tierOptionsRow: { flexDirection: "row", gap: 8, marginTop: 12 },
-  tierOption: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  tierOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  tierOptionText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent, textTransform: "capitalize" },
-  tierOptionTextActive: { color: colors.primaryContent },
-}), [colors]);
-  const { user, logout, updateUser } = useAuth();
-  const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { themeName, setTheme } = useTheme();
+  const { user } = useAuth();
+  const router = useRouter();
 
-  const [username, setUsername] = useState(user?.username ?? "");
-  const [bio, setBio] = useState("");
-  const [avatarUri, setAvatarUri] = useState<string | null>(user?.profile_pic_url ?? null);
-  const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const navigation = useNavigation();
 
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  // Read from the app-wide profile cache instead of fetching on open. That
+  // cache is prefetched as soon as the user signs in, so by the time
+  // Settings can be reached it is almost always already there — the account
+  // card renders on the first frame rather than as an empty placeholder
+  // that fills in a moment later.
+  const { profile, error: profileError, ensureLoaded } = useProfile();
+  const [languageOpen, setLanguageOpen] = useState(false);
 
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
-  const [tierBusy, setTierBusy] = useState(false);
+  // A ref, not state: the guard below only ever reads it from inside an
+  // event handler, and holding it in state would re-render this screen —
+  // and re-run every section's diffing — on each keystroke in the bio.
+  const dirtyRef = useRef(false);
+  const handleDirtyChange = useCallback((dirty: boolean) => {
+    dirtyRef.current = dirty;
+  }, []);
 
+  // The navigation the guard intercepted, held until the user decides. Null
+  // whenever the dialog is closed.
+  const [pendingExit, setPendingExit] = useState<NavigationAction | null>(null);
+
+  // Only does anything on a cold open where the cache hasn't loaded yet;
+  // otherwise it is a no-op.
   useEffect(() => {
-    if (!user) return;
-    (async () => {
-      try {
-        const profile = await getUserProfile(user._id);
-        if (profile.isAuthorized) {
-          setBio(profile.bio ?? "");
-        }
-        setUsername(profile.username);
-        setAvatarUri(profile.profile_pic_url ?? null);
-      } catch (e: any) {
-        setError(e?.response?.data?.message || t("Failed to load settings."));
-      }
-    })();
-  }, [user?._id]);
+    ensureLoaded();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setProfileError(t("Photo library permission is required to change your avatar."));
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
+  // Intercepts leaving the screen with unsaved profile edits. `beforeRemove`
+  // is the one hook that covers all three ways back happens — the header
+  // arrow, the Android hardware button, and the iOS swipe gesture.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (event: BeforeRemoveEvent) => {
+      if (!dirtyRef.current) return;
+      // Only guard going *back*. Pushing a sub-page keeps this screen
+      // mounted with its edits intact, and signing out already had its own
+      // confirmation — prompting again there would be a second, confusing
+      // dialog on top of a decision the user just made.
+      const type = event.data.action.type;
+      if (type !== "GO_BACK" && type !== "POP" && type !== "POP_TO_TOP") return;
+
+      event.preventDefault();
+      setPendingExit(event.data.action);
     });
-    if (!result.canceled && result.assets[0]) {
-      setPickedImageUri(result.assets[0].uri);
-      setAvatarUri(result.assets[0].uri);
-    }
-  };
+    return unsubscribe;
+  }, [navigation]);
 
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    setProfileError(null);
-    setProfileMessage(null);
-    setProfileSaving(true);
-    try {
-      let newAvatarUrl: string | undefined;
-      if (pickedImageUri) {
-        const res = await uploadAvatar(user._id, pickedImageUri);
-        newAvatarUrl = res.profilePicUrl;
-      }
+  const keepEditing = useCallback(() => setPendingExit(null), []);
 
-      const updated = await updateBio(user._id, { bio, username });
+  const discardChanges = useCallback(() => {
+    const action = pendingExit;
+    setPendingExit(null);
+    // Cleared first, so re-dispatching the very action the guard just
+    // blocked doesn't trip it a second time.
+    dirtyRef.current = false;
+    if (action) navigation.dispatch(action);
+  }, [pendingExit, navigation]);
 
-      await updateUser({
-        username: updated.username,
-        ...(newAvatarUrl ? { profile_pic_url: newAvatarUrl } : {}),
-      });
+  const openLanguage = useCallback(() => setLanguageOpen(true), []);
+  const closeLanguage = useCallback(() => setLanguageOpen(false), []);
+  const goToActivityLog = useCallback(() => router.push("/profile/activity-log"), [router]);
+  const goToAbout = useCallback(() => router.push("/profile/about"), [router]);
+  const goToPrivacy = useCallback(() => router.push("/profile/privacy"), [router]);
+  const goToTerms = useCallback(() => router.push("/profile/terms"), [router]);
+  const goToCredits = useCallback(() => router.push("/profile/credits"), [router]);
 
-      setPickedImageUri(null);
-      setProfileMessage(t("Profile updated."));
-    } catch (e: any) {
-      setProfileError(e?.response?.data?.message || t("Failed to save profile."));
-    } finally {
-      setProfileSaving(false);
-    }
-  };
-
-  const handlePasswordChange = async () => {
-    setPasswordError(null);
-    setPasswordMessage(null);
-    setPasswordSaving(true);
-    try {
-      await updatePassword(oldPassword, newPassword);
-      setPasswordMessage(t("Password updated."));
-      setOldPassword("");
-      setNewPassword("");
-    } catch (e: any) {
-      setPasswordError(e?.response?.data?.message || t("Failed to update password."));
-    } finally {
-      setPasswordSaving(false);
-    }
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      t("Delete account"),
-      t("This permanently deletes your account, ratings, and data. This cannot be undone."),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Delete"),
-          style: "destructive",
-          onPress: async () => {
-            setDeleting(true);
-            try {
-              await deleteAccount();
-              await logout();
-            } catch (e: any) {
-              setError(e?.response?.data?.message || t("Failed to delete account."));
-              setDeleting(false);
-            }
-          },
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        screen: { flex: 1, backgroundColor: colors.base100 },
+        content: { padding: 18, paddingBottom: 44, gap: 22 },
+        // Placeholder for the account card, only ever seen on a cold open
+        // before the profile cache has loaded. Sized to roughly what lands
+        // there so the page doesn't jump when it does.
+        skeleton: {
+          height: 268,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.base200,
         },
-      ]
-    );
-  };
-
-  const handleSetTier = async (tier: AccountTier) => {
-    if (tier === (user?.accountTier ?? "free") || tierBusy) return;
-    setTierBusy(true);
-    try {
-      const newTier = await setOwnAccountTier(tier);
-      await updateUser({ accountTier: newTier });
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to update account tier."));
-    } finally {
-      setTierBusy(false);
-    }
-  };
-
-  const currentLanguageName =
-    LANGUAGES.find((l) => l.code === i18n.language)?.name ?? LANGUAGES[0].name;
+        footer: { alignItems: "center", gap: 5, paddingTop: 8 },
+        footerText: {
+          fontFamily: fonts.regular,
+          fontSize: 12,
+          color: colors.placeholder,
+          textAlign: "center",
+        },
+        brand: {
+          fontFamily: fonts.bold,
+          fontSize: 11,
+          letterSpacing: 1.1,
+          color: colors.placeholder,
+          opacity: 0.65,
+          textAlign: "center",
+        },
+      }),
+    [colors]
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      <Text style={styles.sectionTitle}>{t("Edit Profile")}</Text>
-      <Pressable onPress={pickImage} style={styles.avatarWrap}>
-        {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarFallbackText}>{t("Add photo")}</Text>
-          </View>
-        )}
-        <Text style={styles.changePhoto}>{t("Change photo")}</Text>
-      </Pressable>
-
-      <Text style={styles.fieldLabel}>{t("Username")}</Text>
-      <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
-
-      <Text style={styles.fieldLabel}>{t("Bio")}</Text>
-      <TextInput
-        style={[styles.input, styles.bioInput]}
-        value={bio}
-        onChangeText={setBio}
-        multiline
-        placeholder={t("Tell people about yourself")}
-      />
-
-      {profileError && <Text style={styles.error}>{profileError}</Text>}
-      {profileMessage && <Text style={styles.success}>{profileMessage}</Text>}
-      <Pressable style={styles.button} onPress={handleSaveProfile} disabled={profileSaving || !username}>
-        {profileSaving ? (
-          <ActivityIndicator color={colors.primaryContent} />
-        ) : (
-          <Text style={styles.buttonText}>{t("Save")}</Text>
-        )}
-      </Pressable>
-
-      <Text style={styles.sectionTitle}>{t("Language")}</Text>
-      <Pressable style={styles.row} onPress={() => setLanguagePickerVisible(true)}>
-        <Text style={styles.rowLabel}>{t("Language")}</Text>
-        <Text style={styles.rowValue}>{currentLanguageName}</Text>
-      </Pressable>
-
-      <Text style={styles.sectionTitle}>{t("Appearance")}</Text>
-      <Text style={styles.rowValue}>{t("Choose the theme")}</Text>
-      <View style={[styles.themeGrid, { marginTop: 12 }]}>
-        {THEME_NAMES.map((name) => {
-          const palette = PALETTES[name];
-          const isActive = name === themeName;
-          return (
-            <Pressable
-              key={name}
-              style={[styles.themeCard, isActive && styles.themeCardActive]}
-              onPress={() => setTheme(name)}
-            >
-              <View style={styles.themeCardHeader}>
-                <Text style={styles.themeCardName}>{name}</Text>
-                {isActive && (
-                  <View style={styles.themeBadge}>
-                    <Text style={styles.themeBadgeText}>{t("Active")}</Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.themeDots}>
-                <View style={[styles.themeDot, { backgroundColor: palette.primary }]} />
-                <View style={[styles.themeDot, { backgroundColor: palette.secondary }]} />
-                <View style={[styles.themeDot, { backgroundColor: palette.accent }]} />
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Pressable style={styles.row} onPress={() => router.push("/profile/activity-log")}>
-        <Text style={styles.rowLabel}>{t("Activity Log")}</Text>
-      </Pressable>
-
-      <Pressable style={styles.row} onPress={() => router.push("/profile/import")}>
-        <Text style={styles.rowLabel}>{t("Import Data")}</Text>
-      </Pressable>
-
-      <Pressable style={styles.row} onPress={() => router.push("/profile/about")}>
-        <Text style={styles.rowLabel}>{t("About")}</Text>
-      </Pressable>
-
-      <Pressable style={styles.row} onPress={() => router.push("/profile/privacy")}>
-        <Text style={styles.rowLabel}>{t("Privacy Policy")}</Text>
-      </Pressable>
-
-      <Pressable style={styles.row} onPress={() => router.push("/profile/terms")}>
-        <Text style={styles.rowLabel}>{t("Terms of Service")}</Text>
-      </Pressable>
-
-      <Pressable style={styles.row} onPress={() => router.push("/profile/credits")}>
-        <Text style={styles.rowLabel}>{t("Credits")}</Text>
-      </Pressable>
-
-      {!user?.isOAuthUser && (
-        <>
-          <Text style={styles.sectionTitle}>{t("Change Password")}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t("Current password")}
-            secureTextEntry
-            value={oldPassword}
-            onChangeText={setOldPassword}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder={t("New password")}
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
-          {passwordError && <Text style={styles.error}>{passwordError}</Text>}
-          {passwordMessage && <Text style={styles.success}>{passwordMessage}</Text>}
-          <Pressable
-            style={styles.button}
-            onPress={handlePasswordChange}
-            disabled={passwordSaving || !oldPassword || !newPassword}
-          >
-            {passwordSaving ? (
-              <ActivityIndicator color={colors.primaryContent} />
-            ) : (
-              <Text style={styles.buttonText}>{t("Update Password")}</Text>
-            )}
-          </Pressable>
-        </>
-      )}
-
-      {__DEV__ && (
-        <>
-          <Text style={styles.sectionTitle}>{t("Dev Tools")}</Text>
-          <Text style={styles.rowValue}>
-            {t("Simulate a purchase to test tier-gated features. No real billing yet.")}
-          </Text>
-          <View style={styles.tierOptionsRow}>
-            {TIER_OPTIONS.map((tier) => {
-              const isActive = (user?.accountTier ?? "free") === tier;
-              return (
-                <Pressable
-                  key={tier}
-                  style={[styles.tierOption, isActive && styles.tierOptionActive]}
-                  onPress={() => handleSetTier(tier)}
-                  disabled={tierBusy}
-                >
-                  {tierBusy && isActive ? (
-                    <ActivityIndicator color={colors.primaryContent} size="small" />
-                  ) : (
-                    <Text style={[styles.tierOptionText, isActive && styles.tierOptionTextActive]}>
-                      {tier}
-                    </Text>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </>
-      )}
-
-      <Pressable
-        style={styles.logoutButton}
-        onPress={async () => {
-          await logout();
-          router.replace("/login");
-        }}
+    <>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        <Text style={styles.logoutButtonText}>{t("Log Out")}</Text>
-      </Pressable>
-
-      <Text style={[styles.sectionTitle, styles.dangerTitle]}>{t("Danger Zone")}</Text>
-      <Pressable style={styles.deleteButton} onPress={handleDeleteAccount} disabled={deleting}>
-        {deleting ? (
-          <ActivityIndicator color={colors.error} />
-        ) : (
-          <Text style={styles.deleteButtonText}>{t("Delete Account")}</Text>
-        )}
-      </Pressable>
-
-      <Modal visible={languagePickerVisible} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setLanguagePickerVisible(false)}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t("Language")}</Text>
-            <FlatList
-              data={LANGUAGES}
-              keyExtractor={(item) => item.code}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.languageRow}
-                  onPress={async () => {
-                    await changeLanguage(item.code);
-                    setLanguagePickerVisible(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.languageRowText,
-                      item.code === i18n.language && styles.languageRowTextActive,
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
-                </Pressable>
-              )}
+        <SettingsSection title={t("Account")}>
+          {profile && user ? (
+            <AccountSection
+              // Remounts if the signed-in account changes, so the fields
+              // never keep the previous user's values.
+              key={user._id}
+              userId={user._id}
+              initialUsername={profile.username}
+              initialBio={profile.bio ?? ""}
+              initialAvatar={profile.profile_pic_url ?? null}
+              onDirtyChange={handleDirtyChange}
             />
-          </View>
-        </Pressable>
-      </Modal>
-    </ScrollView>
+          ) : (
+            <View style={styles.skeleton} />
+          )}
+        </SettingsSection>
+
+        {!profile && profileError ? <SettingsNotice tone="error" message={profileError} /> : null}
+
+        <SettingsSection title={t("Appearance")}>
+          <ThemePicker />
+          <SettingsRow
+            icon="language-outline"
+            label={t("Language")}
+            value={languageLabel(i18n.language)}
+            onPress={openLanguage}
+            chevron
+          />
+        </SettingsSection>
+
+        <SettingsSection
+          title={t("Your data")}
+          caption={t("Review what you've imported or rated, and undo it if you need to.")}
+        >
+          <SettingsRow
+            icon="time-outline"
+            label={t("Activity Log")}
+            onPress={goToActivityLog}
+            chevron
+            divider={false}
+          />
+        </SettingsSection>
+
+        {user && !user.isOAuthUser ? (
+          <SettingsSection title={t("Security")}>
+            <SecuritySection />
+          </SettingsSection>
+        ) : null}
+
+        <SettingsSection title={t("About and support")}>
+          <SettingsRow
+            icon="information-circle-outline"
+            label={t("About")}
+            onPress={goToAbout}
+            chevron
+            divider={false}
+          />
+          <SettingsRow
+            icon="shield-outline"
+            label={t("Privacy Policy")}
+            onPress={goToPrivacy}
+            chevron
+          />
+          <SettingsRow
+            icon="document-text-outline"
+            label={t("Terms of Service")}
+            onPress={goToTerms}
+            chevron
+          />
+          <SettingsRow
+            icon="ribbon-outline"
+            label={t("Credits")}
+            onPress={goToCredits}
+            chevron
+          />
+        </SettingsSection>
+
+        {__DEV__ ? (
+          <SettingsSection title={t("Developer")}>
+            <DevToolsSection />
+          </SettingsSection>
+        ) : null}
+
+        <DangerZoneSection />
+
+        <View style={styles.footer}>
+          {user?.email ? (
+            <Text style={styles.footerText}>
+              {t("You logged in as {{email}}", { email: user.email })}
+            </Text>
+          ) : null}
+          {/* Computed rather than written in, so it doesn't quietly go stale. */}
+          <Text style={styles.brand}>Cinephix {new Date().getFullYear()}</Text>
+        </View>
+      </ScrollView>
+
+      <LanguageSheet visible={languageOpen} onClose={closeLanguage} />
+
+      <ConfirmDialog
+        visible={pendingExit !== null}
+        // Radially symmetric, unlike the pencil that was here: the box is
+        // centred correctly now, but a diagonal glyph still *reads* off-axis
+        // inside a square plate. It is also the better warning semantic.
+        icon="alert-circle-outline"
+        title={t("Unsaved changes")}
+        message={t("You have unsaved changes. Are you sure you want to discard them?")}
+        confirmLabel={t("Discard")}
+        cancelLabel={t("Keep editing")}
+        danger
+        onConfirm={discardChanges}
+        onCancel={keepEditing}
+      />
+    </>
   );
 }
-

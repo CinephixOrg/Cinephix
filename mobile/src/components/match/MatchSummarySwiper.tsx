@@ -12,6 +12,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import AnimatedInsightList from "./AnimatedInsightList";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { localeUpper } from "../../utils/text";
 
 // Sized generously against the real worst case (this session's own observed
 // LLM output: up to ~3 items per category) rather than syncing height to
@@ -110,7 +111,6 @@ export default function MatchSummarySwiper({ analysis, strengths, weaknesses, co
           fontSize: 13,
           color: colors.primary,
           textAlign: "center",
-          textTransform: "uppercase",
           letterSpacing: 0.5,
           marginBottom: 10,
         },
@@ -121,7 +121,6 @@ export default function MatchSummarySwiper({ analysis, strengths, weaknesses, co
           fontFamily: fonts.bold,
           fontSize: 13,
           textAlign: "center",
-          textTransform: "uppercase",
           letterSpacing: 0.5,
           marginBottom: 10,
         },
@@ -130,7 +129,6 @@ export default function MatchSummarySwiper({ analysis, strengths, weaknesses, co
           fontSize: 13,
           color: colors.primary,
           textAlign: "center",
-          textTransform: "uppercase",
           letterSpacing: 0.5,
           marginBottom: 10,
         },
@@ -172,7 +170,7 @@ export default function MatchSummarySwiper({ analysis, strengths, weaknesses, co
           scrollEventThrottle={32}
         >
           <View style={[styles.section, styles.analysisSection]}>
-            <Text style={styles.analysisHeader}>{t("Sync Summary")}</Text>
+            <Text style={styles.analysisHeader}>{localeUpper(t("Sync Summary"))}</Text>
             <Text style={styles.paragraph} numberOfLines={7} ellipsizeMode="tail">
               {analysis}
             </Text>
@@ -181,18 +179,18 @@ export default function MatchSummarySwiper({ analysis, strengths, weaknesses, co
           <View style={[styles.section, { justifyContent: "center" }]}>
             <View style={styles.columnsRow}>
               <View style={styles.column}>
-                <Text style={[styles.columnHeader, { color: colors.success }]}>{t("Strengths")}</Text>
+                <Text style={[styles.columnHeader, { color: colors.success }]}>{localeUpper(t("Strengths"))}</Text>
                 <AnimatedInsightList items={strengths.slice(0, MAX_ITEMS)} icon="checkmark-circle" iconColor={colors.success} />
               </View>
               <View style={styles.column}>
-                <Text style={[styles.columnHeader, { color: colors.warning }]}>{t("Weaknesses")}</Text>
+                <Text style={[styles.columnHeader, { color: colors.warning }]}>{localeUpper(t("Weaknesses"))}</Text>
                 <AnimatedInsightList items={weaknesses.slice(0, MAX_ITEMS)} icon="alert-circle" iconColor={colors.warning} />
               </View>
             </View>
           </View>
 
           <View style={[styles.section, { justifyContent: "center" }]}>
-            <Text style={styles.startersHeader}>{t("Conversation Starters")}</Text>
+            <Text style={styles.startersHeader}>{localeUpper(t("Conversation Starters"))}</Text>
             {conversationStarters.slice(0, MAX_ITEMS).map((s, i) => (
               <View key={i} style={styles.starterButton}>
                 <Text style={styles.starterButtonText} numberOfLines={2} ellipsizeMode="tail">

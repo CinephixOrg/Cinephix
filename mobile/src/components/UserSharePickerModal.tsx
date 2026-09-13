@@ -8,6 +8,7 @@ import { getAllGroups } from "../api/groupService";
 import { useTheme } from "../context/ThemeContext";
 import type { Connection, Group, UserSearchResult } from "../types";
 import { fonts } from "../theme/typography";
+import { localeUpper } from "../utils/text";
 
 interface Props {
   visible: boolean;
@@ -168,7 +169,6 @@ export default function UserSharePickerModal({ visible, title, onClose, sending,
           fontFamily: fonts.medium,
           fontSize: 12,
           color: colors.placeholder,
-          textTransform: "uppercase",
           letterSpacing: 0.5,
           paddingHorizontal: 16,
           paddingBottom: 6,
@@ -242,7 +242,7 @@ export default function UserSharePickerModal({ visible, title, onClose, sending,
                 data={displayList}
                 keyExtractor={(item) => item._id}
                 ListHeaderComponent={
-                  !query.trim() ? <Text style={styles.sectionLabel}>{t("Network")}</Text> : null
+                  !query.trim() ? <Text style={styles.sectionLabel}>{localeUpper(t("Network"))}</Text> : null
                 }
                 ListEmptyComponent={
                   <Text style={styles.empty}>

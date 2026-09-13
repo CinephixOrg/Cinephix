@@ -12,6 +12,7 @@ import { useRevealAnimation } from "../../hooks/useRevealAnimation";
 import type { ContentType } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { localeUpper } from "../../utils/text";
 
 interface Props {
   targetUserId: string;
@@ -218,7 +219,7 @@ export default function MatchSharedFavorites({
         tag: { fontSize: 11, color: colors.primary, textAlign: "center" },
         ratingsRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24 },
         ratingColumn: { alignItems: "center", gap: 8, maxWidth: "45%" },
-        ratingName: { fontFamily: fonts.bold, fontSize: 14, color: colors.placeholder, textTransform: "uppercase", letterSpacing: 0.5 },
+        ratingName: { fontFamily: fonts.bold, fontSize: 14, color: colors.placeholder, letterSpacing: 0.5 },
         ratingUnit: { flexDirection: "row", alignItems: "center", gap: 6 },
         ratingText: { fontSize: 15, fontFamily: fonts.medium, color: colors.baseContent },
         ratingMuted: { fontSize: 11.5, fontStyle: "italic", color: colors.placeholder },
@@ -294,7 +295,7 @@ export default function MatchSharedFavorites({
             <View style={styles.ratingsRow}>
               <View style={styles.ratingColumn}>
                 <Text style={styles.ratingName} numberOfLines={1} ellipsizeMode="tail">
-                  {t("You")}
+                  {localeUpper(t("You"))}
                 </Text>
                 {focusedDetail.myRating != null ? (
                   <View style={styles.ratingUnit}>
@@ -307,7 +308,7 @@ export default function MatchSharedFavorites({
               </View>
               <View style={styles.ratingColumn}>
                 <Text style={styles.ratingName} numberOfLines={1} ellipsizeMode="tail">
-                  {targetUsername}
+                  {localeUpper(targetUsername)}
                 </Text>
                 {focusedDetail.targetRating != null ? (
                   <View style={styles.ratingUnit}>

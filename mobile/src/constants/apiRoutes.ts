@@ -94,8 +94,9 @@ export const API_ROUTES = {
     DELETE: (id: string) => `/shares/${id}`,
   },
   IMPORT: {
-    TVTIME: "/users/import-tvtime",
-    LETTERBOXD: "/users/import-letterboxd",
+    // One endpoint for every platform; the source travels as a form field.
+    RUN: "/users/import",
+    SOURCES: "/users/import/sources",
   },
   CONTENT: {
     GET_STATS: (type: string, id: string) => `/content/${type}/${id}/stats`,

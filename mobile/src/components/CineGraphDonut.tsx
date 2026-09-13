@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { CineGraphRatings, CineGraphStats } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { localeUpper } from "../utils/text";
 
 // Created once at module scope — recreating it every render would remount
 // the underlying SVG node and break the opacity animation driven through it.
@@ -515,7 +516,7 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
           justifyContent: "center",
         },
         centerLabel: { textAlign: "center", color: colors.baseContent, fontFamily: fonts.bold, fontSize: 16 },
-        centerLabelSub: { fontSize: 10, color: colors.placeholder, textTransform: "uppercase", letterSpacing: 0.5 },
+        centerLabelSub: { fontSize: 10, color: colors.placeholder, letterSpacing: 0.5 },
         centerDetailRow: { fontSize: 11, fontFamily: fonts.medium, color: colors.baseContent, marginBottom: 3, textAlign: "center" },
         chip: { position: "absolute", borderWidth: 1.5, borderRadius: 14, backgroundColor: colors.base200 },
         chipPress: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5 },
@@ -630,7 +631,7 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
                 pointerEvents="none"
               >
                 <Text style={styles.centerLabel}>{slices.total}</Text>
-                <Text style={styles.centerLabelSub}>{t("items")}</Text>
+                <Text style={styles.centerLabelSub}>{localeUpper(t("items"))}</Text>
               </Animated.View>
               <Animated.View
                 style={[styles.centerOverlay, { opacity: revealAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] }) }]}
@@ -660,7 +661,7 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
           ) : (
             <View pointerEvents="none">
               <Text style={styles.centerLabel}>{slices.total}</Text>
-              <Text style={styles.centerLabelSub}>{t("items")}</Text>
+              <Text style={styles.centerLabelSub}>{localeUpper(t("items"))}</Text>
             </View>
           )}
         </View>
