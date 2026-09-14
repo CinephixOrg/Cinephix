@@ -71,6 +71,9 @@ export const API_ROUTES = {
     REMOVE_FOLLOWER: "/users/remove-follower",
     GET_SUGGESTIONS: "/users/me/suggestions",
     GET_ONLINE_FRIENDS: "/users/online",
+    // This device's Expo push token: registered on sign-in, removed on sign-out.
+    PUSH_TOKENS: "/users/me/push-tokens",
+    PUSH_TOKEN: (token: string) => `/users/me/push-tokens/${encodeURIComponent(token)}`,
   },
   ACTIVITY_LOG: {
     GET_ALL: "/users/me/logs",

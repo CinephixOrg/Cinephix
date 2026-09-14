@@ -1,11 +1,16 @@
 import Notification from "../models/Notification.js";
 import { messagePreview, shareLikeSummary } from "../utils/notificationPayload.js";
+import { pushNotification } from "./push.js";
 
 // Every in-app notification is created, updated and removed here, so each
-// type has exactly one definition of what it carries.
+// type has exactly one definition of what it carries. Every one created is
+// also pushed to the recipient's devices (services/push.js), in the
+// background.
 
-export function notifyFollow({ recipientId, senderId }) {
-  return Notification.create({ user: recipientId, sender: senderId, type: "follow" });
+export async function notifyFollow({ recipientId, senderId }) {
+  const notification = await Notification.create({ user: recipientId, sender: senderId, type: "follow" });
+  pushNotification(notification.toObject());
+  return notification;
 }
 
 export async function retractFollow({ recipientId, senderId }) {
@@ -14,9 +19,9 @@ export async function retractFollow({ recipientId, senderId }) {
 
 /**
  * A direct message. The notification carries the message's id and a preview
- * of its text, so the feed can show what was said, and a push notification —
- * once message alerts move there — can be sent from this document alone.
- * Returns the notification as a plain object, for real-time delivery.
+ * of its text, so the feed can show what was said and the push can say it
+ * too, from this document alone. Returns the notification as a plain object,
+ * for real-time delivery.
  */
 export async function notifyMessage({ recipientId, senderId, conversationId, message }) {
   const notification = await Notification.create({
@@ -26,7 +31,9 @@ export async function notifyMessage({ recipientId, senderId, conversationId, mes
     conversationId,
     message: { messageId: message._id, ...messagePreview(message) },
   });
-  return notification.toObject();
+  const plain = notification.toObject();
+  pushNotification(plain);
+  return plain;
 }
 
 /**
@@ -52,12 +59,14 @@ export async function syncShareLikeNotification(share, { likerId, liked }) {
   if (liked && String(likerId) !== String(share.user)) {
     await Notification.deleteMany(filter);
     try {
-      await Notification.create({
+      const notification = await Notification.create({
         user: share.user,
         sender: likerId,
         type: "share_like",
         share: { shareId: share._id, shareType: share.type, likerCount },
       });
+      // An unlike only corrects the count below, and isn't pushed.
+      pushNotification(notification.toObject());
     } catch (error) {
       // A like landing at the same moment already recreated it (the index
       // allows one per share), with the same count.

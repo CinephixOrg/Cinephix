@@ -149,14 +149,18 @@ export function loadMoreFeed(filter: FeedFilter): Promise<void> {
 
 // ---- Actions ---------------------------------------------------------------------
 
-export function markRead(id: string): void {
+/** Resolves once the server has it (or refused: low stakes, the next refresh corrects it). */
+export function markRead(id: string): Promise<void> {
   updateBoth((state) => {
     const items = markReadById(state.items, id);
     return items === state.items ? state : { ...state, items };
   });
-  markNotificationRead(id).catch(() => {
-    // Low stakes: the read state corrects itself on the next refresh.
-  });
+  return markNotificationRead(id).then(
+    () => undefined,
+    () => {
+      // Low stakes: the read state corrects itself on the next refresh.
+    }
+  );
 }
 
 /** On the Unread feed, marking everything read leaves nothing to show. */

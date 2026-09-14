@@ -14,6 +14,7 @@ import type { Message, MessagePagination } from "../types";
 import { SkeletonChatBubbles } from "../components/Skeleton";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { setActiveChat } from "../push/activeChat";
 
 interface Props {
   // Whether tapping the header title opens the other person's profile.
@@ -109,6 +110,15 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
         ),
     });
   }, [conversationId, otherUsername, conversations, styles, linkTitleToProfile]);
+
+  // While this chat is on screen, a push about a message in it arrives
+  // silently: the message itself is already appearing here.
+  useFocusEffect(
+    useCallback(
+      () => setActiveChat({ conversationId: conversationId ?? null, participantId: participantId ?? null }),
+      [conversationId, participantId]
+    )
+  );
 
   useFocusEffect(
     useCallback(() => {

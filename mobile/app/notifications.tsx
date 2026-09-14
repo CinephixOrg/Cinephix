@@ -23,17 +23,8 @@ import {
   removeNotification,
   type FeedFilter,
 } from "../src/api/notificationFeedStore";
-import { fetchPublicProfile } from "../src/api/publicProfileCache";
-import { conversationPrefetch } from "../src/api/conversationService";
-import { sharePrefetch } from "../src/api/shareService";
-import {
-  SECTION_LABEL,
-  buildRows,
-  destinationFor,
-  hrefFor,
-  type FeedRow,
-  type NotificationDestination,
-} from "../src/utils/notificationFeed";
+import { prefetchDestination } from "../src/api/notificationPrefetch";
+import { SECTION_LABEL, buildRows, destinationFor, hrefFor, type FeedRow } from "../src/utils/notificationFeed";
 import { afterTransition, type TransitionSource } from "../src/utils/afterTransition";
 import type { Notification } from "../src/types";
 
@@ -46,26 +37,6 @@ const animateNextLayout = () => LayoutAnimation.configureNext(GLIDE);
 const CLOCK_TICK_MS = 60_000;
 
 const keyExtractor = (row: FeedRow) => row.key;
-
-// Starts the destination's data loading as the tap navigates, so it has the
-// transition's head start. Each destination takes the same request instead of
-// starting its own: the profile through its bundle cache's in-flight dedupe,
-// the chat and the share through their prefetchers.
-function prefetchDestination(destination: NotificationDestination) {
-  switch (destination.kind) {
-    case "profile":
-      fetchPublicProfile(destination.userId).catch(() => {
-        // The profile screen loads (and reports) on its own.
-      });
-      break;
-    case "chat":
-      conversationPrefetch.prefetch(destination.userId);
-      break;
-    case "share":
-      sharePrefetch.prefetch(destination.shareId);
-      break;
-  }
-}
 
 export default function NotificationsScreen() {
   const { user } = useAuth();
