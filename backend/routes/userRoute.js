@@ -46,6 +46,7 @@ import {
 import { getImportSources, runImport } from "../controllers/importController.js";
 import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
 import { getMyActivity } from "../controllers/activityController.js";
+import { registerPushToken, unregisterPushToken } from "../controllers/pushTokenController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
 import { authRateLimiter } from "../middleware/rateLimiter.js";
@@ -168,6 +169,11 @@ router.get("/me/followers", authMiddleware, getMyFollowers);
 // empty.
 router.get("/me/follow-requests", authMiddleware, (req, res) => res.status(200).json([]));
 router.get("/me/sent-requests", authMiddleware, (req, res) => res.status(200).json([]));
+
+// Push notifications: this device's Expo push token, registered on sign-in and
+// removed on sign-out.
+router.post("/me/push-tokens", authMiddleware, registerPushToken);
+router.delete("/me/push-tokens/:token", authMiddleware, unregisterPushToken);
 
 // Get notifications
 router.get("/notifications", authMiddleware, getNotifications);

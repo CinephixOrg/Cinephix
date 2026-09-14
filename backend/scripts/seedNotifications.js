@@ -17,6 +17,11 @@
 // had acted. If you have fewer than two shares, test recommendation shares
 // are created for you. Meant for a test account only; re-running refreshes
 // the notifications instead of stacking duplicates, and sends one more DM.
+//
+// Each notification is also pushed to the account's registered devices, the
+// way the app would push it: sign in on a development build first to see the
+// pushes arrive. (Share-like pushes are throttled to one per share every five
+// minutes. Set PUSH_NOTIFICATIONS=off to seed without pushing.)
 
 import "dotenv/config";
 import mongoose from "mongoose";
@@ -25,6 +30,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import Share from "../models/Share.js";
 import { notifyFollow, notifyMessage, retractFollow, syncShareLikeNotification } from "../services/notifications.js";
+import { flushPushDeliveries } from "../services/push.js";
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
@@ -134,6 +140,9 @@ async function main() {
   const [singleShare, crowdShare] = await ensureShares(target._id);
   const single = await likeShare(singleShare._id, [liker._id]);
   const popular = await likeShare(crowdShare._id, crowd.map((user) => user._id));
+
+  // Pushes send in the background; let them reach Expo before disconnecting.
+  await flushPushDeliveries();
 
   const likers = (share) => share.likes.filter((id) => String(id) !== String(target._id)).length;
   console.log(`\nDone. Share ${single._id} has ${likers(single)} liker(s); share ${popular._id} has ${likers(popular)}.`);

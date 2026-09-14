@@ -8,3 +8,6 @@ backup/frontend/cinephix/node_modules/
 mobile/.dev-logs/
 # Cleanup-script backups contain full user documents (ratings, reviews).
 backend/backups/
+# Firebase Admin SDK service-account keys are private keys: upload them to EAS
+# (eas credentials) and keep them out of the repository.
+**/*firebase-adminsdk*.json

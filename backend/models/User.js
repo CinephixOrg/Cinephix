@@ -11,6 +11,16 @@ const WatchItemSchema = new mongoose.Schema({
 });
 
 
+// One device that receives the account's push notifications (services/push.js).
+const PushTokenSchema = new Schema({
+  token: { type: String, required: true }, // ExponentPushToken[...]
+  platform: { type: String, enum: ["ios", "android"] },
+  // The app's language on that device; its pushes are written in it.
+  locale: { type: String },
+  deviceName: { type: String },
+  lastSeenAt: { type: Date, default: Date.now },
+}, { _id: false });
+
 const userSchema = new Schema({
   username: {
     type: String,
@@ -123,6 +133,16 @@ seriesCineGraph: {
   currentStreak: { type: Number, default: 0 },
   lastStreakDate: { type: Date },
 
+  // Devices receiving this account's push notifications, newest first, at most
+  // MAX_PUSH_TOKENS (utils/pushMessages.js). Left out of every query unless
+  // asked for with select("+pushTokens"), so no profile or user response can
+  // ever include another person's device tokens.
+  pushTokens: {
+    type: [PushTokenSchema],
+    default: undefined,
+    select: false,
+  },
+
 }, { timestamps: true }); // Bu seçenek sizde zaten mevcuttu
 
 // ===== DATABASE INDEXES (Issue #13) =====
@@ -137,6 +157,10 @@ userSchema.index({ following: 1 });
 
 // Compound index for efficient watchlist queries
 userSchema.index({ _id: 1, watchlist: 1 });
+
+// Finding a device's token on whichever account holds it: moving it to a new
+// account on sign-in, and retiring it when Expo reports the app gone.
+userSchema.index({ "pushTokens.token": 1 }, { sparse: true });
 
 const User = mongoose.model('User', userSchema);
 
