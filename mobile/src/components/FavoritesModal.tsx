@@ -74,11 +74,10 @@ export default function FavoritesModal({ visible, onClose, type, currentItem, my
     (async () => {
       try {
         const favorites = await getFavorites(myUserId);
-        const existing: FavoriteItem[] = favorites.isAuthorized
-          ? type === "movie"
+        const existing: FavoriteItem[] =
+          type === "movie"
             ? favorites.movies.map((m) => ({ id: m._id, title: m.title, posterPath: m.poster_path }))
-            : favorites.series.map((s) => ({ id: s._id, title: s.name, posterPath: s.poster_path }))
-          : [];
+            : favorites.series.map((s) => ({ id: s._id, title: s.name, posterPath: s.poster_path }));
         const union = existing.some((it) => it.id === currentItem.id)
           ? existing
           : [...existing, currentItem];

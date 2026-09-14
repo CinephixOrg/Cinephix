@@ -6,7 +6,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import Group from "../models/Group.js";
-import Notification from "../models/Notification.js";
+import { notifyMessage } from "../services/notifications.js";
 
 // How many messages ship alongside a conversation from
 // getOrCreateConversation. Matches the client's own default page size, so
@@ -344,16 +344,16 @@ export const sendMessage = asyncHandler(async (req, res) => {
     $inc: { [`unreadCounts.${otherId}`]: 1 },
   });
 
+  // The recipient's notification carries a preview of what was said.
+  const notification = await notifyMessage({
+    recipientId: otherId,
+    senderId: userId,
+    conversationId: conversation._id,
+    message,
+  });
+
   // Broadcast via Socket.io
   const io = getIo();
-  
-  // Create DB notification
-  await Notification.create({
-    user: otherId,
-    sender: userId,
-    type: 'message',
-    conversationId: conversation._id
-  });
 
   if (io) {
     io.to(roomKey("dm", conversation._id.toString())).emit(
@@ -372,10 +372,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     // Send real-time notification to the receiver
     io.to(`user:${otherId}`).emit("new-notification", {
+      _id: notification._id,
       type: 'message',
-      sender: { _id: userId, username: req.user.username },
+      sender: { _id: userId, username: req.user.username, profile_pic_url: req.user.profile_pic_url },
       conversationId: conversation._id,
-      createdAt: new Date()
+      message: notification.message,
+      createdAt: notification.createdAt
     });
   }
 

@@ -10,12 +10,6 @@ import { NotificationContext } from "../context/NotificationContext.jsx";
 import MovieCard from "../components/MovieCard.jsx";
 import SeriesCard from "../components/SeriesCard.jsx";
 
-const LockIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-  </svg>
-);
-
 export default function PublicProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,7 +31,6 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadingLists, setLoadingLists] = useState(true);
   const [isFollowed, setIsFollowed] = useState(false);
-  const [isRequested, setIsRequested] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -131,7 +124,6 @@ export default function PublicProfilePage() {
           followed = Boolean(p?.isFollowed || p?.followedByMe);
         }
         setIsFollowed(Boolean(followed));
-        setIsRequested(Boolean(p?.isRequested));
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to fetch public profile", err);
@@ -151,8 +143,7 @@ export default function PublicProfilePage() {
 
         const movies = Array.isArray(favRes.data?.data?.movies || favRes.data?.movies) ? (favRes.data?.data?.movies || favRes.data?.movies) : [];
         const series = Array.isArray(favRes.data?.data?.series || favRes.data?.series) ? (favRes.data?.data?.series || favRes.data?.series) : [];
-        const isPrivateAndHidden = favRes.data?.data?.isPrivateAndHidden || favRes.data?.isPrivateAndHidden;
-        setFavorites({ movies, series, isPrivateAndHidden });
+        setFavorites({ movies, series });
       } catch (err) {
         if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
         console.error("Failed to load favorites", err);
@@ -215,7 +206,6 @@ export default function PublicProfilePage() {
         followed = Boolean(p?.isFollowed || p?.followedByMe);
       }
       setIsFollowed(Boolean(followed));
-      setIsRequested(Boolean(p?.isRequested));
 
       const movies = Array.isArray(favRes.data?.movies) ? favRes.data.movies : [];
       const series = Array.isArray(favRes.data?.series) ? favRes.data.series : [];
@@ -235,23 +225,16 @@ export default function PublicProfilePage() {
     setFollowLoading(true);
     try {
       const headers = { Authorization: `Bearer ${authUser.token}` };
-      if (!isFollowed && !isRequested) {
+      if (!isFollowed) {
         // Using configured API instance which sets the correct base URL
-        const res = await API.post('/users/follow', { targetId: profile._id }, { headers });
-        const resType = res.data?.data?.type || res.data?.type || res.type;
-
-        if (resType === 'requested') {
-          setIsRequested(true);
-        } else if (resType === 'following') {
-          setIsFollowed(true);
-        }
+        await API.post('/users/follow', { targetId: profile._id }, { headers });
+        setIsFollowed(true);
         if (fetchUnreadCount) fetchUnreadCount();
         if (fetchNotifications) fetchNotifications();
         await refreshProfileData();
       } else {
         await API.post('/users/unfollow', { targetId: profile._id }, { headers });
         setIsFollowed(false);
-        setIsRequested(false);
         if (fetchUnreadCount) fetchUnreadCount();
         if (fetchNotifications) fetchNotifications();
         await refreshProfileData();
@@ -289,14 +272,6 @@ export default function PublicProfilePage() {
     }
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
   })();
-
-  const PrivateLockUI = () => (
-    <div className="flex flex-col items-center justify-center p-12 bg-base-100 rounded-xl border border-base-200">
-      <LockIcon className="w-12 h-12 text-warning mb-4"/>
-      <h3 className="text-xl font-bold">This account is private</h3>
-      <p>Follow to see detailed CineGraph and Favorites.</p>
-    </div>
-  );
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -342,11 +317,11 @@ export default function PublicProfilePage() {
             <div>
               <div className="mt-4 flex gap-2">
                 <button
-                  className={`btn ${isFollowed ? 'btn-success' : isRequested ? 'btn-disabled' : 'btn-primary'} btn-sm`}
+                  className={`btn ${isFollowed ? 'btn-success' : 'btn-primary'} btn-sm`}
                   onClick={toggleFollow}
-                  disabled={followLoading || isRequested}
+                  disabled={followLoading}
                 >
-                  {followLoading ? '...' : isRequested ? 'Requested' : isFollowed ? 'Unfollow' : 'Follow'}
+                  {followLoading ? '...' : isFollowed ? 'Unfollow' : 'Follow'}
                 </button>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
@@ -457,11 +432,6 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {favorites?.isPrivateAndHidden || cineGraphData?.isPrivateAndHidden ? (
-        <div className="mt-12">
-          <PrivateLockUI />
-        </div>
-      ) : (
         <>
           {/* CineGraph charts (computed from favorites) */}
           <section className="mt-6">
@@ -514,7 +484,6 @@ export default function PublicProfilePage() {
             )}
           </section>
         </>
-      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Rating from "../models/Rating.js";
 import User from "../models/User.js";
 import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
+import { removeShareNotifications, syncShareLikeNotification } from "../services/notifications.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import {
@@ -697,6 +698,12 @@ export const toggleShareLike = asyncHandler(async (req, res) => {
 
   await share.save();
 
+  // The author's "liked your share" notification follows the like state.
+  // Best-effort: the like itself is already saved.
+  await syncShareLikeNotification(share, { likerId: userId, liked }).catch((err) =>
+    console.error("Failed to update share like notification:", err.message)
+  );
+
   // A "list" share is a snapshot post ABOUT a real CustomList, not its own
   // independent thing to like — liking the post should mean liking the
   // list, so the list's own `likes` (already the signal /lists/popular
@@ -792,13 +799,29 @@ export const getUserShares = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
 
-  const requesterId = req.user.id;
   const query = { user: targetUserId };
   const [items, total] = await Promise.all([
-    Share.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
+    viewerShareQuery(Share.find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)),
+    Share.countDocuments(query),
+  ]);
+
+  sendPaginated(res, await withViewerMeta(items, req.user.id), total, page, limit, "User shares fetched");
+});
+
+// ── GET /api/shares/:id ── one share, in exactly the shape the user-shares
+// list returns, for the share page a "liked your share" notification opens.
+export const getShareById = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, "Share not found", 404);
+  const share = await viewerShareQuery(Share.findOne({ _id: req.params.id }));
+  if (!share) return sendError(res, "Share not found", 404);
+  const [withMeta] = await withViewerMeta([share], req.user.id);
+  sendSuccess(res, withMeta, "Share fetched");
+});
+
+// Reads shares the way a share card renders them.
+function viewerShareQuery(query) {
+  return (
+    query
       // Only the handful of viewers actually rendered are read back. This
       // used to populate the FULL views array of every share on the page —
       // one User document per person who ever opened it — and then throw
@@ -815,10 +838,13 @@ export const getUserShares = asyncHandler(async (req, res) => {
       // "user.accountTier" itself (see that function).
       .populate("user", "username profile_pic_url accountTier isOfficial")
       .populate("views", "username profile_pic_url")
-      .lean(),
-    Share.countDocuments(query),
-  ]);
+      .lean()
+  );
+}
 
+// Adds what depends on who is looking — liked, their poll vote, each poll
+// option's top voters — for a whole batch of shares in two queries.
+async function withViewerMeta(items, requesterId) {
   // Batch-fetch every poll's top-5-voter identities across the whole page in
   // one query, same reasoning as shareHydrationStages' own single $lookup —
   // avoids one User.find per poll per page.
@@ -843,7 +869,7 @@ export const getUserShares = asyncHandler(async (req, res) => {
     ).map((s) => s._id.toString())
   );
 
-  const withMeta = items.map((s) => {
+  return items.map((s) => {
     const liked = likedIds.has(s._id.toString());
     // Also capped here: the $slice above is an optimization, and this
     // keeps the response shape identical regardless of whether it applied.
@@ -863,9 +889,7 @@ export const getUserShares = asyncHandler(async (req, res) => {
     }
     return { ...s, liked, topViewers, pollData, userVoteIndex, likes: undefined, views: undefined };
   });
-
-  sendPaginated(res, withMeta, total, page, limit, "User shares fetched");
-});
+}
 
 // ── DELETE /api/shares/:id ── owner-only
 export const deleteShare = asyncHandler(async (req, res) => {
@@ -875,5 +899,8 @@ export const deleteShare = asyncHandler(async (req, res) => {
     return sendError(res, "Not authorized", 403);
   }
   await share.deleteOne();
+  // Its "liked your share" notification would otherwise open a page for a
+  // share that no longer exists.
+  await removeShareNotifications(share._id);
   sendSuccess(res, null, "Share deleted");
 });

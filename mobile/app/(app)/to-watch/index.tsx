@@ -1,5 +1,5 @@
-import ToWatchListView from "../../../src/components/ToWatchListView";
+import WatchlistScreen from "../../../src/screens/WatchlistScreen";
 
 export default function ToWatchScreen() {
-  return <ToWatchListView />;
+  return <WatchlistScreen />;
 }

@@ -87,10 +87,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           getFavorites(user._id),
           getUserShares("me", 1, 1),
         ]);
-        // isAuthorizedToView always passes for viewerId === targetUser._id,
-        // so these should never actually be the masked branch — defensive only.
-        if (!profileData.isAuthorized) throw new Error("Own profile unexpectedly masked");
-        if (!favoritesData.isAuthorized) throw new Error("Own favorites unexpectedly masked");
         lastFetchedAtRef.current = Date.now();
         // Identity-preserving: a revalidation that comes back byte-identical
         // (the common case) keeps the previous object, so React bails out of

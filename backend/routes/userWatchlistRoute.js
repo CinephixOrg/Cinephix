@@ -1,6 +1,8 @@
 // routes/userWatchlistRoute.js
 import express from "express";
+import mongoose from "mongoose";
 import User from "../models/User.js";
+import { refreshUserCineGraph } from "../utils/cineGraph.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { conn } from "../db/connections.js";
 import { createMovieModel } from "../models/Movie.js";
@@ -46,8 +48,7 @@ router.post("/watchlist", authMiddleware, async (req, res) => {
 
     user.watchlist.push({ itemId: contentId, itemType: contentType });
 
-    // --- NEW LOGIC: Update Graph Count ---
-    const graph = contentType === "movie" ? user.movieCineGraph : user.seriesCineGraph;
+    // The title's genres, for the badge checks below.
     let genres = [];
 
     if (contentType === "movie") {
@@ -61,12 +62,6 @@ router.post("/watchlist", authMiddleware, async (req, res) => {
         genres = (series.genre_ids || []).map(id => SERIES_GENRE_MAP[id]).filter(Boolean);
       }
     }
-
-    genres.forEach(genre => {
-      const node = graph.get(genre) || { count: 0, ratedCount: 0, avgRating: 0 };
-      graph.set(genre, { ...node, count: node.count + 1 });
-    });
-    // --- END NEW LOGIC ---
 
     // Badge popup detection — this add is the actual event that moves both
     // a genre badge's count and a volume badge's count (Watched-List
@@ -120,6 +115,7 @@ router.post("/watchlist", authMiddleware, async (req, res) => {
     }
 
     await user.save();
+    await refreshUserCineGraph(userId);
 
     return res.status(201).json({ message: "Added", watchlist: user.watchlist, newlyEarnedBadges });
   } catch (err) {
@@ -147,50 +143,6 @@ router.delete("/watchlist/:itemId", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    // --- NEW LOGIC: Decrement Graph Count ---
-    const graph = itemType === "movie" ? user.movieCineGraph : user.seriesCineGraph;
-    let genres = [];
-
-    if (itemType === "movie") {
-      const movie = await Movie.findById(itemId).lean();
-      if (movie) {
-        genres = (movie.genre_ids || []).map(id => MOVIE_GENRE_MAP[id]).filter(Boolean);
-      }
-    } else {
-      const series = await Series.findById(itemId).lean();
-      if (series) {
-        genres = (series.genre_ids || []).map(id => SERIES_GENRE_MAP[id]).filter(Boolean);
-      }
-    }
-
-    // Delete rating if it exists and adjust graph's ratedCount / avgRating
-    const existingRating = await Rating.findOneAndDelete({ user: userId, contentId: itemId });
-
-    genres.forEach(genre => {
-      const node = graph.get(genre);
-      if (node) {
-        const newNode = { ...node, count: Math.max(0, node.count - 1) };
-        
-        if (existingRating) {
-          const R = existingRating.value;
-          const C = newNode.ratedCount || 0;
-          const A = newNode.avgRating || 0;
-          
-          if (C <= 1) {
-            newNode.ratedCount = 0;
-            newNode.avgRating = 0;
-          } else {
-            const sum = (A * C) - R;
-            newNode.ratedCount = C - 1;
-            newNode.avgRating = Number((sum / newNode.ratedCount).toFixed(2));
-          }
-        }
-        
-        graph.set(genre, newNode);
-      }
-    });
-    // --- END NEW LOGIC ---
-
     // Also remove from favorites if it's there
     if (itemType === "movie") {
       user.favoriteMovies = (user.favoriteMovies || []).filter(f => f?.toString() !== itemId?.toString());
@@ -198,11 +150,17 @@ router.delete("/watchlist/:itemId", authMiddleware, async (req, res) => {
       user.favoriteSeries = (user.favoriteSeries || []).filter(f => f?.toString() !== itemId?.toString());
     }
 
-    if (user.watchlist.length === beforeLen) {
-      return res.status(404).json({ message: "Item not found" });
-    }
-
     await user.save();
+
+    // The rating goes with the title. Deleted through the driver in both id
+    // forms: the schema declares contentId a String, but seeded ratings store
+    // an ObjectId, and a Mongoose query would cast the filter to String and
+    // never match those.
+    const contentIds = [String(itemId)];
+    if (mongoose.isValidObjectId(itemId)) contentIds.push(new mongoose.Types.ObjectId(String(itemId)));
+    await Rating.collection.deleteMany({ user: new mongoose.Types.ObjectId(String(userId)), contentId: { $in: contentIds } });
+
+    await refreshUserCineGraph(userId);
     return res.status(200).json({ message: "Removed", watchlist: user.watchlist });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });

@@ -38,7 +38,6 @@ if (existing) {
     // "free" until/unless a dedicated official visual treatment is designed.
     accountTier: "free",
     bio: "The official Cinephix account. Trivia, tips, polls and more. 🎬",
-    visibility: "public",
   });
   console.log(`Created official account: ${official.username} (_id: ${official._id})`);
 }

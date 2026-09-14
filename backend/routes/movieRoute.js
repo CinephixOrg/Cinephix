@@ -190,7 +190,7 @@ export default async function(movieModel) {
       
       let query = movieModel.find({ _id: { $in: objectIds } });
       if (lightweight) {
-        query = query.select("_id title name poster_path vote_average first_air_date release_date tvdb id genre_ids");
+        query = query.select("_id title name poster_path vote_average popularity first_air_date release_date tvdb id genre_ids");
       }
       
       console.time("movie_bulk_query");

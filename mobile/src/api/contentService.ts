@@ -162,6 +162,12 @@ export interface LightweightContent {
   name?: string;
   poster_path?: string | null;
   vote_average?: number;
+  // All three come back from /bulk?lightweight=true. The Watched List uses
+  // them to sort by release date and to break search ties by popularity
+  // without a request per title.
+  release_date?: string | null;
+  first_air_date?: string | null;
+  popularity?: number;
   // Present only on getSharedGenreContent's response — each side's own
   // rating for this title, unused/undefined from every other caller.
   myRating?: number;

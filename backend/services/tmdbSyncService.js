@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { resolveTmdbHits } from "../utils/catalogUpsert.js";
 
 // Helper to wait a bit between requests to avoid rate limits
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -27,75 +28,11 @@ async function fetchFromTMDB(url) {
   }
 }
 
-async function upsertMovie(tmdbMovie) {
-  const Movie = mongoose.model("Movie");
-  const tmdbId = tmdbMovie.id;
-  if (!tmdbId) return;
-
-  const filter = {
-    $or: [{ "id.tmdb": tmdbId }, { tmdb_id: tmdbId }, { tmdb: tmdbId }]
-  };
-
-  const update = {
-    $set: {
-      "id.tmdb": tmdbId,
-      tmdb_id: tmdbId,
-      title: tmdbMovie.title,
-      original_title: tmdbMovie.original_title,
-      release_date: tmdbMovie.release_date,
-      poster_path: tmdbMovie.poster_path,
-      backdrop_path: tmdbMovie.backdrop_path,
-      overview: tmdbMovie.overview,
-      vote_average: tmdbMovie.vote_average,
-      vote_count: tmdbMovie.vote_count,
-      popularity: tmdbMovie.popularity,
-      genre_ids: tmdbMovie.genre_ids,
-      type: "movie",
-      updated_at: new Date()
-    }
-  };
-
-  try {
-    await Movie.updateOne(filter, update, { upsert: true });
-  } catch (err) {
-    console.error(`Failed to upsert movie ${tmdbMovie.title}:`, err.message);
-  }
-}
-
-async function upsertSeries(tmdbSeries) {
-  const Series = mongoose.model("Series");
-  const tmdbId = tmdbSeries.id;
-  if (!tmdbId) return;
-
-  const filter = {
-    $or: [{ "id.tmdb": tmdbId }, { tmdb_id: tmdbId }, { tmdb: tmdbId }]
-  };
-
-  const update = {
-    $set: {
-      "id.tmdb": tmdbId,
-      tmdb_id: tmdbId,
-      name: tmdbSeries.name,
-      original_name: tmdbSeries.original_name,
-      first_air_date: tmdbSeries.first_air_date,
-      poster_path: tmdbSeries.poster_path,
-      backdrop_path: tmdbSeries.backdrop_path,
-      overview: tmdbSeries.overview,
-      vote_average: tmdbSeries.vote_average,
-      vote_count: tmdbSeries.vote_count,
-      popularity: tmdbSeries.popularity,
-      genre_ids: tmdbSeries.genre_ids,
-      type: "series",
-      updated_at: new Date()
-    }
-  };
-
-  try {
-    await Series.updateOne(filter, update, { upsert: true });
-  } catch (err) {
-    console.error(`Failed to upsert series ${tmdbSeries.name}:`, err.message);
-  }
-}
+// Overwritten on every sync for documents that already exist, because they
+// move day to day. Everything else is only filled where a document has
+// nothing, so a sync never replaces a legacy record's own title, overview or
+// poster.
+const REFRESH_FIELDS = ["popularity", "vote_average", "vote_count"];
 
 export async function syncTMDBTrending() {
   console.log("Starting TMDB Trending Sync...");
@@ -114,12 +51,18 @@ export async function syncTMDBTrending() {
       const data = await fetchFromTMDB(`${endpoint.url}?page=${page}`);
       if (data && data.results && Array.isArray(data.results)) {
         console.log(`Processing ${data.results.length} items from page ${page}...`);
-        for (const item of data.results) {
-          if (endpoint.type === "movie") {
-            await upsertMovie(item);
-          } else if (endpoint.type === "series") {
-            await upsertSeries(item);
-          }
+        // Resolved as one batch: an existing TMDB id, else a legacy record
+        // with the same title and release date (enriched in place), else a
+        // new document. Upserting on the TMDB id alone gave every trending
+        // film that existed only as a legacy record a duplicate twin.
+        const Model = mongoose.model(endpoint.type === "series" ? "Series" : "Movie");
+        try {
+          const resolved = await resolveTmdbHits(Model, endpoint.type, data.results, { refreshFields: REFRESH_FIELDS });
+          const counts = { tmdb: 0, legacy: 0, created: 0 };
+          for (const entry of resolved.values()) counts[entry.via] += 1;
+          console.log(`  matched by TMDB id: ${counts.tmdb}, enriched legacy: ${counts.legacy}, created: ${counts.created}`);
+        } catch (err) {
+          console.error(`Failed to sync ${endpoint.type} page ${page}:`, err.message);
         }
       }
       await delay(500); // 500ms delay between pages

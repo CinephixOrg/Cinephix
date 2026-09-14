@@ -1,264 +1,319 @@
-import { useCallback, useState, useMemo } from "react";
-import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
-import { SkeletonRow } from "../src/components/Skeleton";
-import { Redirect, useFocusEffect, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, LayoutAnimation, RefreshControl, StyleSheet, View, type ListRenderItem } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
+import { Redirect, useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import i18n from "../src/i18n";
 import { useAuth } from "../src/context/AuthContext";
 import { useNotifications } from "../src/context/NotificationContext";
-import {
-  getNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
-  deleteNotification,
-  clearAllNotifications,
-} from "../src/api/notificationService";
-import type { Notification, NotificationType } from "../src/types";
 import { useTheme } from "../src/context/ThemeContext";
-import { fonts } from "../src/theme/typography";
+import { useToast } from "../src/context/ToastContext";
+import ConfirmDialog from "../src/components/settings/ConfirmDialog";
+import { CollectionStateView } from "../src/components/collection/CollectionStates";
+import NotificationRow, { NotificationSectionHeader } from "../src/components/notifications/NotificationRow";
+import NotificationToolbar from "../src/components/notifications/NotificationToolbar";
+import NotificationSkeleton from "../src/components/notifications/NotificationSkeleton";
+import { useNotificationFeed } from "../src/components/notifications/useNotificationFeed";
+import {
+  clearAll,
+  getFeed,
+  loadMoreFeed,
+  markAllRead,
+  markRead,
+  refreshFeed,
+  removeNotification,
+  type FeedFilter,
+} from "../src/api/notificationFeedStore";
+import { fetchPublicProfile } from "../src/api/publicProfileCache";
+import { conversationPrefetch } from "../src/api/conversationService";
+import { sharePrefetch } from "../src/api/shareService";
+import {
+  SECTION_LABEL,
+  buildRows,
+  destinationFor,
+  hrefFor,
+  type FeedRow,
+  type NotificationDestination,
+} from "../src/utils/notificationFeed";
+import { afterTransition, type TransitionSource } from "../src/utils/afterTransition";
+import type { Notification } from "../src/types";
 
-function getNotificationMeta(type: NotificationType): { icon: string; text: string } {
-  switch (type) {
-    case "message":
-      return { icon: "💬", text: i18n.t("sent you a message") };
-    case "follow":
-      return { icon: "👤", text: i18n.t("started following you") };
-    case "follow_request":
-      return { icon: "🛎️", text: i18n.t("New follow request") };
-    case "follow_accepted":
-      return { icon: "👤", text: i18n.t("Follow request accepted") };
-    default:
-      return { icon: "📌", text: i18n.t("New notification") };
+// Removals — a swipe, Mark all read on the Unread tab, Clear all — glide the
+// remaining rows into place instead of jumping.
+const GLIDE = LayoutAnimation.create(220, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity);
+const animateNextLayout = () => LayoutAnimation.configureNext(GLIDE);
+
+// Relative times ("5m") move on while the page stays open.
+const CLOCK_TICK_MS = 60_000;
+
+const keyExtractor = (row: FeedRow) => row.key;
+
+// Starts the destination's data loading as the tap navigates, so it has the
+// transition's head start. Each destination takes the same request instead of
+// starting its own: the profile through its bundle cache's in-flight dedupe,
+// the chat and the share through their prefetchers.
+function prefetchDestination(destination: NotificationDestination) {
+  switch (destination.kind) {
+    case "profile":
+      fetchPublicProfile(destination.userId).catch(() => {
+        // The profile screen loads (and reports) on its own.
+      });
+      break;
+    case "chat":
+      conversationPrefetch.prefetch(destination.userId);
+      break;
+    case "share":
+      sharePrefetch.prefetch(destination.shareId);
+      break;
   }
 }
 
 export default function NotificationsScreen() {
+  const { user } = useAuth();
+  if (!user) return <Redirect href="/login" />;
+  return <NotificationsContent userId={user._id} />;
+}
+
+// The Notifications page.
+//
+// Everything on it reads from the app-wide feed store: reopening the page
+// shows the last list on the first frame and refreshes underneath, pages load
+// as the list nears its end, and every action updates the list before the
+// server answers (and rolls back if it refuses). See notificationFeedStore.ts.
+function NotificationsContent({ userId }: { userId: string }) {
   const { colors } = useTheme();
-  const styles = useMemo(() => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.base100 },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  actionText: { color: colors.primary, fontFamily: fonts.medium, fontSize: 13 },
-  actionTextDanger: { color: colors.error, fontFamily: fonts.medium, fontSize: 13 },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  rowUnread: { backgroundColor: colors.base200 },
-  rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 12 },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 13, color: colors.primary },
-  rowText: { flex: 1 },
-  senderRow: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent },
-  notifText: { fontSize: 13, color: colors.baseContent, marginTop: 2 },
-  timestamp: { fontSize: 11, color: colors.placeholder, marginTop: 2 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginLeft: 8 },
-  deleteButton: { padding: 12 },
-  empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
-  error: { color: colors.error, textAlign: "center", marginBottom: 8, paddingHorizontal: 16 },
-}), [colors]);
   const { t } = useTranslation();
   const router = useRouter();
-  const { user } = useAuth();
-  const { unreadCount, decrementUnreadCount, clearUnreadCount } = useNotifications();
+  const navigation = useNavigation();
+  const { unreadCount, decrementUnreadCount, clearUnreadCount, syncUnreadCount, refreshUnreadCount } = useNotifications();
+  const { showToast } = useToast();
 
-  const [items, setItems] = useState<Notification[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FeedFilter>("all");
+  const feed = useNotificationFeed(filter, userId);
+  const allFeed = useNotificationFeed("all", userId);
+  const [failed, setFailed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [now, setNow] = useState(() => new Date());
 
-  const loadPage = useCallback(async (pageNum: number, append: boolean) => {
-    try {
-      const { items: newItems, pagination } = await getNotifications(pageNum, 20);
-      setItems((prev) => (append ? [...prev, ...newItems] : newItems));
-      setHasMore(pagination ? pageNum < pagination.pages : newItems.length > 0);
-      setError(null);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to load notifications."));
-    }
-  }, []);
+  // Recreated on every provider render; read through refs so the callbacks
+  // handed to the memoized rows keep their identity.
+  const toastRef = useRef(showToast);
+  toastRef.current = showToast;
+  const tRef = useRef(t);
+  tRef.current = t;
+
+  // ---- Loading -----------------------------------------------------------------
+
+  const refresh = useCallback(
+    (target: FeedFilter) =>
+      refreshFeed(target)
+        .then((count) => {
+          syncUnreadCount(count);
+          setFailed(false);
+        })
+        .catch(() => {
+          // Over a list already on screen, a failed refresh isn't worth
+          // replacing it with an error (the offline banner covers that).
+          if (!getFeed(target)) setFailed(true);
+        }),
+    [syncUnreadCount]
+  );
+
+  // Set while a tap's push is under way, so a second tap on the way out
+  // doesn't stack the destination twice.
+  const opening = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      setPage(1);
-      loadPage(1, false).finally(() => setLoading(false));
-    }, [loadPage])
+      opening.current = false;
+      setNow(new Date());
+      refresh(filter);
+      const clock = setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
+      return () => clearInterval(clock);
+    }, [filter, refresh])
   );
 
-  const loadMore = async () => {
-    if (loadingMore || !hasMore || loading) return;
-    setLoadingMore(true);
-    const nextPage = page + 1;
-    await loadPage(nextPage, true);
-    setPage(nextPage);
-    setLoadingMore(false);
-  };
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    refresh(filter).finally(() => setRefreshing(false));
+  }, [filter, refresh]);
 
-  const handleMarkRead = async (item: Notification) => {
-    if (item.read) return;
-    setItems((prev) => prev.map((n) => (n._id === item._id ? { ...n, read: true } : n)));
-    decrementUnreadCount(1);
-    try {
-      await markNotificationRead(item._id);
-    } catch {
-      // Optimistic update already applied — a stale read-state on failure
-      // is low-stakes and self-corrects next time this screen loads.
-    }
-  };
+  const onEndReached = useCallback(() => {
+    loadMoreFeed(filter).catch(() => {
+      // Retried the next time the end of the list is reached.
+    });
+  }, [filter]);
 
-  const handleTap = (item: Notification) => {
-    handleMarkRead(item);
-    switch (item.type) {
-      case "follow":
-      case "follow_accepted":
-        router.push(`/user/${item.sender._id}`);
-        break;
-      case "follow_request":
-        router.push("/network?tab=requests");
-        break;
-      case "message":
-        if (item.conversationId) {
-          router.push({
-            pathname: "/socials/messages/[conversationId]",
-            params: {
-              conversationId: item.conversationId,
-              otherUsername: item.sender.username,
-              otherAvatar: item.sender.profile_pic_url || "",
-            },
-          });
+  const retry = useCallback(() => {
+    setFailed(false);
+    refresh(filter);
+  }, [filter, refresh]);
+
+  // ---- Actions -------------------------------------------------------------------
+
+  // Navigation first, everything else after.
+  //
+  // Marking the row read re-renders both feeds and every unread badge in the
+  // app. Done before the push, that work shared its JS task and held the
+  // transition back — the delay between tap and screen. Now the push goes out
+  // on its own, the destination's data starts loading alongside it, and the
+  // row turns read once the new screen has fully covered this one, where
+  // nobody sees the re-render.
+  const open = useCallback(
+    (item: Notification) => {
+      if (opening.current) return;
+      const markSeen = () => {
+        if (item.read) return;
+        markRead(item._id);
+        decrementUnreadCount(1);
+      };
+
+      const destination = destinationFor(item, userId);
+      const href = hrefFor(destination);
+      if (!href) {
+        markSeen();
+        return;
+      }
+
+      opening.current = true;
+      prefetchDestination(destination);
+      router.push(href as never);
+      afterTransition(navigation as unknown as TransitionSource, () =>
+        requestAnimationFrame(() => {
+          opening.current = false;
+          markSeen();
+        })
+      );
+    },
+    [router, navigation, userId, decrementUnreadCount]
+  );
+
+  const remove = useCallback(
+    (item: Notification) => {
+      animateNextLayout();
+      if (!item.read) decrementUnreadCount(1);
+      removeNotification(item).catch(() => {
+        toastRef.current(tRef.current("Failed to delete notification."));
+        // The row is back; so is its share of the badge.
+        refreshUnreadCount();
+      });
+    },
+    [decrementUnreadCount, refreshUnreadCount]
+  );
+
+  const onMarkAllRead = useCallback(() => {
+    // On the Unread tab this empties the list.
+    if (filter === "unread") animateNextLayout();
+    clearUnreadCount();
+    markAllRead().catch(() => {
+      toastRef.current(tRef.current("Failed to mark all as read."));
+      refreshUnreadCount();
+    });
+  }, [filter, clearUnreadCount, refreshUnreadCount]);
+
+  const askToClear = useCallback(() => setConfirmingClear(true), []);
+  const cancelClear = useCallback(() => setConfirmingClear(false), []);
+  const confirmClear = useCallback(() => {
+    setConfirmingClear(false);
+    animateNextLayout();
+    clearUnreadCount();
+    clearAll().catch(() => {
+      toastRef.current(tRef.current("Failed to clear notifications."));
+      refreshUnreadCount();
+    });
+  }, [clearUnreadCount, refreshUnreadCount]);
+
+  // ---- Rendering -------------------------------------------------------------------
+
+  const rows = useMemo(() => (feed ? buildRows(feed.items, now) : []), [feed, now]);
+
+  const renderItem: ListRenderItem<FeedRow> = useCallback(
+    ({ item: row }) =>
+      row.kind === "header" ? (
+        <NotificationSectionHeader label={t(SECTION_LABEL[row.section])} />
+      ) : (
+        <NotificationRow item={row.item} now={now} onOpen={open} onDelete={remove} />
+      ),
+    [t, now, open, remove]
+  );
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        screen: { flex: 1, backgroundColor: colors.base100 },
+        content: { paddingTop: 4, paddingBottom: 32 },
+        emptyContent: { flexGrow: 1 },
+        footer: { paddingVertical: 16 },
+      }),
+    [colors]
+  );
+
+  let body: React.ReactNode;
+  if (!feed) {
+    body = failed ? (
+      <CollectionStateView
+        icon="cloud-offline-outline"
+        title={t("Failed to load notifications.")}
+        text={t("Check your connection and try again.")}
+        action={{ label: t("Retry"), onPress: retry }}
+      />
+    ) : (
+      <NotificationSkeleton />
+    );
+  } else {
+    body = (
+      <FlatList
+        data={rows}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        contentContainerStyle={rows.length === 0 ? styles.emptyContent : styles.content}
+        ListEmptyComponent={
+          filter === "unread" ? (
+            <CollectionStateView icon="checkmark-done-outline" title={t("You're all caught up")} text={t("No unread notifications.")} />
+          ) : (
+            <CollectionStateView
+              icon="notifications-outline"
+              title={t("No notifications yet.")}
+              text={t("When someone follows you, messages you or likes your shares, it shows up here.")}
+            />
+          )
         }
-        break;
-    }
-  };
-
-  const handleDelete = async (item: Notification) => {
-    setItems((prev) => prev.filter((n) => n._id !== item._id));
-    if (!item.read) decrementUnreadCount(1);
-    try {
-      await deleteNotification(item._id);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to delete notification."));
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    clearUnreadCount();
-    try {
-      await markAllNotificationsRead();
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to mark all as read."));
-    }
-  };
-
-  const handleClearAll = async () => {
-    setItems([]);
-    clearUnreadCount();
-    try {
-      await clearAllNotifications();
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to clear notifications."));
-    }
-  };
-
-  if (!user) {
-    return <Redirect href="/login" />;
+        ListFooterComponent={feed.hasMore ? <ActivityIndicator style={styles.footer} color={colors.primary} /> : null}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.6}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+        }
+        showsVerticalScrollIndicator={false}
+      />
+    );
   }
 
   return (
-    <View style={styles.container}>
-      {(unreadCount > 0 || items.length > 0) && (
-        <View style={styles.actionRow}>
-          {unreadCount > 0 ? (
-            <Pressable onPress={handleMarkAllRead}>
-              <Text style={styles.actionText}>{t("Mark all read")}</Text>
-            </Pressable>
-          ) : (
-            <View />
-          )}
-          {items.length > 0 && (
-            <Pressable onPress={handleClearAll}>
-              <Text style={styles.actionTextDanger}>{t("Clear all")}</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
+    <View style={styles.screen}>
+      <NotificationToolbar
+        filter={filter}
+        onChangeFilter={setFilter}
+        unreadCount={unreadCount}
+        canClear={(allFeed?.items.length ?? 0) > 0 || (feed?.items.length ?? 0) > 0}
+        onMarkAllRead={onMarkAllRead}
+        onClearAll={askToClear}
+      />
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {body}
 
-      {loading ? (
-        <View style={styles.list}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <SkeletonRow key={i} lines={2} />
-          ))}
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => {
-            const { icon, text } = getNotificationMeta(item.type);
-            return (
-              <View style={[styles.row, !item.read && styles.rowUnread]}>
-                <Pressable style={styles.rowMain} onPress={() => handleTap(item)}>
-                  {item.sender.profile_pic_url ? (
-                    <Image source={{ uri: item.sender.profile_pic_url }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatar, styles.avatarFallback]}>
-                      <Text style={styles.avatarFallbackText}>
-                        {item.sender.username.slice(0, 2).toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.rowText}>
-                    <Text style={styles.senderRow}>
-                      {icon} {item.sender.username}
-                    </Text>
-                    <Text style={styles.notifText}>{text}</Text>
-                    <Text style={styles.timestamp}>
-                      {new Date(item.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                  {!item.read && <View style={styles.unreadDot} />}
-                </Pressable>
-                <Pressable
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item)}
-                  hitSlop={8}
-                >
-                  <Ionicons name="trash-outline" size={16} color={colors.placeholder} />
-                </Pressable>
-              </View>
-            );
-          }}
-          ListEmptyComponent={<Text style={styles.empty}>{t("No notifications yet.")}</Text>}
-          ListFooterComponent={
-            loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-        />
-      )}
+      <ConfirmDialog
+        visible={confirmingClear}
+        icon="trash-outline"
+        title={t("Clear all notifications?")}
+        message={t("This removes every notification. It can't be undone.")}
+        confirmLabel={t("Clear all")}
+        cancelLabel={t("Cancel")}
+        danger
+        emphasis="solid"
+        onConfirm={confirmClear}
+        onCancel={cancelClear}
+      />
     </View>
   );
 }
-

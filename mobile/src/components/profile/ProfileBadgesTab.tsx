@@ -408,11 +408,6 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
 
       const request = userId
         ? getAllBadgesForUser(userId).then((res) => {
-            // Defensive only — PublicProfileCategoryTabs' own caller
-            // (app/user/[id]/index.tsx) already gates the whole screen on
-            // profile.isAuthorized before this tab can ever mount, so this
-            // branch isn't expected to be reached in practice.
-            if (!res.authorized) return null;
             return [
               res.genre,
               res.volume,

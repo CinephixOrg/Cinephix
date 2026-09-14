@@ -209,9 +209,22 @@ export interface CollectionSlice {
   total: number;
 }
 
+// GET /users/collections/:id/:kind — every entry of someone's watched list or
+// watchlist, for the public profile's full-list sheet. Ids only (the app
+// fills in titles and posters from its content cache), in stored order.
+// `rating` is the owner's own rating and only present on the watched list.
+export interface PublicCollectionEntry {
+  itemId: string;
+  itemType: ContentType;
+  rating?: number | null;
+}
+
+export interface PublicCollectionEntries {
+  items: PublicCollectionEntry[];
+}
+
 // GET /users/collections/:id — everything the public profile's Lists tab
-// needs, in one response. `isAuthorized` false is the private-account
-// masked shape, matching favorites/CineGraph.
+// needs, in one response.
 //
 // `lists` comes back in the same shape /discover and /popular return, so
 // the profile's Lists rail renders with ListRailCard instead of needing a
@@ -220,7 +233,6 @@ export interface UserCollections {
   lists: DiscoverListItem[];
   watched: CollectionSlice;
   watchlist: CollectionSlice;
-  isAuthorized: boolean;
 }
 
 export interface Pagination {
@@ -230,29 +242,15 @@ export interface Pagination {
   pages: number;
 }
 
-export type FollowStatus = "self" | "following" | "requested" | "not-following";
-export type FollowActionType = "following" | "requested";
+export type FollowStatus = "self" | "following" | "not-following";
 
-interface PublicProfileBase {
+// GET /users/profile/:id — the (lean) User document without its password.
+// Every profile is public, so the same shape comes back for anyone.
+export interface PublicProfile {
   _id: string;
   username: string;
   profile_pic_url?: string;
-  isRequested: boolean;
-}
-
-// GET /users/profile/:id's masked branch (private account you don't follow)
-// — every other field is absent from the response, not just empty.
-export interface PublicProfileMasked extends PublicProfileBase {
-  isAuthorized: false;
-  isPrivateMasked: true;
-  isPrivateAndHidden: true;
-  message: string;
-}
-
-export interface PublicProfileFull extends PublicProfileBase {
-  isAuthorized: true;
   bio?: string;
-  visibility?: "public" | "private";
   accountTier?: AccountTier;
   followers: string[];
   following: string[];
@@ -263,11 +261,7 @@ export interface PublicProfileFull extends PublicProfileBase {
   isOfficial?: boolean;
 }
 
-export type PublicProfile = PublicProfileFull | PublicProfileMasked;
-
-// Own-profile call sites only ever hit the full branch (you're always
-// authorized to view yourself).
-export type UserProfile = PublicProfileFull;
+export type UserProfile = PublicProfile;
 
 export interface Connection {
   _id: string;
@@ -285,16 +279,6 @@ export interface SuggestedUser {
   accountTier?: AccountTier;
 }
 
-// GET /users/me/follow-requests populates '_id username profile_pic_url name
-// bio' but User has no `name` field, so only these four keys ever come back.
-export interface FollowRequestUser {
-  _id: string;
-  username: string;
-  profile_pic_url?: string;
-  bio?: string;
-  accountTier?: AccountTier;
-}
-
 export type CineGraphStats = Record<string, number>;
 // genre -> average rating (raw 1-10 scale, matches Rating.value), null if unrated
 export type CineGraphRatings = Record<string, number | null>;
@@ -304,7 +288,6 @@ export interface CineGraphData {
   seriesStats: CineGraphStats;
   movieGenreRatings: CineGraphRatings;
   seriesGenreRatings: CineGraphRatings;
-  isAuthorized: boolean;
 }
 
 // One of GENRE_BADGES's 8 keys (badgeController.js) — "action" | "comedy" |
@@ -382,17 +365,11 @@ export interface ActivityBadgeResponse {
 // (badgeRoute.js's getAllBadgesForUser) computes all 20 families in one
 // request instead of ProfileBadgesTab.tsx's own-profile 20-separate-calls
 // path, since firing 20 requests for a profile that isn't the viewer's own
-// would be wasteful. `authorized` mirrors every other public-profile
-// surface's own isAuthorized flag (favorites, CineGraph, genre detail) —
-// false for a private profile the viewer doesn't follow, in which case
-// every other field is absent.
-export type AllBadgesResponse =
-  | { authorized: false }
-  | ({
-      authorized: true;
-      genre: GenreBadgesResponse;
-      volume: VolumeBadgesResponse;
-    } & Record<
+// would be wasteful.
+export type AllBadgesResponse = {
+  genre: GenreBadgesResponse;
+  volume: VolumeBadgesResponse;
+} & Record<
       | "ratingCount"
       | "reviewCount"
       | "listCount"
@@ -413,7 +390,7 @@ export type AllBadgesResponse =
       | "halloweenViewer"
       | "newYearViewer",
       ActivityBadgeResponse
-    >);
+    >;
 
 export interface GenreDetailItem {
   contentId: string;
@@ -427,7 +404,6 @@ export interface GenreDetailData {
   items: GenreDetailItem[];
   avgRating: number | null; // raw 1-10
   count: number;
-  isAuthorized: boolean;
 }
 
 // GET /users/favorites/:id populates only these fields — deliberately
@@ -448,21 +424,10 @@ export interface FavoriteSeries {
   rating?: number | null;
 }
 
-export interface FavoritesMasked {
-  isAuthorized: false;
-  isPrivateMasked: true;
-  isPrivateAndHidden: true;
-  movies: [];
-  series: [];
-}
-
-export interface FavoritesFull {
-  isAuthorized: true;
+export interface Favorites {
   movies: FavoriteMovie[];
   series: FavoriteSeries[];
 }
-
-export type Favorites = FavoritesFull | FavoritesMasked;
 
 export interface CustomListItem {
   itemId: string;
@@ -746,7 +711,7 @@ export interface ProfileAnalysisCooldownError {
   lastRunAt: string;
 }
 
-export type NotificationType = "follow" | "message" | "follow_request" | "follow_accepted";
+export type NotificationType = "follow" | "message" | "share_like";
 
 export interface NotificationSender {
   _id: string;
@@ -754,11 +719,29 @@ export interface NotificationSender {
   profile_pic_url?: string;
 }
 
+// type "message": what was said, as a snippet (backend utils/notificationPayload.js).
+export interface NotificationMessagePayload {
+  messageId?: string;
+  preview?: string;
+  kind?: "text" | "recommendation" | "analysis_share" | "profile_share";
+}
+
+// type "share_like": one notification per share, however many people like it.
+export interface NotificationSharePayload {
+  shareId: string;
+  shareType?: ShareType;
+  /** How many people like the share, not counting its author. */
+  likerCount: number;
+}
+
 export interface Notification {
   _id: string;
+  /** Who acted; for share_like, whoever liked the share most recently. */
   sender: NotificationSender;
   type: NotificationType;
   conversationId?: string | null;
+  message?: NotificationMessagePayload;
+  share?: NotificationSharePayload;
   read: boolean;
   createdAt: string;
 }

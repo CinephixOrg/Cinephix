@@ -43,6 +43,9 @@ export default function NotificationsPage() {
       navigate(`/dm/${notification.conversationId._id || notification.conversationId}`);
     } else if (notification.type === 'follow') {
       navigate(`/profile/${notification.sender._id}`);
+    } else if (notification.type === 'share_like') {
+      // The web app has no page for a single share; your profile lists them.
+      navigate('/profile');
     }
   };
 
@@ -53,10 +56,17 @@ export default function NotificationsPage() {
   };
 
   const getNotificationText = (notification) => {
+    const name = notification.sender.username;
     if (notification.type === 'message') {
-      return `${notification.sender.username} sent you a message`;
+      return notification.message?.preview
+        ? `${name} sent you a message: "${notification.message.preview}"`
+        : `${name} sent you a message`;
     } else if (notification.type === 'follow') {
-      return `${notification.sender.username} started following you`;
+      return `${name} started following you`;
+    } else if (notification.type === 'share_like') {
+      return notification.share?.likerCount > 1
+        ? `${notification.share.likerCount} users liked your share`
+        : `${name} liked your share`;
     }
     return 'New notification';
   };
@@ -66,6 +76,8 @@ export default function NotificationsPage() {
       return '💬';
     } else if (notification.type === 'follow') {
       return '👤';
+    } else if (notification.type === 'share_like') {
+      return '❤️';
     }
     return '📌';
   };

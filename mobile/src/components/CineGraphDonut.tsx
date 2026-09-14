@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, Pressable, Animated, StyleSheet, useWindowDimensions, type GestureResponderEvent } from "react-native";
 import Svg, { Circle, G, Line } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { CineGraphRatings, CineGraphStats } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 import { localeUpper } from "../utils/text";
+import { sliceAtPoint } from "../utils/donutHitTest";
 
 // Created once at module scope — recreating it every render would remount
 // the underlying SVG node and break the opacity animation driven through it.
@@ -146,6 +147,7 @@ const CENTER_WRAP_HEIGHT = 68; // shorter now that the detail panel has no genre
 const ROTATE_MS = 480;
 const REVEAL_MS = 260;
 const EXPLODE_OFFSET = 10; // how far the selected slice pops out from the ring, once aligned
+const RING_TOUCH_SLOP = 10; // extra touch band on both sides of the ring's stroke
 
 function normalizeAngle(a: number) {
   let x = a % (2 * Math.PI);
@@ -188,6 +190,8 @@ interface SliceItem {
   pct: number;
   rating: number | null;
   angle: number; // this genre's slice midpoint angle, on the *unrotated* ring
+  startFrac: number; // where the slice starts and ends, as fractions of the ring clockwise from 12 o'clock
+  endFrac: number;
   color: string;
 }
 
@@ -272,6 +276,7 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
     const boundaries: number[] = [];
     const list: SliceItem[] = entries.map(([genre, count], i) => {
       boundaries.push((acc / total) * 2 * Math.PI - Math.PI / 2);
+      const startFrac = acc / total;
       acc += count;
       const midFrac = acc / total - count / total / 2;
       const angle = midFrac * 2 * Math.PI - Math.PI / 2;
@@ -281,6 +286,8 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
         pct: (count / total) * 100,
         rating: genreRatings[genre] ?? null,
         angle,
+        startFrac,
+        endFrac: i === entries.length - 1 ? 1 : acc / total,
         color: genreColor(i, entries.length, bgLuminance),
       };
     });
@@ -499,6 +506,28 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
     });
   };
 
+  // Taps on the ring are resolved here from the tap's own angle and distance,
+  // not by react-native-svg's per-slice onPress — see utils/donutHitTest.ts
+  // for why that picked the wrong slice. The band is a little wider than the
+  // stroke so a tap on a slice's edge or on the popped-out selected slice
+  // still counts.
+  const onRingPress = (event: GestureResponderEvent) => {
+    const { locationX, locationY } = event.nativeEvent;
+    const genre = sliceAtPoint(
+      locationX,
+      locationY,
+      {
+        cx: centerX,
+        cy: centerY,
+        innerRadius: ringRadius - STROKE / 2 - RING_TOUCH_SLOP,
+        outerRadius: ringRadius + STROKE / 2 + EXPLODE_OFFSET + RING_TOUCH_SLOP,
+        rotation: rotationRef.current,
+      },
+      slices.list
+    );
+    if (genre) selectGenre(genre);
+  };
+
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -550,7 +579,8 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
   return (
     <View style={[styles.section, { minHeight: areaMinHeight }]}>
       <View style={[styles.box, { width: boxWidth, height: boxHeight }]}>
-        <Svg width={boxWidth} height={boxHeight}>
+        <Pressable onPress={onRingPress} accessible={false} style={{ width: boxWidth, height: boxHeight }}>
+        <Svg width={boxWidth} height={boxHeight} pointerEvents="none">
           <G rotation={rotationDeg} origin={`${centerX}, ${centerY}`}>
             {slices.list.map((s) => {
               const sliceLen = (s.count / slices.total) * circumference;
@@ -590,7 +620,6 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
                   strokeWidth={STROKE}
                   strokeDasharray={`${sliceLen} ${circumference - sliceLen}`}
                   strokeDashoffset={dashOffset}
-                  onPress={() => selectGenre(s.genre)}
                 />
               );
             })}
@@ -612,6 +641,7 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
               })}
           </G>
         </Svg>
+        </Pressable>
 
         <View
           style={[

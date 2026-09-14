@@ -12,9 +12,9 @@ interface WatchlistGraphContextValue {
   ensureLoaded: () => void;
   applyAdd: (itemId: string, itemType: ContentType) => void;
   applyRemove: (itemId: string, itemType: ContentType) => void;
-  // ToWatchListView.tsx already refetches the full list on every screen
-  // focus (its own `load()`) — reusing that same result to keep this
-  // shared set authoritative too, rather than a second independent fetch.
+  // The Watchlist screen (WatchlistScreen.tsx) already holds the full list —
+  // it passes every change here to keep this shared set authoritative too,
+  // rather than a second independent fetch.
   replaceAll: (items: WatchlistItem[]) => void;
 }
 

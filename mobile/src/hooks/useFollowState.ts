@@ -23,15 +23,12 @@ export function useFollowState(targetUserId: string, options?: Options) {
   const seeded = options?.initialStatus !== undefined;
   const isSelf = !!user && targetUserId === user._id;
 
-  const deriveFromGraph = useCallback((): FollowStatus => {
-    if (graph.followingIds.has(targetUserId)) return "following";
-    if (graph.sentRequestIds.has(targetUserId)) return "requested";
-    return "not-following";
-  }, [graph.followingIds, graph.sentRequestIds, targetUserId]);
-
-  const [localStatus, setLocalStatus] = useState<FollowStatus>(
-    () => options?.initialStatus ?? deriveFromGraph()
+  const deriveFromGraph = useCallback(
+    (): FollowStatus => (graph.followingIds.has(targetUserId) ? "following" : "not-following"),
+    [graph.followingIds, targetUserId]
   );
+
+  const [localStatus, setLocalStatus] = useState<FollowStatus>(() => options?.initialStatus ?? deriveFromGraph());
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,9 +47,9 @@ export function useFollowState(targetUserId: string, options?: Options) {
     setPending(true);
     setError(null);
     try {
-      const { type } = await followTargetUser(targetUserId);
-      setLocalStatus(type);
-      graph.applyFollow(targetUserId, type);
+      await followTargetUser(targetUserId);
+      setLocalStatus("following");
+      graph.applyFollow(targetUserId);
       // Both of these lists just changed membership and both counts —
       // dropping the cached pages here, in the one place every follow in the
       // app goes through, means the network screen can't show a stale list
@@ -92,7 +89,5 @@ export function useFollowState(targetUserId: string, options?: Options) {
     error,
     follow,
     unfollow,
-    // Same call as unfollow — cancelling a sent request has no dedicated endpoint.
-    cancelRequest: unfollow,
   };
 }
