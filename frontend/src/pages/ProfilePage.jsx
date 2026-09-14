@@ -29,7 +29,6 @@ export default function ProfilePage() {
   const [loadingExtras, setLoadingExtras] = useState(true);
   const [error, setError] = useState(null);
   const [viewerOpen, setViewerOpen] = useState(false); // <-- YENİ: Görüntüleyici durumu
-  const [isAccessDenied, setIsAccessDenied] = useState(false);
 
   // Profile Analysis feature states
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
@@ -118,11 +117,6 @@ export default function ProfilePage() {
         setProfilePic(profileData.profile_pic_url);
         updateUser({ ...profileData });
 
-        if (profileData.isPrivate) {
-          setIsAccessDenied(true);
-        } else {
-          setIsAccessDenied(false);
-        }
         
         // Profile header is ready, show it!
         setLoading(false);
@@ -279,7 +273,7 @@ export default function ProfilePage() {
               {t("Analyze Profile")}
             </button>
           )}
-          {!isOwnProfile && !profile?.isPrivate && (
+          {!isOwnProfile && (
             <div className="flex flex-col items-center gap-2">
               <div className="flex gap-2">
                 <button
@@ -443,16 +437,6 @@ export default function ProfilePage() {
           <div className="flex justify-center p-12">
             <span className="loading loading-spinner loading-lg text-primary"></span>
           </div>
-        ) : cineGraphData?.isPrivateMasked ? (
-          <div className="text-center p-8 bg-base-200 rounded-lg shadow-inner mt-4 border border-base-300">
-            <div className="text-4xl mb-2">🔒</div>
-            <p className="text-xl font-semibold mb-2">{t("This account is private.")}</p>
-            <p className="text-base-content/70">{t("Follow to see detailed lists and genres.")}</p>
-            <div className="flex justify-center gap-4 mt-4">
-              <div className="badge badge-primary badge-lg">{t("Movies Logged:")} {cineGraphData.totalMovies}</div>
-              <div className="badge badge-secondary badge-lg">{t("Series Logged:")} {cineGraphData.totalSeries}</div>
-            </div>
-          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {cineGraphData ? (
@@ -484,11 +468,6 @@ export default function ProfilePage() {
           <div className="flex justify-center p-6">
             <span className="loading loading-spinner loading-md text-primary"></span>
           </div>
-        ) : favorites?.isPrivateMasked ? (
-          <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
-            <div className="text-2xl mb-2">🔒</div>
-            <p className="text-base-content/70">{t("Follow to see favorite movies.")}</p>
-          </div>
         ) : favorites && favorites.movies && favorites.movies.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
             {favorites.movies.map((movie) => (
@@ -511,11 +490,6 @@ export default function ProfilePage() {
         {loadingExtras ? (
           <div className="flex justify-center p-6">
             <span className="loading loading-spinner loading-md text-primary"></span>
-          </div>
-        ) : favorites?.isPrivateMasked ? (
-          <div className="text-center p-6 bg-base-200 rounded-lg shadow-inner">
-            <div className="text-2xl mb-2">🔒</div>
-            <p className="text-base-content/70">{t("Follow to see favorite series.")}</p>
           </div>
         ) : favorites && favorites.series && favorites.series.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">

@@ -131,13 +131,11 @@ console.log(`Active user set: ${activeUserIds.length} users`);
 // ── 2b. Follows — direct ask to increase interaction density ("takip vs
 // etsinler etkileşimi artıralım"), and this is also what actually moves
 // getPeopleThreePodiums' own Most Followed ranking (profile podium), not
-// just a cosmetic add. Public-visibility targets only (private ones need a
-// real FollowRequest flow this script isn't replicating) — every new
-// relationship updates both sides' arrays and creates the same "follow"
-// Notification followUser() itself creates, so it also surfaces correctly
-// in the Activity feed's own "followed" events, not just the follower
-// count.
-const followableUsers = await User.find({ visibility: { $ne: "private" } })
+// just a cosmetic add. Every new relationship updates both sides' arrays and
+// creates the same "follow" Notification followUser() itself creates, so it
+// also surfaces correctly in the Activity feed's own "followed" events, not
+// just the follower count.
+const followableUsers = await User.find({})
   .select("_id")
   .lean();
 const followableIds = followableUsers.map((u) => u._id.toString());

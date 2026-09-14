@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test \"utils/**/*.test.js\""
+    "test": "node --test \"utils/**/*.test.js\" \"scripts/**/*.test.js\""
   },
   "type": "module",
   "keywords": [],

@@ -51,6 +51,7 @@ import { SEASONAL_BADGE_DEFINITIONS } from "../data/seasonalBadgeDefinitions";
 import { SPECIAL_BADGE_DEFINITIONS } from "../data/specialBadgeDefinitions";
 import { registerShareView, voteOnPoll } from "../api/shareService";
 import { addToToWatchList } from "../api/toWatchService";
+import { toWatchCache } from "../api/collectionCache";
 import type { ActivityTier, OfficialContentCategory, PollOption, ProfileAnalysis, Share, StreakTier, VolumeTier } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
@@ -1151,6 +1152,7 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
     }, 500);
     try {
       await addToToWatchList(contentId, contentType);
+      toWatchCache.invalidate();
     } catch (e: any) {
       if (watchlistDismissTimeoutRef.current) {
         clearTimeout(watchlistDismissTimeoutRef.current);

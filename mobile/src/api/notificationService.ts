@@ -1,11 +1,27 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ListResult } from "./contentService";
 import type { Notification } from "../types";
 
-export async function getNotifications(page = 1, limit = 20): Promise<ListResult<Notification>> {
-  const res = await API.get(API_ROUTES.NOTIFICATIONS.GET_ALL, { params: { page, limit } });
-  return { items: res.data, pagination: (res as any).pagination };
+export interface NotificationPage {
+  items: Notification[];
+  hasMore: boolean;
+  /** The id to pass as `before` for the next page. */
+  nextCursor: string | null;
+  /** Unread notifications in total, not just on this page. */
+  unreadCount: number;
+}
+
+// Cursor pages, newest first: each page continues strictly before the last
+// id received, so deleting while scrolling can't skip or repeat anything.
+export async function getNotificationPage({
+  before = null,
+  unreadOnly = false,
+  limit = 20,
+}: { before?: string | null; unreadOnly?: boolean; limit?: number } = {}): Promise<NotificationPage> {
+  const res = await API.get(API_ROUTES.NOTIFICATIONS.GET_ALL, {
+    params: { cursor: 1, limit, ...(before ? { before } : {}), ...(unreadOnly ? { unread: 1 } : {}) },
+  });
+  return res.data;
 }
 
 export async function getUnreadCount(): Promise<number> {

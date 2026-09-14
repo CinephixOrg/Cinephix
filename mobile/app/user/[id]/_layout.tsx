@@ -22,9 +22,16 @@ export default function UserProfileStackLayout() {
       <Stack.Screen name="content/[type]/[id]/favorited" options={{ title: t("Favorites") }} />
       <Stack.Screen name="content/[type]/[id]/write-review" options={{ title: "" }} />
       <Stack.Screen name="content/[type]/[id]/similar" options={{ title: t("Similar") }} />
-      {/* Title is set at runtime by the screen itself (the other person's
-          username), so nothing static to declare here. */}
-      <Stack.Screen name="chat" />
+      {/* Titled with the other person's username from the route params
+          (otherUsername), so the native header has it the moment the push
+          starts; the screen then replaces it with its own tappable title. */}
+      <Stack.Screen
+        name="chat"
+        options={({ route }) => ({ title: (route.params as { otherUsername?: string } | undefined)?.otherUsername ?? "" })}
+      />
+      {/* One share on its own page — opened from a "liked your share"
+          notification. */}
+      <Stack.Screen name="shares/[shareId]" options={{ title: t("Share details") }} />
       {/* Genre detail lives in THIS stack, not the profile tab's copy of it.
           Opened from a genre in someone else's CineGraph, it has to come
           back to their profile — and read their titles, not yours. Title is

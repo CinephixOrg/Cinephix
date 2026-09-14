@@ -36,10 +36,7 @@ function ProfileCinegraphsTab({ cineGraph, subTab, basePath = "/profile" }: Prop
     [colors]
   );
 
-  // isAuthorized is always true for your own profile (the caller) — this
-  // guard only matters when this component is reused for someone else's
-  // profile, where a private account's graph comes back masked.
-  if (!cineGraph || !cineGraph.isAuthorized) return null;
+  if (!cineGraph) return null;
 
   return (
     <>

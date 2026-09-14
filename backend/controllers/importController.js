@@ -10,6 +10,7 @@ import { buildCatalogIndex, collectLookupKeys, matchAll, CONFIDENCE } from "../u
 import { SOURCE_CATALOG, getSource } from "../utils/import/sources.js";
 import { createTtlCache } from "../utils/ttlCache.js";
 import { rebuildUserCineGraph } from "../utils/cineGraph.js";
+import { resolveTmdbHits } from "../utils/catalogUpsert.js";
 
 // One generic import endpoint behind every platform.
 //
@@ -24,8 +25,9 @@ import { rebuildUserCineGraph } from "../utils/cineGraph.js";
 // does return is worth writing. Raising this trades recall for precision.
 const MIN_CONFIDENCE = CONFIDENCE.TITLE_ONLY;
 
-// Favourites are a hand-picked four on the profile, not a list.
-const MAX_FAVORITES = 4;
+// Favourites are a hand-picked few per type on the profile, not a list —
+// the same cap updateFavorites enforces.
+const MAX_FAVORITES_PER_TYPE = 5;
 
 // Parallel TMDB searches. Matches the old importer's chunk size, which sat
 // comfortably inside TMDB's rate limit.
@@ -92,43 +94,6 @@ async function searchTmdb(type, title, year) {
 
   tmdbCache.set(cacheKey, found);
   return found;
-}
-
-// Turns a TMDB search hit into a catalogue document, reusing one that
-// already carries the same tmdb id.
-async function upsertFromTmdb(Model, type, hit) {
-  const tmdbId = hit.id;
-  const existing = await Model.findOne({
-    $or: [{ "id.tmdb": tmdbId }, { tmdb_id: tmdbId }, { tmdb: tmdbId }],
-  }).lean();
-  if (existing) return existing;
-
-  const doc = new Model(
-    type === "series"
-      ? {
-          name: hit.name,
-          title: hit.name,
-          id: { tmdb: tmdbId },
-          tmdb_id: tmdbId,
-          first_air_date: hit.first_air_date,
-          poster_path: hit.poster_path,
-          overview: hit.overview,
-          genre_ids: hit.genre_ids || [],
-          type: "series",
-        }
-      : {
-          title: hit.title,
-          id: { tmdb: tmdbId },
-          tmdb_id: tmdbId,
-          release_date: hit.release_date,
-          poster_path: hit.poster_path,
-          overview: hit.overview,
-          genre_ids: hit.genre_ids || [],
-          type: "movie",
-        }
-  );
-  await doc.save();
-  return doc.toObject();
 }
 
 // Fetches the catalogue documents that could match these items.
@@ -246,13 +211,29 @@ export const runImport = asyncHandler(async (req, res) => {
     const Movie = mongoose.model("Movie");
     const Series = mongoose.model("Series");
 
+    // Everything this user already references. The catalogue holds some
+    // films twice (a legacy record and a later TMDB-enriched one); the
+    // matcher picks the twin the user already has, so an import can't add
+    // the same film again under its other id.
+    const owned = await User.findById(userId)
+      .select("watchlist.itemId toWatchList.itemId favoriteMovies favoriteSeries")
+      .lean();
+    const preferIds = owned
+      ? [
+          ...(owned.watchlist || []).map((entry) => entry.itemId),
+          ...(owned.toWatchList || []).map((entry) => entry.itemId),
+          ...(owned.favoriteMovies || []),
+          ...(owned.favoriteSeries || []),
+        ].map(String)
+      : [];
+
     const [movieDocs, seriesDocs] = await Promise.all([
       movieItems.length ? fetchCandidates(Movie, movieItems) : [],
       seriesItems.length ? fetchCandidates(Series, seriesItems) : [],
     ]);
 
-    const movieResult = matchAll(movieItems, buildCatalogIndex(movieDocs, "movie"), MIN_CONFIDENCE);
-    const seriesResult = matchAll(seriesItems, buildCatalogIndex(seriesDocs, "series"), MIN_CONFIDENCE);
+    const movieResult = matchAll(movieItems, buildCatalogIndex(movieDocs, "movie", { preferIds }), MIN_CONFIDENCE);
+    const seriesResult = matchAll(seriesItems, buildCatalogIndex(seriesDocs, "series", { preferIds }), MIN_CONFIDENCE);
 
     const matched = [...movieResult.matched, ...seriesResult.matched];
     const unmatched = [...movieResult.unmatched, ...seriesResult.unmatched];
@@ -263,6 +244,7 @@ export const runImport = asyncHandler(async (req, res) => {
 
     // ---- Stage 3b: fill the gaps from TMDB -------------------------------
     let tmdbAdded = 0;
+    let tmdbResolved = 0;
     let tmdbSkipped = 0;
     const stillUnmatched = [];
 
@@ -272,6 +254,7 @@ export const runImport = asyncHandler(async (req, res) => {
       stillUnmatched.push(...unmatched.slice(TMDB_LOOKUP_LIMIT));
 
       progress("lookup", `Looking up ${lookups.length} new titles…`, 0, lookups.length);
+      const found = [];
 
       for (let i = 0; i < lookups.length; i += TMDB_CONCURRENCY) {
         // Nobody is waiting for the answer any more. Stop searching, but
@@ -283,29 +266,43 @@ export const runImport = asyncHandler(async (req, res) => {
           break;
         }
         const chunk = lookups.slice(i, i + TMDB_CONCURRENCY);
-        const results = await Promise.all(
-          chunk.map(async (item) => {
-            const hit = await searchTmdb(item.type, item.title, item.year);
-            if (!hit) return { item, doc: null };
-            try {
-              const doc = await upsertFromTmdb(item.type === "series" ? Series : Movie, item.type, hit);
-              return { item, doc };
-            } catch {
-              return { item, doc: null };
-            }
-          })
-        );
-        for (const { item, doc } of results) {
-          if (doc) {
-            matched.push({ item, doc, via: "tmdb", confidence: CONFIDENCE.ID });
-            tmdbAdded += 1;
-          } else {
-            stillUnmatched.push(item);
-          }
-        }
+        const hits = await Promise.all(chunk.map((item) => searchTmdb(item.type, item.title, item.year)));
+        chunk.forEach((item, k) => {
+          if (hits[k]) found.push({ item, hit: hits[k] });
+          else stillUnmatched.push(item);
+        });
         progress("lookup", `Looking up new titles…`, Math.min(i + TMDB_CONCURRENCY, lookups.length), lookups.length);
       }
-      byRule.tmdb = tmdbAdded;
+
+      // Resolve every hit against the catalogue in one batch per type:
+      // an existing TMDB id first, then a legacy record with the same title
+      // and release date (enriched in place, keeping its _id), and only then
+      // a new document. Resolving hit by hit on the TMDB id alone created a
+      // second record for every film that so far existed only as a legacy
+      // document.
+      for (const type of ["movie", "series"]) {
+        const group = found.filter((entry) => entry.item.type === type);
+        if (group.length === 0) continue;
+        let resolved;
+        try {
+          resolved = await resolveTmdbHits(type === "series" ? Series : Movie, type, group.map((entry) => entry.hit));
+        } catch (error) {
+          console.error(`Import: resolving ${type} lookups failed:`, error);
+          stillUnmatched.push(...group.map((entry) => entry.item));
+          continue;
+        }
+        for (const { item, hit } of group) {
+          const entry = resolved.get(Number(hit.id));
+          if (!entry) {
+            stillUnmatched.push(item);
+            continue;
+          }
+          matched.push({ item, doc: { _id: entry._id }, via: "tmdb", confidence: CONFIDENCE.ID });
+          tmdbResolved += 1;
+          if (entry.via === "created") tmdbAdded += 1;
+        }
+      }
+      byRule.tmdb = tmdbResolved;
     } else {
       stillUnmatched.push(...unmatched);
     }
@@ -317,13 +314,17 @@ export const runImport = asyncHandler(async (req, res) => {
 
     user.watchlist = user.watchlist || [];
     user.toWatchList = user.toWatchList || [];
-    user.favorites = user.favorites || [];
+    // favoriteMovies/favoriteSeries are the fields the profile reads. This
+    // used to write a `favorites` field that isn't on the User schema, so
+    // Mongoose silently discarded every imported favorite.
+    user.favoriteMovies = user.favoriteMovies || [];
+    user.favoriteSeries = user.favoriteSeries || [];
 
     // `watchlist` is this schema's *watched* list and `toWatchList` is the
     // to-watch one — long-standing naming, not a mix-up here.
     const watchedIds = new Set(user.watchlist.map((entry) => String(entry.itemId)));
     const toWatchIds = new Set(user.toWatchList.map((entry) => String(entry.itemId)));
-    const favoriteIds = new Set(user.favorites.map((entry) => String(entry.itemId)));
+    const favoriteIds = new Set([...user.favoriteMovies, ...user.favoriteSeries].map(String));
 
     const existingRatings = await Rating.find({ user: userId }).select("contentId contentType").lean();
     const ratedKeys = new Set(existingRatings.map((r) => `${r.contentType}_${r.contentId}`));
@@ -363,8 +364,9 @@ export const runImport = asyncHandler(async (req, res) => {
         touched = true;
       }
 
-      if (item.favorite && !favoriteIds.has(id) && user.favorites.length < MAX_FAVORITES) {
-        user.favorites.push({ itemId: doc._id, itemType: type });
+      const favoriteList = type === "series" ? user.favoriteSeries : user.favoriteMovies;
+      if (item.favorite && !favoriteIds.has(id) && favoriteList.length < MAX_FAVORITES_PER_TYPE) {
+        favoriteList.push(doc._id);
         favoriteIds.add(id);
         addedFavorites += 1;
         touched = true;
@@ -384,11 +386,14 @@ export const runImport = asyncHandler(async (req, res) => {
     if (newRatings.length > 0) await Rating.insertMany(newRatings);
     const listsChanged = addedWatched + addedWatchlist + addedFavorites > 0;
     if (listsChanged) await user.save();
-    if (addedRatings > 0) {
+    // CineGraph counts Watched List titles and averages ratings, so either
+    // kind of addition changes it.
+    const cineGraphChanged = addedWatched > 0 || addedRatings > 0;
+    if (cineGraphChanged) {
       try {
         await rebuildUserCineGraph(userId);
       } catch {
-        // The graph rebuilds on the next rating too — not worth failing an
+        // The graph rebuilds on the next change too — not worth failing an
         // otherwise successful import over.
       }
     }
@@ -405,7 +410,7 @@ export const runImport = asyncHandler(async (req, res) => {
           source: sourceId,
           addedWatchlistIds: addedWatchedIds,
           addedRatingIds: ratingIds,
-          updatedCineGraph: addedRatings > 0,
+          updatedCineGraph: cineGraphChanged,
         },
       });
     }

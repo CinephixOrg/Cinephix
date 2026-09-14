@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import NotificationBell from "../../../src/components/NotificationBell";
+import BackToProfileButton from "../../../src/components/BackToProfileButton";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 
@@ -17,7 +17,7 @@ export default function ToWatchStackLayout() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: t("Watchlist"), headerRight: () => <NotificationBell /> }}
+        options={{ title: t("Your Watchlist"), headerLeft: () => <BackToProfileButton /> }}
       />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />
       <Stack.Screen name="content/[type]/[id]/reviews" options={{ title: t("Reviews") }} />

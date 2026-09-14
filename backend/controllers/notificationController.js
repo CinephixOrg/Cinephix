@@ -1,34 +1,50 @@
+import mongoose from 'mongoose';
 import Notification from '../models/Notification.js';
-import User from '../models/User.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js';
+import { buildFeedFilter, parseFeedQuery, shapeCursorPage } from '../utils/notificationFeed.js';
+
+const SENDER_FIELDS = 'username profile_pic_url';
 
 /**
- * @desc    Get all notifications for current user (with pagination)
+ * @desc    Notifications for the current user, newest first
  * @route   GET /api/notifications
+ *            ?cursor=1[&before=<id>]  cursor pages (the app): { items, hasMore, nextCursor, unreadCount }
+ *            ?page=N                  numbered pages (the web client), paginated envelope
+ *            &unread=1                unread only; &limit=N (max 50)
  * @access  Private
  */
 export const getNotifications = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
-  const skip = (page - 1) * limit;
+  const { limit, before, cursor, unreadOnly, page } = parseFeedQuery(req.query);
+  const userId = req.user.id;
 
-  const notifications = await Notification.find({ user: req.user.id })
-    .populate('sender', 'username profile_pic_url')
-    .sort({ createdAt: -1 })
-    .limit(parseInt(limit))
-    .skip(skip)
-    .lean();
+  if (cursor) {
+    // The unread total rides along so the app's badge is exact the moment
+    // the list loads, instead of waiting for its next background poll.
+    const [docs, unreadCount] = await Promise.all([
+      Notification.find(buildFeedFilter(userId, { before, unreadOnly }))
+        .sort({ _id: -1 })
+        .limit(limit + 1)
+        .populate('sender', SENDER_FIELDS)
+        .lean(),
+      Notification.countDocuments({ user: userId, read: false }),
+    ]);
+    return sendSuccess(res, { ...shapeCursorPage(docs, limit), unreadCount }, 'Notifications fetched', 200);
+  }
 
-  const total = await Notification.countDocuments({ user: req.user.id });
+  const filter = buildFeedFilter(userId, { unreadOnly });
+  const [notifications, total] = await Promise.all([
+    Notification.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('sender', SENDER_FIELDS)
+      .lean(),
+    Notification.countDocuments(filter),
+  ]);
 
-  sendPaginated(
-    res,
-    notifications,
-    total,
-    parseInt(page),
-    parseInt(limit),
-    'Notifications fetched'
-  );
+  // Rows whose sender account is gone have no one to show; see shapeCursorPage.
+  sendPaginated(res, notifications.filter((n) => n.sender), total, page, limit, 'Notifications fetched');
 });
 
 /**
@@ -78,20 +94,23 @@ export const getUnreadMessageCounts = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const markNotificationAsRead = asyncHandler(async (req, res) => {
-  const notification = await Notification.findByIdAndUpdate(
-    req.params.id,
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return sendError(res, 'Notification not found', 404);
+  }
+
+  // Scoped to the caller inside the update itself. This used to update first
+  // and check ownership afterwards, so anyone could mark anyone's
+  // notification read — the 403 arrived after the write.
+  const notification = await Notification.findOneAndUpdate(
+    { _id: req.params.id, user: req.user.id },
     { read: true },
     { new: true }
   )
-    .populate('sender', 'username profile_pic_url')
+    .populate('sender', SENDER_FIELDS)
     .lean();
 
   if (!notification) {
     return sendError(res, 'Notification not found', 404);
-  }
-
-  if (notification.user.toString() !== req.user.id) {
-    return sendError(res, 'Not authorized', 403);
   }
 
   sendSuccess(res, notification, 'Notification marked as read', 200);
@@ -117,17 +136,15 @@ export const markAllAsRead = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const deleteNotification = asyncHandler(async (req, res) => {
-  const notification = await Notification.findById(req.params.id);
-
-  if (!notification) {
+  if (!mongoose.isValidObjectId(req.params.id)) {
     return sendError(res, 'Notification not found', 404);
   }
 
-  if (notification.user.toString() !== req.user.id) {
-    return sendError(res, 'Not authorized', 403);
+  // One scoped query; someone else's notification reads as not found.
+  const { deletedCount } = await Notification.deleteOne({ _id: req.params.id, user: req.user.id });
+  if (!deletedCount) {
+    return sendError(res, 'Notification not found', 404);
   }
-
-  await Notification.findByIdAndDelete(req.params.id);
 
   sendSuccess(res, null, 'Notification deleted', 200);
 });

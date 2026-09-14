@@ -35,6 +35,8 @@ interface Props {
   initialShares?: Share[];
   // Lists / watched list / watchlist, same deal.
   collections?: UserCollections;
+  // For the full-list sheets' "@username's Watchlist" headers.
+  username: string;
 }
 
 // Declaration order is tab order, left to right.
@@ -56,7 +58,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
 // ProfileBadgesTab.tsx wholesale (passing `userId`) rather than a parallel
 // component — see that file's own `userId` prop comment for why one
 // component serves both profiles.
-export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory, initialShares, collections }: Props) {
+export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory, initialShares, collections, username }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -95,8 +97,8 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
   const hasVisited = (key: Category) => visitedRef.current.has(key);
   const visibility = (key: Category) => (category === key ? undefined : styles.hiddenTab);
 
-  const movies = favorites?.isAuthorized ? favorites.movies : [];
-  const series = favorites?.isAuthorized ? favorites.series : [];
+  const movies = favorites?.movies ?? [];
+  const series = favorites?.series ?? [];
 
   return (
     <>
@@ -116,7 +118,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
         })}
       </View>
 
-      {hasVisited("cinegraph") && cineGraph?.isAuthorized && (
+      {hasVisited("cinegraph") && cineGraph && (
         <View style={visibility("cinegraph")}>
           <SyncScoreCard userId={userId} />
           <View style={styles.subFilterRow}>
@@ -137,7 +139,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
           </View>
         )}
 
-        {hasVisited("favorites") && favorites?.isAuthorized && (
+        {hasVisited("favorites") && favorites && (
           <View style={visibility("favorites")}>
             <ContentRail
               title={t("Favorite Movies")}
@@ -186,7 +188,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
 
         {hasVisited("lists") && (
           <View style={visibility("lists")}>
-            <PublicListsTab collections={collections} userId={userId} />
+            <PublicListsTab collections={collections} userId={userId} username={username} />
           </View>
         )}
 

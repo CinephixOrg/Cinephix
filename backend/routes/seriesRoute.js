@@ -176,7 +176,7 @@ export default async function (seriesModel) {
       
       let query = seriesModel.find({ _id: { $in: objectIds } });
       if (lightweight) {
-        query = query.select("_id title name poster_path vote_average first_air_date release_date tvdb id genre_ids");
+        query = query.select("_id title name poster_path vote_average popularity first_air_date release_date tvdb id genre_ids");
       }
       
       const series = await query.lean();

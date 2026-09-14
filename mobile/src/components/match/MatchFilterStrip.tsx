@@ -106,7 +106,7 @@ export default function MatchFilterStrip({
     ? t("Select at least one genre to find your match.")
     : t("Select at least one filter method (Watched Count or Average Rating).");
 
-  const stats = cineGraph?.isAuthorized ? (filters.type === "movie" ? cineGraph.movieStats : cineGraph.seriesStats) : {};
+  const stats = cineGraph ? (filters.type === "movie" ? cineGraph.movieStats : cineGraph.seriesStats) : {};
 
   const toggleGenre = (genre: string) => {
     const genres = filters.genres.includes(genre) ? filters.genres.filter((g) => g !== genre) : [...filters.genres, genre];

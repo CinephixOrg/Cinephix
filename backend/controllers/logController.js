@@ -4,15 +4,9 @@ import Rating from "../models/Rating.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import { createMovieModel } from "../models/Movie.js";
-import { createSeriesModel } from "../models/Series.js";
-import { conn } from "../db/connections.js";
-import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
+import { refreshUserCineGraph } from "../utils/cineGraph.js";
 
 import mongoose from "mongoose";
-
-const Movie = createMovieModel(conn);
-const Series = createSeriesModel(conn);
 
 export const getLogs = asyncHandler(async (req, res) => {
   const userId = req.user.id;
@@ -28,57 +22,6 @@ export const getLogs = asyncHandler(async (req, res) => {
   
   sendSuccess(res, logs, 'Logs fetched successfully');
 });
-
-const recalculateUserCineGraph = async (userId) => {
-  const user = await User.findById(userId);
-  if (!user) return;
-
-  const ratings = await Rating.find({ user: userId }).lean();
-  
-  const movieIds = ratings.filter(r => r.contentType === 'movie').map(r => r.contentId);
-  const seriesIds = ratings.filter(r => r.contentType === 'series').map(r => r.contentId);
-
-  const movies = await Movie.find({ _id: { $in: movieIds } }).lean();
-  const seriesList = await Series.find({ _id: { $in: seriesIds } }).lean();
-
-  const movieMap = {};
-  movies.forEach(m => movieMap[m._id.toString()] = m);
-  
-  const seriesMap = {};
-  seriesList.forEach(s => seriesMap[s._id.toString()] = s);
-
-  const mGraph = new Map();
-  const sGraph = new Map();
-
-  for (const r of ratings) {
-    if (r.contentType === 'movie') {
-      const movie = movieMap[r.contentId];
-      if (!movie) continue;
-      const genres = (movie.genre_ids || []).map(id => MOVIE_GENRE_MAP[id]).filter(Boolean);
-      genres.forEach(g => {
-         const node = mGraph.get(g) || { count: 0, avgRating: 0 };
-         const newCount = node.count + 1;
-         const newAvg = (node.avgRating * node.count + r.value) / newCount;
-         mGraph.set(g, { count: newCount, avgRating: Number(newAvg.toFixed(2)) });
-      });
-    } else {
-      const series = seriesMap[r.contentId];
-      if (!series) continue;
-      const genres = (series.genre_ids || []).map(id => SERIES_GENRE_MAP[id]).filter(Boolean);
-      genres.forEach(g => {
-         const node = sGraph.get(g) || { count: 0, avgRating: 0 };
-         const newCount = node.count + 1;
-         const newAvg = (node.avgRating * node.count + r.value) / newCount;
-         sGraph.set(g, { count: newCount, avgRating: Number(newAvg.toFixed(2)) });
-      });
-    }
-  }
-
-  await User.findByIdAndUpdate(userId, {
-    movieCineGraph: mGraph,
-    seriesCineGraph: sGraph
-  });
-};
 
 export const revertLogs = asyncHandler(async (req, res) => {
   const { logIds } = req.body;
@@ -101,6 +44,8 @@ export const revertLogs = asyncHandler(async (req, res) => {
     if (log.payload) {
       if (log.payload.addedWatchlistIds && log.payload.addedWatchlistIds.length > 0) {
         allWatchlistIdsToRemove.push(...log.payload.addedWatchlistIds);
+        // CineGraph counts Watched List titles, so removing them changes it too.
+        needsCineGraphRecalc = true;
       }
       if (log.payload.addedRatingIds && log.payload.addedRatingIds.length > 0) {
         allRatingIdsToRemove.push(...log.payload.addedRatingIds);
@@ -124,9 +69,9 @@ export const revertLogs = asyncHandler(async (req, res) => {
     await Rating.deleteMany({ _id: { $in: allRatingIdsToRemove }, user: userId });
   }
 
-  // Recalculate CineGraph if ratings were affected
+  // Recompute CineGraph if the Watched List or ratings were affected
   if (needsCineGraphRecalc) {
-    await recalculateUserCineGraph(userId);
+    await refreshUserCineGraph(userId);
   }
 
   // Mark as reverted

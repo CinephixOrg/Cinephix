@@ -16,10 +16,6 @@ import {
   followUser,
   unfollowUser,
   removeFollower,
-  acceptFollowRequest,
-  rejectFollowRequest,
-  getPendingRequests,
-  getSentRequests,
   getNotifications,
   getMyFollowing,
   getMyFollowers,
@@ -29,6 +25,7 @@ import {
   getUserProfile,
   getUserFavorites,
   getUserCollections,
+  getUserCollectionEntries,
   updateUserBio,
   getUserRatings,
   getUserCineGraph,
@@ -44,7 +41,6 @@ import {
   getOnlineFriends,
   getProfileAnalysis,
   getProfileAnalysisHistory,
-  updateVisibility,
   setOwnAccountTier
 } from "../controllers/userController.js";
 import { getImportSources, runImport } from "../controllers/importController.js";
@@ -161,14 +157,17 @@ router.post("/unfollow", authMiddleware, unfollowUser); // Support body targetId
 router.post("/remove-follower", authMiddleware, removeFollower); // New route
 router.post("/:id/follow", authMiddleware, followUser);
 router.post("/:id/unfollow", authMiddleware, unfollowUser);
-router.post("/:targetId/follow-request/accept", authMiddleware, acceptFollowRequest);
-router.post("/:targetId/follow-request/reject", authMiddleware, rejectFollowRequest);
 
-// Get current user's following, followers, and pending requests
+// Following and followers (yours, or another user's with ?userId=)
 router.get("/me/following", authMiddleware, getMyFollowing);
 router.get("/me/followers", authMiddleware, getMyFollowers);
-router.get("/me/follow-requests", authMiddleware, getPendingRequests);
-router.get("/me/sent-requests", authMiddleware, getSentRequests);
+
+// Compatibility for app builds from before follow requests were removed: they
+// still ask for these on start-up, and a 404 there left their follow buttons
+// unable to load. There are no follow requests any more, so both are always
+// empty.
+router.get("/me/follow-requests", authMiddleware, (req, res) => res.status(200).json([]));
+router.get("/me/sent-requests", authMiddleware, (req, res) => res.status(200).json([]));
 
 // Get notifications
 router.get("/notifications", authMiddleware, getNotifications);
@@ -184,11 +183,13 @@ router.get("/profile/:id", authMiddleware, getUserProfile);
 router.get("/favorites/:id", authMiddleware, getUserFavorites);
 
 // Lists + watched list + watchlist in one call, for the public profile's
-// Lists tab. Private accounts get the same masked-empty shape favorites does.
+// Lists tab.
 router.get("/collections/:id", authMiddleware, getUserCollections);
+// Every entry of one of those lists (kind: watched | watchlist), for the
+// profile's full-list sheet.
+router.get("/collections/:id/:kind", authMiddleware, getUserCollectionEntries);
 
 router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchemas.updateProfile), updateUserBio);
-router.patch("/me/visibility", authMiddleware, updateVisibility);
 router.patch("/me/tier", authMiddleware, setOwnAccountTier); // DEV-ONLY: simulates a tier purchase, disabled in production
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);

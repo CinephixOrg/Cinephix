@@ -46,9 +46,6 @@ export default function SettingsPage() {
   });
   const [loadingPass, setLoadingPass] = useState(false);
 
-  // Privacy State
-  const [loadingVisibility, setLoadingVisibility] = useState(false);
-
   // Activity Log State
   const [logs, setLogs] = useState([]);
   const [selectedLogs, setSelectedLogs] = useState(new Set());
@@ -232,20 +229,6 @@ export default function SettingsPage() {
       toast.error(err.message || "Failed to update password.");
     } finally {
       setLoadingPass(false);
-    }
-  };
-
-  const handleVisibilityToggle = async (e) => {
-    const newVisibility = e.target.checked ? 'private' : 'public';
-    setLoadingVisibility(true);
-    try {
-      await API.patch('/users/me/visibility', { visibility: newVisibility });
-      updateUser({ visibility: newVisibility });
-      toast.success(`Profile is now ${newVisibility}!`);
-    } catch (err) {
-      toast.error('Failed to update visibility.');
-    } finally {
-      setLoadingVisibility(false);
     }
   };
 
@@ -602,25 +585,6 @@ export default function SettingsPage() {
                       </div>
                     </form>
                   )}
-                </div>
-
-                <div>
-                  <h2 className="card-title mb-4">{t("Privacy")}</h2>
-                  <div className="flex items-center justify-between p-4 bg-base-300 rounded-lg">
-                    <div>
-                      <h3 className="font-semibold">{t("Private Profile")}</h3>
-                      <p className="text-sm text-base-content/70">
-                        {t("When private")}
-                      </p>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      className="toggle toggle-primary" 
-                      checked={user?.visibility === 'private'} 
-                      onChange={handleVisibilityToggle}
-                      disabled={loadingVisibility}
-                    />
-                  </div>
                 </div>
 
                 <div className="card bg-base-300 shadow-xl border border-error/30">

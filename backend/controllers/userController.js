@@ -10,11 +10,14 @@ import Notification from "../models/Notification.js";
 import ActivityLog from "../models/ActivityLog.js";
 import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
-import FollowRequest from "../models/FollowRequest.js";
+import { notifyFollow, retractFollow } from "../services/notifications.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
 import Share from "../models/Share.js";
 import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
+import { refreshUserCineGraph } from "../utils/cineGraph.js";
+import { buildCollectionEntries } from "../utils/publicCollection.js";
+import { PUBLIC_ACCESS, PUBLIC_PROFILE } from "../utils/publicProfile.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -247,35 +250,19 @@ export const followUser = asyncHandler(async (req, res) => {
     return res.status(200).json({ success: true, data: { type: 'following' } });
   }
 
-  const visibility = userToFollow.visibility || 'public';
+  await User.updateOne(
+    { _id: loggedInUserId },
+    { $addToSet: { following: userToFollowId } }
+  );
 
-  if (visibility === 'private') {
-    const existingReq = await FollowRequest.findOne({ requesterId: loggedInUserId, targetId: userToFollowId });
-    if (!existingReq) {
-       await FollowRequest.create({ requesterId: loggedInUserId, targetId: userToFollowId, status: 'pending' });
-       await Notification.create({ user: userToFollowId, sender: loggedInUserId, type: 'follow_request', read: false });
-       console.log("Notification created successfully for:", userToFollowId);
-    }
-    return sendSuccess(res, { type: 'requested' }, 'Follow request sent', 200);
-  } else {
-    await User.updateOne(
-      { _id: loggedInUserId },
-      { $addToSet: { following: userToFollowId } }
-    );
+  await User.updateOne(
+    { _id: userToFollowId },
+    { $addToSet: { followers: loggedInUserId } }
+  );
 
-    await User.updateOne(
-      { _id: userToFollowId },
-      { $addToSet: { followers: loggedInUserId } }
-    );
+  await notifyFollow({ recipientId: userToFollowId, senderId: loggedInUserId });
 
-    await Notification.create({
-      user: userToFollowId,
-      sender: loggedInUserId,
-      type: 'follow'
-    });
-
-    return sendSuccess(res, { type: 'following' }, 'User followed successfully', 200);
-  }
+  return sendSuccess(res, { type: 'following' }, 'User followed successfully', 200);
 });
 
 // @desc    Unfollow a user
@@ -300,14 +287,7 @@ export const unfollowUser = asyncHandler(async (req, res) => {
     { $pull: { followers: loggedInUserId } }
   );
 
-  // Remove follow request if exists
-  await FollowRequest.deleteOne({ requesterId: loggedInUserId, targetId: userToUnfollowId });
-
-  await Notification.deleteOne({
-    user: userToUnfollowId,
-    sender: loggedInUserId,
-    type: 'follow'
-  });
+  await retractFollow({ recipientId: userToUnfollowId, senderId: loggedInUserId });
 
   sendSuccess(res, null, 'User unfollowed successfully', 200);
 });
@@ -334,122 +314,6 @@ export const removeFollower = asyncHandler(async (req, res) => {
   );
 
   return res.status(200).json({ success: true, message: "Follower removed successfully" });
-});
-
-// @desc    Accept follow request
-// @route   POST /api/users/:targetId/follow-request/accept
-// @access  Private
-export const acceptFollowRequest = asyncHandler(async (req, res) => {
-  const { targetId } = req.params;
-  const { requesterId } = req.body;
-
-  if (!targetId || !requesterId) {
-    return res.status(400).json({ message: "Missing targetId or requesterId" });
-  }
-
-  // Ensure the person accepting the request is actually the target
-  if (targetId !== req.user.id) {
-    return res.status(403).json({ message: "You can only accept requests directed to you." });
-  }
-
-  const followRequest = await FollowRequest.findOne({
-    requesterId,
-    targetId,
-    status: 'pending'
-  });
-
-  if (!followRequest) {
-    return res.status(404).json({ message: 'Follow request not found' });
-  }
-
-  await User.updateOne(
-    { _id: requesterId },
-    { $addToSet: { following: targetId } }
-  );
-
-  await User.updateOne(
-    { _id: targetId },
-    { $addToSet: { followers: requesterId } }
-  );
-
-  await FollowRequest.findByIdAndDelete(followRequest._id);
-
-  await Notification.findOneAndDelete({
-    user: targetId,
-    sender: requesterId,
-    type: 'follow_request'
-  });
-
-  await Notification.create({
-    user: requesterId,
-    sender: targetId,
-    type: 'follow_accepted',
-    read: false
-  });
-  console.log("Notification created successfully for:", requesterId);
-
-  return res.status(200).json({ success: true, message: 'Follow request accepted' });
-});
-
-// @desc    Reject follow request
-// @route   POST /api/users/:targetId/follow-request/reject
-// @access  Private
-export const rejectFollowRequest = asyncHandler(async (req, res) => {
-  const { targetId } = req.params;
-  const { requesterId } = req.body;
-
-  if (!targetId || !requesterId) {
-    return res.status(400).json({ message: "Missing targetId or requesterId" });
-  }
-
-  if (targetId !== req.user.id) {
-    return res.status(403).json({ message: "You can only reject requests directed to you." });
-  }
-
-  const followRequest = await FollowRequest.findOneAndDelete({
-    requesterId,
-    targetId,
-    status: 'pending'
-  });
-
-  if (!followRequest) {
-    return res.status(404).json({ message: 'Follow request not found' });
-  }
-
-  await Notification.findOneAndDelete({
-    user: targetId,
-    sender: requesterId,
-    type: 'follow_request'
-  });
-
-  return res.status(200).json({ success: true, message: 'Follow request rejected' });
-});
-
-// @desc    Get pending follow requests
-// @route   GET /api/users/me/follow-requests
-// @access  Private
-export const getPendingRequests = asyncHandler(async (req, res) => {
-  const loggedInUserId = req.user.id;
-
-  const requests = await FollowRequest.find({ targetId: loggedInUserId, status: 'pending' })
-    .populate('requesterId', '_id username profile_pic_url name bio accountTier')
-    .sort({ createdAt: -1 })
-    .lean();
-
-  return res.status(200).json(requests.map(r => r.requesterId).filter(Boolean));
-});
-
-// @desc    Get sent follow requests
-// @route   GET /api/users/me/sent-requests
-// @access  Private
-export const getSentRequests = asyncHandler(async (req, res) => {
-  const loggedInUserId = req.user.id;
-
-  const requests = await FollowRequest.find({ requesterId: loggedInUserId, status: 'pending' })
-    .select('targetId')
-    .lean();
-
-  return res.status(200).json(requests.map(r => r.targetId).filter(Boolean));
 });
 
 
@@ -514,18 +378,13 @@ const sendConnectionPage = async (res, { targetDoc, field, page, limit, message 
 export const getMyFollowing = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, userId } = req.query;
     const targetUserId = userId || req.user.id;
-    const viewerId = req.user.id.toString();
 
     const targetDoc = await User.findById(targetUserId)
-        .select('_id visibility followers following')
+        .select('_id followers following')
         .lean();
 
     if (!targetDoc) {
         return sendError(res, 'User not found', 404);
-    }
-
-    if (userId && userId !== viewerId && !isAuthorizedToView(viewerId, targetDoc)) {
-        return sendError(res, 'This account is private', 403);
     }
 
     return sendConnectionPage(res, {
@@ -543,18 +402,13 @@ export const getMyFollowing = asyncHandler(async (req, res) => {
 export const getMyFollowers = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, userId } = req.query;
     const targetUserId = userId || req.user.id;
-    const viewerId = req.user.id.toString();
 
     const targetDoc = await User.findById(targetUserId)
-        .select('_id visibility followers following')
+        .select('_id followers following')
         .lean();
 
     if (!targetDoc) {
         return sendError(res, 'User not found', 404);
-    }
-
-    if (userId && userId !== viewerId && !isAuthorizedToView(viewerId, targetDoc)) {
-        return sendError(res, 'This account is private', 403);
     }
 
     return sendConnectionPage(res, {
@@ -678,16 +532,6 @@ export const updateFavorites = async (req, res) => {
 
 // ... (existing updateFavorites function ends here)
 
-export const isAuthorizedToView = (viewerId, targetUser) => {
-  if (!targetUser) return false;
-  const visibility = targetUser.visibility || 'public';
-  if (!viewerId) return visibility === 'public';
-  if (viewerId === targetUser._id.toString()) return true;
-  if (visibility === 'public') return true;
-  if (targetUser.followers && targetUser.followers.some(id => id.toString() === viewerId)) return true;
-  return false;
-};
-
 /**
  * @desc   Get user's public profile information (For ProfilePage)
  * @route  GET /api/users/profile/:id
@@ -701,48 +545,14 @@ export const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const currentUserId = req.user ? req.user.id.toString() : null;
-    let isRequested = false;
-
-    if (currentUserId) {
-      const existingRequest = await FollowRequest.findOne({
-        requesterId: currentUserId,
-        targetId: user._id,
-        status: 'pending'
-      });
-      if (existingRequest) isRequested = true;
-    }
-
-    if (!isAuthorizedToView(currentUserId, user)) {
-      return res.status(200).json({
-        _id: user._id,
-        username: user.username,
-        profile_pic_url: user.profile_pic_url,
-        isPrivate: true,
-        isPrivateMasked: true,
-        isPrivateAndHidden: true,
-        isAuthorized: false,
-        isRequested,
-        message: "Profile is private"
-      });
-    }
-    
-    res.status(200).json({ ...user, isAuthorized: true, isRequested });
+    // Every profile is public; see utils/publicProfile.js for why the flags
+    // are still sent.
+    res.status(200).json({ ...user, ...PUBLIC_PROFILE });
 
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-export const updateVisibility = asyncHandler(async (req, res) => {
-  const { visibility } = req.body;
-  if (!['public', 'private'].includes(visibility)) {
-    return sendError(res, 'Invalid visibility value', 400);
-  }
-
-  const user = await User.findByIdAndUpdate(req.user.id, { visibility }, { new: true }).select('-password');
-  sendSuccess(res, { visibility: user.visibility }, 'Visibility updated successfully');
-});
 
 // @desc    DEV-ONLY: change your own account tier to simulate a purchase.
 //          No real billing exists yet — remove/replace this once real IAP lands.
@@ -837,29 +647,16 @@ const hydrateWatchItems = async (items, limit) => {
 export const getUserCollections = asyncHandler(async (req, res) => {
   const targetUserId = req.params.id === 'me' ? req.user.id : req.params.id;
   const user = await User.findById(targetUserId)
-    .select('watchlist toWatchList visibility followers')
+    .select('watchlist toWatchList')
     .lean();
 
   if (!user) {
     return sendError(res, 'User not found', 404);
   }
 
-  const currentUserId = req.user ? req.user.id.toString() : null;
-  if (!isAuthorizedToView(currentUserId, user)) {
-    // Same masked shape the favorites/CineGraph endpoints use for a private
-    // account: empty, explicitly flagged, never a 403 — the profile page
-    // still renders, it just has nothing to show in this tab.
-    return sendSuccess(
-      res,
-      { lists: [], watched: { items: [], total: 0 }, watchlist: { items: [], total: 0 }, isAuthorized: false },
-      'User collections fetched (masked)'
-    );
-  }
-
-  const isOwner = currentUserId === String(targetUserId);
-  // Someone else's private lists stay private even when their profile is
-  // visible — isPublic is a per-list decision, separate from account
-  // visibility. Viewing your own profile shows both.
+  const isOwner = req.user.id.toString() === String(targetUserId);
+  // Someone else's lists marked not public stay hidden — isPublic is a
+  // per-list setting. Viewing your own profile shows both.
   const listQuery = isOwner ? { owner: targetUserId } : { owner: targetUserId, isPublic: true };
 
   const [lists, watched, watchlist] = await Promise.all([
@@ -883,9 +680,53 @@ export const getUserCollections = asyncHandler(async (req, res) => {
       lists: await hydratePreviewItems(lists),
       watched,
       watchlist,
-      isAuthorized: true
+      ...PUBLIC_ACCESS
     },
     'User collections fetched'
+  );
+});
+
+/**
+ * @desc   Every entry of a user's watched list or watchlist, for the public
+ *         profile's full-list sheet (search, filters, sorting). Unlike
+ *         getUserCollections this isn't capped: it ships ids only, and the
+ *         app fills in titles and posters from its own content cache.
+ * @route  GET /api/users/collections/:id/:kind   (kind: watched | watchlist)
+ * @access Private
+ */
+export const getUserCollectionEntries = asyncHandler(async (req, res) => {
+  const { kind } = req.params;
+  if (kind !== 'watched' && kind !== 'watchlist') {
+    return sendError(res, 'kind must be "watched" or "watchlist"', 400);
+  }
+
+  const targetUserId = req.params.id === 'me' ? req.user.id : req.params.id;
+  if (!mongoose.isValidObjectId(targetUserId)) {
+    return sendError(res, 'Invalid user ID', 400);
+  }
+
+  const field = kind === 'watched' ? 'watchlist' : 'toWatchList';
+  const user = await User.findById(targetUserId).select(field).lean();
+  if (!user) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  // The owner's ratings, read through the driver so ratings whose contentId
+  // is stored as an ObjectId match too (see utils/cineGraph.js). A watchlist
+  // hasn't been watched yet, so it has no ratings to show.
+  const ratings = kind === 'watched'
+    ? await Rating.collection
+        .find(
+          { user: new mongoose.Types.ObjectId(String(targetUserId)) },
+          { projection: { contentId: 1, value: 1, updatedAt: 1, createdAt: 1 } }
+        )
+        .toArray()
+    : null;
+
+  sendSuccess(
+    res,
+    { items: buildCollectionEntries(user[field], ratings), ...PUBLIC_ACCESS },
+    'User collection fetched'
   );
 });
 
@@ -896,25 +737,13 @@ export const getUserCollections = asyncHandler(async (req, res) => {
  */
 export const getUserFavorites = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
-    .select('favoriteMovies favoriteSeries visibility followers')
+    .select('favoriteMovies favoriteSeries')
     .populate('favoriteMovies', '_id title poster_path')
     .populate('favoriteSeries', '_id name poster_path')
     .lean();
 
   if (!user) {
     return sendError(res, 'User not found', 404);
-  }
-
-  const currentUserId = req.user ? req.user.id.toString() : null;
-  
-  if (!isAuthorizedToView(currentUserId, user)) {
-    return sendSuccess(res, {
-      movies: [],
-      series: [],
-      isPrivateMasked: true,
-      isPrivateAndHidden: true,
-      isAuthorized: false
-    }, 'User favorites fetched (masked)');
   }
 
   // The rating shown under each favorite is always the profile owner's own
@@ -931,7 +760,7 @@ export const getUserFavorites = asyncHandler(async (req, res) => {
   sendSuccess(res, {
     movies: movies.map((m) => ({ ...m, rating: ratingByContentId.get(m._id.toString()) ?? null })),
     series: series.map((s) => ({ ...s, rating: ratingByContentId.get(s._id.toString()) ?? null })),
-    isAuthorized: true
+    ...PUBLIC_ACCESS,
   }, 'User favorites fetched', 200);
 });
 
@@ -1076,33 +905,10 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
       targetUserId = req.user.id;
   }
 
-  const user = await User.findById(targetUserId).select('watchlist visibility followers').lean();
+  const user = await User.findById(targetUserId).select('watchlist').lean();
 
-  if (!user) {
-      return sendSuccess(res, { movieStats: {}, seriesStats: {}, movieGenreRatings: {}, seriesGenreRatings: {} }, 'CineGraph fetched', 200);
-  }
-
-  const currentUserId = req.user ? req.user.id.toString() : null;
-
-  if (!isAuthorizedToView(currentUserId, user)) {
-    const movieCount = user.watchlist?.filter(item => item.itemType === 'movie').length || 0;
-    const seriesCount = user.watchlist?.filter(item => item.itemType === 'series').length || 0;
-
-    return sendSuccess(res, {
-      movieStats: {},
-      seriesStats: {},
-      movieGenreRatings: {},
-      seriesGenreRatings: {},
-      isPrivateMasked: true,
-      isPrivateAndHidden: true,
-      isAuthorized: false,
-      totalMovies: movieCount,
-      totalSeries: seriesCount
-    }, 'CineGraph fetched (masked)', 200);
-  }
-
-  if (!user.watchlist || user.watchlist.length === 0) {
-    return sendSuccess(res, { movieStats: {}, seriesStats: {}, movieGenreRatings: {}, seriesGenreRatings: {}, isAuthorized: true }, 'CineGraph fetched', 200);
+  if (!user || !user.watchlist || user.watchlist.length === 0) {
+    return sendSuccess(res, { movieStats: {}, seriesStats: {}, movieGenreRatings: {}, seriesGenreRatings: {}, ...PUBLIC_ACCESS }, 'CineGraph fetched', 200);
   }
 
   const watchlist = user.watchlist;
@@ -1185,7 +991,7 @@ export const getUserCineGraph = asyncHandler(async (req, res) => {
     seriesStats: seriesGenreCounts,
     movieGenreRatings,
     seriesGenreRatings,
-    isAuthorized: true,
+    ...PUBLIC_ACCESS,
   }, 'CineGraph fetched', 200);
 });
 
@@ -1216,13 +1022,8 @@ export const getUserGenreDetail = asyncHandler(async (req, res) => {
     return sendError(res, 'genre query param is required', 400);
   }
 
-  const user = await User.findById(targetUserId).select('watchlist visibility followers').lean();
+  const user = await User.findById(targetUserId).select('watchlist').lean();
   if (!user) return sendError(res, 'User not found', 404);
-
-  const currentUserId = req.user ? req.user.id.toString() : null;
-  if (!isAuthorizedToView(currentUserId, user)) {
-    return sendSuccess(res, { items: [], avgRating: null, count: 0, isAuthorized: false }, 'Genre detail fetched (masked)', 200);
-  }
 
   const genreMap = type === 'movie' ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
   const targetGenreIds = Object.keys(genreMap)
@@ -1276,7 +1077,7 @@ export const getUserGenreDetail = asyncHandler(async (req, res) => {
     ? Number((ratedValues.reduce((a, b) => a + b, 0) / ratedValues.length).toFixed(1))
     : null;
 
-  sendSuccess(res, { items, avgRating, count: items.length, isAuthorized: true }, 'Genre detail fetched', 200);
+  sendSuccess(res, { items, avgRating, count: items.length, ...PUBLIC_ACCESS }, 'Genre detail fetched', 200);
 });
 
 // controllers/userController.js
@@ -1496,7 +1297,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 
   user.isOAuthUser = Boolean(user.googleId && !user.password);
 
-  sendSuccess(res, user, 'Profile fetched', 200);
+  sendSuccess(res, { ...user, ...PUBLIC_PROFILE }, 'Profile fetched', 200);
 });
 
 // @desc    Watchlist'e item ekle
@@ -1536,6 +1337,7 @@ export const addToWatchlist = asyncHandler(async (req, res) => {
   // Add to watchlist
   user.watchlist.push({ itemId: id, itemType: type });
   await user.save();
+  await refreshUserCineGraph(userId);
 
   await ActivityLog.create({
     userId,
@@ -1583,6 +1385,7 @@ export const removeFromWatchlist = asyncHandler(async (req, res) => {
     (item) => item.itemId.toString() !== itemId
   );
   await user.save();
+  await refreshUserCineGraph(userId);
 
   sendSuccess(res, user.watchlist, 'Item removed from watchlist', 200);
 });
@@ -2134,26 +1937,12 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
     Review.countDocuments({ user: userId, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
     Share.countDocuments({ user: userId, createdAt: { $gte: monthStart, $lt: monthEnd } }),
     Share.countDocuments({ user: userId, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
-    // Someone followed you (public account), or you accepted their request
-    // (private account) — either way you gained a follower.
-    Notification.countDocuments({
-      $or: [{ user: userId, type: "follow" }, { sender: userId, type: "follow_accepted" }],
-      createdAt: { $gte: monthStart, $lt: monthEnd }
-    }),
-    Notification.countDocuments({
-      $or: [{ user: userId, type: "follow" }, { sender: userId, type: "follow_accepted" }],
-      createdAt: { $gte: prevMonthStart, $lt: monthStart }
-    }),
-    // The mirror image: you followed someone, or your request to them was
-    // accepted — either way you started following one more account.
-    Notification.countDocuments({
-      $or: [{ sender: userId, type: "follow" }, { user: userId, type: "follow_accepted" }],
-      createdAt: { $gte: monthStart, $lt: monthEnd }
-    }),
-    Notification.countDocuments({
-      $or: [{ sender: userId, type: "follow" }, { user: userId, type: "follow_accepted" }],
-      createdAt: { $gte: prevMonthStart, $lt: monthStart }
-    })
+    // Someone followed you.
+    Notification.countDocuments({ user: userId, type: "follow", createdAt: { $gte: monthStart, $lt: monthEnd } }),
+    Notification.countDocuments({ user: userId, type: "follow", createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
+    // You followed someone.
+    Notification.countDocuments({ sender: userId, type: "follow", createdAt: { $gte: monthStart, $lt: monthEnd } }),
+    Notification.countDocuments({ sender: userId, type: "follow", createdAt: { $gte: prevMonthStart, $lt: monthStart } })
   ]);
 
   const monthlyStats = {
