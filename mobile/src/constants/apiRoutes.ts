@@ -107,8 +107,8 @@ export const API_ROUTES = {
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
-    REORDER: "/lists/me/reorder",
     CREATE: "/lists",
+    SUGGESTIONS: "/lists/suggestions",
     GET_BY_ID: (id: string) => `/lists/${id}`,
     UPDATE: (id: string) => `/lists/${id}`,
     DELETE: (id: string) => `/lists/${id}`,

@@ -4,8 +4,6 @@ import {
   Text,
   FlatList,
   Pressable,
-  TextInput,
-  Switch,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
@@ -14,7 +12,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getListById, removeItem, toggleListLike, updateList } from "../api/listService";
+import { getListById, removeItem, toggleListLike } from "../api/listService";
 import { createShare } from "../api/shareService";
 import { getMovieById, getSeriesById } from "../api/contentService";
 import MiniContentCard from "../components/MiniContentCard";
@@ -120,37 +118,6 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   filterMenuRowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   filterMenuRowText: { fontFamily: fonts.medium, fontSize: 13, color: colors.baseContent },
   filterMenuRowTextActive: { color: colors.primary, fontFamily: fonts.bold },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.base200,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    color: colors.baseContent,
-    marginBottom: 10,
-  },
-  descInput: { minHeight: 70, textAlignVertical: "top" },
-  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  switchLabel: { color: colors.baseContent, fontSize: 15 },
-  editButtonRow: { flexDirection: "row", gap: 10 },
-  cancelButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  cancelButtonText: { color: colors.baseContent, fontFamily: fonts.medium },
-  saveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  saveButtonText: { color: colors.primaryContent, fontFamily: fonts.bold },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
   errorText: { color: colors.error, marginTop: 8 },
 }), [colors]);
@@ -181,11 +148,6 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const [liking, setLiking] = useState(false);
   const { showToast } = useToast();
 
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [sharingToMedia, setSharingToMedia] = useState(false);
 
   const load = useCallback(async () => {
@@ -193,9 +155,6 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
       const { list: fetchedList, isOwner: owner, hasLiked: liked } = await getListById(targetListId);
       setList(fetchedList);
       setIsOwner(owner);
-      setName(fetchedList.name);
-      setDescription(fetchedList.description);
-      setIsPublic(fetchedList.isPublic);
       setLikeCount(fetchedList.likeCount);
       setHasLiked(liked);
 
@@ -213,6 +172,8 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     }
   }, [targetListId]);
 
+  // Refetches on every focus, which is also how an edit made in the list
+  // editor shows up here when it closes.
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
@@ -220,22 +181,9 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     }, [load])
   );
 
-  const handleSaveEdit = async () => {
-    setSaving(true);
-    try {
-      const updated = await updateList(targetListId, {
-        name: name.trim(),
-        description: description.trim(),
-        isPublic,
-      });
-      setList((prev) => (prev ? { ...prev, ...updated, owner: prev.owner } : prev));
-      setEditing(false);
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to update list."));
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Name, description, visibility and titles are all edited in the list
+  // editor, a root-level screen shared with list creation.
+  const openEditor = () => router.push({ pathname: "/list-editor", params: { listId: targetListId } });
 
   const handleLike = async () => {
     if (liking) return;
@@ -318,140 +266,105 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
       contentContainerStyle={styles.list}
       ListHeaderComponent={
         <View style={styles.header}>
-          {editing ? (
-            <>
-              <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={t("Name")} />
-              <TextInput
-                style={[styles.input, styles.descInput]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder={t("Description")}
-                multiline
+          <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
+            <UserAvatar
+              userId={list.owner._id}
+              username={list.owner.username}
+              profilePicUrl={list.owner.profile_pic_url}
+              size={28}
+              disabled
+            />
+            <Text style={styles.ownerName}>{list.owner.username}</Text>
+          </Pressable>
+
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{list.name}</Text>
+            <View style={[styles.badge, list.isPublic ? styles.badgePublic : styles.badgePrivate]}>
+              <Text style={styles.badgeText}>{list.isPublic ? t("Public") : t("Private")}</Text>
+            </View>
+          </View>
+
+          {list.description ? (
+            // Same "tap to expand, tap again to collapse" behavior as
+            // Content Detail's own overview text — direct ask ("aynı
+            // detailspageteki overview metni gibi").
+            <Pressable onPress={() => setDescriptionExpanded((e) => !e)}>
+              <Text style={styles.description} numberOfLines={descriptionExpanded ? undefined : 2} ellipsizeMode="tail">
+                {list.description}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* Reordered per direct ask: like, then view, then item count
+              (was item, like, view) — filter icon pushed to the row's
+              far right replaces the old All/Movies/Series segmented
+              control below entirely. */}
+          <View style={styles.statsRow}>
+            <Pressable style={styles.statItem} onPress={handleLike} disabled={liking} hitSlop={8}>
+              <Ionicons
+                name={hasLiked ? "heart" : "heart-outline"}
+                size={18}
+                color={hasLiked ? colors.primary : colors.placeholder}
               />
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>{t("Public")}</Text>
-                <Switch
-                  value={isPublic}
-                  onValueChange={setIsPublic}
-                  trackColor={{ true: colors.primary, false: colors.border }}
-                />
-              </View>
-              <View style={styles.editButtonRow}>
-                <Pressable style={styles.cancelButton} onPress={() => setEditing(false)} disabled={saving}>
-                  <Text style={styles.cancelButtonText}>{t("Cancel")}</Text>
-                </Pressable>
-                <Pressable style={styles.saveButton} onPress={handleSaveEdit} disabled={saving || !name.trim()}>
-                  {saving ? (
-                    <ActivityIndicator color={colors.primaryContent} />
-                  ) : (
-                    <Text style={styles.saveButtonText}>{t("Save")}</Text>
-                  )}
-                </Pressable>
-              </View>
-            </>
-          ) : (
-            <>
-              <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
-                <UserAvatar
-                  userId={list.owner._id}
-                  username={list.owner.username}
-                  profilePicUrl={list.owner.profile_pic_url}
-                  size={28}
-                  disabled
-                />
-                <Text style={styles.ownerName}>{list.owner.username}</Text>
+              <Text style={[styles.statText, styles.likeStatText, hasLiked && styles.statTextActive]}>
+                {hasLiked ? t("Liked") : t("Like?")} {likeCount}
+              </Text>
+            </Pressable>
+            <View style={styles.statItem}>
+              <Ionicons name="eye-outline" size={15} color={colors.placeholder} />
+              <Text style={styles.statText}>{t("view_count", { count: list.views ?? 0 })}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="film-outline" size={15} color={colors.placeholder} />
+              <Text style={styles.statText}>{t("item_count", { count: items.length })}</Text>
+            </View>
+            <View style={styles.filterButtonWrap}>
+              <Pressable onPress={() => setFilterMenuVisible((v) => !v)} hitSlop={8}>
+                <Ionicons name="filter" size={18} color={itemTypeFilter !== "all" ? colors.primary : colors.placeholder} />
               </Pressable>
-
-              <View style={styles.titleRow}>
-                <Text style={styles.title}>{list.name}</Text>
-                <View style={[styles.badge, list.isPublic ? styles.badgePublic : styles.badgePrivate]}>
-                  <Text style={styles.badgeText}>{list.isPublic ? t("Public") : t("Private")}</Text>
-                </View>
-              </View>
-
-              {list.description ? (
-                // Same "tap to expand, tap again to collapse" behavior as
-                // Content Detail's own overview text — direct ask ("aynı
-                // detailspageteki overview metni gibi").
-                <Pressable onPress={() => setDescriptionExpanded((e) => !e)}>
-                  <Text style={styles.description} numberOfLines={descriptionExpanded ? undefined : 2} ellipsizeMode="tail">
-                    {list.description}
-                  </Text>
-                </Pressable>
-              ) : null}
-
-              {/* Reordered per direct ask: like, then view, then item count
-                  (was item, like, view) — filter icon pushed to the row's
-                  far right replaces the old All/Movies/Series segmented
-                  control below entirely. */}
-              <View style={styles.statsRow}>
-                <Pressable style={styles.statItem} onPress={handleLike} disabled={liking} hitSlop={8}>
-                  <Ionicons
-                    name={hasLiked ? "heart" : "heart-outline"}
-                    size={18}
-                    color={hasLiked ? colors.primary : colors.placeholder}
-                  />
-                  <Text style={[styles.statText, styles.likeStatText, hasLiked && styles.statTextActive]}>
-                    {hasLiked ? t("Liked") : t("Like?")} {likeCount}
-                  </Text>
-                </Pressable>
-                <View style={styles.statItem}>
-                  <Ionicons name="eye-outline" size={15} color={colors.placeholder} />
-                  <Text style={styles.statText}>{t("view_count", { count: list.views ?? 0 })}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Ionicons name="film-outline" size={15} color={colors.placeholder} />
-                  <Text style={styles.statText}>{t("item_count", { count: items.length })}</Text>
-                </View>
-                <View style={styles.filterButtonWrap}>
-                  <Pressable onPress={() => setFilterMenuVisible((v) => !v)} hitSlop={8}>
-                    <Ionicons name="filter" size={18} color={itemTypeFilter !== "all" ? colors.primary : colors.placeholder} />
-                  </Pressable>
-                  {filterMenuVisible && (
-                    <>
-                      <Pressable style={styles.filterMenuBackdrop} onPress={() => setFilterMenuVisible(false)} />
-                      <View style={styles.filterMenu}>
-                        {ITEM_TYPE_FILTERS.map((filter, i) => (
-                          <View key={filter}>
-                            {i > 0 && <View style={styles.filterMenuRowDivider} />}
-                            <Pressable
-                              style={styles.filterMenuRow}
-                              onPress={() => {
-                                setItemTypeFilter(filter);
-                                setFilterMenuVisible(false);
-                              }}
-                            >
-                              <Text style={[styles.filterMenuRowText, itemTypeFilter === filter && styles.filterMenuRowTextActive]}>
-                                {filter === "all" ? t("All") : filter === "movie" ? t("Movies") : t("Series")}
-                              </Text>
-                              {itemTypeFilter === filter && <Ionicons name="checkmark" size={16} color={colors.primary} />}
-                            </Pressable>
-                          </View>
-                        ))}
+              {filterMenuVisible && (
+                <>
+                  <Pressable style={styles.filterMenuBackdrop} onPress={() => setFilterMenuVisible(false)} />
+                  <View style={styles.filterMenu}>
+                    {ITEM_TYPE_FILTERS.map((filter, i) => (
+                      <View key={filter}>
+                        {i > 0 && <View style={styles.filterMenuRowDivider} />}
+                        <Pressable
+                          style={styles.filterMenuRow}
+                          onPress={() => {
+                            setItemTypeFilter(filter);
+                            setFilterMenuVisible(false);
+                          }}
+                        >
+                          <Text style={[styles.filterMenuRowText, itemTypeFilter === filter && styles.filterMenuRowTextActive]}>
+                            {filter === "all" ? t("All") : filter === "movie" ? t("Movies") : t("Series")}
+                          </Text>
+                          {itemTypeFilter === filter && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+                        </Pressable>
                       </View>
-                    </>
-                  )}
-                </View>
-              </View>
-              <View style={styles.statsRowDivider} />
-
-              {isOwner && (
-                <View style={styles.ownerActionsRow}>
-                  <Pressable style={styles.editButton} onPress={() => setEditing(true)}>
-                    <Text style={styles.editButtonText}>{t("Edit")}</Text>
-                  </Pressable>
-                  {list.isPublic && (
-                    <Pressable style={styles.shareButton} onPress={handleShareToMedia} disabled={sharingToMedia} hitSlop={4}>
-                      {sharingToMedia ? (
-                        <ActivityIndicator size="small" color={colors.baseContent} />
-                      ) : (
-                        <Ionicons name="newspaper-outline" size={18} color={colors.baseContent} />
-                      )}
-                    </Pressable>
-                  )}
-                </View>
+                    ))}
+                  </View>
+                </>
               )}
-            </>
+            </View>
+          </View>
+          <View style={styles.statsRowDivider} />
+
+          {isOwner && (
+            <View style={styles.ownerActionsRow}>
+              <Pressable style={styles.editButton} onPress={openEditor}>
+                <Text style={styles.editButtonText}>{t("Edit")}</Text>
+              </Pressable>
+              {list.isPublic && (
+                <Pressable style={styles.shareButton} onPress={handleShareToMedia} disabled={sharingToMedia} hitSlop={4}>
+                  {sharingToMedia ? (
+                    <ActivityIndicator size="small" color={colors.baseContent} />
+                  ) : (
+                    <Ionicons name="newspaper-outline" size={18} color={colors.baseContent} />
+                  )}
+                </Pressable>
+              )}
+            </View>
           )}
 
           {error && <Text style={styles.errorText}>{error}</Text>}

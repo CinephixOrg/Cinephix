@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -12,8 +12,13 @@ interface Props {
   total: number;
   /** True while a search or any filter is narrowing the list. */
   narrowed: boolean;
-  filters: CollectionFilters;
-  onFilterAction: (action: FilterAction) => void;
+  /** A title collection's filters, each shown as a removable chip. */
+  filters?: CollectionFilters;
+  onFilterAction?: (action: FilterAction) => void;
+  /** Replaces the "titles" count, for a collection of something else (the Lists page). */
+  countLabel?: string;
+  /** Rendered just before the Edit toggle (the Lists page's New List button). */
+  accessory?: ReactNode;
   editing?: boolean;
   canEdit?: boolean;
   /** Without it there is no Edit toggle at all — a read-only collection. */
@@ -22,10 +27,21 @@ interface Props {
 
 // The row between the search bar and the grid: what's being shown, which
 // filters produced it (each removable in one tap), and the Edit toggle.
-function CollectionToolbar({ shown, total, narrowed, filters, onFilterAction, editing = false, canEdit = false, onToggleEdit }: Props) {
+function CollectionToolbar({
+  shown,
+  total,
+  narrowed,
+  filters,
+  onFilterAction,
+  countLabel,
+  accessory,
+  editing = false,
+  canEdit = false,
+  onToggleEdit,
+}: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const chips = useMemo(() => activeChips(filters, t), [filters, t]);
+  const chips = useMemo(() => (filters && onFilterAction ? activeChips(filters, t) : []), [filters, onFilterAction, t]);
 
   const styles = useMemo(
     () =>
@@ -61,9 +77,8 @@ function CollectionToolbar({ shown, total, narrowed, filters, onFilterAction, ed
     [colors]
   );
 
-  const countLabel = narrowed
-    ? t("{{shown}} of {{total}} titles", { shown, total })
-    : t("{{count}} titles", { count: total });
+  const label =
+    countLabel ?? (narrowed ? t("{{shown}} of {{total}} titles", { shown, total }) : t("{{count}} titles", { count: total }));
 
   return (
     <View style={styles.row}>
@@ -74,7 +89,7 @@ function CollectionToolbar({ shown, total, narrowed, filters, onFilterAction, ed
               <Pressable
                 key={chip.key}
                 style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
-                onPress={() => onFilterAction(chip.action)}
+                onPress={() => onFilterAction?.(chip.action)}
                 hitSlop={4}
                 accessibilityRole="button"
                 accessibilityLabel={`${chip.label}, ${t("Remove")}`}
@@ -83,12 +98,16 @@ function CollectionToolbar({ shown, total, narrowed, filters, onFilterAction, ed
                 <Ionicons name="close" size={13} color={colors.primary} />
               </Pressable>
             ))}
-            <Text style={styles.count}>{countLabel}</Text>
+            <Text style={styles.count}>{label}</Text>
           </ScrollView>
         ) : (
-          <Text style={styles.count}>{countLabel}</Text>
+          <Text style={styles.count} numberOfLines={1}>
+            {label}
+          </Text>
         )}
       </View>
+
+      {accessory}
 
       {onToggleEdit ? (
         <Pressable

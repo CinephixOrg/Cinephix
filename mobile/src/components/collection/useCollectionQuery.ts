@@ -19,7 +19,7 @@ export function useGridMetrics(width: number) {
 
 // Search, filters and the filter sheet's open state for one collection —
 // shared by the personal Watched List / Watchlist screens and the public
-// profile's list sheets, so all four behave identically.
+// profile's Watched List / Watchlist pages, so all four behave identically.
 //
 // The query runs urgently: it's an in-memory pass cheap enough that the
 // sheet's result count and the toolbar are exact on the frame of a tap. Only

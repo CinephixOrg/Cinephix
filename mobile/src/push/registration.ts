@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
+import type * as NotificationsTypes from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import i18next from "../i18n";
 import { registerPushToken, unregisterPushToken } from "../api/pushService";
@@ -9,6 +9,8 @@ import { PALETTES, DEFAULT_THEME } from "../theme/palettes";
 
 // This device's side of push notifications: the Android channels, the
 // permission prompt, the Expo push token, and telling the server about it.
+
+export type NotificationsModule = typeof NotificationsTypes;
 
 /** Must match PUSH_CHANNELS in backend/utils/pushMessages.js. */
 export const PUSH_CHANNELS = { messages: "messages", activity: "activity" } as const;
@@ -29,6 +31,25 @@ export function pushSupported(): boolean {
   return true;
 }
 
+let notificationsModule: NotificationsModule | null | undefined;
+
+/**
+ * expo-notifications, loaded on first use and only where remote push works.
+ *
+ * Never imported at the top of a module: in Expo Go on Android, merely
+ * importing it throws, and since the root layout and AuthContext both reach
+ * this file, a static import took every route in the app down with it
+ * ("missing the required default export"). Metro evaluates a require only
+ * when it runs, so Expo Go never evaluates the module at all.
+ */
+export function getNotifications(): NotificationsModule | null {
+  if (notificationsModule === undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    notificationsModule = pushSupported() ? (require("expo-notifications") as NotificationsModule) : null;
+  }
+  return notificationsModule;
+}
+
 function projectId(): string | undefined {
   return Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? undefined;
 }
@@ -41,7 +62,7 @@ let warnedNoProject = false;
  * these are created before asking. Re-creating updates the names to the
  * current language.
  */
-async function ensureChannels(): Promise<void> {
+async function ensureChannels(Notifications: NotificationsModule): Promise<void> {
   if (Platform.OS !== "android") return;
   const lightColor = PALETTES[DEFAULT_THEME].primary;
   await Promise.all([
@@ -62,8 +83,8 @@ async function ensureChannels(): Promise<void> {
   ]);
 }
 
-async function ensurePermission(ask: boolean): Promise<boolean> {
-  const allowed = (status: Notifications.NotificationPermissionsStatus) =>
+async function ensurePermission(Notifications: NotificationsModule, ask: boolean): Promise<boolean> {
+  const allowed = (status: NotificationsTypes.NotificationPermissionsStatus) =>
     status.granted || status.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
 
   const current = await Notifications.getPermissionsAsync();
@@ -93,7 +114,8 @@ export function registerForPush(userId: string, options: { ask?: boolean; force?
 }
 
 async function register(userId: string, { ask = false, force = false }: { ask?: boolean; force?: boolean }): Promise<string | null> {
-  if (!pushSupported()) return null;
+  const Notifications = getNotifications();
+  if (!Notifications) return null;
   const id = projectId();
   if (!id) {
     if (!warnedNoProject) {
@@ -103,8 +125,8 @@ async function register(userId: string, { ask = false, force = false }: { ask?: 
     return null;
   }
 
-  await ensureChannels();
-  if (!(await ensurePermission(ask))) return null;
+  await ensureChannels(Notifications);
+  if (!(await ensurePermission(Notifications, ask))) return null;
 
   const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: id });
   const locale = i18next.language || "en";
@@ -139,6 +161,7 @@ export async function unregisterForPush(): Promise<void> {
 }
 
 export function setAppBadge(count: number): void {
-  if (!pushSupported()) return;
-  Notifications.setBadgeCountAsync(Math.max(0, count)).catch(() => {});
+  getNotifications()
+    ?.setBadgeCountAsync(Math.max(0, count))
+    .catch(() => {});
 }

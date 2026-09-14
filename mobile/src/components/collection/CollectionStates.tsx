@@ -14,11 +14,10 @@ import { rowHeightOf, tilePosition, type GridMetrics } from "./gridModel";
 // It used to be a wrapping flex row with a right margin on every tile but the
 // fifth. Flex wrapping re-derives each row from the container's real width,
 // so whenever that was even a pixel narrower than the width the tile size was
-// computed from — inside the bordered public-list sheet, for one — the fifth
-// tile wrapped onto the next row and every row after it came out crooked.
-// CollectionGrid places posters with tilePosition, and so does this: same
-// positions, same size, same radius and base color, so every poster appears
-// exactly where its placeholder was.
+// computed from, the fifth tile wrapped onto the next row and every row after
+// it came out crooked. CollectionGrid places posters with tilePosition, and so
+// does this: same positions, same size, same radius and base color, so every
+// poster appears exactly where its placeholder was.
 export const CollectionSkeleton = memo(function CollectionSkeleton({ metrics }: { metrics: GridMetrics }) {
   const { height: windowHeight } = useWindowDimensions();
   // Enough rows for the tallest the grid can be; anything below it is clipped.

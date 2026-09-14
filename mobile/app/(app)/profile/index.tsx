@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, type LayoutChangeEvent }
 import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { Drawer } from "react-native-drawer-layout";
+import ProfileDrawer from "../../../src/components/profile/ProfileDrawer";
 import { useProfile } from "../../../src/context/ProfileContext";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
 import ProfileCategoryTabs, { type Category } from "../../../src/components/profile/ProfileCategoryTabs";
@@ -147,11 +147,10 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Drawer
+    <ProfileDrawer
       open={drawerOpen}
       onOpen={() => setDrawerOpen(true)}
       onClose={() => setDrawerOpen(false)}
-      drawerPosition="right"
       renderDrawerContent={() => <ProfileDrawerContent onNavigate={() => setDrawerOpen(false)} />}
     >
       <ScrollView ref={scrollRef} style={styles.screen} contentContainerStyle={styles.scrollContent}>
@@ -166,6 +165,6 @@ export default function ProfileScreen() {
           />
         </View>
       </ScrollView>
-    </Drawer>
+    </ProfileDrawer>
   );
 }

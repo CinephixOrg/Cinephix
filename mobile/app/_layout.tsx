@@ -115,6 +115,17 @@ function RootNavigator() {
         />
         <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
         <Stack.Screen
+          name="list-editor"
+          options={{
+            headerShown: true,
+            title: "",
+            headerStyle: { backgroundColor: colors.base100 },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        <Stack.Screen
           name="network"
           options={{
             headerShown: true,

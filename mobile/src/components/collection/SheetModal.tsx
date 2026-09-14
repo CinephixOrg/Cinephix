@@ -8,7 +8,6 @@ import {
   Text,
   View,
   useWindowDimensions,
-  type DimensionValue,
   type LayoutChangeEvent,
 } from "react-native";
 import {
@@ -28,48 +27,23 @@ const DISMISS_MIN_DISTANCE = 72;
 const DISMISS_VELOCITY = 900;
 const ASSUMED_SHEET_HEIGHT = 520;
 
-/**
- * The sheet's side border. Content laid out from the screen width — a poster
- * grid — has to subtract it on both sides, or it comes out wider than the
- * sheet.
- */
-export const SHEET_BORDER_WIDTH = 1;
-
 interface Props {
   visible: boolean;
   onClose: () => void;
-  /**
-   * Android back button. Defaults to onClose; override it to close something
-   * inside the sheet first (an inline sheet opened from this one).
-   */
-  onRequestClose?: () => void;
   /** Rendered in the drag area under the grabber; dragging it down dismisses the sheet. */
   header: ReactNode;
   children: ReactNode;
-  /**
-   * A fixed height, for content that fills the sheet (a grid). Without one
-   * the sheet sizes to its content, up to 88% of the screen.
-   */
-  height?: DimensionValue;
-  /**
-   * Render into the current window instead of opening a new Modal — for a
-   * sheet opened from inside another sheet. Pass it as that sheet's `overlay`
-   * so it covers the whole window.
-   */
-  inline?: boolean;
-  /** Rendered above this sheet, covering the whole window. */
-  overlay?: ReactNode;
 }
 
-// The bottom sheet behind the collection filter menu and the public profile's
-// list sheets: slides up over a dimmed backdrop, closes on a backdrop tap, the
-// close button or a drag down on its header.
+// The bottom sheet behind the collection filter menu: slides up over a dimmed
+// backdrop, sizes to its content (up to 88% of the screen), and closes on a
+// backdrop tap, the close button, Android back or a drag down on its header.
 //
 // The slide starts a frame after the sheet mounts, so mounting doesn't eat
 // the animation's first frames. The drag feeds an Animated value through
 // plain setValue calls, since handing a native-driver Animated.event to a
 // gesture handler crashes on Fabric.
-function SheetModal({ visible, onClose, onRequestClose, header, children, height, inline = false, overlay }: Props) {
+function SheetModal({ visible, onClose, header, children }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { height: screenHeight } = useWindowDimensions();
@@ -157,15 +131,15 @@ function SheetModal({ visible, onClose, onRequestClose, header, children, height
         backdrop: { flex: 1, justifyContent: "flex-end" },
         dim: { backgroundColor: "rgba(0,0,0,0.55)" },
         sheet: {
+          maxHeight: "88%",
           backgroundColor: colors.base100,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          borderWidth: SHEET_BORDER_WIDTH,
+          borderWidth: 1,
           borderBottomWidth: 0,
           borderColor: colors.border,
           overflow: "hidden",
         },
-        sheetAuto: { maxHeight: "88%" },
         handle: { paddingTop: 10, paddingBottom: 4 },
         grabber: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: "center" },
       }),
@@ -174,42 +148,33 @@ function SheetModal({ visible, onClose, onRequestClose, header, children, height
 
   if (!mounted) return null;
 
-  const content = (
-    <View style={styles.backdrop}>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dim, { opacity: backdropOpacity }]} />
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("Close")} />
-
-      <Animated.View
-        onLayout={onSheetLayout}
-        style={[styles.sheet, height === undefined ? styles.sheetAuto : { height }, { transform: [{ translateY: sheetTranslate }] }]}
-      >
-        <PanGestureHandler onGestureEvent={onPanEvent} onHandlerStateChange={onPanStateChange}>
-          <View>
-            <View style={styles.handle} accessible={false}>
-              <View style={styles.grabber} />
-            </View>
-            {header}
-          </View>
-        </PanGestureHandler>
-        {children}
-      </Animated.View>
-
-      {overlay}
-    </View>
-  );
-
-  if (inline) return <View style={StyleSheet.absoluteFill}>{content}</View>;
-
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onRequestClose ?? onClose} statusBarTranslucent>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>{content}</GestureHandlerRootView>
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+        <View style={styles.backdrop}>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dim, { opacity: backdropOpacity }]} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("Close")} />
+
+          <Animated.View onLayout={onSheetLayout} style={[styles.sheet, { transform: [{ translateY: sheetTranslate }] }]}>
+            <PanGestureHandler onGestureEvent={onPanEvent} onHandlerStateChange={onPanStateChange}>
+              <View>
+                <View style={styles.handle} accessible={false}>
+                  <View style={styles.grabber} />
+                </View>
+                {header}
+              </View>
+            </PanGestureHandler>
+            {children}
+          </Animated.View>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
 
 export default memo(SheetModal);
 
-/** The title row with a close button that every collection sheet uses. */
+/** The title row with a close button that the sheet's header uses. */
 export const SheetHeader = memo(function SheetHeader({ title, onClose }: { title: string; onClose: () => void }) {
   const { colors } = useTheme();
   const { t } = useTranslation();

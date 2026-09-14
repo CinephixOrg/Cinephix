@@ -4,6 +4,9 @@ import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { LIST_COUNT_TIERS, crossedActivityTier, bumpStreak } from "../controllers/badgeController.js";
+import { normalizeListItems } from "../utils/listItems.js";
+import { parseSuggestionRequest } from "../utils/listSuggestions.js";
+import { suggestForList } from "../services/listSuggestions.js";
 
 const router = express.Router();
 
@@ -215,7 +218,9 @@ router.get("/me", authMiddleware, async (req, res) => {
   try {
     let lists = await CustomList.find({ owner: req.user._id }).sort({ order: -1, createdAt: -1 }).lean();
     lists = await backfillOrder(lists);
-    return res.json({ lists: await hydratePreviewItems(lists) });
+    // 20 preview posters, like /popular and /discover: the My Lists page shows
+    // the same card, whose film strip swipes through them.
+    return res.json({ lists: await hydratePreviewItems(lists, 20) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
@@ -254,11 +259,34 @@ router.patch("/me/reorder", authMiddleware, async (req, res) => {
   }
 });
 
-// ── POST /api/lists ── create a new list
+// ── POST /api/lists/suggestions ── titles to suggest for a list being built
+// Body: { seeds: [{ itemId, itemType }], exclude?: [{ itemId, itemType }], limit? }
+// — seeds are the list's most recently added titles, exclude everything
+// already on it. See services/listSuggestions.js.
+router.post("/suggestions", authMiddleware, async (req, res) => {
+  const request = parseSuggestionRequest(req.body);
+  if (request.error) return res.status(400).json({ message: request.error });
+  try {
+    return res.json(await suggestForList(request));
+  } catch (err) {
+    console.error("List suggestions failed:", err?.message || err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── POST /api/lists ── create a new list, optionally with its titles
+// Body: { name, description?, isPublic?, items?: [{ itemId, itemType }] }
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { name, description, isPublic } = req.body;
+    const { name, description, isPublic, items } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: "Name is required" });
+
+    let listItems = [];
+    if (items !== undefined) {
+      const normalized = normalizeListItems(items);
+      if (normalized.error) return res.status(400).json({ message: normalized.error });
+      listItems = normalized.items;
+    }
 
     const maxOrderDoc = await CustomList.findOne({ owner: req.user._id })
       .sort({ order: -1 })
@@ -271,6 +299,7 @@ router.post("/", authMiddleware, async (req, res) => {
       name: name.trim(),
       description: description?.trim() || "",
       isPublic: !!isPublic,
+      items: listItems,
       order,
     });
 
@@ -320,7 +349,8 @@ router.get("/:id", optionalAuth, async (req, res) => {
   }
 });
 
-// ── PATCH /api/lists/:id ── update name / description / visibility
+// ── PATCH /api/lists/:id ── update name / description / visibility, and
+// optionally replace the titles (the list editor saves them all at once)
 router.patch("/:id", authMiddleware, async (req, res) => {
   try {
     const list = await CustomList.findById(req.params.id);
@@ -329,7 +359,13 @@ router.patch("/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const { name, description, isPublic } = req.body;
+    const { name, description, isPublic, items } = req.body;
+    if (name !== undefined && !String(name).trim()) return res.status(400).json({ message: "Name is required" });
+    if (items !== undefined) {
+      const normalized = normalizeListItems(items, list.items);
+      if (normalized.error) return res.status(400).json({ message: normalized.error });
+      list.items = normalized.items;
+    }
     if (name !== undefined) list.name = name.trim();
     if (description !== undefined) list.description = description.trim();
     if (isPublic !== undefined) list.isPublic = !!isPublic;

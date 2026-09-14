@@ -675,9 +675,10 @@ export const getUserCollections = asyncHandler(async (req, res) => {
   sendSuccess(
     res,
     {
-      // Same preview-poster hydration the Lists screens already use, so a
-      // list card looks identical wherever it's rendered.
-      lists: await hydratePreviewItems(lists),
+      // The same 20 preview posters Discover's /popular and /discover send,
+      // so a list card's film strip swipes through the same titles on a
+      // profile as it does on Discover.
+      lists: await hydratePreviewItems(lists, 20),
       watched,
       watchlist,
       ...PUBLIC_ACCESS

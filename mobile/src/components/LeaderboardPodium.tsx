@@ -380,18 +380,21 @@ export default function LeaderboardPodium({ basePath }: Props) {
   };
 
   function renderRealCard(key: CategoryKey, rank: 1 | 2 | 3, item: any) {
-    const common = { key: item.content.id as string, rank, content: item.content, basePath, locked: false as const };
+    // The React key is passed on its own: React doesn't allow `key` inside a
+    // spread props object.
+    const cardKey = item.content.id as string;
+    const common = { rank, content: item.content, basePath, locked: false as const };
     switch (key) {
       case "favorited":
-        return <LeaderboardCard {...common} metric={{ kind: "favorited", favoriteCount: item.favoriteCount }} />;
+        return <LeaderboardCard key={cardKey} {...common} metric={{ kind: "favorited", favoriteCount: item.favoriteCount }} />;
       case "rated":
-        return <LeaderboardCard {...common} metric={{ kind: "rated", avgRating: item.avgRating }} />;
+        return <LeaderboardCard key={cardKey} {...common} metric={{ kind: "rated", avgRating: item.avgRating }} />;
       case "recommended":
-        return <LeaderboardCard {...common} metric={{ kind: "recommended", recommendCount: item.recommendCount }} />;
+        return <LeaderboardCard key={cardKey} {...common} metric={{ kind: "recommended", recommendCount: item.recommendCount }} />;
       case "watched":
-        return <LeaderboardCard {...common} metric={{ kind: "watched", watchedCount: item.watchedCount }} />;
+        return <LeaderboardCard key={cardKey} {...common} metric={{ kind: "watched", watchedCount: item.watchedCount }} />;
       case "reviewed":
-        return <LeaderboardCard {...common} metric={{ kind: "reviewed", reviewCount: item.reviewCount }} />;
+        return <LeaderboardCard key={cardKey} {...common} metric={{ kind: "reviewed", reviewCount: item.reviewCount }} />;
     }
   }
 

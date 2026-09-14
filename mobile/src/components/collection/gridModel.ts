@@ -121,3 +121,70 @@ export function nextBand(
   }
   return { first: Math.max(0, firstVisible - overscanRows), last: lastVisible + overscanRows };
 }
+
+// ---------------------------------------------------------------------------
+// Following one grid's items from render to render
+// ---------------------------------------------------------------------------
+
+/** glide: animate to a new position. snap: jump there. */
+export type GridMotion = "glide" | "snap";
+
+/** An item just removed, kept for its exit animation in the slot it left. */
+export interface GridGhost<T> {
+  item: T;
+  key: string;
+  index: number;
+  expiresAt: number;
+}
+
+export interface TrackedGrid<T> {
+  items: readonly T[];
+  keys: string[];
+  /** How items move into the slots this change gives them. */
+  motion: GridMotion;
+  /** Keys that just came back (an Undo): they fade and scale in. */
+  appearing: ReadonlySet<string>;
+  ghosts: GridGhost<T>[];
+  /** Bumped on every reorder, to trigger the grid's fade. */
+  reorders: number;
+}
+
+const NO_KEYS: ReadonlySet<string> = new Set();
+
+export function initialTracking<T>(items: readonly T[], keyOf: (item: T) => string): TrackedGrid<T> {
+  return { items, keys: items.map(keyOf), motion: "snap", appearing: NO_KEYS, ghosts: [], reorders: 0 };
+}
+
+/**
+ * What the grid should do for a new list: which items glide, which play an
+ * exit as ghosts, which appear, or whether it's a reorder to fade through.
+ */
+export function trackChange<T>(
+  previous: TrackedGrid<T>,
+  items: readonly T[],
+  keyOf: (item: T) => string,
+  exitMs: number,
+  now: number
+): TrackedGrid<T> {
+  const keys = items.map(keyOf);
+  const change = classifyChange(previous.keys, keys);
+  if (change.kind === "reorder") {
+    return { items, keys, motion: "snap", appearing: NO_KEYS, ghosts: [], reorders: previous.reorders + 1 };
+  }
+  const present = new Set(keys);
+  // An item put back by Undo while its exit is still playing stops being a ghost.
+  let ghosts = previous.ghosts.filter((ghost) => ghost.expiresAt > now && !present.has(ghost.key));
+  if (change.kind === "removal") {
+    ghosts = ghosts.concat(
+      change.removed.map((index) => ({ item: previous.items[index], key: previous.keys[index], index, expiresAt: now + exitMs }))
+    );
+  }
+  return {
+    items,
+    keys,
+    motion: change.kind === "same" ? previous.motion : "glide",
+    appearing: change.kind === "insertion" ? new Set(change.added.map((index) => keys[index])) : NO_KEYS,
+    ghosts,
+    reorders: previous.reorders,
+  };
+}

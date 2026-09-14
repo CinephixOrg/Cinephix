@@ -342,8 +342,6 @@ interface Props {
   sortGroups: SortGroupSpec[];
   /** The Rated / Not Rated filter (Watched Lists only). */
   showRatedFilter: boolean;
-  /** Open inside the current window — when this is shown from inside another sheet. See SheetModal. */
-  inline?: boolean;
 }
 
 // Filter menu shared by every collection view.
@@ -360,7 +358,6 @@ function CollectionFilterSheet({
   resultCount,
   sortGroups,
   showRatedFilter,
-  inline = false,
 }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -368,7 +365,7 @@ function CollectionFilterSheet({
   const styles = useMemo(() => createStyles(colors, insets.bottom), [colors, insets.bottom]);
 
   return (
-    <SheetModal visible={visible} onClose={onClose} inline={inline} header={<SheetHeader title={t("Filters")} onClose={onClose} />}>
+    <SheetModal visible={visible} onClose={onClose} header={<SheetHeader title={t("Filters")} onClose={onClose} />}>
       <ScrollView contentContainerStyle={styles.body} bounces={false} showsVerticalScrollIndicator={false}>
         <TypeSection types={filters.types} onAction={onAction} styles={styles} colors={colors} />
         <SortSection sorts={filters.sorts} groups={sortGroups} onAction={onAction} styles={styles} />

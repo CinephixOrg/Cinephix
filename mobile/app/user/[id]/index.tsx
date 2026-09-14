@@ -1,7 +1,9 @@
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
+import ProfileDrawer from "../../../src/components/profile/ProfileDrawer";
 import { useAuth } from "../../../src/context/AuthContext";
 import { useChat } from "../../../src/context/ChatContext";
 import { useToast } from "../../../src/context/ToastContext";
@@ -9,16 +11,17 @@ import { useFollowState } from "../../../src/hooks/useFollowState";
 import {
   fetchPublicProfile,
   fetchPublicProfileCollections,
-  getCachedCollections,
   getCachedPublicProfile,
   invalidatePublicProfile,
   type PublicProfileBundle,
 } from "../../../src/api/publicProfileCache";
+import { prefetchPublicCollection } from "../../../src/api/publicCollectionCache";
 import { sameShape } from "../../../src/utils/cache";
 import { getOrCreateConversation, sendRichMessage } from "../../../src/api/conversationService";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
 import type { PhotoViewerAction } from "../../../src/components/profile/ProfilePhotoViewerModal";
 import PublicProfileCategoryTabs from "../../../src/components/profile/PublicProfileCategoryTabs";
+import PublicProfileDrawerContent from "../../../src/components/profile/PublicProfileDrawerContent";
 import UserSharePickerModal from "../../../src/components/UserSharePickerModal";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import type { CineGraphData, Favorites, FollowStatus, PublicProfile } from "../../../src/types";
@@ -73,7 +76,6 @@ export default function PublicProfileScreen() {
   const [favorites, setFavorites] = useState<Favorites | null>(cachedBundle?.favorites ?? null);
   const [shareCount, setShareCount] = useState<number | undefined>(cachedBundle?.shareCount);
   const [shares, setShares] = useState(cachedBundle?.shares);
-  const [collections, setCollections] = useState(id ? getCachedCollections(id) : undefined);
   // Whether `profile` came from the network this session rather than the
   // cache — see initialFollowStatus below for why that distinction matters.
   const [profileIsFresh, setProfileIsFresh] = useState(false);
@@ -112,6 +114,37 @@ export default function PublicProfileScreen() {
     unfollow: unfollowUser,
   } = useFollowState(id ?? "", { initialStatus: initialFollowStatus });
 
+  // The slide-out drawer, the same one the own profile has: this person's
+  // Watched List, Watchlist and Lists as full pages, and Report / Block.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setDrawerOpen((prev) => !prev)}
+          hitSlop={8}
+          style={{ marginRight: 12, padding: 4 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("Menu")}
+        >
+          <Ionicons name="menu" size={24} color={colors.baseContent} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, colors, t]);
+
+  // Opening the drawer warms all three pages behind it, so whichever one is
+  // tapped renders its content straight away instead of a placeholder.
+  useEffect(() => {
+    if (!drawerOpen || !id) return;
+    prefetchPublicCollection(id, "watched");
+    prefetchPublicCollection(id, "watchlist");
+    fetchPublicProfileCollections(id).catch(() => {
+      // The Lists page loads (and reports) on its own.
+    });
+  }, [drawerOpen, id]);
+
   // Revalidates on every focus, but never tears the screen down to do it.
   //
   // This used to flip `loading` true on each focus, which swapped the whole
@@ -144,17 +177,6 @@ export default function PublicProfileScreen() {
         apply(cached);
         setLoading(false);
       }
-
-      // Awaited separately from the bundle, so the header and Sharings grid
-      // never wait on the Lists tab's data. Lands quietly behind them.
-      fetchPublicProfileCollections(id)
-        .then((result) => {
-          if (!cancelled) setCollections((prev) => (sameShape(prev, result) ? prev : result));
-        })
-        .catch(() => {
-          // The tab shows its own empty rails; nothing else on the page
-          // depends on this.
-        });
 
       setError(null);
       fetchPublicProfile(id)
@@ -326,25 +348,30 @@ export default function PublicProfileScreen() {
 
   return (
     <>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
-        <ProfileHeaderInstagram
-          profile={profile}
-          targetUserId={id}
-          shareCount={shareCount}
-          actionsSlot={actionRow}
-          photoViewerActions={photoViewerActions}
-        />
+      <ProfileDrawer
+        open={drawerOpen}
+        onOpen={() => setDrawerOpen(true)}
+        onClose={() => setDrawerOpen(false)}
+        renderDrawerContent={() => <PublicProfileDrawerContent userId={id} onNavigate={() => setDrawerOpen(false)} />}
+      >
+        <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+          <ProfileHeaderInstagram
+            profile={profile}
+            targetUserId={id}
+            shareCount={shareCount}
+            actionsSlot={actionRow}
+            photoViewerActions={photoViewerActions}
+          />
 
-        <PublicProfileCategoryTabs
-          favorites={favorites}
-          cineGraph={cineGraph}
-          userId={id}
-          initialShares={shares}
-          collections={collections}
-          username={profile.username}
-          initialCategory={tab === "favorites" ? "favorites" : undefined}
-        />
-      </ScrollView>
+          <PublicProfileCategoryTabs
+            favorites={favorites}
+            cineGraph={cineGraph}
+            userId={id}
+            initialShares={shares}
+            initialCategory={tab === "favorites" ? "favorites" : undefined}
+          />
+        </ScrollView>
+      </ProfileDrawer>
 
       <UserSharePickerModal
         visible={sharePickerVisible}

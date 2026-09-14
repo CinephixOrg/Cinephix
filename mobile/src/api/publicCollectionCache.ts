@@ -3,13 +3,13 @@ import { ensureContent, entryFor, sameEntries } from "./collectionCache";
 import { createLruCache } from "../utils/cache";
 import type { CollectionEntry } from "../utils/collectionQuery";
 
-// Cache behind the public profile's full Watched List / Watchlist sheets.
+// Cache behind the public profile's Watched List / Watchlist pages.
 //
 // Same approach as the personal lists (collectionCache.ts): the server sends
 // ids, and titles and posters come from the shared content cache — two bulk
 // requests at most, and none for titles already seen anywhere in the app.
 // Stale-while-revalidate, one in-flight request per list, and an unchanged
-// list keeps its identity so an open sheet doesn't rebuild its search index.
+// list keeps its identity so an open page doesn't rebuild its search index.
 
 export type PublicCollectionKind = "watched" | "watchlist";
 
@@ -70,7 +70,7 @@ export function loadPublicCollection(userId: string, kind: PublicCollectionKind)
 export function prefetchPublicCollection(userId: string, kind: PublicCollectionKind): void {
   if (isPublicCollectionFresh(getCachedPublicCollection(userId, kind))) return;
   loadPublicCollection(userId, kind).catch(() => {
-    // Silent — the sheet retries when it opens.
+    // Silent — the page retries when it opens.
   });
 }
 
