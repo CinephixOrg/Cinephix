@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
-import * as Notifications from "expo-notifications";
+import type { NotificationResponse } from "expo-notifications";
 import { useRootNavigationState, useRouter } from "expo-router";
 import i18next from "../i18n";
 import { useAuth } from "../context/AuthContext";
@@ -10,22 +10,28 @@ import { prefetchDestination } from "../api/notificationPrefetch";
 import { destinationFor, hrefFor } from "../utils/notificationFeed";
 import { isForActiveChat, isForViewer, parsePushData, toRoutable, type PushData } from "../utils/pushRouting";
 import { getActiveChat } from "../push/activeChat";
-import { pushSupported, registerForPush, setAppBadge } from "../push/registration";
-
-// How a push is shown while the app is open: as a banner, unless it's a
-// message in the chat already on screen. Set at import, before any push can
-// arrive.
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => {
-    const data = parsePushData(notification.request.content.data);
-    const quiet = data !== null && isForActiveChat(data, getActiveChat());
-    return { shouldShowBanner: !quiet, shouldShowList: !quiet, shouldPlaySound: !quiet, shouldSetBadge: true };
-  },
-});
+import { getNotifications, registerForPush, setAppBadge, type NotificationsModule } from "../push/registration";
 
 // Taps already routed. The launch tap is also reported by the listener on
 // some platforms, and a remount (sign out, sign back in) must not replay it.
 const handledResponses = new Set<string>();
+
+let handlerInstalled = false;
+
+// How a push is shown while the app is open: as a banner, unless it's a
+// message in the chat already on screen. Installed once, on the first mount,
+// before anything can arrive.
+function installForegroundHandler(Notifications: NotificationsModule) {
+  if (handlerInstalled) return;
+  handlerInstalled = true;
+  Notifications.setNotificationHandler({
+    handleNotification: async (notification) => {
+      const data = parsePushData(notification.request.content.data);
+      const quiet = data !== null && isForActiveChat(data, getActiveChat());
+      return { shouldShowBanner: !quiet, shouldShowList: !quiet, shouldPlaySound: !quiet, shouldSetBadge: true };
+    },
+  });
+}
 
 /**
  * Push notifications for the signed-in account, mounted once under the root
@@ -39,6 +45,9 @@ const handledResponses = new Set<string>();
  *   * a push arriving while the app is open refreshes the unread badge and
  *     the loaded feed;
  *   * keeps the app icon's badge equal to the unread count.
+ *
+ * Does nothing at all where remote push isn't available (Expo Go on Android):
+ * expo-notifications is never even loaded there (see getNotifications).
  */
 export function usePushNotifications() {
   const { user } = useAuth();
@@ -72,8 +81,11 @@ export function usePushNotifications() {
 
   // Taps: the one that launched the app, and every one after.
   useEffect(() => {
-    if (!pushSupported()) return;
-    const take = (response: Notifications.NotificationResponse | null) => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
+    installForegroundHandler(Notifications);
+
+    const take = (response: NotificationResponse | null) => {
       if (!response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
       const key = response.notification.request.identifier;
       if (handledResponses.has(key)) return;
@@ -96,7 +108,8 @@ export function usePushNotifications() {
 
   // Registration, and keeping it current.
   useEffect(() => {
-    if (!userId || !pushSupported()) return;
+    const Notifications = getNotifications();
+    if (!userId || !Notifications) return;
     const report = (error: unknown) => console.warn("Push registration failed:", (error as Error)?.message ?? error);
 
     registerForPush(userId, { ask: true }).catch(report);
@@ -122,7 +135,8 @@ export function usePushNotifications() {
 
   // A push while the app is open: the badge and any loaded feed catch up.
   useEffect(() => {
-    if (!userId || !pushSupported()) return;
+    const Notifications = getNotifications();
+    if (!userId || !Notifications) return;
     const subscription = Notifications.addNotificationReceivedListener((notification) => {
       if (!parsePushData(notification.request.content.data)) return;
       refreshUnreadCount();

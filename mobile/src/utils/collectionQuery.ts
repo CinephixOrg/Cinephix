@@ -268,7 +268,7 @@ export interface MatchScore {
 }
 
 /** Scores one title against a normalized query, or returns null for no match. */
-export function matchTitle(item: IndexedEntry, queryNorm: string, queryTokens: string[]): MatchScore | null {
+export function matchTitle(item: Pick<IndexedEntry, "norm" | "tokens">, queryNorm: string, queryTokens: string[]): MatchScore | null {
   if (queryTokens.length === 0) return null;
 
   let allPrefix = true;
@@ -309,6 +309,51 @@ export function matchTitle(item: IndexedEntry, queryNorm: string, queryTokens: s
   else return null;
 
   return { tier, matched, exact };
+}
+
+// ---------------------------------------------------------------------------
+// Searching by name (the Lists page)
+// ---------------------------------------------------------------------------
+
+export interface NamedIndexEntry<T> {
+  item: T;
+  norm: string;
+  tokens: string[];
+  /** The item's place in the list it was indexed from. */
+  position: number;
+}
+
+/** Precomputes a name search, once per list change rather than once per keystroke. */
+export function buildNamedIndex<T>(items: readonly T[], nameOf: (item: T) => string): NamedIndexEntry<T>[] {
+  return items.map((item, position) => {
+    const norm = normalizeText(nameOf(item));
+    return { item, norm, tokens: tokenize(norm), position };
+  });
+}
+
+/**
+ * The items whose name matches, with the same matching as a title search
+ * (accents and case folded, word prefixes, one typo), best match first and
+ * equally good matches in their own order. An empty search is every item, in
+ * order.
+ */
+export function searchNamed<T>(index: readonly NamedIndexEntry<T>[], query: string): T[] {
+  const queryNorm = normalizeText(query);
+  if (queryNorm.length === 0) return index.map((entry) => entry.item);
+  const queryTokens = tokenize(queryNorm);
+  const hits: { entry: NamedIndexEntry<T>; score: MatchScore }[] = [];
+  for (const entry of index) {
+    const score = matchTitle(entry, queryNorm, queryTokens);
+    if (score) hits.push({ entry, score });
+  }
+  hits.sort(
+    (a, b) =>
+      b.score.tier - a.score.tier ||
+      b.score.matched - a.score.matched ||
+      b.score.exact - a.score.exact ||
+      a.entry.position - b.entry.position
+  );
+  return hits.map((hit) => hit.entry.item);
 }
 
 // Relevance first, popularity only to break ties within it.

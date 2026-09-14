@@ -32,6 +32,13 @@ export default function UserProfileStackLayout() {
       {/* One share on its own page — opened from a "liked your share"
           notification. */}
       <Stack.Screen name="shares/[shareId]" options={{ title: t("Share details") }} />
+      {/* This person's library, opened from their profile's drawer: full,
+          read-only pages in this stack, so Back returns to the profile.
+          Titled at runtime with the owner's name ("@ana's Watched List", see
+          useOwnerTitle), so there's no generic title to flash first. */}
+      <Stack.Screen name="watched" options={{ title: "" }} />
+      <Stack.Screen name="watchlist" options={{ title: "" }} />
+      <Stack.Screen name="lists/index" options={{ title: "" }} />
       {/* Genre detail lives in THIS stack, not the profile tab's copy of it.
           Opened from a genre in someone else's CineGraph, it has to come
           back to their profile — and read their titles, not yours. Title is

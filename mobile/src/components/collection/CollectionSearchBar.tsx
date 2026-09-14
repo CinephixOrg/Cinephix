@@ -6,17 +6,21 @@ import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
 // The main Search page waits 400ms because every query is a network request.
-// This one runs in memory in well under a frame, so the debounce only needs
-// to be long enough to skip the intermediate states of a fast typist.
-const DEBOUNCE_MS = 120;
+// A collection search runs in memory in well under a frame, so by default the
+// debounce only needs to be long enough to skip a fast typist's intermediate
+// states.
+const DEFAULT_DEBOUNCE_MS = 120;
 
 interface Props {
   placeholder: string;
+  /** Longer for a search that goes to the network (the list editor). */
+  debounceMs?: number;
   /** The text to start with, read on mount — restores a search when a sheet reopens. */
   initialQuery?: string;
   onChangeQuery: (query: string) => void;
-  onOpenFilters: () => void;
-  activeFilterCount: number;
+  /** Without it there is no filter button (the Lists page only searches). */
+  onOpenFilters?: () => void;
+  activeFilterCount?: number;
 }
 
 // Search box for a collection, with the filter button at its trailing edge
@@ -24,7 +28,14 @@ interface Props {
 //
 // Owns its own text. The screen only hears about the debounced value, so a
 // keystroke re-renders this bar and nothing else.
-function CollectionSearchBar({ placeholder, initialQuery = "", onChangeQuery, onOpenFilters, activeFilterCount }: Props) {
+function CollectionSearchBar({
+  placeholder,
+  debounceMs = DEFAULT_DEBOUNCE_MS,
+  initialQuery = "",
+  onChangeQuery,
+  onOpenFilters,
+  activeFilterCount = 0,
+}: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const [value, setValue] = useState(initialQuery);
@@ -40,15 +51,16 @@ function CollectionSearchBar({ placeholder, initialQuery = "", onChangeQuery, on
       onChangeQuery("");
       return;
     }
-    const timer = setTimeout(() => onChangeQuery(value), DEBOUNCE_MS);
+    const timer = setTimeout(() => onChangeQuery(value), debounceMs);
     return () => clearTimeout(timer);
-  }, [value, onChangeQuery]);
+  }, [value, onChangeQuery, debounceMs]);
 
   useEffect(() => {
     Animated.timing(clearVisibility, { toValue: hasText ? 1 : 0, duration: 140, useNativeDriver: true }).start();
   }, [clearVisibility, hasText]);
 
   const filtering = activeFilterCount > 0;
+  const hasFilters = onOpenFilters !== undefined;
 
   const styles = useMemo(
     () =>
@@ -61,7 +73,7 @@ function CollectionSearchBar({ placeholder, initialQuery = "", onChangeQuery, on
           borderWidth: 1.5,
           backgroundColor: colors.base200,
           paddingLeft: 14,
-          paddingRight: 5,
+          paddingRight: hasFilters ? 5 : 10,
           gap: 8,
         },
         input: {
@@ -90,7 +102,7 @@ function CollectionSearchBar({ placeholder, initialQuery = "", onChangeQuery, on
         },
         badgeText: { fontFamily: fonts.bold, fontSize: 10, color: colors.base100 },
       }),
-    [colors]
+    [colors, hasFilters]
   );
 
   return (
@@ -124,24 +136,26 @@ function CollectionSearchBar({ placeholder, initialQuery = "", onChangeQuery, on
           <Ionicons name="close-circle" size={18} color={colors.placeholder} />
         </Pressable>
       </Animated.View>
-      <Pressable
-        onPress={onOpenFilters}
-        hitSlop={6}
-        accessibilityRole="button"
-        accessibilityLabel={t("Filters")}
-        style={({ pressed }) => [
-          styles.filterButton,
-          { backgroundColor: filtering ? colors.primary : colors.base300 },
-          pressed && { transform: [{ scale: 0.94 }] },
-        ]}
-      >
-        <Ionicons name="options-outline" size={19} color={filtering ? colors.primaryContent : colors.baseContent} />
-        {filtering ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{activeFilterCount}</Text>
-          </View>
-        ) : null}
-      </Pressable>
+      {onOpenFilters ? (
+        <Pressable
+          onPress={onOpenFilters}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={t("Filters")}
+          style={({ pressed }) => [
+            styles.filterButton,
+            { backgroundColor: filtering ? colors.primary : colors.base300 },
+            pressed && { transform: [{ scale: 0.94 }] },
+          ]}
+        >
+          <Ionicons name="options-outline" size={19} color={filtering ? colors.primaryContent : colors.baseContent} />
+          {filtering ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{activeFilterCount}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      ) : null}
     </View>
   );
 }

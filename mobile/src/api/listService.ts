@@ -15,10 +15,17 @@ export async function getMyLists(): Promise<CustomList[]> {
 // Every call here creates a genuinely new list (no upsert on this
 // endpoint), so `newlyEarnedBadges` (the listCount activity badge) never
 // needs an "was this an edit" guard the way rating/review counts do.
+export interface ListItemRef {
+  itemId: string;
+  itemType: ContentType;
+}
+
 export async function createList(fields: {
   name: string;
   description?: string;
   isPublic?: boolean;
+  /** The titles to start with, in order (the list editor). */
+  items?: ListItemRef[];
 }): Promise<{ list: CustomList; newlyEarnedBadges: NewlyEarnedBadge[] }> {
   const res = await API.post(API_ROUTES.LISTS.CREATE, fields);
   return { list: res.data.list, newlyEarnedBadges: res.data.newlyEarnedBadges };
@@ -33,18 +40,32 @@ export async function getListById(
 
 export async function updateList(
   id: string,
-  fields: { name?: string; description?: string; isPublic?: boolean }
+  /** `items` replaces every title on the list, in order. */
+  fields: { name?: string; description?: string; isPublic?: boolean; items?: ListItemRef[] }
 ): Promise<CustomList> {
   const res = await API.patch(API_ROUTES.LISTS.UPDATE(id), fields);
   return res.data.list;
 }
 
-export async function deleteList(id: string): Promise<void> {
-  await API.delete(API_ROUTES.LISTS.DELETE(id));
+export interface ListSuggestion {
+  id: string;
+  type: ContentType;
+  title: string;
+  poster_path: string | null;
+  releaseDate: string | null;
 }
 
-export async function reorderLists(orderedIds: string[]): Promise<void> {
-  await API.patch(API_ROUTES.LISTS.REORDER, { orderedIds });
+/**
+ * Titles to suggest for a list being built, drawn from `seeds` (its most
+ * recently added titles), leaving out `exclude` (everything already on it).
+ */
+export async function getListSuggestions(seeds: ListItemRef[], exclude: ListItemRef[], limit?: number): Promise<ListSuggestion[]> {
+  const res = await API.post(API_ROUTES.LISTS.SUGGESTIONS, { seeds, exclude, limit });
+  return res.data.items;
+}
+
+export async function deleteList(id: string): Promise<void> {
+  await API.delete(API_ROUTES.LISTS.DELETE(id));
 }
 
 export async function addItem(

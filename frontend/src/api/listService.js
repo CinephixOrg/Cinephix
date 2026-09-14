@@ -16,10 +16,20 @@ export const listService = {
     return res.data;
   },
 
-  createList: async ({ name, description, isPublic }) => {
-    const res = await API.post(API_ROUTES.LISTS.CREATE, { name, description, isPublic });
+  // `items` ([{ itemId, itemType }], in order) creates the list with its
+  // titles already on it, in the same request (the list editor).
+  createList: async ({ name, description, isPublic, items }) => {
+    const res = await API.post(API_ROUTES.LISTS.CREATE, { name, description, isPublic, ...(items ? { items } : {}) });
     clearCacheItem(CACHE_KEYS.MY_LISTS);
     return res.data;
+  },
+
+  // Titles to suggest for a list being built: drawn from `seeds` (its most
+  // recently added titles, oldest first), leaving out `exclude` (everything
+  // already on it). Resolves with [{ id, type, title, poster_path, releaseDate }].
+  getSuggestions: async (seeds, exclude, limit) => {
+    const res = await API.post("/lists/suggestions", { seeds, exclude, limit });
+    return res.data.items;
   },
 
   getListById: async (id) => {

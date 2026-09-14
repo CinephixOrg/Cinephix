@@ -49,8 +49,8 @@ const sameEntry = (a: CollectionEntry, b: CollectionEntry) => a.id === b.id && a
 
 // The signed-in user's Watched List and Watchlist: one implementation,
 // configured per list, so the two pages can't drift apart. The public
-// profile's read-only list sheets (PublicCollectionSheet) are built from the
-// same pieces.
+// profile's read-only Watched List and Watchlist pages
+// (PublicCollectionScreen) are built from the same pieces.
 //
 // Everything a query needs is already in memory: the list comes from its
 // collection cache (instant on revisit, refreshed underneath) and search,

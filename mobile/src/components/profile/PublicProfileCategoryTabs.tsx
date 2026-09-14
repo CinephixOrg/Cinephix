@@ -7,13 +7,12 @@ import ProfileSharingsTab from "./ProfileSharingsTab";
 import ProfileCinegraphsTab from "./ProfileCinegraphsTab";
 import ProfileBadgesTab from "./ProfileBadgesTab";
 import SyncScoreCard from "./SyncScoreCard";
-import PublicListsTab from "./PublicListsTab";
 import CineGraphSubTabSwitcher, { type CineGraphSubTab } from "./CineGraphSubTabSwitcher";
-import type { CineGraphData, Favorites, Share, UserCollections } from "../../types";
+import type { CineGraphData, Favorites, Share } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
 
-export type Category = "sharings" | "favorites" | "lists" | "cinegraph" | "badges";
+export type Category = "sharings" | "favorites" | "cinegraph" | "badges";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -33,23 +32,20 @@ interface Props {
   // renders content immediately rather than firing a second request and
   // sitting on a spinner after the profile itself already loaded.
   initialShares?: Share[];
-  // Lists / watched list / watchlist, same deal.
-  collections?: UserCollections;
-  // For the full-list sheets' "@username's Watchlist" headers.
-  username: string;
 }
 
 // Declaration order is tab order, left to right.
 const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
   sharings: { active: "grid", inactive: "grid-outline" },
   favorites: { active: "heart", inactive: "heart-outline" },
-  lists: { active: "list", inactive: "list-outline" },
   cinegraph: { active: "pie-chart", inactive: "pie-chart-outline" },
   badges: { active: "ribbon", inactive: "ribbon-outline" },
 };
 
 // Public-profile counterpart to ProfileCategoryTabs.tsx — Sharings/
-// Favorites/Lists/CineGraph/Badges, minus Analyses (no public equivalent
+// Favorites/CineGraph/Badges, the same tabs as the own profile. Their
+// Watched List, Watchlist and Lists are pages opened from the profile's
+// drawer, as on the own profile. Minus Analyses (no public equivalent
 // of Analyses/Activity — both current-user-scoped or backend-unsupported
 // for an arbitrary userId). CineMatch/Analyze used to be standalone
 // buttons above these tabs; now they live as SyncScoreCard at the top of
@@ -58,7 +54,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
 // ProfileBadgesTab.tsx wholesale (passing `userId`) rather than a parallel
 // component — see that file's own `userId` prop comment for why one
 // component serves both profiles.
-export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory, initialShares, collections, username }: Props) {
+export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory, initialShares }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -183,12 +179,6 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
                 />
               )}
             />
-          </View>
-        )}
-
-        {hasVisited("lists") && (
-          <View style={visibility("lists")}>
-            <PublicListsTab collections={collections} userId={userId} username={username} />
           </View>
         )}
 

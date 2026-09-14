@@ -4,11 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
-import type { CollectionEntry } from "../../utils/collectionQuery";
 
 interface Props {
-  /** The title waiting to be removed, or null when nothing is pending. */
-  entry: CollectionEntry | null;
+  /** What's waiting to be removed (a title, a list), or null when nothing is pending. */
+  entry: object | null;
   message: string;
   durationMs: number;
   onUndo: () => void;
@@ -27,7 +26,7 @@ function CollectionUndoBar({ entry, message, durationMs, onUndo }: Props) {
   const reveal = useRef(new Animated.Value(0)).current;
   const remaining = useRef(new Animated.Value(1)).current;
   // Kept so the bar stays on screen while it slides away.
-  const [shown, setShown] = useState<CollectionEntry | null>(entry);
+  const [shown, setShown] = useState<object | null>(entry);
 
   useEffect(() => {
     if (entry) setShown(entry);

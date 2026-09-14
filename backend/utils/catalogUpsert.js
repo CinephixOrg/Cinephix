@@ -189,9 +189,13 @@ export function planCatalogWrites({
  * Resolves TMDB results to catalogue documents, enriching legacy twins
  * instead of duplicating them.
  *
+ * With `write: false` nothing is written: results match documents the
+ * catalogue already has (by TMDB id, or a legacy twin, left as it is), and a
+ * result the catalogue doesn't have is left out rather than created.
+ *
  * @returns {Promise<Map<number, {_id: mongoose.Types.ObjectId, via: "tmdb"|"legacy"|"created"}>>}
  */
-export async function resolveTmdbHits(Model, type, hits, { refreshFields = [] } = {}) {
+export async function resolveTmdbHits(Model, type, hits, { refreshFields = [], write = true } = {}) {
   const unique = [];
   const seen = new Set();
   for (const hit of hits || []) {
@@ -228,6 +232,9 @@ export async function resolveTmdbHits(Model, type, hits, { refreshFields = [] } 
   }
 
   const plan = planCatalogWrites({ type, hits: unique, existingByTmdb, legacyCandidates: legacy, refreshFields });
+  if (!write) {
+    return new Map([...plan.resolved].filter(([, entry]) => entry.via !== "created"));
+  }
   // The raw driver, not Model.bulkWrite: Mongoose treats `id` as a virtual,
   // which is how most of the existing rich twins ended up without the
   // id.tmdb their creating code tried to write.
