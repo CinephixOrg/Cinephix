@@ -2,6 +2,19 @@ export type ContentType = "movie" | "series";
 
 export type AccountTier = "free" | "plus" | "premium" | "dev";
 
+// Single active "Currently Watching" status — see backend's User.js own
+// field comment for the full TTL/auto-clear design. `startedAt` is an ISO
+// string here (over the wire), checked client-side against
+// CURRENTLY_WATCHING_TTL_MS (ContentDetailScreen.tsx) the same way the
+// server does, purely for local button-state display — the server stays
+// authoritative for the actual feed (GET /feed/currently-watching already
+// filters by its own TTL).
+export interface CurrentlyWatching {
+  itemId: string;
+  itemType: ContentType;
+  startedAt: string;
+}
+
 export interface User {
   _id: string;
   username: string;
@@ -10,6 +23,7 @@ export interface User {
   googleId?: string | null;
   isOAuthUser?: boolean;
   accountTier?: AccountTier;
+  currentlyWatching?: CurrentlyWatching | null;
   token: string;
 }
 

@@ -30,6 +30,11 @@ interface Props<T> {
   // height) — keeps a group of rails visually uniform regardless of how
   // much content or empty-state text each one has.
   height?: number;
+  // Arbitrary trailing content next to the title, alongside (or instead
+  // of) See all/Edit — added for CurrentlyWatchingSection.tsx's own All/
+  // Friends mode toggle, which isn't a link or an edit action so neither
+  // existing slot fit it.
+  headerRight?: React.ReactNode;
 }
 
 // First horizontal poster-rail pattern in the app — generic over item type
@@ -47,6 +52,7 @@ export default function ContentRail<T>({
   onEditPress,
   editLabel,
   height,
+  headerRight,
 }: Props<T>) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -96,6 +102,7 @@ export default function ContentRail<T>({
               <Ionicons name="pencil" size={16} color={colors.baseContent} />
             </Pressable>
           )}
+          {headerRight}
         </View>
       </View>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}

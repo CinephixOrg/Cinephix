@@ -14,11 +14,14 @@ import {
 import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import * as SecureStore from "expo-secure-store";
+import { STORAGE_KEYS } from "../constants/apiRoutes";
 import { useAuth } from "../context/AuthContext";
 import { getMovieById, getSeriesById, getContentStats, getWatchedByFriends, getSimilarContent } from "../api/contentService";
 import type { ContentStats, WatchedByFriend, SimilarContentItem } from "../api/contentService";
 import { getAllRatingsForContent, getMyRating, rateContent } from "../api/ratingService";
 import { addToWatchlist, getWatchlist, removeFromWatchlist } from "../api/watchlistService";
+import { setCurrentlyWatching, stopCurrentlyWatching } from "../api/userService";
 import { addToToWatchList, getToWatchList, removeFromToWatchList } from "../api/toWatchService";
 import {
   addItem as addItemToList,
@@ -36,6 +39,7 @@ import FavoritesModal from "../components/FavoritesModal";
 import UserAvatar from "../components/UserAvatar";
 import ShareOptionsMenu from "../components/ShareOptionsMenu";
 import UserSharePickerModal from "../components/UserSharePickerModal";
+import CurrentlyWatchingTutorialModal from "../components/CurrentlyWatchingTutorialModal";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
 import { sendGroupRichMessage } from "../api/groupService";
 import { createShare } from "../api/shareService";
@@ -54,6 +58,12 @@ const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 // something this small on screen).
 const SIMILAR_POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 const OVERVIEW_LINE_HEIGHT = 20; // matches styles.overview's lineHeight
+
+// Mirrors feedController.js's own CURRENTLY_WATCHING_TTL_MS — used only to
+// decide this button's own local active/inactive state instantly (no extra
+// request just to check), the server stays authoritative for the actual
+// feed's own filtering.
+const CURRENTLY_WATCHING_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Rendered from a thin route file inside EACH tab that links to it
 // (movies/content/[type]/[id].tsx, series/..., watchlist/..., lists/...),
@@ -80,13 +90,21 @@ export default function ContentDetailScreen() {
     borderRadius: 12,
     backgroundColor: colors.base200,
   },
-  // Circular, half-overlapping the poster's own bottom edge — the button's
-  // own vertical center sits exactly on the poster's bottom border.
-  giftButton: {
+  // Half-overlapping the poster's own bottom edge, centered as a pair —
+  // was a single self-centered button (left:"50%", marginLeft:-18); now a
+  // row so the new "Currently Watching" button sits directly beside the
+  // recommend one, same hizada per direct ask, rather than each computing
+  // its own centering offset independently.
+  posterActionRow: {
     position: "absolute",
     bottom: -18,
-    left: "50%",
-    marginLeft: -18,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+  },
+  giftButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -96,6 +114,21 @@ export default function ContentDetailScreen() {
     borderWidth: 2,
     borderColor: colors.base100,
   },
+  // Same shape as giftButton; color flips to signal the active/inactive
+  // state at a glance rather than relying purely on the icon swap
+  // (play vs. stop) — colors.error reads as "tap to stop" the same way a
+  // record/live indicator would.
+  watchingButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.base300,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.base100,
+  },
+  watchingButtonActive: { backgroundColor: colors.error },
   topRightCol: { flex: 1 },
   // Always a 2-line stack (title, then year) — was flexDirection:"row" with
   // flexWrap:"wrap", which only pushed the year onto its own line once the
@@ -243,7 +276,7 @@ export default function ContentDetailScreen() {
 }), [colors]);
   const { t } = useTranslation();
   const { type, id } = useLocalSearchParams<{ type: ContentType; id: string }>();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { showToast } = useToast();
   const { reportEarnedBadges } = useBadgeEarned();
   const watchlistGraph = useWatchlistGraph();
@@ -299,6 +332,9 @@ export default function ContentDetailScreen() {
   const [recommendPickerVisible, setRecommendPickerVisible] = useState(false);
   const [sendingRecommendation, setSendingRecommendation] = useState(false);
   const [sharingRecommendation, setSharingRecommendation] = useState(false);
+
+  const [currentlyWatchingBusy, setCurrentlyWatchingBusy] = useState(false);
+  const [currentlyWatchingTutorialVisible, setCurrentlyWatchingTutorialVisible] = useState(false);
 
   const { myReview, refetchMyReview } = useMyReview(id, user?._id);
   // Trimmed from a full Friends/Popular-tab-plus-pagination section down to
@@ -517,9 +553,14 @@ export default function ContentDetailScreen() {
         setRatingSaved(false);
         refreshRatings();
       } else {
-        const { newlyEarnedBadges } = await addToWatchlist(id, type);
+        const { newlyEarnedBadges, currentlyWatching } = await addToWatchlist(id, type);
         setInWatchlist(true);
         reportEarnedBadges(newlyEarnedBadges);
+        // Mirrors the backend's own auto-clear (userWatchlistRoute.js) —
+        // this add just stopped "Currently Watching" server-side if this
+        // was that item, keep the cached button state in sync without a
+        // refetch.
+        if (isWatchingThis) await updateUser({ currentlyWatching });
         // Mirrors web's handleAddToList: if a rating was chosen before this
         // item was ever on the watched list, it was held locally only
         // (handleRate's gate) — save it now that the invariant is satisfied.
@@ -609,8 +650,9 @@ export default function ContentDetailScreen() {
     if (!inWatchlist) {
       setInWatchlist(true);
       addToWatchlist(id, type)
-        .then(({ newlyEarnedBadges }) => {
+        .then(({ newlyEarnedBadges, currentlyWatching }) => {
           reportEarnedBadges(newlyEarnedBadges);
+          if (isWatchingThis) updateUser({ currentlyWatching });
           if (myRating > 0 && !ratingSaved) {
             rateContent(id, type, myRating)
               .then((result) => {
@@ -779,6 +821,71 @@ export default function ContentDetailScreen() {
     }
   };
 
+  // Active only if it's THIS exact item AND still within the 1-day window —
+  // a stale currentlyWatching left over from a much earlier session (the
+  // server never physically clears it on its own, same lazy-expiry
+  // convention the streak badge's own lastStreakDate already uses) must
+  // read as "not watching" here, not just "watching something old."
+  const isWatchingThis =
+    user?.currentlyWatching?.itemId === id &&
+    user?.currentlyWatching?.itemType === type &&
+    Date.now() - new Date(user.currentlyWatching.startedAt).getTime() < CURRENTLY_WATCHING_TTL_MS;
+
+  const activateCurrentlyWatching = async () => {
+    setCurrentlyWatchingBusy(true);
+    try {
+      const currentlyWatching = await setCurrentlyWatching(id, type);
+      await updateUser({ currentlyWatching });
+    } catch {
+      showToast(t("Something went wrong. Please try again."));
+    } finally {
+      setCurrentlyWatchingBusy(false);
+    }
+  };
+
+  // First tap ever (app-wide, not per-title — SecureStore, not per-user
+  // server state) shows the tutorial instead of activating directly; the
+  // tutorial's own "Start Watching" button is what actually calls
+  // activateCurrentlyWatching. Every later tap (here or on any other
+  // title) skips straight to toggling. Stopping never shows the tutorial —
+  // there's nothing to newly explain when you already know how to start
+  // it.
+  const handlePressCurrentlyWatching = async () => {
+    if (isWatchingThis) {
+      setCurrentlyWatchingBusy(true);
+      try {
+        await stopCurrentlyWatching();
+        await updateUser({ currentlyWatching: null });
+      } catch {
+        showToast(t("Something went wrong. Please try again."));
+      } finally {
+        setCurrentlyWatchingBusy(false);
+      }
+      return;
+    }
+    const seen = await SecureStore.getItemAsync(STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN);
+    if (!seen) {
+      setCurrentlyWatchingTutorialVisible(true);
+      return;
+    }
+    await activateCurrentlyWatching();
+  };
+
+  const handleConfirmCurrentlyWatchingTutorial = async () => {
+    setCurrentlyWatchingTutorialVisible(false);
+    await SecureStore.setItemAsync(STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN, "1");
+    await activateCurrentlyWatching();
+  };
+
+  // Dismissing without confirming still marks the tutorial seen — it was
+  // shown and read either way, same "seen" (not "confirmed") semantics
+  // SYNC_INTRO_SEEN already uses elsewhere in this app. Just doesn't
+  // activate anything this time.
+  const handleCancelCurrentlyWatchingTutorial = async () => {
+    setCurrentlyWatchingTutorialVisible(false);
+    await SecureStore.setItemAsync(STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN, "1");
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
@@ -792,14 +899,33 @@ export default function ContentDetailScreen() {
           ) : (
             <View style={styles.posterSmall} onLayout={(e) => setPosterHeight(e.nativeEvent.layout.height)} />
           )}
-          <Pressable
-            style={styles.giftButton}
-            onPress={() => setGiftMenuVisible(true)}
-            accessibilityLabel={t("Recommend")}
-            hitSlop={6}
-          >
-            <Ionicons name="gift-outline" size={18} color={colors.primaryContent} />
-          </Pressable>
+          <View style={styles.posterActionRow}>
+            <Pressable
+              style={styles.giftButton}
+              onPress={() => setGiftMenuVisible(true)}
+              accessibilityLabel={t("Recommend")}
+              hitSlop={6}
+            >
+              <Ionicons name="gift-outline" size={18} color={colors.primaryContent} />
+            </Pressable>
+            <Pressable
+              style={[styles.watchingButton, isWatchingThis && styles.watchingButtonActive]}
+              onPress={handlePressCurrentlyWatching}
+              disabled={currentlyWatchingBusy}
+              accessibilityLabel={isWatchingThis ? t("Stop Currently Watching") : t("Currently Watching")}
+              hitSlop={6}
+            >
+              {currentlyWatchingBusy ? (
+                <ActivityIndicator size="small" color={colors.primaryContent} />
+              ) : (
+                <Ionicons
+                  name={isWatchingThis ? "stop" : "play"}
+                  size={16}
+                  color={isWatchingThis ? "#fff" : colors.baseContent}
+                />
+              )}
+            </Pressable>
+          </View>
         </View>
         <View style={styles.topRightCol}>
           <View style={styles.titleRow} onLayout={(e) => setTitleRowHeight(e.nativeEvent.layout.height)}>
@@ -1125,6 +1251,12 @@ export default function ContentDetailScreen() {
         sending={sendingRecommendation}
         onConfirm={handleSendRecommendation}
         allowGroups
+      />
+
+      <CurrentlyWatchingTutorialModal
+        visible={currentlyWatchingTutorialVisible}
+        onConfirm={handleConfirmCurrentlyWatchingTutorial}
+        onCancel={handleCancelCurrentlyWatchingTutorial}
       />
     </ScrollView>
   );

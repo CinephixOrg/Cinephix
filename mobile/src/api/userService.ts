@@ -3,6 +3,8 @@ import { API_ROUTES } from "../constants/apiRoutes";
 import type {
   AccountTier,
   CineGraphData,
+  ContentType,
+  CurrentlyWatching,
   UserCollections,
   Connection,
   FeedUserRef,
@@ -106,6 +108,22 @@ export async function updateVisibility(visibility: "public" | "private"): Promis
 export async function setOwnAccountTier(tier: AccountTier): Promise<AccountTier> {
   const res = await API.patch(API_ROUTES.USERS.UPDATE_TIER, { tier });
   return res.data.accountTier;
+}
+
+// Content Detail's "Currently Watching" button — see CurrentlyWatching's
+// own type comment (types/index.ts) for the TTL/auto-clear design this is
+// part of. Both return the fresh currentlyWatching value so the caller can
+// feed it straight into AuthContext's updateUser without a second fetch.
+export async function setCurrentlyWatching(
+  itemId: string,
+  itemType: ContentType
+): Promise<CurrentlyWatching> {
+  const res = await API.post(API_ROUTES.USERS.SET_CURRENTLY_WATCHING, { itemId, itemType });
+  return res.data.currentlyWatching;
+}
+
+export async function stopCurrentlyWatching(): Promise<void> {
+  await API.delete(API_ROUTES.USERS.STOP_CURRENTLY_WATCHING);
 }
 
 export async function deleteAccount(): Promise<void> {

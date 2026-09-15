@@ -744,6 +744,35 @@ export const updateVisibility = asyncHandler(async (req, res) => {
   sendSuccess(res, { visibility: user.visibility }, 'Visibility updated successfully');
 });
 
+// @desc    Marks a title as "Currently Watching" — a real explicit action
+//          (Content Detail's own play-icon button), one active item at a
+//          time; setting a new one silently replaces whatever was active
+//          before. See User.js's own currentlyWatching field comment for
+//          the full TTL/auto-clear design.
+// @route   POST /api/users/me/currently-watching
+// @access  Private
+export const setCurrentlyWatching = asyncHandler(async (req, res) => {
+  const { itemId, itemType } = req.body;
+  if (!itemId || !['movie', 'series'].includes(itemType)) {
+    return sendError(res, 'itemId and a valid itemType are required', 400);
+  }
+  const currentlyWatching = { itemId, itemType, startedAt: new Date() };
+  await User.findByIdAndUpdate(req.user.id, { currentlyWatching });
+  sendSuccess(res, { currentlyWatching }, 'Currently watching updated', 200);
+});
+
+// @desc    Manual stop — the counterpart to the auto-clear
+//          userWatchlistRoute.js's watchlist-add already does when the
+//          SAME item is marked watched. Needed as its own action because a
+//          series is rarely finished in one sitting: the user pauses for
+//          the day without necessarily marking it watched yet.
+// @route   DELETE /api/users/me/currently-watching
+// @access  Private
+export const stopCurrentlyWatching = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(req.user.id, { $unset: { currentlyWatching: 1 } });
+  sendSuccess(res, { currentlyWatching: null }, 'Currently watching stopped', 200);
+});
+
 // @desc    DEV-ONLY: change your own account tier to simulate a purchase.
 //          No real billing exists yet — remove/replace this once real IAP lands.
 // @route   PATCH /api/users/me/tier

@@ -45,7 +45,9 @@ import {
   getProfileAnalysis,
   getProfileAnalysisHistory,
   updateVisibility,
-  setOwnAccountTier
+  setOwnAccountTier,
+  setCurrentlyWatching,
+  stopCurrentlyWatching
 } from "../controllers/userController.js";
 import { getImportSources, runImport } from "../controllers/importController.js";
 import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
@@ -189,6 +191,8 @@ router.get("/collections/:id", authMiddleware, getUserCollections);
 
 router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchemas.updateProfile), updateUserBio);
 router.patch("/me/visibility", authMiddleware, updateVisibility);
+router.post("/me/currently-watching", authMiddleware, setCurrentlyWatching);
+router.delete("/me/currently-watching", authMiddleware, stopCurrentlyWatching);
 router.patch("/me/tier", authMiddleware, setOwnAccountTier); // DEV-ONLY: simulates a tier purchase, disabled in production
 
 router.get("/ratings/:id", authMiddleware, getUserRatings);

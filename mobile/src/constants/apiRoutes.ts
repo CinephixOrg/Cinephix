@@ -61,6 +61,8 @@ export const API_ROUTES = {
     UPLOAD_AVATAR: (id: string) => `/users/profile/${id}/upload-profile-pic`,
     UPDATE_PASSWORD: "/users/profile/password",
     UPDATE_VISIBILITY: "/users/me/visibility",
+    SET_CURRENTLY_WATCHING: "/users/me/currently-watching",
+    STOP_CURRENTLY_WATCHING: "/users/me/currently-watching",
     UPDATE_TIER: "/users/me/tier", // DEV-ONLY: simulates a tier purchase
     DELETE_ACCOUNT: "/users/profile",
     GET_FOLLOWING: "/users/me/following",
@@ -129,6 +131,8 @@ export const API_ROUTES = {
     MY_PODIUM_PLACEMENTS: "/feed/my-podium-placements",
     ACTIVITY: "/feed/activity",
     RECOMMENDATIONS: "/feed/recommendations",
+    NEW_RELEASES: "/feed/new-releases",
+    CURRENTLY_WATCHING: "/feed/currently-watching",
   },
   MATCH: {
     FIND: "/match",
@@ -206,4 +210,9 @@ export const STORAGE_KEYS = {
   // so an unchanged placement doesn't re-show the same "you made the
   // podium!" news every single login, only a genuinely new or improved one.
   LAST_SHOWN_PODIUM_PLACEMENT: "cinephix_last_shown_podium_placement",
+  // Whether the "Currently Watching" button's own first-use tutorial has
+  // been shown — direct ask, so tapping the button the very first time
+  // explains what it does before it actually activates anything, and never
+  // again after that.
+  CURRENTLY_WATCHING_TUTORIAL_SEEN: "cinephix_currently_watching_tutorial_seen",
 };

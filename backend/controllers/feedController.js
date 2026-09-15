@@ -918,3 +918,129 @@ export const getRecommendations = asyncHandler(async (req, res) => {
     "Recommendations fetched"
   );
 });
+
+// How far back "new" reaches — checked directly against real data before
+// picking it (same discipline as every threshold in this codebase): a
+// 30-day window returned zero results outright, 90 days returns a real,
+// non-trivial ~58 combined movies+series in this dev DB. Not personalized
+// and nothing is excluded for being already watched/queued — unlike
+// getRecommendations above, this is a plain "what's new in the catalog"
+// browse, not a recommendation, so a title you've already seen still
+// belongs here (the same reasoning Trending/Popular This Week already
+// apply to their own rails).
+const NEW_RELEASES_WINDOW_DAYS = 90;
+
+// ── GET /api/feed/new-releases ──────────────────────────────────
+export const getNewReleases = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
+  const contentType = req.query.type || "all"; // "movie" | "series" | "all"
+
+  const now = new Date();
+  const since = new Date(now.getTime() - NEW_RELEASES_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  // Movie/Series store these as plain "YYYY-MM-DD" strings (TMDB's own
+  // format) — lexicographic comparison against ISO date-only strings sorts
+  // correctly, same as the rest of this codebase's date-string handling.
+  const sinceStr = since.toISOString().slice(0, 10);
+  const nowStr = now.toISOString().slice(0, 10);
+
+  const fetchNew = async (model, dateField) =>
+    model
+      .find({
+        [dateField]: { $gte: sinceStr, $lte: nowStr },
+        poster_path: { $exists: true, $ne: null, $ne: "" },
+      })
+      .select("_id title name poster_path genre_ids vote_average release_date first_air_date")
+      .sort({ [dateField]: -1 })
+      .limit(limit)
+      .lean();
+
+  let movies = [];
+  let series = [];
+  if (contentType !== "series") movies = await fetchNew(getMovie(), "release_date");
+  if (contentType !== "movie") series = await fetchNew(getSeries(), "first_air_date");
+
+  // Interleave by recency rather than concatenating movies-then-series —
+  // same merge-by-position approach getRecommendations above already uses,
+  // just walking two already-date-sorted lists instead of two
+  // score-sorted ones.
+  const results = [];
+  const maxLen = Math.max(movies.length, series.length);
+  for (let i = 0; i < maxLen && results.length < limit; i++) {
+    if (movies[i]) results.push({ ...movies[i], contentType: "movie" });
+    if (series[i] && results.length < limit) results.push({ ...series[i], contentType: "series" });
+  }
+  results.sort(
+    (a, b) => new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date)
+  );
+
+  sendSuccess(res, { items: results.slice(0, limit) }, "New releases fetched");
+});
+
+// How long a "Currently Watching" status stays live before it's treated as
+// stale — direct ask, deliberately short (1 day, not the originally
+// discussed 14) since this is meant to read as "watching right now," not
+// "still working through this series." Mirrors User.js's own
+// `currentlyWatching` field comment for the full reasoning (also cleared
+// for real, not just here, the moment the same item lands on the Watched
+// List — userWatchlistRoute.js's watchlist-add).
+const CURRENTLY_WATCHING_TTL_MS = 24 * 60 * 60 * 1000;
+
+// ── GET /api/feed/currently-watching ──────────────────────────────────
+// `scope=all` (default) shows anyone whose status is still within the TTL
+// window app-wide; `scope=friends` scopes that same query to the viewer's
+// own `following` list — the mode toggle discussed directly, not two
+// separate endpoints, since both share the exact same shape/hydration and
+// differ only by one extra `_id` filter.
+export const getCurrentlyWatchingFeed = asyncHandler(async (req, res) => {
+  const scope = req.query.scope === "friends" ? "friends" : "all";
+  const limit = Math.min(parseInt(req.query.limit) || 20, 40);
+  const since = new Date(Date.now() - CURRENTLY_WATCHING_TTL_MS);
+
+  const userFilter = {
+    "currentlyWatching.startedAt": { $gte: since },
+    isOfficial: { $ne: true },
+  };
+  if (scope === "friends") {
+    const viewer = await User.findById(req.user.id).select("following").lean();
+    userFilter._id = { $in: viewer.following || [] };
+  }
+
+  const watchers = await User.find(userFilter)
+    .select("username profile_pic_url accountTier currentlyWatching")
+    .sort({ "currentlyWatching.startedAt": -1 })
+    .limit(limit)
+    .lean();
+
+  if (watchers.length === 0) return sendSuccess(res, { items: [] }, "Currently watching fetched", 200);
+
+  const movieIds = watchers.filter((u) => u.currentlyWatching.itemType === "movie").map((u) => u.currentlyWatching.itemId);
+  const seriesIds = watchers.filter((u) => u.currentlyWatching.itemType === "series").map((u) => u.currentlyWatching.itemId);
+
+  const [movies, series] = await Promise.all([
+    movieIds.length > 0 ? getMovie().find({ _id: { $in: movieIds } }).select("_id title poster_path").lean() : [],
+    seriesIds.length > 0 ? getSeries().find({ _id: { $in: seriesIds } }).select("_id name poster_path").lean() : [],
+  ]);
+  const movieById = new Map(movies.map((m) => [m._id.toString(), m]));
+  const seriesById = new Map(series.map((s) => [s._id.toString(), s]));
+
+  // A referenced title can be missing (deleted from the catalog since) —
+  // dropped rather than shown with a blank poster, same "skip, don't
+  // half-render" convention hydrateContentData's own callers already use.
+  const items = watchers
+    .map((u) => {
+      const cw = u.currentlyWatching;
+      const content = cw.itemType === "movie" ? movieById.get(cw.itemId.toString()) : seriesById.get(cw.itemId.toString());
+      if (!content) return null;
+      return {
+        user: { _id: u._id, username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
+        contentId: cw.itemId,
+        contentType: cw.itemType,
+        title: content.title || content.name,
+        posterUrl: content.poster_path,
+        startedAt: cw.startedAt,
+      };
+    })
+    .filter(Boolean);
+
+  sendSuccess(res, { items }, "Currently watching fetched", 200);
+});
