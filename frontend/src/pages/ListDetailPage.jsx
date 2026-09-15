@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useContext } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { listService } from "../api/listService";
 import { contentService } from "../api/contentService";
-import { AuthContext } from "../context/AuthContext";
 import MovieCard from "../components/MovieCard";
 import SeriesCard from "../components/SeriesCard";
 import AddItemsToListModal from "../components/AddItemsToListModal";
@@ -10,7 +9,7 @@ import { toast } from "react-hot-toast";
 
 export default function ListDetailPage() {
   const { id } = useParams();
-  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [list, setList] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -18,14 +17,7 @@ export default function ListDetailPage() {
   const [series, setSeries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // edit state
   const [showAddItems, setShowAddItems] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [editDesc, setEditDesc] = useState("");
-  const [editPublic, setEditPublic] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -33,9 +25,6 @@ export default function ListDetailPage() {
         const data = await listService.getListById(id);
         setList(data.list);
         setIsOwner(data.isOwner);
-        setEditName(data.list.name);
-        setEditDesc(data.list.description || "");
-        setEditPublic(data.list.isPublic);
 
         const movieIds = data.list.items
           .filter((i) => i.itemType === "movie")
@@ -59,25 +48,6 @@ export default function ListDetailPage() {
     };
     load();
   }, [id]);
-
-  const handleSaveEdit = async () => {
-    if (!editName.trim()) return toast.error("Name is required");
-    setSaving(true);
-    try {
-      const data = await listService.updateList(id, {
-        name: editName,
-        description: editDesc,
-        isPublic: editPublic,
-      });
-      setList(data.list);
-      setEditing(false);
-      toast.success("List updated");
-    } catch {
-      toast.error("Failed to update list");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleRemoveMovie = async (movie) => {
     try {
@@ -114,84 +84,50 @@ export default function ListDetailPage() {
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        {editing ? (
-          <div className="card bg-base-100 shadow p-6 max-w-lg">
-            <h2 className="font-bold text-lg mb-4">Edit List</h2>
-            <div className="flex flex-col gap-3">
-              <input
-                className="input input-bordered"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                maxLength={80}
-                placeholder="List name"
-              />
-              <textarea
-                className="textarea textarea-bordered"
-                value={editDesc}
-                onChange={(e) => setEditDesc(e.target.value)}
-                maxLength={300}
-                rows={3}
-                placeholder="Description (optional)"
-              />
-              <label className="label cursor-pointer justify-start gap-4">
-                <input
-                  type="checkbox"
-                  className="toggle toggle-primary"
-                  checked={editPublic}
-                  onChange={(e) => setEditPublic(e.target.checked)}
-                />
-                <span className="label-text">{editPublic ? "Public — anyone can discover and view this" : "Private — only you can see this"}</span>
-              </label>
-              <div className="flex gap-2 mt-2">
-                <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)} disabled={saving}>Cancel</button>
-                <button className={`btn btn-primary btn-sm ${saving ? "loading" : ""}`} onClick={handleSaveEdit} disabled={saving}>Save</button>
-              </div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-bold">{list.name}</h1>
+              <span className={`badge ${list.isPublic ? "badge-success" : "badge-ghost"}`}>
+                {list.isPublic ? "Public" : "Private"}
+              </span>
             </div>
+            {list.description && (
+              <p className="text-base-content/60 mt-2 max-w-xl">{list.description}</p>
+            )}
+            <p className="text-sm text-base-content/40 mt-1">
+              By{" "}
+              <Link to={`/profile/${list.owner._id}`} className="hover:text-primary">
+                {list.owner.username}
+              </Link>{" "}
+              · {totalItems} item{totalItems !== 1 ? "s" : ""}
+            </p>
           </div>
-        ) : (
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-bold">{list.name}</h1>
-                <span className={`badge ${list.isPublic ? "badge-success" : "badge-ghost"}`}>
-                  {list.isPublic ? "Public" : "Private"}
-                </span>
-              </div>
-              {list.description && (
-                <p className="text-base-content/60 mt-2 max-w-xl">{list.description}</p>
-              )}
-              <p className="text-sm text-base-content/40 mt-1">
-                By{" "}
-                <Link to={`/profile/${list.owner._id}`} className="hover:text-primary">
-                  {list.owner.username}
-                </Link>{" "}
-                · {totalItems} item{totalItems !== 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {list.isPublic && (
-                <button className="btn btn-outline btn-sm" onClick={handleCopyLink}>
-                  Share Link
-                </button>
-              )}
-              {isOwner && (
-                <button className="btn btn-primary btn-sm" onClick={() => setShowAddItems(true)}>
-                  + Add Items
-                </button>
-              )}
-              {isOwner && (
-                <button className="btn btn-outline btn-sm" onClick={() => setEditing(true)}>
-                  Edit
-                </button>
-              )}
-              {isOwner && (
-                <Link to="/my-lists" className="btn btn-ghost btn-sm">
-                  ← My Lists
-                </Link>
-              )}
-            </div>
+          <div className="flex gap-2 flex-wrap">
+            {list.isPublic && (
+              <button className="btn btn-outline btn-sm" onClick={handleCopyLink}>
+                Share Link
+              </button>
+            )}
+            {isOwner && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowAddItems(true)}>
+                + Add Items
+              </button>
+            )}
+            {/* Name, description, visibility and titles are all edited in
+                the list editor (/lists/:id/edit), shared with list creation. */}
+            {isOwner && (
+              <button className="btn btn-outline btn-sm" onClick={() => navigate(`/lists/${id}/edit`)}>
+                Edit
+              </button>
+            )}
+            {isOwner && (
+              <Link to="/my-lists" className="btn btn-ghost btn-sm">
+                ← My Lists
+              </Link>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Content */}

@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { listService } from "../api/listService";
 import { toast } from "react-hot-toast";
-import CreateListModal from "../components/CreateListModal";
 import { useTranslation } from "react-i18next";
 
 export default function MyListsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
   const [listToDelete, setListToDelete] = useState(null);
 
   useEffect(() => {
@@ -19,10 +18,6 @@ export default function MyListsPage() {
       .catch(() => toast.error(t("Failed to load lists")))
       .finally(() => setLoading(false));
   }, []);
-
-  const handleListCreated = (newList) => {
-    setLists((prev) => [newList, ...prev]);
-  };
 
   const handleDelete = (list) => {
     setListToDelete(list);
@@ -48,7 +43,8 @@ export default function MyListsPage() {
           <h1 className="text-3xl font-bold">{t("My Lists")}</h1>
           <p className="text-base-content/60 mt-1">{t("Curated collections")}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+        {/* The list editor: name, search and add titles, suggestions — one page. */}
+        <button className="btn btn-primary" onClick={() => navigate("/lists/new")}>
           {t("+ New List")}
         </button>
       </div>
@@ -97,13 +93,6 @@ export default function MyListsPage() {
             </div>
           ))}
         </div>
-      )}
-
-      {showCreate && (
-        <CreateListModal
-          onClose={() => setShowCreate(false)}
-          onCreated={handleListCreated}
-        />
       )}
 
       {listToDelete && (

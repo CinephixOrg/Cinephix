@@ -121,7 +121,7 @@ function SuggestedFollowLabel({ userId, style }: { userId: string; style: TextSt
 
   if (status === "self") return null;
 
-  const label = status === "following" ? t("Following") : status === "requested" ? t("Requested") : t("Follow");
+  const label = status === "following" ? t("Following") : t("Follow");
   const onPress = () => (status === "not-following" ? follow() : unfollow());
 
   return (

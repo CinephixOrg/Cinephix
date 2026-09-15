@@ -1,6 +1,7 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
 import type { Conversation, ContentType, GroupConversationRow, Message, MessagePagination } from "../types";
+import { createPrefetcher } from "../utils/prefetch";
 
 interface RecommendationPayload {
   text: string;
@@ -54,6 +55,11 @@ export async function getOrCreateConversation(participantId: string): Promise<Co
   const res = await API.post(API_ROUTES.CONVERSATIONS.GET_OR_CREATE, { participantId });
   return res.data;
 }
+
+// The DM with a person, started by a tap that's about to open it (a message
+// notification) and taken by the chat screen once it mounts. Keyed by the
+// other person's id.
+export const conversationPrefetch = createPrefetcher(getOrCreateConversation);
 
 // This endpoint's envelope is {data, pagination:{hasMore,limit,before}} — a
 // different, cursor-based pagination shape than ListResult<T>'s

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { listService } from "../api/listService";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import CreateListModal from "./CreateListModal";
 
 export default function AddToListModal({ itemId, itemType, onClose }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(null); // listId being added
-  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     listService
@@ -32,18 +32,11 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
     }
   };
 
-  const handleListCreated = (newList) => {
-    setLists((prev) => [newList, ...prev]);
+  // A new list opens in the list editor with this title already on it.
+  const handleCreateNew = () => {
+    onClose();
+    navigate(`/lists/new?add=${itemType}:${itemId}`);
   };
-
-  if (showCreate) {
-    return (
-      <CreateListModal
-        onClose={() => setShowCreate(false)}
-        onCreated={handleListCreated}
-      />
-    );
-  }
 
   return (
     <div className="modal modal-open">
@@ -75,10 +68,7 @@ export default function AddToListModal({ itemId, itemType, onClose }) {
           </ul>
         )}
 
-        <button
-          className="btn btn-primary btn-sm w-full mb-2"
-          onClick={() => setShowCreate(true)}
-        >
+        <button className="btn btn-primary btn-sm w-full mb-2" onClick={handleCreateNew}>
           {t("+ Create New List")}
         </button>
 

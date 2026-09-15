@@ -22,6 +22,7 @@ import ListPage from "./pages/ListPage.jsx";
 import WatchlistPage from "./pages/WatchlistPage.jsx";
 import MyListsPage from "./pages/MyListsPage.jsx";
 import ListDetailPage from "./pages/ListDetailPage.jsx";
+import ListEditorPage from "./pages/ListEditorPage.jsx";
 import SplashScreen from "./pages/SplashScreen.jsx";
 import MoviePage from "./pages/MoviesPage.jsx";
 import SeriesPage from "./pages/SeriesPage.jsx";
@@ -84,7 +85,7 @@ export default function App() {
     console.log("Registered Routes in App:");
     console.log([
       "/login", "/register", "/verify-email", "/forgot-password", "/oauth-success",
-      "/", "/setup-profile", "/home", "/list", "/watchlist", "/my-lists", "/lists/:id",
+      "/", "/setup-profile", "/home", "/list", "/watchlist", "/my-lists", "/lists/new", "/lists/:id/edit", "/lists/:id",
       "/profile/:id", "/profile", "/network", "/movies", "/series", "/match",
       "/settings", "/community", "/community/:slug", "/dm", "/dm/:conversationId",
       "/notifications", "/content/:type/:contentId", "/about", "/privacy", "/terms"
@@ -120,6 +121,11 @@ export default function App() {
             <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
             <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
             <Route path="/my-lists" element={<ProtectedRoute><MyListsPage /></ProtectedRoute>} />
+            {/* The list editor, for creating (?add=movie:<id> to start with a
+                title) and editing. React Router ranks the static "new" above
+                ":id", so neither is mistaken for a list id. */}
+            <Route path="/lists/new" element={<ProtectedRoute><ListEditorPage /></ProtectedRoute>} />
+            <Route path="/lists/:id/edit" element={<ProtectedRoute><ListEditorPage /></ProtectedRoute>} />
             <Route path="/lists/:id" element={<ListDetailPage />} />
             <Route path="/profile/:id" element={<PublicProfilePage />} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

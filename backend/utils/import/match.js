@@ -61,7 +61,7 @@ export function docYear(doc) {
  * Builds the lookup structure a match pass runs against. One pass over the
  * documents; every subsequent lookup is O(1) on a Map rather than a scan.
  */
-export function buildCatalogIndex(docs, type) {
+export function buildCatalogIndex(docs, type, { preferIds = [] } = {}) {
   const byImdb = new Map();
   const byTmdb = new Map();
   const byTvdb = new Map();
@@ -91,25 +91,65 @@ export function buildCatalogIndex(docs, type) {
     if (loose && loose !== fold) push(byLoose, loose, doc);
   }
 
-  return { byImdb, byTmdb, byTvdb, byFold, byLoose, type, size: docs.length };
+  // Documents the importing user already references. The catalogue can hold
+  // two records of the same film (a legacy one and a later TMDB-enriched
+  // one); preferring the one the user already has is what stops an import
+  // from adding the same film a second time under its other id.
+  const prefer = new Set(preferIds.map(String));
+
+  return { byImdb, byTmdb, byTvdb, byFold, byLoose, prefer, type, size: docs.length };
+}
+
+// Decides between two candidates that are equally close to the item's year.
+//
+// This used to fall back to whichever document the database happened to
+// return first, which is how a user already holding one twin of a film could
+// be given the other: an earlier release first (the original, not a remake),
+// then a document the user already references, then the older document —
+// the legacy record that existing lists, ratings and logs point at. ObjectId
+// strings sort by creation time, so string order is age order.
+function preferCandidate(doc, year, best, bestYear, prefer) {
+  if (year !== bestYear) return year < bestYear;
+  const docPreferred = prefer.has(String(doc._id));
+  const bestPreferred = prefer.has(String(best._id));
+  if (docPreferred !== bestPreferred) return docPreferred;
+  return String(doc._id) < String(best._id);
 }
 
 // Of several documents with the same title, the one whose year is closest to
-// the item's. Ties go to the earlier release, which is the original rather
-// than a remake or a re-release record.
-function closestByYear(candidates, targetYear) {
+// the item's, with ties settled by preferCandidate.
+function closestByYear(candidates, targetYear, prefer) {
   let best = null;
+  let bestYear = null;
   let bestDistance = Infinity;
   for (const doc of candidates) {
     const year = docYear(doc);
     if (year === null) continue;
     const distance = Math.abs(year - targetYear);
-    if (distance < bestDistance || (distance === bestDistance && best && year < docYear(best))) {
+    if (
+      best === null ||
+      distance < bestDistance ||
+      (distance === bestDistance && preferCandidate(doc, year, best, bestYear, prefer))
+    ) {
       best = doc;
+      bestYear = year;
       bestDistance = distance;
     }
   }
   return best ? { doc: best, distance: bestDistance } : null;
+}
+
+// When an id match lands on one twin of a film and the user already
+// references the other (same title, same year), return theirs instead.
+function preferOwnedTwin(doc, index) {
+  if (index.prefer.size === 0 || index.prefer.has(String(doc._id))) return doc;
+  const title = docTitle(doc, index.type);
+  if (!title) return doc;
+  const year = docYear(doc);
+  const owned = (index.byFold.get(foldTitle(title)) || []).find(
+    (candidate) => candidate !== doc && index.prefer.has(String(candidate._id)) && docYear(candidate) === year
+  );
+  return owned || doc;
 }
 
 /**
@@ -123,15 +163,15 @@ export function matchItem(item, index) {
 
   if (ids.imdb) {
     const doc = index.byImdb.get(ids.imdb);
-    if (doc) return { doc, via: "imdb", confidence: CONFIDENCE.ID };
+    if (doc) return { doc: preferOwnedTwin(doc, index), via: "imdb", confidence: CONFIDENCE.ID };
   }
   if (ids.tmdb) {
     const doc = index.byTmdb.get(ids.tmdb);
-    if (doc) return { doc, via: "tmdb", confidence: CONFIDENCE.ID };
+    if (doc) return { doc: preferOwnedTwin(doc, index), via: "tmdb", confidence: CONFIDENCE.ID };
   }
   if (ids.tvdb) {
     const doc = index.byTvdb.get(ids.tvdb);
-    if (doc) return { doc, via: "tvdb", confidence: CONFIDENCE.ID };
+    if (doc) return { doc: preferOwnedTwin(doc, index), via: "tvdb", confidence: CONFIDENCE.ID };
   }
 
   const fold = item.fold || foldTitle(item.title);
@@ -142,10 +182,13 @@ export function matchItem(item, index) {
     if (item.year === null) {
       // No year to disambiguate with. A single candidate is safe; several
       // means a remake, and guessing between them would be worse than
-      // reporting the title as ambiguous.
+      // reporting the title as ambiguous — unless exactly one of them is a
+      // document the user already has, which is no guess at all.
       if (exact.length === 1) return { doc: exact[0], via: "title", confidence: CONFIDENCE.TITLE_ONLY };
+      const owned = exact.filter((doc) => index.prefer.has(String(doc._id)));
+      if (owned.length === 1) return { doc: owned[0], via: "title", confidence: CONFIDENCE.TITLE_ONLY };
     } else {
-      const best = closestByYear(exact, item.year);
+      const best = closestByYear(exact, item.year, index.prefer);
       if (best) {
         if (best.distance === 0) return { doc: best.doc, via: "title+year", confidence: CONFIDENCE.TITLE_YEAR };
         // A year off by one is routine: sources disagree on festival vs
@@ -170,7 +213,7 @@ export function matchItem(item, index) {
     const candidates = index.byLoose.get(loose) || index.byFold.get(loose);
     if (candidates && candidates.length > 0) {
       if (item.year !== null) {
-        const best = closestByYear(candidates, item.year);
+        const best = closestByYear(candidates, item.year, index.prefer);
         if (best && best.distance <= 1) {
           return { doc: best.doc, via: "title~", confidence: CONFIDENCE.TITLE_LOOSE };
         }

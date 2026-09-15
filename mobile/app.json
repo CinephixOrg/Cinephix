@@ -8,9 +8,12 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#171212",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cinephix.app"
     },
     "android": {
+      "package": "com.cinephix.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#171212",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -30,7 +33,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Cinephix needs access to your photos to set a profile picture."
+          "photosPermission": "Cinephix needs access to your photos to set a profile picture.",
+          "microphonePermission": false
         }
       ],
       [
@@ -40,8 +44,25 @@
           "image": "./assets/icon.png",
           "imageWidth": 160
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1eb854",
+          "defaultChannel": "activity"
+        }
+      ],
+      "expo-localization",
+      "expo-web-browser"
     ],
-    "scheme": "cinephix"
+    "scheme": "cinephix",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e03bb237-6490-436a-882a-59f0dc7722e5"
+      }
+    },
+    "owner": "cinephix_admin"
   }
 }

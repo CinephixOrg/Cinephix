@@ -22,6 +22,7 @@ import type { ContentStats, WatchedByFriend, SimilarContentItem } from "../api/c
 import { getAllRatingsForContent, getMyRating, rateContent } from "../api/ratingService";
 import { addToWatchlist, getWatchlist, removeFromWatchlist } from "../api/watchlistService";
 import { setCurrentlyWatching, stopCurrentlyWatching } from "../api/userService";
+import { toWatchCache, watchedCache } from "../api/collectionCache";
 import { addToToWatchList, getToWatchList, removeFromToWatchList } from "../api/toWatchService";
 import {
   addItem as addItemToList,
@@ -440,10 +441,8 @@ export default function ContentDetailScreen() {
     if (!user?._id) return;
     try {
       const favorites = await getFavorites(user._id);
-      if (favorites.isAuthorized) {
-        const list = type === "movie" ? favorites.movies : favorites.series;
-        setIsFavorite(list.some((it) => it._id === id));
-      }
+      const list = type === "movie" ? favorites.movies : favorites.series;
+      setIsFavorite(list.some((it) => it._id === id));
     } catch {
       // leave isFavorite as-is (defaults false) on failure
     }
@@ -459,6 +458,10 @@ export default function ContentDetailScreen() {
   // Rating doc per user), and a naive local append would double-count every
   // re-save, inflating the chart. This can never drift from the truth.
   const refreshRatings = useCallback(async () => {
+    // Every rating change and watched-list removal on this screen ends up
+    // here, so it's the one place to tell the Watched List its cached copy
+    // is out of date.
+    watchedCache.invalidate();
     try {
       setRatings(await getAllRatingsForContent(id));
     } catch {
@@ -555,6 +558,7 @@ export default function ContentDetailScreen() {
       } else {
         const { newlyEarnedBadges, currentlyWatching } = await addToWatchlist(id, type);
         setInWatchlist(true);
+        watchedCache.invalidate();
         reportEarnedBadges(newlyEarnedBadges);
         // Mirrors the backend's own auto-clear (userWatchlistRoute.js) —
         // this add just stopped "Currently Watching" server-side if this
@@ -621,10 +625,12 @@ export default function ContentDetailScreen() {
     try {
       if (inToWatchList) {
         await removeFromToWatchList(id, type);
+        toWatchCache.invalidate();
         setInToWatchList(false);
         watchlistGraph.applyRemove(id, type);
       } else {
         await addToToWatchList(id, type);
+        toWatchCache.invalidate();
         setInToWatchList(true);
         // Keeps ShareCard.tsx's own recommendation-post "+" buttons for this
         // same title in sync — same shared WatchlistGraphContext every add/
@@ -651,6 +657,7 @@ export default function ContentDetailScreen() {
       setInWatchlist(true);
       addToWatchlist(id, type)
         .then(({ newlyEarnedBadges, currentlyWatching }) => {
+          watchedCache.invalidate();
           reportEarnedBadges(newlyEarnedBadges);
           if (isWatchingThis) updateUser({ currentlyWatching });
           if (myRating > 0 && !ratingSaved) {

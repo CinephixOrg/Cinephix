@@ -1,8 +1,9 @@
-import { useCallback, useState, useMemo } from "react";
-import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
+import ProfileDrawer from "../../../src/components/profile/ProfileDrawer";
 import { useAuth } from "../../../src/context/AuthContext";
 import { useChat } from "../../../src/context/ChatContext";
 import { useToast } from "../../../src/context/ToastContext";
@@ -10,16 +11,17 @@ import { useFollowState } from "../../../src/hooks/useFollowState";
 import {
   fetchPublicProfile,
   fetchPublicProfileCollections,
-  getCachedCollections,
   getCachedPublicProfile,
   invalidatePublicProfile,
   type PublicProfileBundle,
 } from "../../../src/api/publicProfileCache";
+import { prefetchPublicCollection } from "../../../src/api/publicCollectionCache";
 import { sameShape } from "../../../src/utils/cache";
 import { getOrCreateConversation, sendRichMessage } from "../../../src/api/conversationService";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
 import type { PhotoViewerAction } from "../../../src/components/profile/ProfilePhotoViewerModal";
 import PublicProfileCategoryTabs from "../../../src/components/profile/PublicProfileCategoryTabs";
+import PublicProfileDrawerContent from "../../../src/components/profile/PublicProfileDrawerContent";
 import UserSharePickerModal from "../../../src/components/UserSharePickerModal";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import type { CineGraphData, Favorites, FollowStatus, PublicProfile } from "../../../src/types";
@@ -31,19 +33,7 @@ export default function PublicProfileScreen() {
   const styles = useMemo(() => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.base100 },
   scrollContent: { flexGrow: 1 },
-  container: {
-    padding: 20,
-    alignItems: "center",
-    backgroundColor: colors.base100,
-    flexGrow: 1,
-  },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
-  avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.base200 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarFallbackText: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
-  username: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent, marginTop: 12 },
-  lockRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
-  lockText: { color: colors.placeholder, fontSize: 14, textAlign: "center" },
   // Follow and Message share one row, each taking half of it — the Follow
   // pill used to stretch alone across the full width.
   actionRow: { flexDirection: "row", alignSelf: "stretch", gap: 8, marginTop: 20 },
@@ -86,7 +76,6 @@ export default function PublicProfileScreen() {
   const [favorites, setFavorites] = useState<Favorites | null>(cachedBundle?.favorites ?? null);
   const [shareCount, setShareCount] = useState<number | undefined>(cachedBundle?.shareCount);
   const [shares, setShares] = useState(cachedBundle?.shares);
-  const [collections, setCollections] = useState(id ? getCachedCollections(id) : undefined);
   // Whether `profile` came from the network this session rather than the
   // cache — see initialFollowStatus below for why that distinction matters.
   const [profileIsFresh, setProfileIsFresh] = useState(false);
@@ -105,16 +94,11 @@ export default function PublicProfileScreen() {
   // person from somewhere else in the app since. Unseeded, it reads the
   // graph, which is always current; the fresh fetch below then supplies a
   // real seed for anyone mounting after it.
-  const initialFollowStatus: FollowStatus | undefined = !profile || !profileIsFresh
-    ? undefined
-    : profile.isAuthorized
-      ? profile.followers.includes(user?._id ?? "")
+  const initialFollowStatus: FollowStatus | undefined =
+    !profile || !profileIsFresh
+      ? undefined
+      : profile.followers.includes(user?._id ?? "")
         ? "following"
-        : profile.isRequested
-          ? "requested"
-          : "not-following"
-      : profile.isRequested
-        ? "requested"
         : "not-following";
 
   // Lifted to the page (rather than each usage owning its own
@@ -129,6 +113,37 @@ export default function PublicProfileScreen() {
     follow: followUser,
     unfollow: unfollowUser,
   } = useFollowState(id ?? "", { initialStatus: initialFollowStatus });
+
+  // The slide-out drawer, the same one the own profile has: this person's
+  // Watched List, Watchlist and Lists as full pages, and Report / Block.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setDrawerOpen((prev) => !prev)}
+          hitSlop={8}
+          style={{ marginRight: 12, padding: 4 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("Menu")}
+        >
+          <Ionicons name="menu" size={24} color={colors.baseContent} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, colors, t]);
+
+  // Opening the drawer warms all three pages behind it, so whichever one is
+  // tapped renders its content straight away instead of a placeholder.
+  useEffect(() => {
+    if (!drawerOpen || !id) return;
+    prefetchPublicCollection(id, "watched");
+    prefetchPublicCollection(id, "watchlist");
+    fetchPublicProfileCollections(id).catch(() => {
+      // The Lists page loads (and reports) on its own.
+    });
+  }, [drawerOpen, id]);
 
   // Revalidates on every focus, but never tears the screen down to do it.
   //
@@ -162,17 +177,6 @@ export default function PublicProfileScreen() {
         apply(cached);
         setLoading(false);
       }
-
-      // Awaited separately from the bundle, so the header and Sharings grid
-      // never wait on the Lists tab's data. Lands quietly behind them.
-      fetchPublicProfileCollections(id)
-        .then((result) => {
-          if (!cancelled) setCollections((prev) => (sameShape(prev, result) ? prev : result));
-        })
-        .catch(() => {
-          // The tab shows its own empty rails; nothing else on the page
-          // depends on this.
-        });
 
       setError(null);
       fetchPublicProfile(id)
@@ -217,13 +221,11 @@ export default function PublicProfileScreen() {
     );
   }
 
-  const followLabel =
-    followStatus === "following" ? t("Following") : followStatus === "requested" ? t("Requested") : t("Follow");
-  const followOutline = followStatus === "following" || followStatus === "requested";
-  // Following a private account flips what their profile is even allowed to
-  // return, and either direction changes their follower list — so the cached
-  // bundle is now definitively wrong rather than merely old. Dropping it and
-  // refetching keeps the next focus (and the tabs already on screen) honest.
+  const isFollowing = followStatus === "following";
+  const followLabel = isFollowing ? t("Following") : t("Follow");
+  // Either direction changes their follower list, so the cached bundle is now
+  // definitively wrong rather than merely old. Dropping it and refetching
+  // keeps the next focus (and the tabs already on screen) honest.
   const handleFollowPress = async () => {
     await (followStatus === "not-following" ? followUser() : unfollowUser());
     if (!id) return;
@@ -265,14 +267,14 @@ export default function PublicProfileScreen() {
   const actionRow = (
     <View style={styles.actionRow}>
       <Pressable
-        style={[styles.actionButton, styles.followPill, followOutline ? styles.followPillOutline : styles.followPillPrimary]}
+        style={[styles.actionButton, styles.followPill, isFollowing ? styles.followPillOutline : styles.followPillPrimary]}
         onPress={handleFollowPress}
         disabled={followPending}
       >
         {followPending ? (
-          <ActivityIndicator color={followOutline ? colors.baseContent : colors.primaryContent} />
+          <ActivityIndicator color={isFollowing ? colors.baseContent : colors.primaryContent} />
         ) : (
-          <Text style={[styles.followPillText, followOutline ? styles.followPillTextOutline : styles.followPillTextPrimary]}>
+          <Text style={[styles.followPillText, isFollowing ? styles.followPillTextOutline : styles.followPillTextPrimary]}>
             {followLabel}
           </Text>
         )}
@@ -288,32 +290,6 @@ export default function PublicProfileScreen() {
       </Pressable>
     </View>
   );
-
-  // A private account you don't follow has nothing to show — this stays a
-  // single simple centered view, distinct from the full Instagram-style
-  // layout below (no bio/stats/categories to show either way). Checked
-  // before the photo-viewer/share-profile setup below so TS narrows
-  // `profile` to the full (non-masked) shape for the rest of the function —
-  // the masked branch has no accountTier/etc. to build those from anyway.
-  if (!profile.isAuthorized) {
-    return (
-      <ScrollView contentContainerStyle={styles.container}>
-        {profile.profile_pic_url ? (
-          <Image source={{ uri: profile.profile_pic_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarFallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
-          </View>
-        )}
-        <Text style={styles.username}>{profile.username}</Text>
-        <View style={styles.lockRow}>
-          <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
-          <Text style={styles.lockText}>{t("This account is private.")}</Text>
-        </View>
-        {actionRow}
-      </ScrollView>
-    );
-  }
 
   // In-app share to a friend ("hey, do you know this person?") rather than
   // the OS share sheet — reuses the same recipient-picker + rich-message
@@ -356,9 +332,9 @@ export default function PublicProfileScreen() {
   const photoViewerActions: PhotoViewerAction[] = [
     {
       key: "follow",
-      icon: followStatus === "following" ? "checkmark" : followStatus === "requested" ? "time-outline" : "person-add-outline",
+      icon: isFollowing ? "checkmark" : "person-add-outline",
       label: followLabel,
-      active: followStatus === "following",
+      active: isFollowing,
       loading: followPending,
       onPress: handleFollowPress,
     },
@@ -372,24 +348,30 @@ export default function PublicProfileScreen() {
 
   return (
     <>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
-        <ProfileHeaderInstagram
-          profile={profile}
-          targetUserId={id}
-          shareCount={shareCount}
-          actionsSlot={actionRow}
-          photoViewerActions={photoViewerActions}
-        />
+      <ProfileDrawer
+        open={drawerOpen}
+        onOpen={() => setDrawerOpen(true)}
+        onClose={() => setDrawerOpen(false)}
+        renderDrawerContent={() => <PublicProfileDrawerContent userId={id} onNavigate={() => setDrawerOpen(false)} />}
+      >
+        <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+          <ProfileHeaderInstagram
+            profile={profile}
+            targetUserId={id}
+            shareCount={shareCount}
+            actionsSlot={actionRow}
+            photoViewerActions={photoViewerActions}
+          />
 
-        <PublicProfileCategoryTabs
-          favorites={favorites}
-          cineGraph={cineGraph}
-          userId={id}
-          initialShares={shares}
-          collections={collections}
-          initialCategory={tab === "favorites" ? "favorites" : undefined}
-        />
-      </ScrollView>
+          <PublicProfileCategoryTabs
+            favorites={favorites}
+            cineGraph={cineGraph}
+            userId={id}
+            initialShares={shares}
+            initialCategory={tab === "favorites" ? "favorites" : undefined}
+          />
+        </ScrollView>
+      </ProfileDrawer>
 
       <UserSharePickerModal
         visible={sharePickerVisible}

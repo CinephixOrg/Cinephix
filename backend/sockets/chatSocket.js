@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Message from "../models/Message.js";
 import Group from "../models/Group.js";
 import Conversation from "../models/Conversation.js";
-import Notification from "../models/Notification.js";
+import { notifyMessage } from "../services/notifications.js";
 import { setIo } from "../services/socketService.js";
 import { markOnline, markOffline } from "../services/presenceService.js";
 
@@ -125,15 +125,10 @@ export const setupChat = (io) => {
               ...(otherId && { $inc: { [`unreadCounts.${otherId}`]: 1 } }),
             });
 
-            // Create notification for the other participant
-            if (otherId) {
-              await Notification.create({
-                user: otherId,
-                sender: userId,
-                type: 'message',
-                conversationId: roomId
-              });
-            }
+            // The other participant's notification carries a preview of what was said.
+            const notification = otherId
+              ? await notifyMessage({ recipientId: otherId, senderId: userId, conversationId: roomId, message })
+              : null;
 
             const payload = {
               conversationId: roomId,
@@ -144,10 +139,12 @@ export const setupChat = (io) => {
             if (otherId) {
               io.to(`user:${otherId}`).emit("conversation-updated", payload);
               io.to(`user:${otherId}`).emit("new-notification", {
+                _id: notification._id,
                 type: 'message',
-                sender: { _id: userId, username: socket.user.username },
+                sender: { _id: userId, username: socket.user.username, profile_pic_url: socket.user.profile_pic_url },
                 conversationId: roomId,
-                createdAt: new Date()
+                message: notification.message,
+                createdAt: notification.createdAt
               });
             }
             io.to(`user:${userId}`).emit("conversation-updated", payload);

@@ -1,8 +1,16 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
-import NotificationBell from "../../../src/components/NotificationBell";
+import BackToProfileButton from "../../../src/components/BackToProfileButton";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
+
+// My Lists is always the bottom of this stack. Without it, arriving straight
+// at a list — the list editor sends a newly created list to /lists/[id] —
+// built the stack with that list alone, so it had no Back button and no way
+// out. With it, the list opens on top of My Lists and Back returns there.
+export const unstable_settings = {
+  initialRouteName: "index",
+};
 
 export default function ListsStackLayout() {
   const { colors } = useTheme();
@@ -15,9 +23,11 @@ export default function ListsStackLayout() {
         headerTintColor: colors.baseContent,
       }}
     >
+      {/* A sibling of the Watched List and Watchlist: reached from the
+          Profile drawer, so the arrow returns there. */}
       <Stack.Screen
         name="index"
-        options={{ title: t("My Lists"), headerRight: () => <NotificationBell /> }}
+        options={{ title: t("Your Lists"), headerLeft: () => <BackToProfileButton /> }}
       />
       <Stack.Screen name="[id]" options={{ title: t("List") }} />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />

@@ -2,15 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import {
-  acceptFollowRequest,
-  getFollowers,
-  getFollowing,
-  getPendingRequests,
-  getSuggestions,
-  rejectFollowRequest,
-  removeFollower,
-} from "../src/api/userService";
+import { getFollowers, getFollowing, getSuggestions, removeFollower } from "../src/api/userService";
 import { getCachedConnections, invalidateConnections, setCachedConnections } from "../src/api/connectionsCache";
 import { useAuth } from "../src/context/AuthContext";
 import FollowButton from "../src/components/FollowButton";
@@ -18,12 +10,12 @@ import ContentRail from "../src/components/ContentRail";
 import SuggestedUserCard from "../src/components/SuggestedUserCard";
 import TierAvatarFrame from "../src/components/TierAvatarFrame";
 import { SkeletonRow } from "../src/components/Skeleton";
-import type { Connection, FollowRequestUser, SuggestedUser } from "../src/types";
+import type { Connection, SuggestedUser } from "../src/types";
 import { useTheme } from "../src/context/ThemeContext";
 import { useToast } from "../src/context/ToastContext";
 import { fonts } from "../src/theme/typography";
 
-type Tab = "followers" | "following" | "requests";
+type Tab = "followers" | "following";
 const AVATAR_SIZE = 44;
 // Suggested Users is hidden per product request, not removed — the fetch
 // (getSuggestions) and its state below are untouched, only the JSX render
@@ -55,15 +47,9 @@ export default function NetworkScreen() {
   avatarFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
   rowText: { flex: 1 },
   username: { fontSize: 15, color: colors.baseContent, fontFamily: fonts.medium },
-  bio: { fontSize: 12, color: colors.placeholder, marginTop: 2 },
   followButtonSmall: { minWidth: 0 },
   removeButton: { paddingHorizontal: 8, paddingVertical: 6 },
   removeButtonText: { color: colors.error, fontSize: 12, fontFamily: fonts.medium },
-  requestActions: { flexDirection: "row", gap: 8 },
-  acceptButton: { backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  acceptButtonText: { color: colors.primaryContent, fontSize: 12, fontFamily: fonts.bold },
-  rejectButton: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  rejectButtonText: { color: colors.baseContent, fontSize: 12, fontFamily: fonts.medium },
   error: { color: colors.error, textAlign: "center", marginBottom: 8 },
   empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
 }), [colors]);
@@ -77,7 +63,7 @@ export default function NetworkScreen() {
   const isOwn = !params.userId || params.userId === user?._id;
   const targetId = params.userId || user?._id || "";
 
-  const [tab, setTab] = useState<Tab>(params.tab === "following" || params.tab === "requests" ? params.tab : "followers");
+  const [tab, setTab] = useState<Tab>(params.tab === "following" ? "following" : "followers");
 
   const [items, setItems] = useState<Connection[]>([]);
   const [page, setPage] = useState(1);
@@ -85,9 +71,6 @@ export default function NetworkScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [pendingRequests, setPendingRequests] = useState<FollowRequestUser[]>([]);
-  const [requestActionId, setRequestActionId] = useState<string | null>(null);
 
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
 
@@ -119,9 +102,6 @@ export default function NetworkScreen() {
   useFocusEffect(
     useCallback(() => {
       if (isOwn) {
-        getPendingRequests()
-          .then(setPendingRequests)
-          .catch(() => {});
         getSuggestions(10)
           .then(setSuggestions)
           .catch(() => {});
@@ -130,29 +110,24 @@ export default function NetworkScreen() {
   );
 
   const load = useCallback(
-    // `render: false` fetches purely to fill the tab counts and warm the
-    // cache — used from the Requests tab, which shows no list of its own and
-    // must not have one written into its state.
-    async (pageNum: number, currentTab: Tab, append: boolean, render = true) => {
-      if (currentTab === "requests" || !targetId) return;
+    async (pageNum: number, currentTab: Tab, append: boolean) => {
+      if (!targetId) return;
       try {
         const fetcher = currentTab === "followers" ? getFollowers : getFollowing;
         const { items: newItems, pagination, counts } = await fetcher(pageNum, 20, params.userId);
         const more = pagination ? pageNum < pagination.pages : newItems.length > 0;
-        if (render) {
-          setItems((prev) => (append ? [...prev, ...newItems] : newItems));
-          setHasMore(more);
-          setError(null);
-        }
+        setItems((prev) => (append ? [...prev, ...newItems] : newItems));
+        setHasMore(more);
+        setError(null);
         applyCounts(counts);
         // Only page 1 is cached: it's what a return visit needs to render
         // instantly, and holding every page someone scrolled through would
         // grow without bound for no benefit.
-        if (!append && targetId) {
+        if (!append) {
           setCachedConnections(targetId, currentTab, { items: newItems, hasMore: more, counts });
         }
       } catch (e: any) {
-        if (render) setError(e?.response?.data?.message || t("Failed to load list."));
+        setError(e?.response?.data?.message || t("Failed to load list."));
       }
     },
     [targetId, params.userId, applyCounts]
@@ -171,17 +146,6 @@ export default function NetworkScreen() {
         setLoading(false);
         return;
       }
-      // The Requests tab has no list of its own to show, but the two tab
-      // labels beside it still need their counts — which now arrive with a
-      // list response rather than from dedicated count requests. Fetching
-      // the followers page here supplies them and warms the cache, so
-      // switching to that tab afterwards is instant.
-      if (tab === "requests") {
-        setLoading(false);
-        applyCounts(getCachedConnections(targetId, "followers")?.counts);
-        load(1, "followers", false, false);
-        return;
-      }
       const cached = getCachedConnections(targetId, tab);
       if (cached) {
         setItems(cached.items);
@@ -198,7 +162,7 @@ export default function NetworkScreen() {
   );
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || loading || tab === "requests") return;
+    if (loadingMore || !hasMore || loading) return;
     setLoadingMore(true);
     const nextPage = page + 1;
     await load(nextPage, tab, true);
@@ -221,34 +185,6 @@ export default function NetworkScreen() {
     }
   };
 
-  const handleAccept = async (requesterId: string) => {
-    if (!user) return;
-    setRequestActionId(requesterId);
-    try {
-      await acceptFollowRequest(user._id, requesterId);
-      setPendingRequests((prev) => prev.filter((r) => r._id !== requesterId));
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to load request."));
-    } finally {
-      setRequestActionId(null);
-    }
-  };
-
-  const handleReject = async (requesterId: string) => {
-    if (!user) return;
-    setRequestActionId(requesterId);
-    try {
-      await rejectFollowRequest(user._id, requesterId);
-      setPendingRequests((prev) => prev.filter((r) => r._id !== requesterId));
-    } catch (e: any) {
-      setError(e?.response?.data?.message || t("Failed to load request."));
-    } finally {
-      setRequestActionId(null);
-    }
-  };
-
-  const showRequestsTab = isOwn && (pendingRequests.length > 0 || tab === "requests");
-
   return (
     <View style={styles.container}>
       <View style={styles.tabRow}>
@@ -268,16 +204,6 @@ export default function NetworkScreen() {
             {followingCount != null ? t("{{count}} Following", { count: followingCount }) : t("Following")}
           </Text>
         </Pressable>
-        {showRequestsTab && (
-          <Pressable
-            style={[styles.tabButton, tab === "requests" && styles.tabButtonActive]}
-            onPress={() => setTab("requests")}
-          >
-            <Text style={[styles.tabButtonText, tab === "requests" && styles.tabButtonTextActive]}>
-              {t("Requests")}
-            </Text>
-          </Pressable>
-        )}
       </View>
 
       {SHOW_SUGGESTED_USERS && isOwn && (
@@ -292,55 +218,7 @@ export default function NetworkScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {tab === "requests" ? (
-        <FlatList
-          style={{ flex: 1 }}
-          data={pendingRequests}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Pressable onPress={() => router.push(`/user/${item._id}`)}>
-                <TierAvatarFrame tier={item.accountTier} size={AVATAR_SIZE}>
-                  {(innerSize) =>
-                    item.profile_pic_url ? (
-                      <Image
-                        source={{ uri: item.profile_pic_url }}
-                        style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
-                      />
-                    ) : (
-                      <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                        <Text style={styles.avatarFallbackText}>{item.username.slice(0, 2).toUpperCase()}</Text>
-                      </View>
-                    )
-                  }
-                </TierAvatarFrame>
-              </Pressable>
-              <Pressable style={styles.rowText} onPress={() => router.push(`/user/${item._id}`)}>
-                <Text style={styles.username}>{item.username}</Text>
-                {item.bio ? (
-                  <Text style={styles.bio} numberOfLines={1}>
-                    {item.bio}
-                  </Text>
-                ) : null}
-              </Pressable>
-              {requestActionId === item._id ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <View style={styles.requestActions}>
-                  <Pressable style={styles.acceptButton} onPress={() => handleAccept(item._id)}>
-                    <Text style={styles.acceptButtonText}>{t("Accept")}</Text>
-                  </Pressable>
-                  <Pressable style={styles.rejectButton} onPress={() => handleReject(item._id)}>
-                    <Text style={styles.rejectButtonText}>{t("Reject")}</Text>
-                  </Pressable>
-                </View>
-              )}
-            </View>
-          )}
-          ListEmptyComponent={<Text style={styles.empty}>{t("No pending requests.")}</Text>}
-        />
-      ) : loading ? (
+      {loading ? (
         <View style={styles.list}>
           {[0, 1, 2, 3, 4].map((i) => (
             <SkeletonRow key={i} />
@@ -409,4 +287,3 @@ export default function NetworkScreen() {
     </View>
   );
 }
-

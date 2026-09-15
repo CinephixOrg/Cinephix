@@ -2,6 +2,7 @@ import { getCineGraph, getUserCollections, getUserProfile } from "./userService"
 import { getFavorites } from "./favoriteService";
 import { getUserShares, SHARES_PREVIEW_LIMIT } from "./shareService";
 import { prefetchSyncScore } from "./syncScoreCache";
+import { invalidatePublicCollections } from "./publicCollectionCache";
 import { createLruCache } from "../utils/cache";
 import type { CineGraphData, Favorites, PublicProfile, Share, UserCollections } from "../types";
 
@@ -106,4 +107,5 @@ export function fetchPublicProfile(userId: string): Promise<PublicProfileBundle>
 export function invalidatePublicProfile(userId: string) {
   bundles.delete(userId);
   collections.delete(userId);
+  invalidatePublicCollections(userId);
 }

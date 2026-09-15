@@ -1,112 +1,143 @@
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
-dotenv.config();
+// Repairs every user's CineGraph in one unattended command, from backend/:
+//
+//   node scripts/rebuildCineGraphs.js
+//
+// 1. Normalizes rating and review contentIds to the String the schema
+//    declares. About 2,800 seeded ratings store an ObjectId instead, and every
+//    Mongoose query casts its filter to String, so the app could never find
+//    them: not on removal, not on a title's page, not in the CineGraph pie.
+//    Where a user has the same title rated in both forms, their most recent
+//    rating is kept; the other is written to the backup, then deleted.
+// 2. Rebuilds every user's CineGraph from their Watched List and ratings
+//    (utils/cineGraph.js), clearing the drift the old incremental updates left.
+// 3. Verifies: no ObjectId contentIds left, every user rebuilt.
+//
+// Exits 0 when everything verifies, 1 otherwise. Safe to re-run.
+// `--dry-run` reports what would change and writes nothing.
 
-/* ---------------- CONNECT (INDEPENDENT) ---------------- */
-await mongoose.connect(process.env.MONGO_URI);
-console.log("MongoDB connected (rebuild)");
+import "dotenv/config";
+import { connect, createBackup, disconnect, toOid } from "./lib/catalogReferences.js";
+import { planRatingMerge } from "./lib/ratingMerge.js";
+import { rebuildUserCineGraph } from "../utils/cineGraph.js";
 
-/* ---------------- SCHEMAS (LOCAL) ---------------- */
+const DRY_RUN = process.argv.includes("--dry-run");
+const APPLY = !DRY_RUN;
+const COLLECTIONS = ["ratings", "reviews"];
 
-const userSchema = new mongoose.Schema({
-  watchlist: [{ itemId: mongoose.Schema.Types.ObjectId, itemType: String }],
-  movieCineGraph: {
-    type: Map,
-    of: { count: Number, ratedCount: Number, avgRating: Number },
-    default: {}
-  },
-  seriesCineGraph: {
-    type: Map,
-    of: { count: Number, ratedCount: Number, avgRating: Number },
-    default: {}
+const log = (line = "") => console.log(line);
+
+async function normalizeContentIds(db, name, { backup }) {
+  const collection = db.collection(name);
+  const objectIdDocs = await collection.find({ contentId: { $type: "objectId" } }).toArray();
+  if (objectIdDocs.length === 0) return { objectIdDocs: 0, groupsInBothForms: 0, removed: 0, converted: 0 };
+
+  const users = [...new Set(objectIdDocs.map((doc) => String(doc.user)))].map(toOid);
+  const stringDocs = await collection
+    .find({ user: { $in: users }, contentId: { $in: [...new Set(objectIdDocs.map((doc) => String(doc.contentId)))] } })
+    .toArray();
+
+  // Per user and title: the ObjectId-form documents, and any String-form ones.
+  const groups = new Map();
+  const groupOf = (doc) => {
+    const key = `${doc.user}|${doc.contentId}`;
+    if (!groups.has(key)) groups.set(key, { from: [], to: [] });
+    return groups.get(key);
+  };
+  for (const doc of objectIdDocs) groupOf(doc).from.push(doc);
+  for (const doc of stringDocs) groupOf(doc).to.push(doc);
+
+  const remove = [];
+  let groupsInBothForms = 0;
+  for (const group of groups.values()) {
+    // The String-form lookup above also returns a user's ratings for titles
+    // where only some other user has an ObjectId-form rating. Those groups
+    // have nothing to convert, so they're skipped rather than counted.
+    if (group.from.length === 0) continue;
+    if (group.to.length > 0) groupsInBothForms += 1;
+    remove.push(...planRatingMerge(group.from, group.to).remove);
   }
-}, { strict: false });
+  const removedIds = new Set(remove.map((doc) => String(doc._id)));
+  const convert = objectIdDocs.filter((doc) => !removedIds.has(String(doc._id)));
 
-const ratingSchema = new mongoose.Schema({
-  user: mongoose.Schema.Types.ObjectId,
-  contentId: mongoose.Schema.Types.ObjectId,
-  contentType: String,
-  value: Number
-}, { strict: false });
-
-const movieSchema = new mongoose.Schema({}, { strict: false });
-const seriesSchema = new mongoose.Schema({}, { strict: false });
-
-/* ---------------- MODELS ---------------- */
-
-const User = mongoose.model("User", userSchema, "users");
-const Rating = mongoose.model("Rating", ratingSchema, "ratings");
-const Movie = mongoose.model("Movie", movieSchema, "movies");
-const Series = mongoose.model("Series", seriesSchema, "series");
-
-/* ----------------GENRE MAPS IMPORTED FROM genreConstants (see top of file)  --------------- */
-
-/* ---------------- HELPERS ---------------- */
-
-const addToWatchlistGraph = (graph, genre) => {
-  const node = graph.get(genre) || { count: 0, ratedCount: 0, avgRating: 0 };
-  graph.set(genre, { ...node, count: node.count + 1 });
-};
-
-const addToRatingGraph = (graph, genre, rating) => {
-  const node = graph.get(genre) || { count: 0, ratedCount: 0, avgRating: 0 };
-  const newRatedCount = node.ratedCount + 1;
-  const newAvg = (node.avgRating * node.ratedCount + rating) / newRatedCount;
-  graph.set(genre, { ...node, ratedCount: newRatedCount, avgRating: +newAvg.toFixed(2) });
-};
-
-/* ---------------- MAIN ---------------- */
-
-async function run() {
-  const users = await User.find();
-
-  for (const user of users) {
-    user.movieCineGraph = new Map();
-    user.seriesCineGraph = new Map();
-
-    // 1. Process Watchlist for counts
-    const watchlist = user.watchlist || [];
-    for (const w of watchlist) {
-      if (w.itemType === "movie") {
-        const movie = await Movie.findById(w.itemId).lean();
-        movie?.genre_ids
-          ?.map(id => MOVIE_GENRE_MAP[id])
-          .filter(Boolean)
-          .forEach(g => addToWatchlistGraph(user.movieCineGraph, g));
-      } else if (w.itemType === "series") {
-        const series = await Series.findById(w.itemId).lean();
-        series?.genre_ids
-          ?.map(id => SERIES_GENRE_MAP[id])
-          .filter(Boolean)
-          .forEach(g => addToWatchlistGraph(user.seriesCineGraph, g));
-      }
+  if (APPLY) {
+    if (remove.length > 0) {
+      backup.record(name, remove); // on disk before the delete
+      await collection.deleteMany({ _id: { $in: remove.map((doc) => doc._id) } });
     }
-
-    // 2. Process Ratings for avgRating and ratedCount
-    const ratings = await Rating.find({ user: user._id });
-    for (const r of ratings) {
-      if (r.contentType === "movie") {
-        const movie = await Movie.findById(r.contentId).lean();
-        movie?.genre_ids
-          ?.map(id => MOVIE_GENRE_MAP[id])
-          .filter(Boolean)
-          .forEach(g => addToRatingGraph(user.movieCineGraph, g, r.value));
-      } else {
-        const series = await Series.findById(r.contentId).lean();
-        series?.genre_ids
-          ?.map(id => SERIES_GENRE_MAP[id])
-          .filter(Boolean)
-          .forEach(g => addToRatingGraph(user.seriesCineGraph, g, r.value));
-      }
+    if (convert.length > 0) {
+      await collection.updateMany(
+        { _id: { $in: convert.map((doc) => doc._id) }, contentId: { $type: "objectId" } },
+        [{ $set: { contentId: { $toString: "$contentId" } } }]
+      );
     }
-
-    await user.save();
-    console.log(`✔ rebuilt cinegraph for ${user.username}`);
   }
-
-  console.log("DONE");
-  process.exit(0);
+  return { objectIdDocs: objectIdDocs.length, groupsInBothForms, removed: remove.length, converted: convert.length };
 }
 
-run();
+async function main() {
+  const started = Date.now();
+  const db = await connect();
+  const problems = [];
+  log(DRY_RUN ? "CineGraph repair — DRY RUN, nothing will be written" : "CineGraph repair");
+  const backup = APPLY ? createBackup("backups", "rebuild-cinegraphs", {}) : null;
+  if (backup) log(`Backup file: ${backup.file}`);
+
+  log("\n=== Step 1/3 — rating and review contentIds ===");
+  for (const name of COLLECTIONS) {
+    const result = await normalizeContentIds(db, name, { backup });
+    log(
+      `  ${name}: ${result.objectIdDocs} stored as ObjectId; ${result.groupsInBothForms} also rated in String form; ` +
+        `${APPLY ? "removed" : "would remove"} ${result.removed} older duplicate(s), ${APPLY ? "converted" : "would convert"} ${result.converted}`
+    );
+  }
+
+  log("\n=== Step 2/3 — CineGraphs ===");
+  const users = await db.collection("users").find({}, { projection: { _id: 1 } }).toArray();
+  if (DRY_RUN) {
+    log(`  would rebuild ${users.length} user(s)`);
+  } else {
+    let failed = 0;
+    for (const user of users) {
+      try {
+        await rebuildUserCineGraph(user._id);
+      } catch (error) {
+        failed += 1;
+        log(`  FAILED for user ${user._id}: ${error.message}`);
+      }
+    }
+    log(`  rebuilt ${users.length - failed} of ${users.length} user(s)`);
+    if (failed > 0) problems.push(`CineGraph rebuild failed for ${failed} user(s)`);
+  }
+
+  log("\n=== Step 3/3 — verification ===");
+  if (DRY_RUN) {
+    log("  not run in a dry run");
+  } else {
+    for (const name of COLLECTIONS) {
+      const left = await db.collection(name).countDocuments({ contentId: { $type: "objectId" } });
+      log(`  ${name} still stored as ObjectId: ${left}`);
+      if (left > 0) problems.push(`${left} ${name} still store an ObjectId contentId`);
+    }
+  }
+
+  const seconds = ((Date.now() - started) / 1000).toFixed(0);
+  log("\n=== Result ===");
+  if (backup) log(`Backup file: ${backup.file}`);
+  if (DRY_RUN) {
+    log(`Dry run finished in ${seconds}s. Nothing was written.`);
+  } else if (problems.length === 0) {
+    log(`Every CineGraph is rebuilt and every contentId is a String. Finished in ${seconds}s.`);
+  } else {
+    log(`Finished in ${seconds}s with ${problems.length} issue(s):`);
+    for (const problem of problems) log(`  - ${problem}`);
+    process.exitCode = 1;
+  }
+}
+
+main()
+  .catch((error) => {
+    console.error("\nRepair stopped with an error:", error);
+    console.error("Anything deleted so far is in the backup file, and re-running finishes the job.");
+    process.exitCode = 1;
+  })
+  .finally(disconnect);

@@ -1,6 +1,7 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
 import type { ContentType, PollOption, Share, ShareFeedResult } from "../types";
+import { createPrefetcher } from "../utils/prefetch";
 
 // How many shares a profile's Sharings grid previews. Lives here rather
 // than in that component because the public profile fetches this page as
@@ -79,6 +80,17 @@ export async function getUserShares(
   const pagination = (res as any).pagination;
   return { items: res.data, total: pagination?.total ?? res.data.length };
 }
+
+// One share, in the same shape getUserShares' items come in — for the share
+// page a "liked your share" notification opens.
+export async function getShareById(shareId: string): Promise<Share> {
+  const res = await API.get(API_ROUTES.SHARES.GET(shareId));
+  return res.data;
+}
+
+// One share, started by a tap that's about to open it (a "liked your share"
+// notification) and taken by the share page once it mounts.
+export const sharePrefetch = createPrefetcher(getShareById);
 
 export async function deleteShare(shareId: string): Promise<void> {
   await API.delete(API_ROUTES.SHARES.DELETE(shareId));

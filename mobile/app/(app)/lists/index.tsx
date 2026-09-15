@@ -1,5 +1,5 @@
-import MyListsView from "../../../src/components/MyListsView";
+import MyListsScreen from "../../../src/screens/MyListsScreen";
 
 export default function ListsScreen() {
-  return <MyListsView />;
+  return <MyListsScreen />;
 }

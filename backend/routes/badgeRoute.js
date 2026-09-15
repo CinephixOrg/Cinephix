@@ -2,8 +2,6 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
-import User from "../models/User.js";
-import { isAuthorizedToView } from "../controllers/userController.js";
 import {
   getGenreBadges,
   getVolumeBadges,
@@ -86,24 +84,8 @@ const router = express.Router();
 // same circular import getPodiumBadge's own doc comment above already
 // flags (this routes file sits above both controllers, so importing from
 // both directions here is safe).
-//
-// Same visibility rule as every other public-profile surface (favorites,
-// CineGraph, genre detail) — isAuthorizedToView (userController.js):
-// public profiles, the viewer's own profile, or a private profile the
-// viewer already follows. An unauthorized request gets a 200 with
-// `authorized:false` instead of a 403, so the mobile side can render the
-// same "this account is private" state those other tabs already show
-// rather than treating it as an error.
 const getAllBadgesForUser = asyncHandler(async (req, res) => {
   const targetId = req.params.id;
-  const viewerId = req.user.id;
-
-  if (targetId !== viewerId) {
-    const targetUser = await User.findById(targetId).select("visibility followers").lean();
-    if (!isAuthorizedToView(viewerId, targetUser)) {
-      return sendSuccess(res, { authorized: false }, "Badges fetched (unauthorized)", 200);
-    }
-  }
 
   const [
     genreBadges,
@@ -154,8 +136,10 @@ const getAllBadgesForUser = asyncHandler(async (req, res) => {
   sendSuccess(
     res,
     {
+      // Always true: every profile is public. Sent because older app builds
+      // hide a profile's badges without it (see utils/publicProfile.js).
       authorized: true,
-      genre: { badges: genreBadges, devoteeThreshold: DEVOTEE_THRESHOLD, masterThreshold: MASTER_THRESHOLD },
+      genre:{ badges: genreBadges, devoteeThreshold: DEVOTEE_THRESHOLD, masterThreshold: MASTER_THRESHOLD },
       volume: { badges: volumeBadges, tiers: VOLUME_TIERS },
       ratingCount: { badges: ratingCount, tiers: RATING_COUNT_TIERS },
       reviewCount: { badges: reviewCount, tiers: REVIEW_COUNT_TIERS },

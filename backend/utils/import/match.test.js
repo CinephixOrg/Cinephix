@@ -172,3 +172,48 @@ test("accuracy: a representative library matches end to end", () => {
     assert.equal(result.doc._id, expected, `${item.title} (${item.year})`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Catalogue twins: the same film stored twice (legacy + TMDB-enriched)
+// ---------------------------------------------------------------------------
+
+// The real pair from the bug report. The rich twin's ObjectId is newer.
+const TRUMAN_LEGACY = { _id: "68ed03ce505e6ffb3b237290", title: "The Truman Show", release_date: "1998-06-04" };
+const TRUMAN_RICH = { _id: "6a665a6e422d412dc658d5d9", title: "The Truman Show", release_date: "1998-06-04", tmdb_id: 37165 };
+
+test("twins: without a preference the older legacy document wins, whatever order the database returns", () => {
+  const item = makeItem({ title: "The Truman Show", year: 1998 });
+  for (const docs of [[TRUMAN_LEGACY, TRUMAN_RICH], [TRUMAN_RICH, TRUMAN_LEGACY]]) {
+    assert.equal(matchItem(item, buildCatalogIndex(docs, "movie")).doc._id, TRUMAN_LEGACY._id);
+  }
+});
+
+test("twins: the one the user already has wins, so an import can't add the film twice", () => {
+  const item = makeItem({ title: "The Truman Show", year: 1998 });
+  for (const docs of [[TRUMAN_LEGACY, TRUMAN_RICH], [TRUMAN_RICH, TRUMAN_LEGACY]]) {
+    const index = buildCatalogIndex(docs, "movie", { preferIds: [TRUMAN_RICH._id] });
+    assert.equal(matchItem(item, index).doc._id, TRUMAN_RICH._id);
+  }
+});
+
+test("twins: an id match defers to the user's own twin of the same film", () => {
+  const item = makeItem({ title: "The Truman Show", year: 1998, ids: { tmdb: 37165 } });
+  const plain = buildCatalogIndex([TRUMAN_LEGACY, TRUMAN_RICH], "movie");
+  assert.equal(matchItem(item, plain).doc._id, TRUMAN_RICH._id, "without a preference the id match stands");
+  const owned = buildCatalogIndex([TRUMAN_LEGACY, TRUMAN_RICH], "movie", { preferIds: [TRUMAN_LEGACY._id] });
+  const result = matchItem(item, owned);
+  assert.equal(result.doc._id, TRUMAN_LEGACY._id);
+  assert.equal(result.via, "tmdb");
+});
+
+test("twins: no year, but exactly one twin is owned — that one is taken", () => {
+  const item = makeItem({ title: "The Truman Show" });
+  assert.equal(matchItem(item, buildCatalogIndex([TRUMAN_LEGACY, TRUMAN_RICH], "movie")), null);
+  const index = buildCatalogIndex([TRUMAN_LEGACY, TRUMAN_RICH], "movie", { preferIds: [TRUMAN_LEGACY._id] });
+  assert.equal(matchItem(item, index).doc._id, TRUMAN_LEGACY._id);
+});
+
+test("a preference never overrides a closer year: remakes stay distinct", () => {
+  const index = buildCatalogIndex(MOVIES, "movie", { preferIds: ["m2"] });
+  assert.equal(matchItem(makeItem({ title: "Dune", year: 2021 }), index).doc._id, "m1");
+});

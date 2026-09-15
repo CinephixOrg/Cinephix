@@ -24,6 +24,7 @@ import { formatForLLM } from "../services/llmFormatterService.js";
 import { sanitizeForLLM } from "../services/llmSanitizerService.js";
 import { callLLM } from "../services/llmAdapter.js";
 import { createTtlCache } from "../utils/ttlCache.js";
+import { genreRatingForScore } from "../utils/genreRating.js";
 import { getTierLimits, DEFAULT_MATCH_FILTERS } from "../config/tiers.js";
 
 // Mirrors mobile's supported UI languages (mobile/src/locales/index.ts) — the
@@ -569,13 +570,13 @@ export const findMatches = asyncHandler(async (req, res) => {
         for (const [genre, v] of Object.entries(myGraph)) {
           if (genres.length && !genres.includes(genre)) continue;
           if (useCount) g1[genre] = v.count;
-          if (useAvgRating) r1[genre] = v.avgRating;
+          if (useAvgRating) r1[genre] = genreRatingForScore(v);
         }
 
         for (const [genre, v] of Object.entries(u[cineKey])) {
           if (genres.length && !genres.includes(genre)) continue;
           if (useCount) g2[genre] = v.count;
-          if (useAvgRating) r2[genre] = v.avgRating;
+          if (useAvgRating) r2[genre] = genreRatingForScore(v);
         }
 
         const genreScore = useCount ? cosineSimilarity(g1, g2) : 0;
@@ -1073,13 +1074,13 @@ const computeMatchBreakdown = (
     if (genres.length && !genres.includes(genre)) continue;
     genreCounts1[genre] = v.count;
     if (useCount) g1[genre] = v.count;
-    if (useAvgRating) r1[genre] = v.avgRating;
+    if (useAvgRating) r1[genre] = genreRatingForScore(v);
   }
   for (const [genre, v] of Object.entries(targetGraph)) {
     if (genres.length && !genres.includes(genre)) continue;
     genreCounts2[genre] = v.count;
     if (useCount) g2[genre] = v.count;
-    if (useAvgRating) r2[genre] = v.avgRating;
+    if (useAvgRating) r2[genre] = genreRatingForScore(v);
   }
 
   const genreScore = cosineSimilarity(g1, g2);

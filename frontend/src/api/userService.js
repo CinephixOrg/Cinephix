@@ -283,45 +283,6 @@ export const userService = {
     }
   },
 
-  getPendingRequests: async () => {
-    try {
-      const response = await API.get(API_ROUTES.USERS.GET_PENDING_REQUESTS);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to fetch pending requests' };
-    }
-  },
-
-  getSentRequests: async () => {
-    try {
-      const response = await API.get(API_ROUTES.USERS.GET_SENT_REQUESTS);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get sent requests:', error);
-      return [];
-    }
-  },
-
-  acceptFollowRequest: async (userId) => {
-    try {
-      const response = await API.post(API_ROUTES.USERS.ACCEPT_FOLLOW_REQUEST(userId));
-      clearCacheItem(CACHE_KEYS.CURRENT_USER);
-      clearCacheByPattern('user:');
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to accept follow request' };
-    }
-  },
-
-  rejectFollowRequest: async (userId) => {
-    try {
-      const response = await API.post(API_ROUTES.USERS.REJECT_FOLLOW_REQUEST(userId));
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || { message: 'Failed to reject follow request' };
-    }
-  },
-
   getSuggestions: async (limit = 5) => {
     try {
       const response = await API.get(API_ROUTES.USERS.GET_SUGGESTIONS, { params: { limit } });

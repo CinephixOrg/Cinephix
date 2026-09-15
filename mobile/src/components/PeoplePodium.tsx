@@ -388,20 +388,23 @@ function PeoplePodium({ jumpToCategory }: Props) {
   };
 
   function renderRealCard(key: CategoryKey, rank: 1 | 2 | 3, item: any) {
-    const common = { key: item.user.id as string, rank, user: item.user, locked: false as const };
+    // The React key is passed on its own: React doesn't allow `key` inside a
+    // spread props object.
+    const cardKey = item.user.id as string;
+    const common = { rank, user: item.user, locked: false as const };
     switch (key) {
       case "followed":
-        return <PeoplePodiumCard {...common} metric={{ kind: "followed", count: item.followerCount }} />;
+        return <PeoplePodiumCard key={cardKey} {...common} metric={{ kind: "followed", count: item.followerCount }} />;
       case "watched":
-        return <PeoplePodiumCard {...common} metric={{ kind: "watched", count: item.watchedCount }} />;
+        return <PeoplePodiumCard key={cardKey} {...common} metric={{ kind: "watched", count: item.watchedCount }} />;
       case "reviewed":
-        return <PeoplePodiumCard {...common} metric={{ kind: "reviewed", count: item.reviewCount }} />;
+        return <PeoplePodiumCard key={cardKey} {...common} metric={{ kind: "reviewed", count: item.reviewCount }} />;
       case "liked":
-        return <PeoplePodiumCard {...common} metric={{ kind: "liked", count: item.likeCount }} />;
+        return <PeoplePodiumCard key={cardKey} {...common} metric={{ kind: "liked", count: item.likeCount }} />;
       case "recommended":
-        return <PeoplePodiumCard {...common} metric={{ kind: "recommended", count: item.recommendCount }} />;
+        return <PeoplePodiumCard key={cardKey} {...common} metric={{ kind: "recommended", count: item.recommendCount }} />;
       case "badges":
-        return <PeoplePodiumCard {...common} metric={{ kind: "badges", count: item.badgeCount }} />;
+        return <PeoplePodiumCard key={cardKey} {...common} metric={{ kind: "badges", count: item.badgeCount }} />;
     }
   }
 

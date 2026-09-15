@@ -51,15 +51,10 @@ export default function FollowButton({ targetUserId, initialStatus, size = "medi
   if (status === "self") return null;
 
   const isSmall = size === "small";
-  const label = status === "following" ? t("Following") : status === "requested" ? t("Requested") : t("Follow");
-  const outline = status === "following" || status === "requested";
+  const outline = status === "following";
+  const label = outline ? t("Following") : t("Follow");
 
-  const onPress = () => {
-    if (status === "not-following") follow();
-    // "Requested" is tap-to-cancel here (unlike web, where it's inert) —
-    // deliberate small UX improvement, same backend call either way.
-    else unfollow();
-  };
+  const onPress = () => (status === "not-following" ? follow() : unfollow());
 
   return (
     <Pressable

@@ -23,10 +23,9 @@ export default function NotificationDropdown({
       navigate(`/dm/${notification.conversationId._id || notification.conversationId}`);
     } else if (notification.type === "follow") {
       navigate(`/profile/${notification.sender._id}`);
-    } else if (notification.type === "follow_request") {
-      navigate('/network?tab=requests');
-    } else if (notification.type === "follow_accepted") {
-      navigate(`/profile/${notification.sender._id}`);
+    } else if (notification.type === "share_like") {
+      // The web app has no page for a single share; your profile lists them.
+      navigate("/profile");
     }
 
     onClose();
@@ -34,14 +33,16 @@ export default function NotificationDropdown({
 
   const getNotificationText = (notification) => {
     switch (notification.type) {
-      case "follow_request":
-        return "New follow request";
-      case "follow_accepted":
-        return "Follow request accepted";
       case "message":
-        return "sent you a message";
+        return notification.message?.preview
+          ? `sent you a message: "${notification.message.preview}"`
+          : "sent you a message";
       case "follow":
         return "started following you";
+      case "share_like":
+        return notification.share?.likerCount > 1
+          ? `and ${notification.share.likerCount - 1} others liked your share`
+          : "liked your share";
       default:
         return "New notification";
     }
@@ -50,10 +51,10 @@ export default function NotificationDropdown({
   const getNotificationIcon = (notification) => {
     if (notification.type === "message") {
       return "💬";
-    } else if (notification.type === "follow" || notification.type === "follow_accepted") {
+    } else if (notification.type === "follow") {
       return "👤";
-    } else if (notification.type === "follow_request") {
-      return "🛎️";
+    } else if (notification.type === "share_like") {
+      return "❤️";
     }
     return "📌";
   };

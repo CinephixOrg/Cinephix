@@ -31,6 +31,7 @@ import { initI18n } from "../src/i18n";
 import { fonts } from "../src/theme/typography";
 import OfflineBanner from "../src/components/OfflineBanner";
 import Toast from "../src/components/Toast";
+import { PushNotificationsBridge } from "../src/hooks/usePushNotifications";
 
 // Nothing is switchable yet at this point (fonts/i18n/theme aren't resolved),
 // so the pre-boot loading screen always renders in the default palette —
@@ -114,6 +115,17 @@ function RootNavigator() {
         />
         <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
         <Stack.Screen
+          name="list-editor"
+          options={{
+            headerShown: true,
+            title: "",
+            headerStyle: { backgroundColor: colors.base100 },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        <Stack.Screen
           name="network"
           options={{
             headerShown: true,
@@ -125,6 +137,8 @@ function RootNavigator() {
         />
       </Stack>
       <Toast />
+      {/* Push registration, and routing a tapped push to its screen. */}
+      <PushNotificationsBridge />
     </View>
     </NavigationThemeProvider>
   );

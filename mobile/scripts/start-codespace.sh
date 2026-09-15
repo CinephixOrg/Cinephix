@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-# Starts backend + Metro + an ngrok tunnel so the mobile app can be opened in
-# Expo Go on a physical phone from inside a GitHub Codespace.
+# Starts backend + Metro + an ngrok tunnel so the mobile app can be opened on
+# a physical phone from inside a GitHub Codespace.
+#
+#   mobile/scripts/start-codespace.sh          for the development build (the
+#                                              Cinephix dev-client APK; needed
+#                                              for push notifications)
+#   mobile/scripts/start-codespace.sh --go     for Expo Go
 #
 # Why this exists: `expo start --tunnel` is broken against modern ngrok
 # accounts (the bundled @expo/ngrok wrapper speaks ngrok's old v2 dynamic-
@@ -15,6 +20,13 @@
 # add-authtoken <token>` already run once for this account.
 
 set -euo pipefail
+
+# With expo-dev-client installed, `expo start` targets the development build
+# unless told otherwise, so the target is always passed explicitly.
+TARGET_FLAG="--dev-client"
+if [ "${1:-}" = "--go" ]; then
+  TARGET_FLAG="--go"
+fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MOBILE_DIR="$ROOT/mobile"
@@ -91,7 +103,7 @@ if [ -n "${CODESPACES:-}" ] && [ -n "${CODESPACE_NAME:-}" ] && command -v gh >/d
     echo ""
     echo "!! WARNING: backend port 5000 is still not publicly reachable"
     echo "!! ($BACKEND_PUBLIC_URL/api/health did not return 200)."
-    echo "!! The app will fail to reach the backend from Expo Go until this"
+    echo "!! The app will fail to reach the backend from the phone until this"
     echo "!! is fixed — try: gh codespace ports visibility 5000:public -c $CODESPACE_NAME"
   fi
 fi
@@ -110,7 +122,7 @@ for _ in $(seq 1 15); do
 done
 
 echo "== Starting Metro (localhost mode, no proxy yet) =="
-(cd "$MOBILE_DIR" && npx expo start --host localhost) > "$LOG_DIR/expo.log" 2>&1 &
+(cd "$MOBILE_DIR" && npx expo start "$TARGET_FLAG" --host localhost) > "$LOG_DIR/expo.log" 2>&1 &
 disown
 echo -n "Waiting for Metro on :8081"
 for _ in $(seq 1 30); do
@@ -132,7 +144,7 @@ echo "Tunnel URL: $TUNNEL_URL"
 echo "== Restarting Metro with EXPO_PACKAGER_PROXY_URL set =="
 pkill -f "expo start" 2>/dev/null || true
 sleep 1
-(cd "$MOBILE_DIR" && EXPO_PACKAGER_PROXY_URL="$TUNNEL_URL" npx expo start --host localhost) > "$LOG_DIR/expo.log" 2>&1 &
+(cd "$MOBILE_DIR" && EXPO_PACKAGER_PROXY_URL="$TUNNEL_URL" npx expo start "$TARGET_FLAG" --host localhost) > "$LOG_DIR/expo.log" 2>&1 &
 disown
 echo -n "Waiting for Metro to come back up"
 for _ in $(seq 1 30); do
@@ -144,9 +156,15 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
-EXP_URL="exp://${TUNNEL_URL#https://}"
 echo ""
 echo "======================================================"
-echo " Open in Expo Go: Enter URL manually ->"
-echo " $EXP_URL"
+if [ "$TARGET_FLAG" = "--go" ]; then
+  echo " Open in Expo Go: Enter URL manually ->"
+  echo " exp://${TUNNEL_URL#https://}"
+else
+  echo " Open the Cinephix development build on the phone:"
+  echo " Enter URL manually ->"
+  echo " $TUNNEL_URL"
+fi
 echo "======================================================"
+echo " Logs: $LOG_DIR (backend.log, expo.log, ngrok-agent.log)"

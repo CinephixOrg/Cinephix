@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { View, Pressable, Text, StyleSheet } from "react-native";
 import { useLocalSearchParams, useNavigation, useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../context/ChatContext";
 import {
+  conversationPrefetch,
   getMessages,
-  getOrCreateConversation,
   markConversationRead,
   sendMessageRest,
 } from "../api/conversationService";
@@ -14,6 +14,7 @@ import type { Message, MessagePagination } from "../types";
 import { SkeletonChatBubbles } from "../components/Skeleton";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { setActiveChat } from "../push/activeChat";
 
 interface Props {
   // Whether tapping the header title opens the other person's profile.
@@ -67,7 +68,10 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
   useEffect(() => {
     if (conversationId || !participantId) return;
     let cancelled = false;
-    getOrCreateConversation(participantId)
+    // Joins the request a message notification's tap already started, if
+    // there is one — otherwise it's a plain find-or-create.
+    conversationPrefetch
+      .take(participantId)
       .then((conv) => {
         if (cancelled) return;
         if (conv.messages && conv.messagesPagination) {
@@ -87,7 +91,11 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
     };
   }, [participantId, conversationId]);
 
-  useEffect(() => {
+  // A layout effect, so the header is set before the first paint rather than
+  // a frame after it. The name comes from the route (otherUsername) when the
+  // opener knew it — the profile's Message button and message notifications
+  // both do — so the loading skeleton already sits under the right name.
+  useLayoutEffect(() => {
     const conv = conversations.find((c) => c._id === conversationId);
     const title = otherUsername || conv?.otherUser.username || t("Conversation");
     const otherId = conv?.otherUser._id;
@@ -102,6 +110,15 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
         ),
     });
   }, [conversationId, otherUsername, conversations, styles, linkTitleToProfile]);
+
+  // While this chat is on screen, a push about a message in it arrives
+  // silently: the message itself is already appearing here.
+  useFocusEffect(
+    useCallback(
+      () => setActiveChat({ conversationId: conversationId ?? null, participantId: participantId ?? null }),
+      [conversationId, participantId]
+    )
+  );
 
   useFocusEffect(
     useCallback(() => {

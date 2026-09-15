@@ -56,11 +56,11 @@ export const API_ROUTES = {
       `/users/${id}/genre-detail?type=${type}&genre=${encodeURIComponent(genre)}`,
     GET_FAVORITES: (id: string) => `/users/favorites/${id}`,
     GET_COLLECTIONS: (id: string) => `/users/collections/${id}`,
+    GET_COLLECTION_ENTRIES: (id: string, kind: "watched" | "watchlist") => `/users/collections/${id}/${kind}`,
     UPDATE_FAVORITES: "/users/me/favorites",
     UPDATE_BIO: (id: string) => `/users/profile/${id}/bio`,
     UPLOAD_AVATAR: (id: string) => `/users/profile/${id}/upload-profile-pic`,
     UPDATE_PASSWORD: "/users/profile/password",
-    UPDATE_VISIBILITY: "/users/me/visibility",
     SET_CURRENTLY_WATCHING: "/users/me/currently-watching",
     STOP_CURRENTLY_WATCHING: "/users/me/currently-watching",
     UPDATE_TIER: "/users/me/tier", // DEV-ONLY: simulates a tier purchase
@@ -71,12 +71,11 @@ export const API_ROUTES = {
     FOLLOW: "/users/follow",
     UNFOLLOW: "/users/unfollow",
     REMOVE_FOLLOWER: "/users/remove-follower",
-    ACCEPT_FOLLOW_REQUEST: (targetId: string) => `/users/${targetId}/follow-request/accept`,
-    REJECT_FOLLOW_REQUEST: (targetId: string) => `/users/${targetId}/follow-request/reject`,
-    GET_PENDING_REQUESTS: "/users/me/follow-requests",
-    GET_SENT_REQUESTS: "/users/me/sent-requests",
     GET_SUGGESTIONS: "/users/me/suggestions",
     GET_ONLINE_FRIENDS: "/users/online",
+    // This device's Expo push token: registered on sign-in, removed on sign-out.
+    PUSH_TOKENS: "/users/me/push-tokens",
+    PUSH_TOKEN: (token: string) => `/users/me/push-tokens/${encodeURIComponent(token)}`,
   },
   ACTIVITY_LOG: {
     GET_ALL: "/users/me/logs",
@@ -88,6 +87,7 @@ export const API_ROUTES = {
   },
   SHARES: {
     CREATE: "/shares",
+    GET: (id: string) => `/shares/${id}`,
     GET_FEED: "/shares/feed",
     LIKE: (id: string) => `/shares/${id}/like`,
     VIEW: (id: string) => `/shares/${id}/view`,
@@ -109,8 +109,8 @@ export const API_ROUTES = {
   },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
-    REORDER: "/lists/me/reorder",
     CREATE: "/lists",
+    SUGGESTIONS: "/lists/suggestions",
     GET_BY_ID: (id: string) => `/lists/${id}`,
     UPDATE: (id: string) => `/lists/${id}`,
     DELETE: (id: string) => `/lists/${id}`,

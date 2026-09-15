@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "node --test \"utils/**/*.test.js\""
+    "test": "node --test \"utils/**/*.test.js\" \"scripts/**/*.test.js\""
   },
   "type": "module",
   "keywords": [],
@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "csv-parser": "^3.2.1",
     "dotenv": "^17.2.3",
+    "expo-server-sdk": "^7.2.0",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",

@@ -155,27 +155,25 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
   // card acts the same way a delete button would anywhere else in the app.
   // Optimistic locally, reverted if the API call fails.
   const handleRemoveFavorite = async (type: ContentType, id: string) => {
-    if (!localFavorites?.isAuthorized) return;
-    const applyList = (cur: Favorites | null, movies: typeof localFavorites.movies, series: typeof localFavorites.series) =>
-      cur?.isAuthorized ? { ...cur, movies, series } : cur;
+    if (!localFavorites) return;
 
     if (type === "movie") {
       const prevList = localFavorites.movies;
       const nextList = prevList.filter((i) => i._id !== id);
-      setLocalFavorites((cur) => applyList(cur, nextList, cur?.isAuthorized ? cur.series : []));
+      setLocalFavorites((cur) => (cur ? { ...cur, movies: nextList } : cur));
       try {
         await updateFavorites(type, nextList.map((i) => i._id));
       } catch {
-        setLocalFavorites((cur) => applyList(cur, prevList, cur?.isAuthorized ? cur.series : []));
+        setLocalFavorites((cur) => (cur ? { ...cur, movies: prevList } : cur));
       }
     } else {
       const prevList = localFavorites.series;
       const nextList = prevList.filter((i) => i._id !== id);
-      setLocalFavorites((cur) => applyList(cur, cur?.isAuthorized ? cur.movies : [], nextList));
+      setLocalFavorites((cur) => (cur ? { ...cur, series: nextList } : cur));
       try {
         await updateFavorites(type, nextList.map((i) => i._id));
       } catch {
-        setLocalFavorites((cur) => applyList(cur, cur?.isAuthorized ? cur.movies : [], prevList));
+        setLocalFavorites((cur) => (cur ? { ...cur, series: prevList } : cur));
       }
     }
   };
@@ -191,9 +189,7 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
   // exchange for the add actually being instant and not depending on a
   // second network round trip.
   const handleAddFavorite = async (type: ContentType, item: FavoritePickItem) => {
-    if (!localFavorites?.isAuthorized) return;
-    const applyList = (cur: Favorites | null, movies: typeof localFavorites.movies, series: typeof localFavorites.series) =>
-      cur?.isAuthorized ? { ...cur, movies, series } : cur;
+    if (!localFavorites) return;
 
     // Picking a result from the search modal concludes the edit session —
     // edit mode (the red remove-overlay/empty-"+"-slot UI) turns back off
@@ -204,20 +200,20 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
     if (type === "movie") {
       const prevList = localFavorites.movies;
       const nextList = [...prevList, { _id: item._id, title: item.label, poster_path: item.poster_path, rating: null }];
-      setLocalFavorites((cur) => applyList(cur, nextList, cur?.isAuthorized ? cur.series : []));
+      setLocalFavorites((cur) => (cur ? { ...cur, movies: nextList } : cur));
       try {
         await updateFavorites(type, nextList.map((i) => i._id));
       } catch {
-        setLocalFavorites((cur) => applyList(cur, prevList, cur?.isAuthorized ? cur.series : []));
+        setLocalFavorites((cur) => (cur ? { ...cur, movies: prevList } : cur));
       }
     } else {
       const prevList = localFavorites.series;
       const nextList = [...prevList, { _id: item._id, name: item.label, poster_path: item.poster_path, rating: null }];
-      setLocalFavorites((cur) => applyList(cur, cur?.isAuthorized ? cur.movies : [], nextList));
+      setLocalFavorites((cur) => (cur ? { ...cur, series: nextList } : cur));
       try {
         await updateFavorites(type, nextList.map((i) => i._id));
       } catch {
-        setLocalFavorites((cur) => applyList(cur, cur?.isAuthorized ? cur.movies : [], prevList));
+        setLocalFavorites((cur) => (cur ? { ...cur, series: prevList } : cur));
       }
     }
   };
@@ -227,9 +223,7 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
   // fresh reference on every render, which fed straight into that modal's
   // search effect as a dependency and caused spurious re-searches.
   const favoriteExcludeIds = useMemo(() => {
-    const list = addingType === "series"
-      ? (localFavorites?.isAuthorized && localFavorites.series) || []
-      : (localFavorites?.isAuthorized && localFavorites.movies) || [];
+    const list = (addingType === "series" ? localFavorites?.series : localFavorites?.movies) ?? [];
     return list.map((i) => i._id);
   }, [addingType, localFavorites]);
 
@@ -264,7 +258,7 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
       {/* Kept mounted alongside the graph it belongs to — it measures its
           own slot widths via onLayout to drive the sliding window, and
           remounting made it re-measure and re-animate from scratch. */}
-      {hasVisited("cinegraph") && cineGraph?.isAuthorized && (
+      {hasVisited("cinegraph") && cineGraph && (
         <View style={[styles.subFilterRow, visibility("cinegraph")]}>
           <CineGraphSubTabSwitcher activeTab={cinegraphSubTab} onChange={setCinegraphSubTab} />
         </View>

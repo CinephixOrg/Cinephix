@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 import * as authService from "../api/authService";
 import { setUnauthorizedHandler } from "../api/client";
 import { STORAGE_KEYS } from "../constants/apiRoutes";
+import { unregisterForPush } from "../push/registration";
 import type { User } from "../types";
 
 interface AuthContextValue {
@@ -83,10 +84,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(next);
   };
 
+  // Set while signing out. Removing the push token is itself an
+  // authenticated request, and when the session has expired its 401 calls
+  // logout again through the unauthorized handler below.
+  const signingOut = useRef(false);
+
   const logout = async () => {
-    await SecureStore.deleteItemAsync(STORAGE_KEYS.TOKEN);
-    await SecureStore.deleteItemAsync(STORAGE_KEYS.USER);
-    setUser(null);
+    if (signingOut.current) return;
+    signingOut.current = true;
+    try {
+      // First, while the session token can still authorize it: this device
+      // stops receiving the account's push notifications. Bounded by a
+      // timeout, so an offline sign-out still goes through.
+      await unregisterForPush();
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.TOKEN);
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.USER);
+      setUser(null);
+    } finally {
+      signingOut.current = false;
+    }
   };
 
   // Registered once — client.ts's response interceptor calls this on a 401
