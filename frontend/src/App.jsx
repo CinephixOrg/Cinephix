@@ -1,162 +1,37 @@
-import React, { useContext, useState, useEffect } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-} from "react-router-dom";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
-// Import Error Boundary (Issue #19)
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
-
-import { AuthContext } from "./context/AuthContext.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import RegisterPage from "./pages/RegisterPage.jsx";
-import HomePage from "./pages/HomePage.jsx";
-import WelcomePage from "./pages/WelcomePage.jsx";
-import SetupProfilePage from "./pages/SetupProfilePage.jsx";
-import ProfilePage from "./pages/ProfilePage.jsx";
-import ContentDetailPage from "./pages/ContentDetailPage.jsx";
-import ListPage from "./pages/ListPage.jsx";
-import WatchlistPage from "./pages/WatchlistPage.jsx";
-import MyListsPage from "./pages/MyListsPage.jsx";
-import ListDetailPage from "./pages/ListDetailPage.jsx";
-import ListEditorPage from "./pages/ListEditorPage.jsx";
-import SplashScreen from "./pages/SplashScreen.jsx";
-import MoviePage from "./pages/MoviesPage.jsx";
-import SeriesPage from "./pages/SeriesPage.jsx";
-import SettingsPage from "./pages/SettingsPage.jsx";
-import TopBar from "./components/TopBar";
-import Footer from "./components/Footer";
-
-import NetworkPage from "./pages/NetworkPage.jsx";
-
-import MatchPage from "./pages/MatchPage.jsx";
-import PublicProfilePage from "./pages/PublicProfilePage.jsx";
-import CommunityPage from "./pages/CommunityPage.jsx";
-import GroupDetailPage from "./pages/GroupDetailPage.jsx";
-import DMPage from "./pages/DMPage.jsx";
-import NotificationsPage from "./pages/NotificationsPage.jsx";
+import LandingPage from "./pages/LandingPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.jsx";
 import TermsOfServicePage from "./pages/TermsOfServicePage.jsx";
-import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
-import OAuthSuccessPage from "./pages/OAuthSuccessPage.jsx";
+import LegalPageLayout from "./components/landing/LegalPageLayout.jsx";
 
-
-
-// 3. KORUMALI ROTA COMPONENT'İ
-const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-  return children;
-};
-
-// 4. ANA UYGULAMA COMPONENT'İ
+// The web app itself is retired — Cinephix is mobile-only now, and this
+// site is a marketing page for it (LandingPage.jsx), not a second client.
+// Every route the functional app used to serve (login, home, profile, Sync,
+// DMs, ...) is gone from here, but none of those page/component files were
+// deleted — only this routing table changed, so re-enabling the web app
+// later is a routing change, not a rebuild. Only 3 real routes remain
+// (the landing page + the 2 legal pages + About, all public — no login
+// required to read a privacy policy) plus a catch-all back to "/" for
+// every retired path (old bookmarks, old links) instead of a dead 404.
 export default function App() {
-  const { user, logout } = useContext(AuthContext);
-  const [showSplash, setShowSplash] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') || 'forest';
-    document.documentElement.setAttribute('data-theme', storedTheme);
-    localStorage.setItem('theme', storedTheme);
-  }, []);
-
-  useEffect(() => {
-    // Sadece ana route'a ilk girişte splash screen'i göster
-    if (window.location.pathname === "/") {
-      setShowSplash(true);
-      const timer = setTimeout(() => {
-        setShowSplash(false);
-        navigate("/home"); // Ana route'tan sonra home'a yönlendir
-      }, 3500); // 3.5 saniye sonra splash ekranını gizle
-
-      return () => clearTimeout(timer);
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    console.log("Registered Routes in App:");
-    console.log([
-      "/login", "/register", "/verify-email", "/forgot-password", "/oauth-success",
-      "/", "/setup-profile", "/home", "/list", "/watchlist", "/my-lists", "/lists/new", "/lists/:id/edit", "/lists/:id",
-      "/profile/:id", "/profile", "/network", "/movies", "/series", "/match",
-      "/settings", "/community", "/community/:slug", "/dm", "/dm/:conversationId",
-      "/notifications", "/content/:type/:contentId", "/about", "/privacy", "/terms"
-    ].join("\\n"));
-  }, []);
-
-  if (showSplash) {
-    return <SplashScreen />;
-  }
-
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-base-200">
-
-        {/* 🔥 GLOBAL BAR – HER SAYFADA */}
-        <TopBar />
-
-        <main>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/oauth-success" element={<OAuthSuccessPage />} />
-
-            <Route
-              path="/"
-              element={user ? <Navigate to="/home" /> : <WelcomePage />}
-            />
-
-            <Route path="/setup-profile" element={<ProtectedRoute><SetupProfilePage /></ProtectedRoute>} />
-            <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-            <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
-            <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
-            <Route path="/my-lists" element={<ProtectedRoute><MyListsPage /></ProtectedRoute>} />
-            {/* The list editor, for creating (?add=movie:<id> to start with a
-                title) and editing. React Router ranks the static "new" above
-                ":id", so neither is mistaken for a list id. */}
-            <Route path="/lists/new" element={<ProtectedRoute><ListEditorPage /></ProtectedRoute>} />
-            <Route path="/lists/:id/edit" element={<ProtectedRoute><ListEditorPage /></ProtectedRoute>} />
-            <Route path="/lists/:id" element={<ListDetailPage />} />
-            <Route path="/profile/:id" element={<PublicProfilePage />} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-
-            <Route path="/network" element={<ProtectedRoute><NetworkPage /></ProtectedRoute>} />
-            <Route path="/movies" element={<ProtectedRoute><MoviePage /></ProtectedRoute>} />
-            <Route path="/series" element={<ProtectedRoute><SeriesPage /></ProtectedRoute>} />
-            <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
-            <Route path="/community/:slug" element={<ProtectedRoute><GroupDetailPage /></ProtectedRoute>} />
-            <Route path="/dm" element={<ProtectedRoute><DMPage /></ProtectedRoute>} />
-            <Route path="/dm/:conversationId" element={<ProtectedRoute><DMPage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-
-            <Route
-              path="/content/:type/:contentId"
-              element={<ProtectedRoute><ContentDetailPage /></ProtectedRoute>}
-            />
-
-            <Route path="/about" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
-            <Route path="/privacy" element={<ProtectedRoute><PrivacyPolicyPage /></ProtectedRoute>} />
-            <Route path="/terms" element={<ProtectedRoute><TermsOfServicePage /></ProtectedRoute>} />
-          </Routes>
-        </main>
-
-        {user && <Footer />}
+      <div className="min-h-screen bg-zinc-950">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<LegalPageLayout><AboutPage /></LegalPageLayout>} />
+          <Route path="/privacy" element={<LegalPageLayout><PrivacyPolicyPage /></LegalPageLayout>} />
+          <Route path="/terms" element={<LegalPageLayout><TermsOfServicePage /></LegalPageLayout>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
         <Toaster position="top-center" />
       </div>
     </ErrorBoundary>
   );
-
 }

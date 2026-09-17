@@ -1609,12 +1609,17 @@ export const getSharedGenreContent = asyncHandler(async (req, res) => {
   const titleField = type === "movie" ? "title" : "name";
   const dateField = type === "movie" ? "release_date" : "first_air_date";
 
-  const ratings = await Rating.find({
-    user: { $in: [meId, targetUserId] },
-    contentType: type,
-  })
-    .select("user contentId value")
-    .lean();
+  // `watchlist` (not `toWatchList`) is this app's own confusingly-named
+  // WATCHED list — see this file's other endpoints/mobile/README.md's own
+  // note on the mismatch. Being watched by both, not being rated, is the
+  // real "shared" bar here — direct ask: two people who both watched The
+  // Shining but never rated it should still see it show up, not just
+  // pairs who happen to have also scored it.
+  const [meUser, targetUser, ratings] = await Promise.all([
+    User.findById(meId).select("watchlist").lean(),
+    User.findById(targetUserId).select("watchlist").lean(),
+    Rating.find({ user: { $in: [meId, targetUserId] }, contentType: type }).select("user contentId value").lean(),
+  ]);
 
   const myRatingById = new Map();
   const targetRatingById = new Map();
@@ -1638,16 +1643,37 @@ export const getSharedGenreContent = asyncHandler(async (req, res) => {
     if (r.user.toString() === meId) myRatingById.set(contentId, r.value);
     else if (r.user.toString() === targetUserId) targetRatingById.set(contentId, r.value);
   }
-  const candidateIds = [...new Set([...myRatingById.keys(), ...targetRatingById.keys()])].filter((id) => {
+
+  // Real bug, reported live (first pass): this used to be the UNION of
+  // both sides' RATINGS (a title either of you rated, excluded only if you
+  // BOTH rated it and disagreed by more than
+  // SHARED_GENRE_CONTENT_MAX_RATING_DEVIATION). Whichever side has more
+  // total ratings dominated that union completely. First fix moved it to
+  // an intersection of ratings — but that's still too narrow per a direct
+  // follow-up ask: two people who both genuinely watched something but
+  // never got around to rating it (e.g. The Shining) should still count as
+  // "shared" here. The real membership test is now "both watched it"
+  // (`watchlist`, this app's own watched list), matching every other
+  // "shared X" card's own real-intersection rule (getRecentSharedActivity,
+  // getMutualConnections, getMutualToWatch). Ratings only ever NARROW this
+  // set now (excluding a real scored disagreement) — never widen it by
+  // pulling in something the other side never even watched.
+  const myWatchedIds = new Set(
+    (meUser?.watchlist || []).filter((w) => w.itemType === type).map((w) => String(w.itemId))
+  );
+  const targetWatchedIds = new Set(
+    (targetUser?.watchlist || []).filter((w) => w.itemType === type).map((w) => String(w.itemId))
+  );
+  const candidateIds = [...myWatchedIds].filter((id) => {
+    if (!targetWatchedIds.has(id)) return false;
     const mine = myRatingById.get(id);
     const theirs = targetRatingById.get(id);
-    // Only one side has rated it — no disagreement to check, always include.
     if (mine == null || theirs == null) return true;
     return Math.abs(mine - theirs) <= SHARED_GENRE_CONTENT_MAX_RATING_DEVIATION;
   });
 
   if (candidateIds.length === 0) {
-    return sendSuccess(res, Object.fromEntries(genres.map((g) => [g, []])), "No rated shared content");
+    return sendSuccess(res, Object.fromEntries(genres.map((g) => [g, []])), "No shared watched content");
   }
 
   const docs = await Model.find({ _id: { $in: candidateIds } })
@@ -1841,4 +1867,52 @@ export const getMutualConnections = asyncHandler(async (req, res) => {
   const ordered = pageIds.map((id) => byId.get(id)).filter(Boolean);
 
   sendPaginated(res, ordered, mutualIds.length, parseInt(page), parseInt(limit), "Mutual connections fetched");
+});
+
+/**
+ * Titles sitting in BOTH sides' own to-watch queue right now — the Sync
+ * analysis's own "Watch Together" card, direct ask ("ikisinin de
+ * watchlistinde bulunanları göstersin"). Deliberately the real intersection
+ * of `toWatchList` (the queue behind the app's own "Watchlist"/`/to-watch`
+ * route — see mobile/README.md's own note on the `watchlist`/`toWatchList`
+ * field-naming mismatch, `watchlist` itself is actually the WATCHED list),
+ * not a recommendation engine guessing at shared taste — this only ever
+ * returns something when a real, already-queued overlap exists, and the
+ * card that renders it is omitted entirely when it doesn't (same "only
+ * push a card when there's real data" rule every other card in this deck
+ * follows).
+ * @route  GET /api/match/:targetUserId/mutual-to-watch
+ * @access Private
+ */
+export const getMutualToWatch = asyncHandler(async (req, res) => {
+  const meId = req.user.id;
+  const { targetUserId } = req.params;
+
+  const [me, target] = await Promise.all([
+    User.findById(meId).select("toWatchList").lean(),
+    User.findById(targetUserId).select("toWatchList").lean(),
+  ]);
+  if (!target) return sendError(res, "User not found", 404);
+
+  const targetKeys = new Set((target.toWatchList || []).map((w) => `${w.itemType}:${w.itemId}`));
+  const mutual = (me.toWatchList || []).filter((w) => targetKeys.has(`${w.itemType}:${w.itemId}`));
+  if (mutual.length === 0) return sendSuccess(res, [], "No mutual to-watch titles");
+
+  const movieIds = mutual.filter((w) => w.itemType === "movie").map((w) => w.itemId);
+  const seriesIds = mutual.filter((w) => w.itemType === "series").map((w) => w.itemId);
+  const [movies, series] = await Promise.all([
+    movieIds.length
+      ? mongoose.model("Movie").find({ _id: { $in: movieIds } }).select("_id title poster_path release_date vote_average").lean()
+      : [],
+    seriesIds.length
+      ? mongoose.model("Series").find({ _id: { $in: seriesIds } }).select("_id name poster_path first_air_date vote_average").lean()
+      : [],
+  ]);
+
+  const result = [
+    ...movies.map((d) => ({ ...d, contentType: "movie" })),
+    ...series.map((d) => ({ ...d, contentType: "series" })),
+  ];
+
+  sendSuccess(res, result, "Mutual to-watch titles fetched");
 });

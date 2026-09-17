@@ -144,6 +144,7 @@ export const API_ROUTES = {
     CONTENT_RATINGS: (id: string) => `/match/${id}/content-ratings`,
     RECENT_ACTIVITY: (id: string) => `/match/${id}/recent-activity`,
     MUTUAL_CONNECTIONS: (id: string) => `/match/${id}/mutual-connections`,
+    MUTUAL_TO_WATCH: (id: string) => `/match/${id}/mutual-to-watch`,
   },
   NOTIFICATIONS: {
     GET_ALL: "/notifications",

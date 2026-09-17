@@ -9,6 +9,7 @@ import {
   getContentRatings,
   getRecentSharedActivity,
   getMutualConnections,
+  getMutualToWatch,
 } from "../controllers/matchController.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
 
@@ -34,5 +35,7 @@ router.post("/:targetUserId/content-ratings", authMiddleware, getContentRatings)
 router.post("/:targetUserId/recent-activity", authMiddleware, getRecentSharedActivity);
 // Paginated list of users both the requester and targetUserId follow — the Social Overlap card's avatar grid
 router.get("/:targetUserId/mutual-connections", authMiddleware, getMutualConnections);
+// Titles sitting in both sides' own to-watch queue right now — the "Watch Together" card
+router.get("/:targetUserId/mutual-to-watch", authMiddleware, getMutualToWatch);
 
 export default router;

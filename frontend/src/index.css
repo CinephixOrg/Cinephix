@@ -109,4 +109,34 @@
     -webkit-text-fill-color: transparent;
     font-weight: 900;
   }
+
+  /* Landing page hero — two poster rows drifting slowly in opposite
+     directions (PosterCollage.jsx). Each row's own item list is duplicated
+     by that component so a -50% translate loops with no visible seam. */
+  @keyframes poster-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes poster-scroll-reverse {
+    from { transform: translateX(-50%); }
+    to { transform: translateX(0); }
+  }
+  .animate-poster-scroll {
+    animation: poster-scroll 60s linear infinite;
+  }
+  .animate-poster-scroll-reverse {
+    animation: poster-scroll-reverse 75s linear infinite;
+  }
+
+  /* Landing page's own gold accent text — Premium's exact gradient pair
+     from the mobile app's TIER_FRAME_STYLES (mobile/src/theme/tierFrames.ts),
+     reused here so the marketing site's accent color is the same gold the
+     app itself already uses for Premium, not a separate invented brand
+     color. */
+  .text-glow-gold {
+    background: linear-gradient(135deg, #fff3c4 0%, #ffc94a 60%, #fff3c4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
