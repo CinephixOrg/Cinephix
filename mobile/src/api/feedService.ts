@@ -70,8 +70,8 @@ export async function getNewReleases(limit = 20, type?: ContentType): Promise<{ 
   return res.data;
 }
 
-// Discover's "Currently Watching" rail — who's actively watching what
-// right now (feedController.js's getCurrentlyWatchingFeed, a 1-day TTL
+// Shares' "Currently Watching" section — who's actively watching what
+// right now (feedController.js's getCurrentlyWatchingFeed, a 4-hour TTL
 // window). `scope` is the direct-ask All/Friends mode toggle, not two
 // separate endpoints.
 export async function getCurrentlyWatchingFeed(

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, View, Text, Pressable, ScrollView, RefreshControl, StyleSheet, Image, useWindowDimensions } from "react-native";
+import { Animated, Easing, View, Text, Pressable, ScrollView, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as SecureStore from "expo-secure-store";
@@ -12,12 +12,12 @@ import MatchFilterStrip from "../../../src/components/match/MatchFilterStrip";
 import { MATCH_GENRE_KEYS } from "../../../src/components/match/CineMatchGenreRing";
 import MatchResultsCloud from "../../../src/components/match/MatchResultsCloud";
 import SyncIntroCard from "../../../src/components/match/SyncIntroCard";
+import UpgradeRibbon from "../../../src/components/UpgradeRibbon";
 import type { CineGraphData, SyncCandidate } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 import { STORAGE_KEYS } from "../../../src/constants/apiRoutes";
 
-const CINEPHIX_LOGO = require("../../../assets/cinephix_logo.png");
 
 // Nothing selected by default — the previous round's live-apply/auto-
 // refetch model is gone; the filter panel's own "Find Your Match" button is
@@ -65,16 +65,25 @@ export default function MatchScreen() {
   // blocking the whole page behind it would delay the common case (a
   // return visit, where this stays false) for every single visit just to
   // avoid a one-time, one-frame flash on someone's very first-ever visit.
+  //
+  // Keyed per-user (not just STORAGE_KEYS.SYNC_INTRO_SEEN on its own) —
+  // real bug, reported live: SecureStore is device-local storage with no
+  // account scoping of its own, so testing with a second account on the
+  // same device/emulator inherited the FIRST account's already-dismissed
+  // state, hiding the intro for an account that had genuinely never seen
+  // it. Re-runs if the signed-in user changes (account switch without a
+  // full app reload) rather than only once on mount.
   const [showIntro, setShowIntro] = useState(false);
   useEffect(() => {
-    SecureStore.getItemAsync(STORAGE_KEYS.SYNC_INTRO_SEEN).then((seen) => {
-      if (!seen) setShowIntro(true);
+    if (!user?._id) return;
+    SecureStore.getItemAsync(`${STORAGE_KEYS.SYNC_INTRO_SEEN}:${user._id}`).then((seen) => {
+      setShowIntro(!seen);
     });
-  }, []);
+  }, [user?._id]);
   const dismissIntro = useCallback(() => {
     setShowIntro(false);
-    SecureStore.setItemAsync(STORAGE_KEYS.SYNC_INTRO_SEEN, "1");
-  }, []);
+    if (user?._id) SecureStore.setItemAsync(`${STORAGE_KEYS.SYNC_INTRO_SEEN}:${user._id}`, "1");
+  }, [user?._id]);
 
   const [filters, setFilters] = useState<MatchFilters>(DEFAULT_FILTERS);
 
@@ -258,20 +267,6 @@ export default function MatchScreen() {
           alignItems: "center",
           justifyContent: "center",
         },
-        // No longer position:"absolute" — moved to sit right below the Sync
-        // button (MatchFilterStrip's own upgradeButtonWrap) instead of
-        // floating as a separate top-right pill, direct ask.
-        upgradeBadge: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 5,
-          backgroundColor: colors.primary,
-          borderRadius: 999,
-          paddingHorizontal: 12,
-          paddingVertical: 7,
-        },
-        upgradeBadgeText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 12.5 },
-        upgradeBadgeIcon: { width: 13, height: 13 },
       }),
     [colors, screenWidth, insets.top]
   );
@@ -280,16 +275,11 @@ export default function MatchScreen() {
   // from this screen now; every locked control inside MatchFilterStrip
   // shows a toast instead of navigating away on tap (reported as jarring),
   // so there needs to be an obvious, deliberate way to actually get to the
-  // plans page. Passed into MatchFilterStrip itself (upgradeButton prop)
-  // rather than rendered here as its own floating badge — direct ask to
-  // move it right next to the Sync button.
-  const upgradeButtonEl =
-    tier === "free" || tier === "plus" ? (
-      <Pressable style={styles.upgradeBadge} onPress={() => router.push("/match/subscription" as any)}>
-        <Image source={CINEPHIX_LOGO} style={styles.upgradeBadgeIcon} resizeMode="contain" />
-        <Text style={styles.upgradeBadgeText}>{t("Upgrade")}</Text>
-      </Pressable>
-    ) : null;
+  // plans page. A diagonal corner ribbon now (UpgradeRibbon), direct ask —
+  // "ön planda olmalı... bant gibi" — replacing the plain pill badge this
+  // used to be; MatchFilterStrip positions it into the filter card's own
+  // top-right corner (upgradeButton prop).
+  const upgradeButtonEl = tier === "free" || tier === "plus" ? <UpgradeRibbon onPress={() => router.push("/match/subscription" as any)} /> : null;
 
   return (
     <View style={styles.container}>
@@ -322,10 +312,13 @@ export default function MatchScreen() {
                       one-time card above was already dismissed): the same
                       Sync pitch card that a first-time visitor sees blocking
                       the whole page instead lives here, in the space below
-                      the filters/Sync button, once there's nothing else to
-                      show yet — keeps the pitch around for repeat visits
-                      without it getting in the way every single time. */}
-                  {!hasSearched && <SyncIntroCard onStart={() => {}} showButton={false} />}
+                      the filters/Sync button — permanently, direct ask
+                      ("hep orda durmalı"). Previously gated on
+                      `!hasSearched`, which is real per-session state (never
+                      resets while this screen stays mounted), so running one
+                      sync and paging back from the results made this vanish
+                      for the rest of the session instead of staying put. */}
+                  <SyncIntroCard onStart={() => {}} showButton={false} />
                 </>
               )}
             </ScrollView>

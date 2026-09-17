@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { SkeletonSearchResultRow } from "../Skeleton";
 import { getMovies, getSeries, type ContentFilters } from "../../api/contentService";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../../constants/contentGenreIds";
 import SearchContentRow from "./SearchContentRow";
@@ -167,8 +168,8 @@ export default function SearchContentRows({ contentType, query, showFilters, onC
 
   if (loading && !hasLoadedOnce) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: colors.base100 }}>
+        {Array.from({ length: 6 }, (_, i) => <SkeletonSearchResultRow key={i} />)}
         {filterSheet}
       </View>
     );

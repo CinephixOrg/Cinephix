@@ -19,6 +19,7 @@ import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
 import SyncShareMessageCard from "./SyncShareMessageCard";
 import ProfileShareMessageCard from "./ProfileShareMessageCard";
+import ListShareMessageCard from "./ListShareMessageCard";
 import ProfileAnalysisShareMessageCard from "./ProfileAnalysisShareMessageCard";
 
 const AVATAR_SIZE = 28;
@@ -269,6 +270,8 @@ export default function ChatRoom({ roomType, roomId, canChat, emptyText, initial
                     <RecommendationMessageCard message={item} isOwn={isOwn} />
                   ) : item.type === "profile_share" ? (
                     <ProfileShareMessageCard message={item} isOwn={isOwn} />
+                  ) : item.type === "list_share" ? (
+                    <ListShareMessageCard message={item} isOwn={isOwn} />
                   ) : item.type === "analysis_share" && (item.analysisData as any)?.type === "profile" ? (
                     // Profile-analysis shares — same deck-preview treatment
                     // as the Sync/Cinematch variant below, direct ask to

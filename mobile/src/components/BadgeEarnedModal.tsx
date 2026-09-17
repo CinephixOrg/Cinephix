@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useToast } from "../context/ToastContext";
+import { useRecentShares } from "../context/RecentSharesContext";
 import { createShare } from "../api/shareService";
 import { GENRE_BADGE_DEFINITIONS } from "../data/genreBadgeDefinitions";
 import { VOLUME_BADGE_DEFINITIONS } from "../data/volumeBadgeDefinitions";
@@ -40,6 +41,7 @@ export default function BadgeEarnedModal() {
   const { t } = useTranslation();
   const router = useRouter();
   const { showToast } = useToast();
+  const { announce: announceNewShare } = useRecentShares();
   const { queue, dismissCurrent } = useBadgeEarned();
   const [sharing, setSharing] = useState(false);
   // Separate from `sharing` (the in-flight spinner state) — once a share
@@ -112,11 +114,19 @@ export default function BadgeEarnedModal() {
     if (sharing || shared) return;
     setSharing(true);
     try {
-      await createShare({ type: "badge", badgeFamily: badge.family, badgeKey: badge.key });
+      const share = await createShare({ type: "badge", badgeFamily: badge.family, badgeKey: badge.key, badgeTier: badge.tier });
+      announceNewShare(share);
       setShared(true);
       showToast(t("Shared to Medya"));
-    } catch {
-      showToast(t("Something went wrong. Please try again."));
+    } catch (err: any) {
+      // 409 = already shared (e.g. shared from the Badges tab moments
+      // earlier) — the end state the user wants is identical either way,
+      // so this still flips the button to "Shared" instead of erroring.
+      if (err?.response?.status === 409) {
+        setShared(true);
+      } else {
+        showToast(t("Something went wrong. Please try again."));
+      }
     } finally {
       setSharing(false);
     }

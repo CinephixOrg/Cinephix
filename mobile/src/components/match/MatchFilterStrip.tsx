@@ -42,12 +42,12 @@ interface Props {
   // see that component's own prop comment for why match/index.tsx needs
   // this real completion signal instead of a guessed-duration timer.
   onSpinComplete?: () => void;
-  // The whole "Upgrade" badge element (match/index.tsx's own), rendered
-  // right below the Sync button — direct ask to move it there instead of
-  // floating as its own separate top-right pill. Built and owned by the
-  // caller (same icon/navigation it always had), just positioned from in
-  // here now since that's the only place that actually sits next to the
-  // Sync button.
+  // The whole "Upgrade" ribbon element (match/index.tsx's own UpgradeRibbon),
+  // rendered as an absolutely-positioned corner banner on this card — direct
+  // ask, moved off the plain badge-below-the-Sync-button placement an
+  // earlier round used (see git history/README) in favor of something more
+  // "ön planda" (front-and-center prominent). Built and owned by the caller
+  // (same navigation it always had); this file only positions it.
   upgradeButton?: React.ReactNode;
 }
 
@@ -124,10 +124,22 @@ export default function MatchFilterStrip({
       StyleSheet.create({
         cardWrap: { position: "relative" },
         card: { backgroundColor: colors.base200, borderRadius: 16, paddingVertical: 16, marginHorizontal: 16, marginTop: 8 },
+        // Only added alongside the ribbon (see upgradeButton's own render
+        // below) — clips its diagonal overhang to this card's own rounded
+        // corner instead of spilling past it. Never applied otherwise, so
+        // Premium/dev (no ribbon at all) keep the card's plain, unclipped
+        // behavior exactly as before.
+        cardClipped: { overflow: "hidden" },
         restWrap: { position: "relative" },
-        lockNotice: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12, marginBottom: 4, paddingHorizontal: 16 },
-        lockNoticeText: { fontSize: 12, color: colors.placeholder, flex: 1 },
-        advancedLockHint: { textAlign: "center", paddingHorizontal: 24, marginTop: 8, textDecorationLine: "underline" },
+        // justifyContent:"center" (not the row's own default left-packed
+        // flow) so the icon+text pair sits centered as a unit — direct ask,
+        // this used to start flush against the left edge instead. Shared by
+        // both the Free-only full-filters notice (below) and the Plus-only
+        // advanced-filters hint (advancedLocked && !locked, above), which
+        // used to be two visually different treatments (one an icon row,
+        // one bare centered text) for the same kind of message.
+        lockNotice: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12, marginBottom: 4, paddingHorizontal: 24 },
+        lockNoticeText: { fontSize: 12, color: colors.placeholder, textAlign: "center", textDecorationLine: "underline", flexShrink: 1 },
         switcherWrap: { alignItems: "center" },
         infoNote: { fontSize: 12, color: colors.placeholder, textAlign: "center", lineHeight: 17, marginTop: 12, paddingHorizontal: 20 },
         // "Watched Count" / "Average Rating" — moved between the info note
@@ -158,7 +170,14 @@ export default function MatchFilterStrip({
         matchButtonDisabled: { opacity: 0.4 },
         matchButtonText: { color: "#fff", fontFamily: fonts.bold, fontSize: 16, letterSpacing: 0.3 },
         disabledReasonText: { color: colors.placeholder, fontSize: 11.5, textAlign: "center", marginTop: 8, paddingHorizontal: 24 },
-        upgradeButtonWrap: { alignSelf: "center", marginTop: 14 },
+        // Top-right corner of `card` (the dark box CineGraph sits in) —
+        // direct ask ("ön planda olmalı... koyu renkli arkaplan butonunun
+        // sol ya da sağ köşesine bant gibi"). `card` gains overflow:"hidden"
+        // only in the branch that actually renders this (see below), so the
+        // ribbon's own diagonal overhang gets trimmed to the card's rounded
+        // corner instead of spilling past it — never applied when there's
+        // no ribbon to clip, zero risk to any other tier's card.
+        upgradeRibbonWrap: { position: "absolute", top: 14, right: -32 },
       }),
     [colors]
   );
@@ -169,7 +188,8 @@ export default function MatchFilterStrip({
   return (
     <View>
       <View style={styles.cardWrap}>
-        <View style={styles.card}>
+        <View style={[styles.card, !!upgradeButton && styles.cardClipped]}>
+          {upgradeButton && <View style={styles.upgradeRibbonWrap}>{upgradeButton}</View>}
           {/* Always interactive, every tier — the server now honors `type`
               regardless of account tier, only genres/weighting stay gated. */}
           <View style={styles.switcherWrap}>
@@ -214,8 +234,9 @@ export default function MatchFilterStrip({
               </Pressable>
             </View>
             {advancedLocked && !locked && (
-              <Pressable onPress={() => showToast(upgradeAdvancedMessage)}>
-                <Text style={[styles.lockNoticeText, styles.advancedLockHint]}>{upgradeAdvancedMessage}</Text>
+              <Pressable style={styles.lockNotice} onPress={() => showToast(upgradeAdvancedMessage)}>
+                <Ionicons name="lock-closed" size={14} color={colors.placeholder} />
+                <Text style={styles.lockNoticeText}>{upgradeAdvancedMessage}</Text>
               </Pressable>
             )}
 
@@ -300,7 +321,6 @@ export default function MatchFilterStrip({
           <Text style={styles.matchButtonText}>{t("Sync")}</Text>
         </View>
       </Pressable>
-      {upgradeButton && <View style={styles.upgradeButtonWrap}>{upgradeButton}</View>}
       {!locked && !loading && disabledReason && <Text style={styles.disabledReasonText}>{disabledReason}</Text>}
     </View>
   );

@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { ContentType, PollOption, Share, ShareFeedResult } from "../types";
+import type { ContentType, PollOption, Share, ShareFeedResult, ShareType } from "../types";
 import { createPrefetcher } from "../utils/prefetch";
 
 // How many shares a profile's Sharings grid previews. Lives here rather
@@ -13,6 +13,9 @@ export type CreateSharePayload =
   | { type: "review"; reviewId: string }
   | { type: "recommendation"; contentId: string; contentType: ContentType; note?: string }
   | { type: "list"; listId: string }
+  // "What should I watch next?" — 2 or 3 titles picked from the caller's
+  // own Watchlist (re-verified server-side, never trusted as-is).
+  | { type: "poll"; items: { contentId: string; contentType: ContentType }[] }
   | {
       type: "badge";
       badgeFamily:
@@ -38,10 +41,23 @@ export type CreateSharePayload =
         | "halloweenViewer"
         | "newYearViewer";
       badgeKey: string;
+      // Genre only: which of the 2 simultaneously-visible tiles (devotee
+      // vs master) is being shared — every other family only ever shows
+      // its current tier, so this stays omitted there and the server just
+      // uses whatever tier is currently earned (unchanged behavior).
+      badgeTier?: string;
     };
 
 export async function createShare(payload: CreateSharePayload): Promise<Share> {
   const res = await API.post(API_ROUTES.SHARES.CREATE, payload);
+  return res.data;
+}
+
+// "family:key:tier" strings for every badge the caller has ever shared —
+// powers the Badges tab's Share/Shared button (BadgeDetailModal.tsx via
+// ProfileBadgesTab.tsx), one bulk fetch instead of a per-tile check.
+export async function getSharedBadges(): Promise<string[]> {
+  const res = await API.get(API_ROUTES.SHARES.GET_SHARED_BADGES);
   return res.data;
 }
 
@@ -74,9 +90,14 @@ export async function registerShareView(shareId: string): Promise<{ viewCount: n
 export async function getUserShares(
   userId: string,
   page = 1,
-  limit = 20
+  limit = 20,
+  // Profile's own Sharings tab category filter (ProfileSharingsTab.tsx) —
+  // omitted or empty means unfiltered, same as every existing call site.
+  types?: ShareType[]
 ): Promise<{ items: Share[]; total: number }> {
-  const res = await API.get(API_ROUTES.SHARES.GET_USER_SHARES(userId), { params: { page, limit } });
+  const params: Record<string, any> = { page, limit };
+  if (types && types.length > 0) params.types = types.join(",");
+  const res = await API.get(API_ROUTES.SHARES.GET_USER_SHARES(userId), { params });
   const pagination = (res as any).pagination;
   return { items: res.data, total: pagination?.total ?? res.data.length };
 }

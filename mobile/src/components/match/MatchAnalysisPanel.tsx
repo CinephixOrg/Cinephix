@@ -48,6 +48,12 @@ interface Props {
   // visible container. Sourcing it from the parent instead of re-deriving it
   // independently keeps the two from ever disagreeing again.
   containerWidth: number;
+  // Set only by SyncAnalysisModal.tsx (a public profile's Sync Score card
+  // ⓘ) — threaded through to prefetchMatchAnalysis so the backend applies
+  // its own, separate Free/Plus/Premium gate for that entry point.
+  // Undefined for the Sync page's own direct use of this panel, which
+  // keeps behaving exactly as it always has.
+  source?: "profile";
 }
 
 // Tall enough for the breakdown card's chart + its always-reserved detail
@@ -101,7 +107,7 @@ function formatCooldown(ms: number): string {
 // ScrollView's own full width instead, which would be wrong here. The
 // profile header stays pinned above the carousel, not swiped — it's
 // identity/follow chrome, not one of the analysis's own topics.
-export default function MatchAnalysisPanel({ candidate, filters, containerWidth }: Props) {
+export default function MatchAnalysisPanel({ candidate, filters, containerWidth, source }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -142,6 +148,15 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
   // failure, so the ai-summary card renders a distinct message instead of
   // the generic "No analysis available." fallback.
   const [analysisCooldownRetryAt, setAnalysisCooldownRetryAt] = useState<number | null>(null);
+  // Set only when the profile entry point's own weekly quota (Plus tier —
+  // analyzeMatchWithUser's source:"profile" gate) is exhausted. A genuinely
+  // different situation from the cooldown above (that one means "come back
+  // in N minutes"; this one means "upgrade, or wait for next week"), so it
+  // gets its own state and its own message rather than reusing
+  // analysisCooldownRetryAt's text. Free is blocked before this panel ever
+  // mounts (SyncScoreCard.tsx's own ⓘ handler), so this branch in practice
+  // only ever fires for Plus.
+  const [analysisUpgradeRequired, setAnalysisUpgradeRequired] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   // Gates every card's own data fetch except the ai-summary card's (which
   // stays eager — it's card 0, always the first thing shown). Before this,
@@ -293,22 +308,28 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
     setAnalyzing(true);
     setAnalyzeData(null);
     setAnalysisCooldownRetryAt(null);
-    prefetchMatchAnalysis(candidate.user._id, filters)
+    setAnalysisUpgradeRequired(false);
+    prefetchMatchAnalysis(candidate.user._id, filters, source)
       .then((data) => {
         if (!cancelled) setAnalyzeData(data);
       })
       .catch((err: any) => {
         if (cancelled) return;
-        // The one error shape worth telling the user about specifically —
+        // Two error shapes worth telling the user about specifically:
         // analyzeMatchWithUser's per-(user,target) cooldown (backend
-        // matchController.js). Everything else stays a silent failure
-        // (falls through to the generic "No analysis available." text)
-        // since there's nothing more useful to say about a transient
-        // network/provider error than that. Previously this branch was
-        // empty — a real gap once the cooldown existed at all: a re-visit
-        // to an already-analyzed candidate (cache cleared by an app
-        // restart) silently showed the same generic text as a genuine
-        // failure, no indication it was expected/temporary.
+        // matchController.js), and — new — that same endpoint's separate
+        // source:"profile" weekly-quota gate. Everything else stays a
+        // silent failure (falls through to the generic "No analysis
+        // available." text) since there's nothing more useful to say about
+        // a transient network/provider error than that. Previously the
+        // cooldown branch was empty — a real gap once the cooldown existed
+        // at all: a re-visit to an already-analyzed candidate (cache
+        // cleared by an app restart) silently showed the same generic text
+        // as a genuine failure, no indication it was expected/temporary.
+        if (err?.response?.data?.errors?.requiresUpgrade) {
+          setAnalysisUpgradeRequired(true);
+          return;
+        }
         const retryAfterMs = err?.response?.data?.errors?.retryAfterMs;
         if (err?.response?.status === 429 && retryAfterMs) {
           setAnalysisCooldownRetryAt(Date.now() + retryAfterMs);
@@ -321,7 +342,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidate.user._id, filtersKey]);
+  }, [candidate.user._id, filtersKey, source]);
 
   const insights = candidate.matchInsights;
   const sharedGenreNames = insights?.sharedGenres?.map((g) => g.genre) ?? [];
@@ -459,7 +480,13 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        wrap: { paddingHorizontal: HORIZONTAL_PADDING, paddingTop: 24, gap: 20 },
+        // paddingTop bumped 24→44, direct ask: the bottom-most profile
+        // bubble in MatchResultsCloud.tsx's own cloud (which idle-drifts a
+        // few px below its nominal resting position, MatchCloudBubble's own
+        // bobAnim) could land close enough to this panel's own title
+        // (MatchTitleBadge) to visually overlap it — more breathing room
+        // between the cloud and this panel, not a MatchCloudBubble change.
+        wrap: { paddingHorizontal: HORIZONTAL_PADDING, paddingTop: 44, gap: 20 },
         card: { backgroundColor: colors.base200, borderRadius: 16, padding: 16 },
         cardScroll: { flex: 1 },
         cardScrollCentered: { flexGrow: 1, justifyContent: "center" },
@@ -549,6 +576,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
         // (MatchRadarChart's detailDesc, Shared Genres' detail text, etc.).
         summaryContent: { alignItems: "center" },
         paragraph: { fontSize: 14, color: colors.baseContent, lineHeight: 20, textAlign: "center" },
+        upgradeLink: { color: colors.primary, fontFamily: fonts.bold, marginTop: 8 },
         dotsRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6 },
         dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
         dotActive: { width: 18, backgroundColor: colors.primary },
@@ -590,7 +618,14 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
               <MatchTierRow candidate={candidate} />
               <MatchSummarySwiper analysis={parsed.analysis} strengths={strengths} weaknesses={weaknesses} conversationStarters={conversationStarters} />
             </Animated.View>
-          ) : analyzing ? null : analysisCooldownRetryAt ? (
+          ) : analyzing ? null : analysisUpgradeRequired ? (
+            <View>
+              <Text style={styles.paragraph}>{t("You've used all your sync analyses for this week. Upgrade to Premium for unlimited access.")}</Text>
+              <Pressable onPress={() => router.push("/match/subscription" as any)} hitSlop={8}>
+                <Text style={[styles.paragraph, styles.upgradeLink]}>{t("Upgrade")}</Text>
+              </Pressable>
+            </View>
+          ) : analysisCooldownRetryAt ? (
             <Text style={styles.paragraph}>
               {t("You've already analyzed this match recently. A new analysis will be available in {{time}}.", {
                 time: formatCooldown(analysisCooldownRetryAt - Date.now()),
@@ -915,10 +950,28 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
   // — same "start over, don't carry position across candidates" precedent
   // as the shared-genre carousel above. Non-animated: this is a brand-new
   // deck appearing, not a user-driven navigation.
+  //
+  // scrollX.setValue(0) is the real fix here, not just belt-and-suspenders:
+  // scrollRef.current.scrollTo({x:0, animated:false}) moves the native
+  // ScrollView, but a non-animated programmatic scrollTo doesn't reliably
+  // re-fire onScroll on every platform — when it doesn't, the
+  // Animated.event binding above (scrollX) never hears about the jump and
+  // stays stuck at whatever position the PREVIOUS candidate's deck was
+  // scrolled to. MatchTitleBadge reads scrollX directly (not activeIndex,
+  // per its own comment below) to fade itself in/out, so a stale non-zero
+  // scrollX after switching candidates rendered it as still-faded-out even
+  // though the deck had visibly snapped back to card 0 — a real, reported
+  // bug ("2nd+ switch to a different profile, the first card's LLM title
+  // doesn't load"; a genuine swipe always fixes it because a real drag
+  // gesture DOES reliably fire onScroll, which is exactly why it only ever
+  // reproduced through this programmatic reset path). Setting the Animated
+  // value directly guarantees it agrees with the visual reset regardless of
+  // whether the platform happens to fire that onScroll or not.
   useEffect(() => {
     setActiveIndex(0);
+    scrollX.setValue(0);
     scrollRef.current?.scrollTo({ x: 0, animated: false });
-  }, [candidate.user._id]);
+  }, [candidate.user._id, scrollX]);
 
   // Clamp — a fresh candidate/filter selection can shrink the deck (fewer
   // cards this time) while the previous selection's scroll position is still
@@ -977,11 +1030,33 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth 
         >
           {cards.map((card) => (
             <View key={card.key} style={[styles.card, { width: cardWidth, height: cardHeight }]}>
-              {card.key !== "ai-summary" && <Text style={styles.sectionTitle}>{localeUpper(card.title)}</Text>}
+              {/* "cover" excluded too, alongside "ai-summary" — MatchCoverCard
+                  already renders its own title (MatchGradientTitle, "Ready to
+                  share your Sync?") as the first line of its own centered
+                  content. This external "SHARE" heading was redundant with
+                  that AND, worse, ate real height from the top of the box
+                  before cardScrollCentered's own centering ever runs — so
+                  the actually-centered content below it landed visibly lower
+                  than the card's true middle, direct report even after
+                  "cover" was added to cardScrollCentered. Removing it lets
+                  MatchCoverCard's whole content (title included) center as
+                  one group in the full card height. */}
+              {card.key !== "ai-summary" && card.key !== "cover" && <Text style={styles.sectionTitle}>{localeUpper(card.title)}</Text>}
+              {/* cardScrollCentered (flexGrow:1 + justifyContent:"center")
+                  vertically centers a card whose own content is naturally
+                  shorter than this shared fixed `cardHeight` — without it,
+                  a short card's content just sits at the top with empty
+                  space below, which for "cover" (MatchCoverCard, the
+                  closing Share card — reliably one of the shortest, no
+                  chart/rail of its own) read as the card having "slid
+                  down" / its Share button rendering cut off at the bottom
+                  of a mostly-empty box. "breakdown" already had this fix;
+                  "cover" was the one other card genuinely short enough to
+                  need it too — direct report, not fixed until now. */}
               <ScrollView
                 style={styles.cardScroll}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={card.key === "breakdown" ? styles.cardScrollCentered : undefined}
+                contentContainerStyle={card.key === "breakdown" || card.key === "cover" ? styles.cardScrollCentered : undefined}
                 onScroll={card.key === "social" ? onSocialCardScroll : undefined}
                 scrollEventThrottle={card.key === "social" ? 200 : undefined}
               >

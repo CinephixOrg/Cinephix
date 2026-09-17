@@ -12,7 +12,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -20,12 +20,10 @@ import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useProfile } from "../context/ProfileContext";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
-import { createList, getListById, updateList } from "../api/listService";
-import { ensureContent, entryFor } from "../api/collectionCache";
+import { createList } from "../api/listService";
 import { myListsCache } from "../api/myListsCache";
 import { getCachedSearch, getCachedSuggestions, loadSuggestions, searchTitles } from "../api/listEditorData";
 import CollectionSearchBar from "../components/collection/CollectionSearchBar";
-import { CollectionStateView } from "../components/collection/CollectionStates";
 import ConfirmDialog from "../components/settings/ConfirmDialog";
 import {
   ADDED_COLUMNS,
@@ -40,13 +38,10 @@ import {
   MIN_ITEMS_FOR_SUGGESTIONS,
   addToDraft,
   draftKey,
-  isDraftChanged,
   removeFromDraft,
   seedsKey,
   suggestionSeeds,
   titleIdentity,
-  yearOf,
-  type DraftFields,
   type DraftItem,
 } from "../utils/listDraft";
 import { fonts } from "../theme/typography";
@@ -64,11 +59,7 @@ const SUGGESTIONS_DEBOUNCE_MS = 500;
 // native layout animation.
 const MOVE = LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity);
 
-const EMPTY_DRAFT: DraftFields = { name: "", description: "", isPublic: false, items: [] };
-
-type Status = "loading" | "ready" | "error";
-
-// Creating and editing a list, on one distraction-free page:
+// Creating a new list, on one distraction-free page:
 //
 //   * the name, description and visibility, as borderless text on the canvas;
 //   * a search that adds titles in place, with no trip to another page;
@@ -77,10 +68,16 @@ type Status = "loading" | "ready" | "error";
 //   * the added titles as a poster grid, one tap to remove.
 //
 // Nothing is saved until the button at the bottom: the whole list, titles
-// included, goes in one request. Leaving with unsaved changes asks first.
+// included, goes in one request.
+//
+// Creation-only now — this used to also EDIT an existing list (a `listId`
+// param loaded it via getListById/updateList), but that path went
+// unreachable once ListDetailScreen.tsx grew its own inline name/
+// description edit and per-item removal, and reordering an existing list's
+// items was a direct "not needed" (the user's own words, after this file's
+// own dead `isEditing` branch was flagged). Removed rather than left as
+// dead code nothing could reach.
 export default function ListEditorScreen() {
-  const { listId } = useLocalSearchParams<{ listId?: string }>();
-  const isEditing = Boolean(listId);
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -93,49 +90,15 @@ export default function ListEditorScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const userId = user?._id ?? "";
 
-  const [status, setStatus] = useState<Status>(isEditing ? "loading" : "ready");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [items, setItems] = useState<DraftItem[]>([]);
   const [saving, setSaving] = useState(false);
-  const baseline = useRef<DraftFields>(EMPTY_DRAFT);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: t(isEditing ? "Edit List" : "New List") });
-  }, [navigation, isEditing, t]);
-
-  // ---- Loading an existing list ------------------------------------------------
-
-  const load = useCallback(async () => {
-    if (!listId) return;
-    setStatus("loading");
-    try {
-      const { list } = await getListById(listId);
-      // Titles and posters from the shared content cache: two bulk requests
-      // at most, none for titles already seen anywhere in the app.
-      await ensureContent(list.items);
-      const loaded: DraftItem[] = [];
-      list.items.forEach((item, index) => {
-        const entry = entryFor(String(item.itemId), item.itemType, index, null);
-        if (entry) {
-          loaded.push({ id: entry.id, type: entry.type, title: entry.title, posterPath: entry.posterPath, year: yearOf(entry.releaseDate) });
-        }
-      });
-      baseline.current = { name: list.name, description: list.description ?? "", isPublic: list.isPublic, items: loaded };
-      setName(list.name);
-      setDescription(list.description ?? "");
-      setIsPublic(list.isPublic);
-      setItems(loaded);
-      setStatus("ready");
-    } catch {
-      setStatus("error");
-    }
-  }, [listId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+    navigation.setOptions({ title: t("New List") });
+  }, [navigation, t]);
 
   // ---- The draft ------------------------------------------------------------------
 
@@ -253,10 +216,9 @@ export default function ListEditorScreen() {
 
   // ---- Leaving and saving -------------------------------------------------------------
 
-  const draft: DraftFields = { name, description, isPublic, items };
-  const changed = status === "ready" && isDraftChanged(baseline.current, draft);
-  const changedRef = useRef(changed);
-  changedRef.current = changed;
+  const hasDraft = name.trim().length > 0 || description.trim().length > 0 || items.length > 0;
+  const changedRef = useRef(hasDraft);
+  changedRef.current = hasDraft;
   const allowLeave = useRef(false);
   const [pendingLeave, setPendingLeave] = useState<unknown>(null);
 
@@ -279,7 +241,7 @@ export default function ListEditorScreen() {
   const keepEditing = useCallback(() => setPendingLeave(null), []);
 
   const trimmedName = name.trim();
-  const canSave = status === "ready" && trimmedName.length > 0 && !saving && (!isEditing || changed);
+  const canSave = trimmedName.length > 0 && !saving;
 
   const save = useCallback(async () => {
     if (!canSave) return;
@@ -291,30 +253,23 @@ export default function ListEditorScreen() {
       items: items.map((item) => ({ itemId: item.id, itemType: item.type })),
     };
     try {
-      if (listId) {
-        const updated = await updateList(listId, fields);
-        myListsCache.upsert(userId, updated);
-        allowLeave.current = true;
-        router.back();
-      } else {
-        const { list, newlyEarnedBadges } = await createList(fields);
-        reportEarnedBadges(newlyEarnedBadges);
-        myListsCache.upsert(userId, list);
-        refreshProfile({ force: true });
-        allowLeave.current = true;
-        // Close the editor (a root-level screen) first, then open the new list
-        // in the Lists tab. withAnchor puts that stack's first screen, My
-        // Lists, beneath it, so the list always has a Back button — a plain
-        // replace across navigators opened the list alone in its stack, with
-        // no way back.
-        if (router.canGoBack()) router.back();
-        router.push(`/lists/${list._id}` as never, { withAnchor: true });
-      }
+      const { list, newlyEarnedBadges } = await createList(fields);
+      reportEarnedBadges(newlyEarnedBadges);
+      myListsCache.upsert(userId, list);
+      refreshProfile({ force: true });
+      allowLeave.current = true;
+      // Close the editor (a root-level screen) first, then open the new list
+      // in the Lists tab. withAnchor puts that stack's first screen, My
+      // Lists, beneath it, so the list always has a Back button — a plain
+      // replace across navigators opened the list alone in its stack, with
+      // no way back.
+      if (router.canGoBack()) router.back();
+      router.push(`/lists/${list._id}` as never, { withAnchor: true });
     } catch (e: any) {
-      showToast(e?.response?.data?.message || t(listId ? "Failed to update list." : "Failed to create list."));
+      showToast(e?.response?.data?.message || t("Failed to create list."));
       setSaving(false);
     }
-  }, [canSave, trimmedName, description, isPublic, items, listId, userId, router, reportEarnedBadges, refreshProfile, showToast, t]);
+  }, [canSave, trimmedName, description, isPublic, items, userId, router, reportEarnedBadges, refreshProfile, showToast, t]);
 
   // ---- Layout ---------------------------------------------------------------------------
 
@@ -363,31 +318,9 @@ export default function ListEditorScreen() {
         savePressed: { transform: [{ scale: 0.98 }] },
         saveText: { fontFamily: fonts.bold, fontSize: 16, color: colors.primaryContent },
         saveCount: { fontFamily: fonts.medium, fontSize: 14, color: colors.primaryContent, opacity: 0.8 },
-        center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
       }),
     [colors, insets.bottom]
   );
-
-  if (status === "loading") {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
-
-  if (status === "error") {
-    return (
-      <View style={styles.screen}>
-        <CollectionStateView
-          icon="cloud-offline-outline"
-          title={t("Failed to load list.")}
-          text={t("Check your connection and try again.")}
-          action={{ label: t("Retry"), onPress: load }}
-        />
-      </View>
-    );
-  }
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -405,7 +338,7 @@ export default function ListEditorScreen() {
             placeholder={t("List name")}
             placeholderTextColor={colors.placeholder}
             maxLength={NAME_MAX}
-            autoFocus={!isEditing}
+            autoFocus
             returnKeyType="next"
           />
           <TextInput
@@ -453,7 +386,7 @@ export default function ListEditorScreen() {
             <ActivityIndicator color={colors.primaryContent} />
           ) : (
             <>
-              <Text style={styles.saveText}>{t(isEditing ? "Save changes" : "Create List")}</Text>
+              <Text style={styles.saveText}>{t("Create List")}</Text>
               {items.length > 0 ? <Text style={styles.saveCount}>· {items.length}</Text> : null}
             </>
           )}

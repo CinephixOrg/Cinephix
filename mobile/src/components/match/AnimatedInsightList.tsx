@@ -7,6 +7,13 @@ interface Props {
   items: string[];
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
+  // Omit for the full, untruncated sentence — direct ask for Strengths/
+  // Weaknesses specifically (MatchSummarySwiper.tsx), which used to always
+  // clip at 2 lines with "…" here. Left at 2 for every other caller
+  // (SyncIntroCard's highlights, GenreDonutChart's legend, Conversation
+  // Starters) — those are short by design already, so this only matters as
+  // a safety net there, not a real behavior change.
+  numberOfLines?: number;
 }
 
 // Strengths/Weaknesses/Conversation Starters are the same shape three times
@@ -23,7 +30,7 @@ interface Props {
 // Starters "button" rows in the same swiper) is the deliberate visual
 // distinction between the two — same rounded-container language, different
 // weight.
-export default function AnimatedInsightList({ items, icon, iconColor }: Props) {
+export default function AnimatedInsightList({ items, icon, iconColor, numberOfLines = 2 }: Props) {
   const { colors } = useTheme();
   // Rebuilt (not a one-time useRef) whenever the actual content changes, not
   // just its length — this list isn't remounted when MatchAnalysisPanel
@@ -71,7 +78,7 @@ export default function AnimatedInsightList({ items, icon, iconColor }: Props) {
           ]}
         >
           <Ionicons name={icon} size={14} color={iconColor} />
-          <Text style={styles.listItem} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={styles.listItem} numberOfLines={numberOfLines || undefined} ellipsizeMode="tail">
             {item}
           </Text>
         </Animated.View>

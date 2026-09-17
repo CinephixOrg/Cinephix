@@ -29,7 +29,13 @@ export const TIER_LIMITS = {
     // type/genre; the two matching-weight toggles stay Premium-only, forced
     // to DEFAULT_MATCH_FILTERS' own useCount/useAvgRating server-side
     // (getSyncCandidates) regardless of what a client sends.
-    canUseAdvancedMatchFilters: false
+    canUseAdvancedMatchFilters: false,
+    // A public profile's Sync Score card ⓘ (analyzeMatchWithUser's own
+    // source:"profile" gate) — 0 means fully blocked, not just cooldown-
+    // throttled like the Sync page's own Analyze button stays for every
+    // tier. Direct ask: Free shouldn't see this analysis from a profile at
+    // all, shown an upgrade prompt instead.
+    profileSyncAnalysesPerWeek: 0
   },
   plus: {
     maxMatches: 30,
@@ -41,7 +47,11 @@ export const TIER_LIMITS = {
     analysisAdvancedCards: false,
     canUseMatchFilters: true,
     syncSearchesPerDay: 3,
-    canUseAdvancedMatchFilters: false
+    canUseAdvancedMatchFilters: false,
+    // Weekly, not daily — a deliberately separate window from
+    // syncSearchesPerDay's own daily reset, chosen so a real week of casual
+    // profile-browsing doesn't feel capped after one busy day.
+    profileSyncAnalysesPerWeek: 5
   },
   premium: {
     maxMatches: 100,
@@ -58,7 +68,10 @@ export const TIER_LIMITS = {
     // "X of 15 left today" counter for this tier the way it might for
     // Free/Plus.
     syncSearchesPerDay: 15,
-    canUseAdvancedMatchFilters: true
+    canUseAdvancedMatchFilters: true,
+    // Unlimited, same "generous enough not to be felt" reasoning as
+    // syncSearchesPerDay above.
+    profileSyncAnalysesPerWeek: 999
   },
   // Internal testing tier — no cooldown so Analyze Profile can be re-run
   // freely while iterating; otherwise as generous as premium.
@@ -71,7 +84,8 @@ export const TIER_LIMITS = {
     analysisAdvancedCards: true,
     canUseMatchFilters: true,
     syncSearchesPerDay: 999,
-    canUseAdvancedMatchFilters: true
+    canUseAdvancedMatchFilters: true,
+    profileSyncAnalysesPerWeek: 999
   }
 };
 

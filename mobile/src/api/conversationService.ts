@@ -35,6 +35,17 @@ interface ProfileSharePayload {
   };
 }
 
+interface ListSharePayload {
+  text: string;
+  type: "list_share";
+  listData: {
+    listId: string;
+    name: string;
+    itemCount: number;
+    previewPosters: string[];
+  };
+}
+
 // GET /conversations returns BOTH dm and group rows merged — split by type
 // here rather than discarding groups, so the Messages inbox can show both
 // while every DM-only consumer (RecipientPickerModal, etc.) keeps reading
@@ -95,7 +106,7 @@ export async function sendMessageRest(conversationId: string, text: string): Pro
 // socket path, matching how web itself sends these types.
 export async function sendRichMessage(
   conversationId: string,
-  payload: RecommendationPayload | AnalysisSharePayload | ProfileSharePayload
+  payload: RecommendationPayload | AnalysisSharePayload | ProfileSharePayload | ListSharePayload
 ): Promise<Message> {
   const res = await API.post(API_ROUTES.CONVERSATIONS.SEND_MESSAGE(conversationId), payload);
   return res.data;

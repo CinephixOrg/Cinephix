@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 // From react-native-gesture-handler, not react-native — this card's own
 // film strip now also nests inside ListsSwiper.tsx's outer horizontal
 // pager (same axis), which a plain ScrollView here can't negotiate against
@@ -13,7 +13,6 @@ import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 // strip stay plain — they're children of the scroller, not ancestors, so
 // they're not part of this same negotiation.
 import { ScrollView, Pressable as GHPressable } from "react-native-gesture-handler";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
@@ -72,9 +71,8 @@ interface Props {
 // SVG treatment ShareCard.tsx's posts use. That box-border stays a post-
 // only signal by direct ask ("sadece postta geçerli olsun") — an earlier
 // round had copied it here too, since undone.
-export default function DiscoverListCard({ list, onPress, basePath }: Props) {
+export default function DiscoverListCard({ list, onPress }: Props) {
   const { colors } = useTheme();
-  const router = useRouter();
   const { t } = useTranslation();
   const { showToast } = useToast();
   // Real tappable heart now (was a static heart+count, no onPress at all) —
@@ -168,12 +166,18 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
 
       {list.previewItems.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filmStripContainer}>
+          {/* Plain View, not its own Pressable — same reasoning ShareCard.tsx's
+              own list-post box already gets right and this card didn't: this
+              strip is a PREVIEW, not a set of individually-tappable posters,
+              and a Pressable here fighting the card's own outer GHPressable
+              for the same touch was the real cause of a reported "list page
+              opens, then a movie/series page stacks on top of it" bug — two
+              different touch-recognition systems (gesture-handler's, for the
+              card; plain RN's, for this inner Pressable) both claiming the
+              same tap. Direct ask either way: wherever on this card someone
+              taps, it should always open the list itself. */}
           {list.previewItems.map((item) => (
-            <Pressable
-              key={`${item.itemType}-${item.itemId}`}
-              style={styles.filmStripPoster}
-              onPress={() => router.push(`${basePath}/content/${item.itemType}/${item.itemId}` as any)}
-            >
+            <View key={`${item.itemType}-${item.itemId}`} style={styles.filmStripPoster}>
               {item.poster_path ? (
                 <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
               ) : (
@@ -183,7 +187,7 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
                   </Text>
                 </View>
               )}
-            </Pressable>
+            </View>
           ))}
         </ScrollView>
       )}
@@ -191,16 +195,25 @@ export default function DiscoverListCard({ list, onPress, basePath }: Props) {
       <View style={styles.footerRow}>
         <Text style={styles.count}>{t("item_count", { count: list.items.length })}</Text>
         <View style={styles.engagementRow}>
-          {/* Its own nested Pressable — "inner tap wins" over the card's
-              own onPress, so liking doesn't also trigger navigation. Same
-              Like?/Liked + count wording every other like button in this
-              app uses (SearchListCard.tsx, List Detail, Reviews). */}
-          <Pressable style={styles.engagementUnit} onPress={handleToggleLike} disabled={liking} hitSlop={6}>
+          {/* Its own nested Pressable, deliberately GHPressable (not plain
+              RN Pressable) — real bug, reported live: a plain RN Pressable
+              nested inside this card's own outer GHPressable didn't
+              reliably win the tap, so liking a list from here would ALSO
+              fire the outer onPress and navigate into the list detail page.
+              Gesture-handler's own nested-gesture resolution only works
+              correctly between two of its own Pressables, not a plain RN
+              one inside a GH one — same root cause the poster film-strip
+              fix in this exact file already found (that one just resolved
+              it by making the poster non-interactive instead, which isn't
+              an option for a real button). Same Like?/Liked + count wording
+              every other like button in this app uses (SearchListCard.tsx,
+              List Detail, Reviews). */}
+          <GHPressable style={styles.engagementUnit} onPress={handleToggleLike} disabled={liking} hitSlop={6}>
             <Ionicons name={hasLiked ? "heart" : "heart-outline"} size={13} color={hasLiked ? colors.primary : colors.placeholder} />
             <Text style={[styles.engagementText, hasLiked && styles.engagementTextActive]}>
               {hasLiked ? t("Liked") : t("Like?")} {likeCount}
             </Text>
-          </Pressable>
+          </GHPressable>
           <View style={styles.engagementUnit}>
             <Ionicons name="eye-outline" size={14} color={colors.placeholder} />
             <Text style={styles.engagementText}>{list.views}</Text>

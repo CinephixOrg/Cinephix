@@ -138,12 +138,18 @@ export default function SearchListCard({ list, onPress, basePath }: Props) {
 
       {list.previewItems.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filmStripContainer}>
+          {/* Plain View, not its own Pressable — same fix as
+              DiscoverListCard.tsx's own identical strip (see its comment):
+              a nested Pressable competing with this card's own outer one for
+              the same tap was causing a reported "list page opens, then a
+              movie/series page stacks on top" bug. This card's outer
+              Pressable is plain RN (not gesture-handler), so it likely
+              never hit the exact same touch-system mismatch — but the fix
+              is applied here too for consistency: wherever on a list card
+              someone taps, it should always open the list, never a title
+              inside it. */}
           {list.previewItems.map((item) => (
-            <Pressable
-              key={`${item.itemType}-${item.itemId}`}
-              style={styles.filmStripPoster}
-              onPress={() => router.push(`${basePath}/content/${item.itemType}/${item.itemId}` as any)}
-            >
+            <View key={`${item.itemType}-${item.itemId}`} style={styles.filmStripPoster}>
               {item.poster_path ? (
                 <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
               ) : (
@@ -153,7 +159,7 @@ export default function SearchListCard({ list, onPress, basePath }: Props) {
                   </Text>
                 </View>
               )}
-            </Pressable>
+            </View>
           ))}
         </ScrollView>
       )}

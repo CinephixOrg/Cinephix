@@ -30,6 +30,11 @@ const ITEMS: MenuItem[] = [
   // account preferences.
   { key: "import", label: "Import", icon: "cloud-download-outline", route: "/profile/import" },
   { key: "notifications", label: "Notifications", icon: "notifications-outline", route: "/notifications" },
+  // Direct ask: subscription used to be reachable only from an Upgrade
+  // button somewhere already gated behind a locked feature — a real,
+  // always-available entry point for someone who just wants to go look,
+  // not triggered by hitting a paywall first.
+  { key: "subscriptions", label: "Subscriptions", icon: "diamond-outline", route: "/match/subscription" },
   { key: "settings", label: "Settings", icon: "settings-outline", route: "/profile/settings" },
 ];
 

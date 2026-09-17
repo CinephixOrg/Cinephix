@@ -12,14 +12,13 @@ interface Props {
   onCancel: () => void;
 }
 
-// Shown exactly once, the very first time a viewer ever taps the
-// "Currently Watching" button on Content Detail — direct ask: the button
-// press itself doesn't actually activate anything on that first tap, this
-// explains what it does first, and only "Start Watching" here performs the
-// real toggle-on. Every later tap (this modal never shown again,
-// STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN) toggles directly.
-// Same spring-scale + fade entrance BadgeEarnedModal.tsx's own icon
-// already uses, reused here for the header icon.
+// Shown every time a viewer taps the "Currently Watching" button on
+// Content Detail (was once-only at first, changed on direct ask) — the
+// button press itself doesn't actually activate anything on its own tap,
+// this explains what it does first, and only "Start Watching" here
+// performs the real toggle-on. Same spring-scale + fade entrance
+// BadgeEarnedModal.tsx's own icon already uses, reused here for the header
+// icon.
 export default function CurrentlyWatchingTutorialModal({ visible, onConfirm, onCancel }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();

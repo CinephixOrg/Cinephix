@@ -20,6 +20,7 @@ import {
   runImport,
 } from "../../../src/api/importService";
 import ImportSourceGrid from "../../../src/components/import/ImportSourceGrid";
+import { SkeletonImportSourceGrid } from "../../../src/components/Skeleton";
 import ImportProgressPanel from "../../../src/components/import/ImportProgressPanel";
 import ImportSummaryCard from "../../../src/components/import/ImportSummaryCard";
 import { metaFor } from "../../../src/components/import/importSourceMeta";
@@ -357,12 +358,16 @@ export default function ImportScreen() {
       ) : (
         <>
           <Step index={1} title={t("Choose where you're coming from")} visible>
-            <ImportSourceGrid
-              sources={sources}
-              selectedId={selected?.id ?? null}
-              onSelect={handleSelectSource}
-              disabled={locked}
-            />
+            {sources.length > 0 ? (
+              <ImportSourceGrid
+                sources={sources}
+                selectedId={selected?.id ?? null}
+                onSelect={handleSelectSource}
+                disabled={locked}
+              />
+            ) : (
+              <SkeletonImportSourceGrid />
+            )}
           </Step>
 
           <Step

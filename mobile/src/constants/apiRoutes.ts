@@ -93,6 +93,7 @@ export const API_ROUTES = {
     VIEW: (id: string) => `/shares/${id}/view`,
     VOTE: (id: string) => `/shares/${id}/vote`,
     GET_USER_SHARES: (userId: string) => `/shares/user/${userId}`,
+    GET_SHARED_BADGES: "/shares/badges/shared",
     DELETE: (id: string) => `/shares/${id}`,
   },
   IMPORT: {
@@ -210,9 +211,4 @@ export const STORAGE_KEYS = {
   // so an unchanged placement doesn't re-show the same "you made the
   // podium!" news every single login, only a genuinely new or improved one.
   LAST_SHOWN_PODIUM_PLACEMENT: "cinephix_last_shown_podium_placement",
-  // Whether the "Currently Watching" button's own first-use tutorial has
-  // been shown — direct ask, so tapping the button the very first time
-  // explains what it does before it actually activates anything, and never
-  // again after that.
-  CURRENTLY_WATCHING_TUTORIAL_SEEN: "cinephix_currently_watching_tutorial_seen",
 };

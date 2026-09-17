@@ -105,6 +105,7 @@ const MESSAGE_PHRASE: Record<string, string> = {
   recommendation: "sent you a recommendation",
   analysis_share: "shared an analysis with you",
   profile_share: "shared a profile with you",
+  list_share: "shared a list with you",
 };
 
 export function copyFor(notification: Pick<Notification, "type" | "message" | "share">): NotificationCopy {

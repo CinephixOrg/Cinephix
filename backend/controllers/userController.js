@@ -1130,15 +1130,17 @@ export const findMatches = asyncHandler(async (req, res) => {
   const TargetModel = type === 'movie' ? Movie : Series;
   const GenreMap = type === 'movie' ? MOVIE_GENRE_MAP : SERIES_GENRE_MAP;
 
-  // 1. Tüm kullanıcıları ve watchlist'lerini çek (Kendin hariç)
-  const allUsers = await User.find({ _id: { $ne: currentUserId } })
-    .select('_id username profile_pic_url watchlist')
-    .limit(100)
-    .lean();
+  // 1. Tüm kullanıcıları ve watchlist'lerini çek (Kendin hariç) — allUsers ve
+  // currentUser birbirinden bağımsız, paralel çalıştırılıyor (2 ardışık
+  // ~300ms round trip yerine 1).
+  const [allUsers, currentUser] = await Promise.all([
+    User.find({ _id: { $ne: currentUserId } })
+      .select('_id username profile_pic_url watchlist')
+      .limit(100)
+      .lean(),
+    User.findById(currentUserId).select('watchlist').lean(),
+  ]);
 
-  // Kendi verini çek
-  const currentUser = await User.findById(currentUserId).select('watchlist').lean();
-  
   if (!currentUser.watchlist || currentUser.watchlist.length === 0) {
     return sendError(res, 'Add items to your watchlist to find matches', 400);
   }
@@ -1156,22 +1158,23 @@ export const findMatches = asyncHandler(async (req, res) => {
     });
   });
 
-  // 3. İçerik detaylarını çek
-  const contentDetails = await TargetModel.find({ _id: { $in: Array.from(allContentIds) } })
-    .select('_id genre_ids')
-    .lean();
+  // 3-4. İçerik detayları ve oylar birbirinden bağımsız (ikisi de sadece
+  // allContentIds'e ihtiyaç duyuyor) — paralel çalıştırılıyor.
+  const [contentDetails, allRatings] = await Promise.all([
+    TargetModel.find({ _id: { $in: Array.from(allContentIds) } })
+      .select('_id genre_ids')
+      .lean(),
+    Rating.find({
+      contentType: type,
+      contentId: { $in: Array.from(allContentIds) }
+    }).select('user contentId value').lean(),
+  ]);
 
   const contentGenreMap = {};
   contentDetails.forEach(c => {
     const genreNames = c.genre_ids?.map(id => GenreMap[id]).filter(Boolean) || [];
     contentGenreMap[c._id.toString()] = genreNames;
   });
-
-  // 4. Oyları çek
-  const allRatings = await Rating.find({ 
-    contentType: type,
-    contentId: { $in: Array.from(allContentIds) }
-  }).select('user contentId value').lean();
 
   const userRatingsMap = {};
   allRatings.forEach(r => {
@@ -1667,16 +1670,20 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
   const Movie = mongoose.model('Movie');
   const Series = mongoose.model('Series');
 
-  // Fetch user info for watchlist and social counts
-  const user = await User.findById(userId)
-    .select("watchlist followers following favoriteMovies favoriteSeries createdAt")
-    .lean();
+  // user and lastAnalysis are independent (lastAnalysis only needs
+  // userId) — parallelized instead of 2 sequential round trips; the rare
+  // wasted lastAnalysis lookup when `user` turns out missing is cheap
+  // compared to the common-case win.
+  const [user, lastAnalysis] = await Promise.all([
+    User.findById(userId)
+      .select("watchlist followers following favoriteMovies favoriteSeries createdAt")
+      .lean(),
+    ProfileAnalysis.findOne({ user: userId }).sort({ createdAt: -1 }).lean(),
+  ]);
 
   if (!user) {
     return sendError(res, "User not found", 404);
   }
-
-  const lastAnalysis = await ProfileAnalysis.findOne({ user: userId }).sort({ createdAt: -1 }).lean();
   if (lastAnalysis) {
     const cooldownMs = analysisCooldownHours * 60 * 60 * 1000;
     const elapsedMs = Date.now() - lastAnalysis.createdAt.getTime();

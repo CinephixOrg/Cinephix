@@ -19,7 +19,6 @@ import LeaderboardPodium from "../LeaderboardPodium";
 import ActivitySection from "./ActivitySection";
 import WhatToWatchRail from "./WhatToWatchRail";
 import NewReleasesRail from "./NewReleasesRail";
-import CurrentlyWatchingSection from "./CurrentlyWatchingSection";
 import { SkeletonRail } from "../Skeleton";
 import { PosterRevealProvider } from "../../context/PosterRevealContext";
 import type { PopularThisWeekItem, PopularReview, DiscoverListItem } from "../../types";
@@ -184,12 +183,6 @@ export default function KesfetSection({ isActive }: Props) {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
       <LeaderboardPodium basePath="/home" />
-      <View style={styles.sectionDivider} />
-
-      {/* A live status roster, not a catalog browse like the rails below
-          it — sits right under the podium since "who's watching what right
-          now" is the most time-sensitive content on this page. */}
-      <CurrentlyWatchingSection basePath="/home" />
       <View style={styles.sectionDivider} />
 
       {/* Moved ahead of Trending, direct ask — "what's new" reads better

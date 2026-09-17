@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import LeaderboardCard from "./LeaderboardCard";
 import PodiumSkeletonSlot from "./PodiumSkeletonSlot";
+import UpgradeRibbon from "./UpgradeRibbon";
 import { getLeaderboard } from "../api/feedService";
 import { useAuth } from "../context/AuthContext";
 import type { ContentType, LeaderboardResult } from "../types";
@@ -28,14 +29,11 @@ import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 // Bigger than earlier rounds' own 64/50/50 then 70/56/56 (direct ask,
-// twice now: "podyum çerçevesini biraz büyüt"). Centered in the space
-// *above* the button specifically, not the page's full height — see
-// `adPage`'s own `paddingBottom`/`AD_BUTTON_ZONE` below.
+// twice now: "podyum çerçevesini biraz büyüt"). Centered in the full page
+// height now (the Upgrade Now button that used to reserve its own bottom
+// zone here moved to a corner ribbon instead — see UpgradeRibbon.tsx and
+// `adPage`'s own doc comment below).
 const TEASER_POSTER_WIDTH = { 1: 78, 2: 62, 3: 62 } as const;
-// Reserved height at the bottom of `adPage` for the upgrade button, kept
-// out of the frame row's own centering calculation — see `adPage`'s own
-// doc comment for the full reasoning.
-const AD_BUTTON_ZONE = 40;
 // How often the ad page's whole skeleton row (frames + metric icon
 // together) cross-fades to the next teased category — when there are more
 // than 2 teased categories (Free's own 4), the banner text in `titleRow`
@@ -319,24 +317,19 @@ export default function LeaderboardPodium({ basePath }: Props) {
           alignItems: "center",
           justifyContent: "center",
         },
-        // Ad page only — just the frame row + button (the banner sentence
-        // lives in `titleRow` instead, see `adBannerTitle` below).
-        // `paddingBottom: AD_BUTTON_ZONE` carves out reserved space at the
-        // bottom for the button *before* `justifyContent:"center"` ever
-        // centers `adFrameRow` — so the frame row centers within the
-        // *remaining* space above that reserved zone, not the page's full
-        // height, landing it visually between the banner (in titleRow,
-        // right above this whole page) and the button (in that reserved
-        // zone) rather than dead-center of the page as a whole — direct
-        // ask ("çerçeveyi upgrade butonu ile reklam metninin ortasına
-        // hizala"). The button itself is `position:"absolute"` within that
-        // same reserved zone (`adButtonWrap`, `bottom:8` — direct ask to
-        // sit close to whatever comes right after this whole component,
-        // "alt çizgiye yaklaştır"), independent of the frame row's own
-        // exact height so neither one can ever push into the other.
-        adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingBottom: AD_BUTTON_ZONE, position: "relative" },
+        // Ad page only — just the frame row + ribbon (the banner sentence
+        // lives in `titleRow` instead, see `adBannerTitle` below). Centers
+        // `adFrameRow` in the page's own full height now — no more reserved
+        // bottom zone for a button, since the Upgrade Now button became a
+        // corner ribbon instead (direct ask — "bu reklamlı kısmın köşesine
+        // bant gibi", same UpgradeRibbon.tsx design Sync's own filter card
+        // uses). `adRibbonWrap` positions it top-right; `adPage` doesn't
+        // need `overflow:"hidden"` to clip it the way that narrower card
+        // did — this page spans the full screen width, plenty of room for
+        // the ribbon's diagonal to sit fully inside it.
+        adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, position: "relative" },
         adFrameRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12 },
-        adButtonWrap: { position: "absolute", left: 0, right: 0, bottom: 8, alignItems: "center" },
+        adRibbonWrap: { position: "absolute", top: 4, right: -30 },
         // Sits inside titleRow itself, replacing the plain category title
         // there while the ad page is showing — direct ask ("başlık hizasında
         // reklam metni olacak"). titleRow's own `minHeight:46` already
@@ -344,16 +337,6 @@ export default function LeaderboardPodium({ basePath }: Props) {
         // regardless of which page is active, so swapping between this and
         // the plain `title` text never changes titleRow's own footprint.
         adBannerTitle: { flex: 1, fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.baseContent, textAlign: "center" },
-        upgradeButton: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 6,
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 18,
-          backgroundColor: colors.primary,
-        },
-        upgradeButtonText: { fontFamily: fonts.bold, fontSize: 12, color: colors.primaryContent },
       }),
     [colors, screenWidth]
   );
@@ -462,11 +445,8 @@ export default function LeaderboardPodium({ basePath }: Props) {
                       />
                     ))}
                   </Animated.View>
-                  <View style={styles.adButtonWrap}>
-                    <Pressable style={styles.upgradeButton} onPress={() => router.push("/match/subscription" as any)}>
-                      <Ionicons name="sparkles" size={13} color={colors.primaryContent} />
-                      <Text style={styles.upgradeButtonText}>{t("Upgrade Now")}</Text>
-                    </Pressable>
+                  <View style={styles.adRibbonWrap}>
+                    <UpgradeRibbon onPress={() => router.push("/match/subscription" as any)} />
                   </View>
                 </View>
               )

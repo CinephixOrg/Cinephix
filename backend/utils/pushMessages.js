@@ -74,6 +74,7 @@ const MESSAGE_PHRASE = {
   recommendation: "sent you a recommendation",
   analysis_share: "shared an analysis with you",
   profile_share: "shared a profile with you",
+  list_share: "shared a list with you",
 };
 
 /** Android channels, created by the app (mobile/src/push/registration.ts). */

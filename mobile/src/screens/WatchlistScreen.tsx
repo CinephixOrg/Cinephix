@@ -11,6 +11,10 @@ const WATCHLIST: CollectionConfig = {
   sortGroups: WATCHLIST_SORT_GROUPS,
   // Nothing here has been watched, so nothing here has a rating.
   showRatedFilter: false,
+  // "What should I watch next?" polls only make sense against titles the
+  // viewer has actually queued — the Watched List's own config leaves this
+  // unset.
+  allowPoll: true,
   strings: {
     searchPlaceholder: "Search your watchlist",
     removed: "Removed from your watchlist",

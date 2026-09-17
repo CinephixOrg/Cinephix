@@ -3,9 +3,11 @@ import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import type { UserProfile } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { TIER_FRAME_STYLES } from "../../theme/tierFrames";
 import TierAvatarFrame from "../TierAvatarFrame";
 import ProfilePhotoViewerModal, { type PhotoViewerAction } from "./ProfilePhotoViewerModal";
 
@@ -76,6 +78,7 @@ export default function ProfileHeaderInstagram({
         avatarFallbackText: { fontFamily: fonts.bold, fontSize: 24, color: colors.primary },
         officialAvatarFill: { alignItems: "center", justifyContent: "center" },
         rightCol: { flex: 1, justifyContent: "flex-start" },
+        usernameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
         username: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent },
         // A bit wider than before — three tight stat columns read as
         // asymmetric/cramped next to the avatar's own generous spacing.
@@ -121,7 +124,20 @@ export default function ProfileHeaderInstagram({
         </Pressable>
 
         <View style={styles.rightCol}>
-          <Text style={styles.username}>{profile.isOfficial ? profile.username.toUpperCase() : profile.username}</Text>
+          <View style={styles.usernameRow}>
+            <Text style={styles.username}>{profile.isOfficial ? profile.username.toUpperCase() : profile.username}</Text>
+            {/* Same diamond-mark convention PeoplePodiumCard.tsx/
+                SuggestedUsersBox.tsx already use (Ionicons "diamond",
+                colored from TIER_FRAME_STYLES' own glowColor — gold for
+                Premium, silver for Plus), direct ask specifically for this
+                header even though the avatar right next to it already
+                carries its own tier-colored ring via TierAvatarFrame — a
+                deliberate, explicit request for both here, not an
+                oversight. */}
+            {(profile.accountTier === "plus" || profile.accountTier === "premium") && (
+              <Ionicons name="diamond" size={14} color={TIER_FRAME_STYLES[profile.accountTier]?.glowColor} />
+            )}
+          </View>
           <View style={styles.statsRow}>
             {shareCount != null && (
               <Pressable style={styles.stat} onPress={onSharesPress} disabled={!onSharesPress}>

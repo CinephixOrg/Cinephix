@@ -641,7 +641,58 @@ async function hydratePeopleEntries(raw, metricKey) {
 // activity items (see its own doc comment) can check the *exact* same
 // current top-3s this podium itself shows, rather than a second,
 // potentially-drifting copy of this same ranking logic.
+//
+// This is a genuinely expensive computation — 2 upfront queries, a 5-way
+// Promise.all of aggregations (one with .allowDiskUse), 3 more hydration
+// queries, AND computeAllUsersBadgeCounts, which computes a badge count
+// for EVERY non-official user in the app — and it's called far more often
+// than "someone opened the leaderboard page": computePodiumBadge
+// (badgeController.js's own Podium badge, itself hit both by
+// ProfileBadgesTab's own-profile 20-calls AND the public-profile bulk
+// endpoint, i.e. by every single Badges tab open) and
+// getMyPodiumPlacements (the app-launch "you made the podium!" check)
+// both call this with type=null on every own invocation, on top of the
+// leaderboard page itself. Direct symptom this fixed: the Badges tab
+// (own AND public profile) loading noticeably slower than every other
+// tab, which turned out to be this one call recomputing the WHOLE app's
+// leaderboard from scratch just to answer "is this one user in anyone's
+// top 3."
+//
+// A short-TTL cache — same in-flight-dedup + TTL shape as
+// authMiddleware.js's own userCache — fixes this without touching the
+// computation itself: keyed by `type` (the only thing that changes the
+// result — only Most Watched reads it), a cache hit costs nothing, and a
+// cache miss is deduped across concurrent callers (e.g. this same
+// process's own ProfileBadgesTab's 20 parallel own-profile requests,
+// several of which hit computePodiumBadge → this function at nearly the
+// same instant). 60s is deliberately much longer than the auth cache's 3s
+// — a "top 3 leaderboard" has no correctness requirement to be
+// millisecond-fresh, and this specific call is expensive enough that the
+// staleness trade is clearly worth it.
+const PODIUM_CACHE_TTL_MS = 60_000;
+const podiumCache = new Map(); // type -> { result, cachedAt }
+const podiumPending = new Map(); // type -> in-flight promise
+
 export async function getPeopleThreePodiums(type) {
+  const cacheKey = type ?? "all";
+  const cached = podiumCache.get(cacheKey);
+  if (cached && Date.now() - cached.cachedAt < PODIUM_CACHE_TTL_MS) {
+    return cached.result;
+  }
+  let pending = podiumPending.get(cacheKey);
+  if (!pending) {
+    pending = computePeopleThreePodiums(type)
+      .then((result) => {
+        podiumCache.set(cacheKey, { result, cachedAt: Date.now() });
+        return result;
+      })
+      .finally(() => podiumPending.delete(cacheKey));
+    podiumPending.set(cacheKey, pending);
+  }
+  return pending;
+}
+
+async function computePeopleThreePodiums(type) {
   // The official Cinephix account (isOfficial:true) is deliberately excluded
   // from every single one of these 5 rankings — it auto-posts on a fixed
   // schedule and would otherwise game Most Reviewed/Most Recommended purely
@@ -651,10 +702,10 @@ export async function getPeopleThreePodiums(type) {
   // Share are grouped by a raw `user` ObjectId with no such field on those
   // collections, so those three resolve the official account's own _id once
   // and exclude by id instead.
-  const officialUser = await User.findOne({ isOfficial: true }).select("_id").lean();
-  const officialUserId = officialUser?._id;
-  const excludeOfficialAuthor = officialUserId ? [{ $match: { user: { $ne: officialUserId } } }] : [];
-
+  // officialUser and badgeUsersRaw are mutually independent (badgeUsersRaw
+  // doesn't read officialUserId) — parallelized instead of paying two
+  // sequential round trips before the big Promise.all below even starts.
+  //
   // followerCount/watchedCount are computed per-request over every user
   // document (no index can back a $sort on either) — genuinely free at
   // this collection's current real size (live-checked: 97 users) but the
@@ -670,9 +721,14 @@ export async function getPeopleThreePodiums(type) {
   // queries rather than per-user. Same "genuinely free at this app's
   // current real size (97 users), watch for scale" caveat as the two
   // aggregates above.
-  const badgeUsersRaw = await User.find({ isOfficial: { $ne: true } })
-    .select("username profile_pic_url accountTier watchlist followers createdAt currentStreak lastStreakDate")
-    .lean();
+  const [officialUser, badgeUsersRaw] = await Promise.all([
+    User.findOne({ isOfficial: true }).select("_id").lean(),
+    User.find({ isOfficial: { $ne: true } })
+      .select("username profile_pic_url accountTier watchlist followers createdAt currentStreak lastStreakDate")
+      .lean(),
+  ]);
+  const officialUserId = officialUser?._id;
+  const excludeOfficialAuthor = officialUserId ? [{ $match: { user: { $ne: officialUserId } } }] : [];
 
   const [followedRaw, watchedRaw, reviewedRaw, likedRaw, recommendersRaw] = await Promise.all([
     User.aggregate([
@@ -894,15 +950,13 @@ export const getRecommendations = asyncHandler(async (req, res) => {
       .limit(limit)
       .lean();
 
-  let movies = [];
-  let series = [];
-
-  if (contentType !== "series") {
-    movies = await fetchContent(getMovie(), movieGenreIds);
-  }
-  if (contentType !== "movie") {
-    series = await fetchContent(getSeries(), seriesGenreIds);
-  }
+  // Independent of each other (different collections, different genre-id
+  // lists) — parallelized instead of paying two sequential ~300ms
+  // cross-region round trips when contentType === "all" (the default).
+  const [movies, series] = await Promise.all([
+    contentType !== "series" ? fetchContent(getMovie(), movieGenreIds) : Promise.resolve([]),
+    contentType !== "movie" ? fetchContent(getSeries(), seriesGenreIds) : Promise.resolve([]),
+  ]);
 
   // Interleave movies and series
   const results = [];
@@ -922,13 +976,16 @@ export const getRecommendations = asyncHandler(async (req, res) => {
 // How far back "new" reaches — checked directly against real data before
 // picking it (same discipline as every threshold in this codebase): a
 // 30-day window returned zero results outright, 90 days returns a real,
-// non-trivial ~58 combined movies+series in this dev DB. Not personalized
-// and nothing is excluded for being already watched/queued — unlike
-// getRecommendations above, this is a plain "what's new in the catalog"
-// browse, not a recommendation, so a title you've already seen still
-// belongs here (the same reasoning Trending/Popular This Week already
-// apply to their own rails).
-const NEW_RELEASES_WINDOW_DAYS = 90;
+// non-trivial ~58 combined movies+series in this dev DB but reads as too
+// generous to actually feel "new" (direct ask, "son 3 ay pek de new
+// izlenimi vermiyor") — 60 days is the agreed middle ground: still a real,
+// non-empty ~14 combined items in this dev DB, but tighter than 90. Not
+// personalized and nothing is excluded for being already watched/queued —
+// unlike getRecommendations above, this is a plain "what's new in the
+// catalog" browse, not a recommendation, so a title you've already seen
+// still belongs here (the same reasoning Trending/Popular This Week
+// already apply to their own rails).
+const NEW_RELEASES_WINDOW_DAYS = 60;
 
 // ── GET /api/feed/new-releases ──────────────────────────────────
 export const getNewReleases = asyncHandler(async (req, res) => {
@@ -954,10 +1011,11 @@ export const getNewReleases = asyncHandler(async (req, res) => {
       .limit(limit)
       .lean();
 
-  let movies = [];
-  let series = [];
-  if (contentType !== "series") movies = await fetchNew(getMovie(), "release_date");
-  if (contentType !== "movie") series = await fetchNew(getSeries(), "first_air_date");
+  // Independent — same parallelization as getRecommendations above.
+  const [movies, series] = await Promise.all([
+    contentType !== "series" ? fetchNew(getMovie(), "release_date") : Promise.resolve([]),
+    contentType !== "movie" ? fetchNew(getSeries(), "first_air_date") : Promise.resolve([]),
+  ]);
 
   // Interleave by recency rather than concatenating movies-then-series —
   // same merge-by-position approach getRecommendations above already uses,
@@ -977,13 +1035,17 @@ export const getNewReleases = asyncHandler(async (req, res) => {
 });
 
 // How long a "Currently Watching" status stays live before it's treated as
-// stale — direct ask, deliberately short (1 day, not the originally
-// discussed 14) since this is meant to read as "watching right now," not
-// "still working through this series." Mirrors User.js's own
+// stale. Tightened twice now: 14 days (original brainstorm) -> 1 day
+// (direct ask, "watching right now" not "still working through this
+// series") -> 4 hours (direct ask again, "3-4 saatten fazla orda durması
+// şu an izliyor izlenimi yaratmıyor" — a full day was still long enough to
+// read as stale well before it actually expired). 4 hours comfortably
+// covers one real sitting (a movie, or a couple of episodes) without
+// stretching into "still going a day later." Mirrors User.js's own
 // `currentlyWatching` field comment for the full reasoning (also cleared
 // for real, not just here, the moment the same item lands on the Watched
 // List — userWatchlistRoute.js's watchlist-add).
-const CURRENTLY_WATCHING_TTL_MS = 24 * 60 * 60 * 1000;
+const CURRENTLY_WATCHING_TTL_MS = 4 * 60 * 60 * 1000;
 
 // ── GET /api/feed/currently-watching ──────────────────────────────────
 // `scope=all` (default) shows anyone whose status is still within the TTL

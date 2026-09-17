@@ -96,6 +96,24 @@ export default function ProfileScreen() {
     scrollRef.current?.scrollTo({ y: tabsY, animated: true });
   };
 
+  // This screen has no idea what "near bottom" means to whichever category
+  // tab is actually mounted below it, so it doesn't decide anything itself
+  // — it just calls whatever ProfileSharingsTab.tsx has registered into
+  // this ref (only while that tab's own feed mode is actually active;
+  // `null` the rest of the time, including every other category body,
+  // which never touches this ref at all). A plain distance check on raw
+  // scroll events (not a library) since this is the app's only outer
+  // ScrollView that needs this, and scrollEventThrottle already caps how
+  // often it can fire.
+  const NEAR_BOTTOM_THRESHOLD = 600;
+  const nearBottomRef = useRef<(() => void) | null>(null);
+  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number }; layoutMeasurement: { height: number }; contentSize: { height: number } } }) => {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - NEAR_BOTTOM_THRESHOLD) {
+      nearBottomRef.current?.();
+    }
+  }, []);
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -153,7 +171,13 @@ export default function ProfileScreen() {
       onClose={() => setDrawerOpen(false)}
       renderDrawerContent={() => <ProfileDrawerContent onNavigate={() => setDrawerOpen(false)} />}
     >
-      <ScrollView ref={scrollRef} style={styles.screen} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.screen}
+        contentContainerStyle={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={200}
+      >
         <ProfileHeaderInstagram profile={profile} shareCount={shareCount} onSharesPress={handleSharesPress} />
         <View style={styles.tabContent} onLayout={(e: LayoutChangeEvent) => setTabsY(e.nativeEvent.layout.y)}>
           <ProfileCategoryTabs
@@ -162,6 +186,7 @@ export default function ProfileScreen() {
             category={category}
             onCategoryChange={setCategory}
             screenFocused={screenFocused}
+            nearBottomRef={nearBottomRef}
           />
         </View>
       </ScrollView>

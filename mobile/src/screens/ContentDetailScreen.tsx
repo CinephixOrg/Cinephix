@@ -14,7 +14,6 @@ import {
 import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import * as SecureStore from "expo-secure-store";
 import { STORAGE_KEYS } from "../constants/apiRoutes";
 import { useAuth } from "../context/AuthContext";
 import { getMovieById, getSeriesById, getContentStats, getWatchedByFriends, getSimilarContent } from "../api/contentService";
@@ -41,6 +40,7 @@ import UserAvatar from "../components/UserAvatar";
 import ShareOptionsMenu from "../components/ShareOptionsMenu";
 import UserSharePickerModal from "../components/UserSharePickerModal";
 import CurrentlyWatchingTutorialModal from "../components/CurrentlyWatchingTutorialModal";
+import { SkeletonContentDetail } from "../components/Skeleton";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
 import { sendGroupRichMessage } from "../api/groupService";
 import { createShare } from "../api/shareService";
@@ -50,6 +50,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useWatchlistGraph } from "../context/WatchlistGraphContext";
+import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
@@ -60,11 +61,12 @@ const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 const SIMILAR_POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 const OVERVIEW_LINE_HEIGHT = 20; // matches styles.overview's lineHeight
 
-// Mirrors feedController.js's own CURRENTLY_WATCHING_TTL_MS — used only to
+// Mirrors feedController.js's own CURRENTLY_WATCHING_TTL_MS (tightened to
+// 4 hours, direct ask — see that constant's own comment) — used only to
 // decide this button's own local active/inactive state instantly (no extra
 // request just to check), the server stays authoritative for the actual
 // feed's own filtering.
-const CURRENTLY_WATCHING_TTL_MS = 24 * 60 * 60 * 1000;
+const CURRENTLY_WATCHING_TTL_MS = 4 * 60 * 60 * 1000;
 
 // Rendered from a thin route file inside EACH tab that links to it
 // (movies/content/[type]/[id].tsx, series/..., watchlist/..., lists/...),
@@ -204,11 +206,12 @@ export default function ContentDetailScreen() {
   dividerStrong: { height: 1.5, backgroundColor: colors.border, marginVertical: 16 },
   friendsBox: { backgroundColor: colors.base200, borderRadius: 12, padding: 12 },
   friendsRow: { flexGrow: 0 },
-  // Smaller avatar, no username below it anymore — just the avatar (with
-  // its own tier frame, unaffected by size) and the star rating, direct
-  // ask. width narrowed to match the smaller avatar instead of the old
-  // name-driven 66.
-  friendCard: { alignItems: "center", width: 40, marginRight: 14, gap: 4 },
+  // Widened from 40 to fit a full 5-star row (size 11 + gap 1 × 5 stars ≈
+  // 59px) without it overflowing its own card into the next one — that
+  // overflow, not the gap value itself, was the real cause of adjacent
+  // cards' star rows visually running together. Avatar bumped 34→40 too,
+  // direct ask ("bir tık daha büyük olsun").
+  friendCard: { alignItems: "center", width: 60, marginRight: 16, gap: 5 },
   // "Similar Movies/Series" rail — a plain horizontal poster strip, same
   // 2:3 aspect ratio used everywhere else in this app.
   similarRow: { flexGrow: 0, marginTop: 4 },
@@ -281,6 +284,7 @@ export default function ContentDetailScreen() {
   const { showToast } = useToast();
   const { reportEarnedBadges } = useBadgeEarned();
   const watchlistGraph = useWatchlistGraph();
+  const { announce: announceNewShare } = useRecentShares();
   const router = useRouter();
   // This screen is duplicated into every tab (content/[type]/[id].tsx under
   // home/socials/watchlist/profile/search/to-watch/lists, plus
@@ -726,11 +730,9 @@ export default function ContentDetailScreen() {
 
   if (loading) {
     return (
-      <ActivityIndicator
-        style={{ flex: 1, backgroundColor: colors.base100 }}
-        size="large"
-        color={colors.primary}
-      />
+      <View style={{ flex: 1, backgroundColor: colors.base100 }}>
+        <SkeletonContentDetail />
+      </View>
     );
   }
 
@@ -815,7 +817,8 @@ export default function ContentDetailScreen() {
   const handleShareRecommendationToMedia = async () => {
     setSharingRecommendation(true);
     try {
-      await createShare({ type: "recommendation", contentId: id, contentType: type });
+      const share = await createShare({ type: "recommendation", contentId: id, contentType: type });
+      announceNewShare(share);
       setGiftMenuVisible(false);
       showToast(t("Shared to Medya"));
     } catch (e: any) {
@@ -850,13 +853,11 @@ export default function ContentDetailScreen() {
     }
   };
 
-  // First tap ever (app-wide, not per-title — SecureStore, not per-user
-  // server state) shows the tutorial instead of activating directly; the
-  // tutorial's own "Start Watching" button is what actually calls
-  // activateCurrentlyWatching. Every later tap (here or on any other
-  // title) skips straight to toggling. Stopping never shows the tutorial —
-  // there's nothing to newly explain when you already know how to start
-  // it.
+  // Every tap shows the tutorial before activating (direct ask, changed
+  // from an earlier once-only design) — the tutorial's own "Start
+  // Watching" button is what actually calls activateCurrentlyWatching.
+  // Stopping never shows the tutorial — there's nothing to newly explain
+  // when you're already watching.
   const handlePressCurrentlyWatching = async () => {
     if (isWatchingThis) {
       setCurrentlyWatchingBusy(true);
@@ -870,27 +871,20 @@ export default function ContentDetailScreen() {
       }
       return;
     }
-    const seen = await SecureStore.getItemAsync(STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN);
-    if (!seen) {
-      setCurrentlyWatchingTutorialVisible(true);
-      return;
-    }
-    await activateCurrentlyWatching();
+    // Shown every time, not just the first — direct ask, a change of mind
+    // from this tutorial's own original once-only design.
+    setCurrentlyWatchingTutorialVisible(true);
   };
 
   const handleConfirmCurrentlyWatchingTutorial = async () => {
     setCurrentlyWatchingTutorialVisible(false);
-    await SecureStore.setItemAsync(STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN, "1");
     await activateCurrentlyWatching();
   };
 
-  // Dismissing without confirming still marks the tutorial seen — it was
-  // shown and read either way, same "seen" (not "confirmed") semantics
-  // SYNC_INTRO_SEEN already uses elsewhere in this app. Just doesn't
-  // activate anything this time.
-  const handleCancelCurrentlyWatchingTutorial = async () => {
+  // Dismissing without confirming just closes it now — no "seen" flag left
+  // to persist since this shows every time regardless.
+  const handleCancelCurrentlyWatchingTutorial = () => {
     setCurrentlyWatchingTutorialVisible(false);
-    await SecureStore.setItemAsync(STORAGE_KEYS.CURRENTLY_WATCHING_TUTORIAL_SEEN, "1");
   };
 
   return (
@@ -1061,9 +1055,9 @@ export default function ContentDetailScreen() {
                   username={friend.username}
                   profilePicUrl={friend.profile_pic_url}
                   tier={friend.accountTier}
-                  size={34}
+                  size={40}
                 />
-                <StarRatingDisplay value={friend.rating} size={10} />
+                <StarRatingDisplay value={friend.rating} size={11} />
               </View>
             ))}
           </ScrollView>

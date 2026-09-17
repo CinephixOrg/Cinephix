@@ -67,7 +67,7 @@ export default function SyncAnalysisModal({ visible, onClose, candidate, filters
         <View style={styles.sheet}>
           <View style={styles.panelWrap} onLayout={handleLayout}>
             {panelWidth > 0 && (
-              <MatchAnalysisPanel candidate={candidate} filters={filters} containerWidth={panelWidth} />
+              <MatchAnalysisPanel candidate={candidate} filters={filters} containerWidth={panelWidth} source="profile" />
             )}
           </View>
 

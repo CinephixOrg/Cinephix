@@ -35,6 +35,7 @@ function buildStyles(colors: ColorPalette) {
     railRow: { flexDirection: "row", paddingHorizontal: 16 },
     railCell: { width: 120, marginRight: 12 },
     railPoster: { aspectRatio: 2 / 3 },
+    searchResultRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 16 },
   });
 }
 
@@ -286,6 +287,120 @@ export function SkeletonRail() {
           <View key={i} style={styles.railCell}>
             <SkeletonBox width="100%" style={styles.railPoster} borderRadius={8} />
             <SkeletonBox width="80%" height={12} style={{ marginTop: 6 }} />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// Mirrors SearchContentRow.tsx's exact row shape (52x78 poster, title +
+// year) — used by the Search page's Films/Series tabs on first load.
+export function SkeletonSearchResultRow() {
+  const styles = useSkeletonStyles();
+  return (
+    <View style={styles.searchResultRow}>
+      <SkeletonBox width={52} height={78} borderRadius={6} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <SkeletonBox width="75%" height={14} />
+        <SkeletonBox width={40} height={12} />
+      </View>
+    </View>
+  );
+}
+
+// Mirrors ImportSourceGrid.tsx's own 2-column card shape (icon plate +
+// label + subtitle) — shown only on a cold cache (getCachedImportSources
+// returns nothing yet, so there was previously a blank grid area until
+// fetchImportSources resolved).
+export function SkeletonImportSourceGrid() {
+  return (
+    <View style={{ gap: 10 }}>
+      {[0, 1, 2].map((row) => (
+        <View key={row} style={{ flexDirection: "row", gap: 10 }}>
+          {[0, 1].map((col) => (
+            <View key={col} style={{ flex: 1, borderRadius: 16, padding: 14, gap: 10 }}>
+              <SkeletonBox width={38} height={38} borderRadius={11} />
+              <View style={{ gap: 6 }}>
+                <SkeletonBox width="70%" height={14} />
+                <SkeletonBox width="45%" height={11} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// Mirrors ShareCard.tsx's own outer shape (avatar+username header, then
+// the shareBox body — a 64x96 poster beside 2-3 text lines — and a
+// footer row of like/comment icons) — used by SharesFeedSection.tsx while
+// the feed's first page is still loading, replacing a bare spinner.
+export function SkeletonShareCard() {
+  const { colors } = useTheme();
+  return (
+    <View style={{ marginBottom: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 }}>
+        <SkeletonBox width={40} height={40} borderRadius={20} />
+        <View style={{ gap: 4 }}>
+          <SkeletonBox width={110} height={13} />
+          <SkeletonBox width={60} height={10} />
+        </View>
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 10,
+          marginHorizontal: 12,
+          marginTop: 4,
+          marginBottom: 6,
+          padding: 10,
+          backgroundColor: colors.base200,
+          borderRadius: 12,
+        }}
+      >
+        <SkeletonBox width={64} height={96} borderRadius={6} />
+        <View style={{ flex: 1, gap: 6, paddingTop: 2 }}>
+          <SkeletonBox width="80%" height={14} />
+          <SkeletonBox width="100%" height={12} />
+          <SkeletonBox width="60%" height={12} />
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", gap: 16, paddingHorizontal: 12 }}>
+        <SkeletonBox width={40} height={16} />
+        <SkeletonBox width={40} height={16} />
+      </View>
+    </View>
+  );
+}
+
+// Mirrors ContentDetailScreen.tsx's own top-of-page layout (38%-width 2:3
+// poster + title/year/overview beside it, then the 4-stat row below) —
+// used while `content` is still loading, replacing a full-screen spinner
+// that gave no sense of what was about to appear.
+export function SkeletonContentDetail() {
+  return (
+    <View style={{ padding: 16, gap: 8 }}>
+      <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+        <View style={{ width: "38%" }}>
+          <SkeletonBox width="100%" style={{ aspectRatio: 2 / 3 }} borderRadius={12} />
+        </View>
+        <View style={{ flex: 1, gap: 8 }}>
+          <SkeletonBox width="80%" height={22} />
+          <SkeletonBox width={50} height={15} />
+          <SkeletonBox width="100%" height={13} style={{ marginTop: 8 }} />
+          <SkeletonBox width="100%" height={13} />
+          <SkeletonBox width="60%" height={13} />
+        </View>
+      </View>
+      <SkeletonBox width="100%" height={60} style={{ marginTop: 24 }} borderRadius={10} />
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 24 }}>
+        {[0, 1, 2, 3].map((i) => (
+          <View key={i} style={{ alignItems: "center", gap: 4 }}>
+            <SkeletonBox width={36} height={36} borderRadius={18} />
+            <SkeletonBox width={24} height={13} />
+            <SkeletonBox width={44} height={10} />
           </View>
         ))}
       </View>

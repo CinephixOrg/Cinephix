@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { View, FlatList, ActivityIndicator, Text, Pressable, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { SkeletonListRow } from "../Skeleton";
 import { getPopularReviews, type ReviewSort } from "../../api/reviewService";
 import SearchReviewCard from "./SearchReviewCard";
 import FilterBottomSheet from "./FilterBottomSheet";
@@ -175,8 +176,8 @@ export default function SearchReviewsSection({ query, showFilters, onCloseFilter
 
   if (loading && !hasLoadedOnce) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: colors.base100, paddingHorizontal: 16, paddingTop: 4 }}>
+        {Array.from({ length: 5 }, (_, i) => <SkeletonListRow key={i} />)}
         {filterSheet}
       </View>
     );

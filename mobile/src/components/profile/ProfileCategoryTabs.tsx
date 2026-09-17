@@ -12,9 +12,11 @@ import ProfileSharingsTab from "./ProfileSharingsTab";
 import ProfileAnalysisModal from "../ProfileAnalysisModal";
 import CineGraphSubTabSwitcher, { type CineGraphSubTab } from "./CineGraphSubTabSwitcher";
 import AddFavoriteModal, { type FavoritePickItem } from "./AddFavoriteModal";
+import CollectionUndoBar from "../collection/CollectionUndoBar";
 import { updateFavorites } from "../../api/favoriteService";
 import type { CineGraphData, ContentType, Favorites, ProfileAnalysis } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import { useToast } from "../../context/ToastContext";
 
 export type Category = "sharings" | "favorites" | "cinegraph" | "analyses" | "badges";
 
@@ -25,21 +27,23 @@ const FAVORITES_COLUMNS = 5;
 const FAVORITES_GAP = 8;
 const FAVORITES_PADDING = 16; // matches ContentRail's own fixed railContent padding
 const FAVORITES_MAX = 5;
+const REMOVE_UNDO_MS = 4000;
 
 // FavoriteCard doesn't care whether it's rendering a movie or series (it
 // never shows the title, just the poster + rating), so both favorite item
-// shapes collapse to this for rendering purposes. A rail padded up to
-// FAVORITES_MAX with "empty" slots (only while that rail is in edit mode)
-// is what lets EmptyFavoriteSlot's "+" tiles appear in the free spaces.
+// shapes collapse to this for rendering purposes.
 type FavItem = { _id: string; poster_path?: string | null; rating?: number | null };
-type FavSlot = { kind: "item"; item: FavItem } | { kind: "empty"; key: string };
 
-function buildSlots(items: FavItem[], editing: boolean): FavSlot[] {
-  const itemSlots: FavSlot[] = items.map((item) => ({ kind: "item", item }));
-  if (!editing) return itemSlots;
+// The empty "+" slots only ever trail the real items (never interspersed),
+// so they're rendered as ContentRail's own fixed `footer` now instead of
+// being padded into `data` as their own FavSlot union — that union existed
+// specifically to let this rail's data double as both real items AND empty
+// slots in one array, which stopped working once real items also needed to
+// be individually drag-reordered (an empty slot has nothing to reorder).
+function emptySlotKeys(items: FavItem[], editing: boolean): string[] {
+  if (!editing) return [];
   const emptyCount = Math.max(0, FAVORITES_MAX - items.length);
-  const emptySlots: FavSlot[] = Array.from({ length: emptyCount }, (_, i) => ({ kind: "empty", key: `empty-${i}` }));
-  return [...itemSlots, ...emptySlots];
+  return Array.from({ length: emptyCount }, (_, i) => `empty-${i}`);
 }
 
 interface Props {
@@ -60,6 +64,12 @@ interface Props {
   // result's poster/title tap sends us to that title's Content Detail page,
   // then reappear with its search state intact once we come back.
   screenFocused: boolean;
+  // Forwarded straight through to ProfileSharingsTab.tsx — see that
+  // component's own comment, and profile/index.tsx's, for the full "why":
+  // this screen's single outer ScrollView is the only thing that can
+  // detect "near the bottom," but only the Sharings tab's own feed mode
+  // ever needs to react to it.
+  nearBottomRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
@@ -70,7 +80,7 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
   badges: { active: "ribbon", inactive: "ribbon-outline" },
 };
 
-export default function ProfileCategoryTabs({ favorites, cineGraph, category, onCategoryChange, screenFocused }: Props) {
+export default function ProfileCategoryTabs({ favorites, cineGraph, category, onCategoryChange, screenFocused, nearBottomRef }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -93,6 +103,17 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
         subFilterRow: { alignItems: "center", paddingTop: 8 },
         body: { paddingTop: 8 },
         hiddenTab: { display: "none" },
+        // Between Favorite Movies and Favorite Series — direct ask, same
+        // hairline+colors.border language used everywhere else in this app
+        // (statsRowDivider and its many siblings), just not one this file
+        // had a reason to need until now.
+        favoritesDivider: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: colors.border,
+          marginHorizontal: 16,
+          marginBottom: 8,
+        },
+        emptySlotsRow: { flexDirection: "row", marginLeft: FAVORITES_GAP },
       }),
     [colors]
   );
@@ -143,40 +164,131 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
   useEffect(() => {
     setLocalFavorites(favorites);
   }, [favorites]);
-  // Which rail (if either) is showing the inline remove-overlay/add-slot
-  // edit mode — toggled by that rail's own pencil icon, replacing the old
-  // "open a full-screen edit modal" flow.
+  // Which rail (if either) is showing the inline remove-overlay/add-slot/
+  // drag-to-reorder edit mode — toggled by that rail's own pencil icon,
+  // replacing the old "open a full-screen edit modal" flow.
   const [editingType, setEditingType] = useState<ContentType | null>(null);
   const [addingType, setAddingType] = useState<ContentType | null>(null);
+  const { showToast } = useToast();
 
-  const toggleEditing = (type: ContentType) => setEditingType((prev) => (prev === type ? null : type));
+  // Removal — same optimistic-hide-then-commit-with-undo shape
+  // CollectionScreen.tsx's own Watched List/Watchlist removal already uses
+  // (a direct ask to bring here too): the X hides the card immediately,
+  // but the actual updateFavorites call (and the loss of whatever rating
+  // was attached — favoriting doesn't touch a rating, but removing the
+  // FAVORITE ITSELF is exactly the kind of "large tap target, easy to
+  // mis-tap" action that bar exists for) waits out REMOVE_UNDO_MS unless
+  // undone. One pending removal at a time, same rule as the Watched List.
+  const pendingRemovalRef = useRef<{ type: ContentType; item: FavItem; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const [undoEntry, setUndoEntry] = useState<FavItem | null>(null);
 
-  // Removal is immediate (no separate Save step) — the X on an overlaid
-  // card acts the same way a delete button would anywhere else in the app.
-  // Optimistic locally, reverted if the API call fails.
-  const handleRemoveFavorite = async (type: ContentType, id: string) => {
-    if (!localFavorites) return;
+  // `item` itself is unused here — the optimistic removal already happened
+  // at hide-time in handleRemoveFavorite below, so committing just means
+  // persisting whatever `localFavorites` already reflects. Kept as a
+  // parameter for symmetry with flushPendingRemoval's own bookkeeping.
+  const commitRemoval = useCallback(
+    (type: ContentType) => {
+      setLocalFavorites((cur) => {
+        if (!cur) return cur;
+        const key = type === "movie" ? "movies" : "series";
+        const list = (cur as any)[key] as FavItem[];
+        // A failed persist isn't rolled back here — same precedent
+        // CollectionScreen.tsx's own commitRemoval sets (a toast, not a
+        // silent revert) for this kind of rare-failure case.
+        updateFavorites(type, list.map((i) => i._id)).catch(() => {
+          showToast(t("Something went wrong. Please try again."));
+        });
+        return cur;
+      });
+    },
+    [showToast, t]
+  );
 
-    if (type === "movie") {
-      const prevList = localFavorites.movies;
-      const nextList = prevList.filter((i) => i._id !== id);
-      setLocalFavorites((cur) => (cur ? { ...cur, movies: nextList } : cur));
-      try {
-        await updateFavorites(type, nextList.map((i) => i._id));
-      } catch {
-        setLocalFavorites((cur) => (cur ? { ...cur, movies: prevList } : cur));
-      }
-    } else {
-      const prevList = localFavorites.series;
-      const nextList = prevList.filter((i) => i._id !== id);
-      setLocalFavorites((cur) => (cur ? { ...cur, series: nextList } : cur));
-      try {
-        await updateFavorites(type, nextList.map((i) => i._id));
-      } catch {
-        setLocalFavorites((cur) => (cur ? { ...cur, series: prevList } : cur));
-      }
-    }
+  const flushPendingRemoval = useCallback(() => {
+    const pending = pendingRemovalRef.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pendingRemovalRef.current = null;
+    setUndoEntry(null);
+    commitRemoval(pending.type);
+  }, [commitRemoval]);
+
+  useEffect(() => () => flushPendingRemoval(), [flushPendingRemoval]);
+
+  const handleRemoveFavorite = useCallback(
+    (type: ContentType, item: FavItem) => {
+      if (!localFavorites) return;
+      if (pendingRemovalRef.current?.item._id === item._id && pendingRemovalRef.current.type === type) return;
+      flushPendingRemoval();
+
+      const key = type === "movie" ? "movies" : "series";
+      setLocalFavorites((cur) => (cur ? { ...cur, [key]: (cur as any)[key].filter((i: FavItem) => i._id !== item._id) } : cur));
+
+      const timer = setTimeout(() => {
+        if (pendingRemovalRef.current?.item !== item) return;
+        pendingRemovalRef.current = null;
+        setUndoEntry(null);
+        commitRemoval(type);
+      }, REMOVE_UNDO_MS);
+      pendingRemovalRef.current = { type, item, timer };
+      setUndoEntry(item);
+    },
+    [localFavorites, flushPendingRemoval, commitRemoval]
+  );
+
+  const handleUndoRemoveFavorite = useCallback(() => {
+    const pending = pendingRemovalRef.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pendingRemovalRef.current = null;
+    setUndoEntry(null);
+    const key = pending.type === "movie" ? "movies" : "series";
+    setLocalFavorites((cur) => {
+      if (!cur) return cur;
+      const list = (cur as any)[key] as FavItem[];
+      if (list.some((i) => i._id === pending.item._id)) return cur;
+      return { ...cur, [key]: [...list, pending.item] };
+    });
+  }, []);
+
+  // Toggling edit mode off commits any still-pending removal right away —
+  // its undo window is scoped to being in edit mode, not left dangling
+  // once the pencil's tapped back to "Done".
+  const toggleEditing = (type: ContentType) => {
+    if (editingType === type) flushPendingRemoval();
+    setEditingType((prev) => (prev === type ? null : type));
   };
+
+  // Auto-close edit mode on leaving this screen — real bug, reported live:
+  // opening edit mode, switching to another tab/screen without tapping
+  // "Done" first, then coming back to Profile left edit mode still on.
+  // Same screenFocused signal ProfileBadgesTab.tsx's own revalidate effect
+  // already uses for "did the user leave and come back" — commits any
+  // still-pending removal first, same as tapping the pencil to close it
+  // manually already does.
+  useEffect(() => {
+    if (screenFocused || !editingType) return;
+    flushPendingRemoval();
+    setEditingType(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenFocused]);
+
+  // Drag-to-reorder (ContentRail's own dragEnabled/onReorder) — the new
+  // order comes back as the full reordered array already, so this is a
+  // straight optimistic-set-then-persist, no diffing needed.
+  const handleReorderFavorite = useCallback(
+    (type: ContentType, reordered: FavItem[]) => {
+      if (!localFavorites) return;
+      const key = type === "movie" ? "movies" : "series";
+      const prevList = (localFavorites as any)[key] as FavItem[];
+      setLocalFavorites((cur) => (cur ? { ...cur, [key]: reordered } : cur));
+      updateFavorites(type, reordered.map((i) => i._id)).catch(() => {
+        setLocalFavorites((cur) => (cur ? { ...cur, [key]: prevList } : cur));
+        showToast(t("Something went wrong. Please try again."));
+      });
+    },
+    [localFavorites, showToast, t]
+  );
 
   // Optimistic, same as handleRemoveFavorite — was previously re-fetching
   // via getFavorites("me") afterward instead, but GET /users/favorites/:id
@@ -267,79 +379,106 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
       <Animated.View style={[styles.body, { opacity: bodyOpacity }]}>
         {hasVisited("sharings") && (
           <View style={visibility("sharings")}>
-            <ProfileSharingsTab active={category === "sharings"} />
+            <ProfileSharingsTab active={category === "sharings"} nearBottomRef={nearBottomRef} />
           </View>
         )}
 
         {hasVisited("favorites") && localFavorites && (
           <View style={visibility("favorites")}>
             {(() => {
-              const movieSlots = buildSlots(localFavorites.movies, editingType === "movie");
+              const movies = localFavorites.movies;
+              const movieEmptyKeys = emptySlotKeys(movies, editingType === "movie");
               return (
                 <ContentRail
                   title={t("Favorite Movies")}
-                  data={movieSlots}
-                  keyExtractor={(slot) => (slot.kind === "item" ? slot.item._id : slot.key)}
+                  data={movies}
+                  keyExtractor={(item) => item._id}
                   emptyText={t("No favorite movies yet.")}
                   height={favoritesRailHeight}
                   onEditPress={() => toggleEditing("movie")}
                   editLabel={t("Edit Favorite Movies")}
-                  renderItem={(slot, index) => {
-                    const cardStyle = {
-                      width: favoritesCardWidth,
-                      marginRight: index === movieSlots.length - 1 ? 0 : FAVORITES_GAP,
-                      marginBottom: 0,
-                    };
-                    return slot.kind === "item" ? (
-                      <FavoriteCard
-                        id={slot.item._id}
-                        type="movie"
-                        posterPath={slot.item.poster_path}
-                        rating={slot.item.rating}
-                        basePath="/profile"
-                        editing={editingType === "movie"}
-                        onRemove={() => handleRemoveFavorite("movie", slot.item._id)}
-                        style={cardStyle}
-                      />
-                    ) : (
-                      <EmptyFavoriteSlot onPress={() => setAddingType("movie")} style={cardStyle} />
-                    );
-                  }}
+                  dragEnabled={editingType === "movie"}
+                  onReorder={(reordered) => handleReorderFavorite("movie", reordered)}
+                  footer={
+                    movieEmptyKeys.length > 0 ? (
+                      <View style={styles.emptySlotsRow}>
+                        {movieEmptyKeys.map((key, i) => (
+                          <EmptyFavoriteSlot
+                            key={key}
+                            onPress={() => setAddingType("movie")}
+                            style={{ width: favoritesCardWidth, marginRight: i === movieEmptyKeys.length - 1 ? 0 : FAVORITES_GAP, marginBottom: 0 }}
+                          />
+                        ))}
+                      </View>
+                    ) : undefined
+                  }
+                  renderItem={(item, index, drag) => (
+                    <FavoriteCard
+                      id={item._id}
+                      type="movie"
+                      posterPath={item.poster_path}
+                      rating={item.rating}
+                      basePath="/profile"
+                      editing={editingType === "movie"}
+                      onRemove={() => handleRemoveFavorite("movie", item)}
+                      drag={drag}
+                      style={{
+                        width: favoritesCardWidth,
+                        marginRight: index === movies.length - 1 && movieEmptyKeys.length === 0 ? 0 : FAVORITES_GAP,
+                        marginBottom: 0,
+                      }}
+                    />
+                  )}
                 />
               );
             })()}
+
+            <View style={styles.favoritesDivider} />
+
             {(() => {
-              const seriesSlots = buildSlots(localFavorites.series, editingType === "series");
+              const series = localFavorites.series;
+              const seriesEmptyKeys = emptySlotKeys(series, editingType === "series");
               return (
                 <ContentRail
                   title={t("Favorite Series")}
-                  data={seriesSlots}
-                  keyExtractor={(slot) => (slot.kind === "item" ? slot.item._id : slot.key)}
+                  data={series}
+                  keyExtractor={(item) => item._id}
                   emptyText={t("No favorite series yet.")}
                   height={favoritesRailHeight}
                   onEditPress={() => toggleEditing("series")}
                   editLabel={t("Edit Favorite Series")}
-                  renderItem={(slot, index) => {
-                    const cardStyle = {
-                      width: favoritesCardWidth,
-                      marginRight: index === seriesSlots.length - 1 ? 0 : FAVORITES_GAP,
-                      marginBottom: 0,
-                    };
-                    return slot.kind === "item" ? (
-                      <FavoriteCard
-                        id={slot.item._id}
-                        type="series"
-                        posterPath={slot.item.poster_path}
-                        rating={slot.item.rating}
-                        basePath="/profile"
-                        editing={editingType === "series"}
-                        onRemove={() => handleRemoveFavorite("series", slot.item._id)}
-                        style={cardStyle}
-                      />
-                    ) : (
-                      <EmptyFavoriteSlot onPress={() => setAddingType("series")} style={cardStyle} />
-                    );
-                  }}
+                  dragEnabled={editingType === "series"}
+                  onReorder={(reordered) => handleReorderFavorite("series", reordered)}
+                  footer={
+                    seriesEmptyKeys.length > 0 ? (
+                      <View style={styles.emptySlotsRow}>
+                        {seriesEmptyKeys.map((key, i) => (
+                          <EmptyFavoriteSlot
+                            key={key}
+                            onPress={() => setAddingType("series")}
+                            style={{ width: favoritesCardWidth, marginRight: i === seriesEmptyKeys.length - 1 ? 0 : FAVORITES_GAP, marginBottom: 0 }}
+                          />
+                        ))}
+                      </View>
+                    ) : undefined
+                  }
+                  renderItem={(item, index, drag) => (
+                    <FavoriteCard
+                      id={item._id}
+                      type="series"
+                      posterPath={item.poster_path}
+                      rating={item.rating}
+                      basePath="/profile"
+                      editing={editingType === "series"}
+                      onRemove={() => handleRemoveFavorite("series", item)}
+                      drag={drag}
+                      style={{
+                        width: favoritesCardWidth,
+                        marginRight: index === series.length - 1 && seriesEmptyKeys.length === 0 ? 0 : FAVORITES_GAP,
+                        marginBottom: 0,
+                      }}
+                    />
+                  )}
                 />
               );
             })()}
@@ -371,6 +510,13 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
         excludeIds={favoriteExcludeIds}
         onClose={() => setAddingType(null)}
         onAdd={(item) => addingType && handleAddFavorite(addingType, item)}
+      />
+
+      <CollectionUndoBar
+        entry={undoEntry}
+        message={t("Removed from favorites")}
+        durationMs={REMOVE_UNDO_MS}
+        onUndo={handleUndoRemoveFavorite}
       />
 
       {/* Same screenFocused gate as AddFavoriteModal above, and for the same

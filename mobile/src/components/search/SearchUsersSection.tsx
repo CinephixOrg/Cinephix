@@ -3,6 +3,7 @@ import { View, FlatList, ActivityIndicator, Text, Pressable, StyleSheet } from "
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { SkeletonRow } from "../Skeleton";
 import { searchUsers } from "../../api/userService";
 import UserAvatar from "../UserAvatar";
 import type { UserSearchResult } from "../../types";
@@ -112,7 +113,11 @@ export default function SearchUsersSection({ query }: Props) {
   }
 
   if (loading && !hasLoadedOnce) {
-    return <ActivityIndicator style={{ flex: 1, backgroundColor: colors.base100 }} color={colors.primary} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.base100, paddingHorizontal: 16, paddingTop: 4 }}>
+        {Array.from({ length: 8 }, (_, i) => <SkeletonRow key={i} />)}
+      </View>
+    );
   }
 
   return (

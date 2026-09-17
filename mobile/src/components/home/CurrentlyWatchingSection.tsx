@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getCurrentlyWatchingFeed, type CurrentlyWatchingFeedItem } from "../../api/feedService";
 import ContentRail from "../ContentRail";
 import CurrentlyWatchingCard from "./CurrentlyWatchingCard";
+import { SkeletonRail } from "../Skeleton";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
@@ -12,9 +13,12 @@ const CARD_GAP = 12;
 
 type Scope = "all" | "friends";
 
-// Discover's "Currently Watching" rail — who's actively watching what
-// right now (1-day TTL, feedController.js's getCurrentlyWatchingFeed), a
-// live status roster rather than a Medya post, direct ask. The All/Friends
+// Shares' "Currently Watching" section — who's actively watching what
+// right now (4-hour TTL, feedController.js's getCurrentlyWatchingFeed), a
+// live status roster rather than a Medya post, direct ask. Lives between
+// the podium and the "Shares" post-feed title (moved from Discover — same
+// reasoning OnlineFriendsBar.tsx already established for living here: a
+// live status roster, not a catalog-browse rail). The All/Friends
 // mode toggle is a plain two-segment pill (not CineGraphSubTabSwitcher's
 // animated capsule — that component is hardcoded to movie/series) sitting
 // in ContentRail's new headerRight slot. Defaults to "all" rather than
@@ -47,7 +51,7 @@ export default function CurrentlyWatchingSection({ basePath }: { basePath: "/hom
     [colors]
   );
 
-  // Loading is the only state that hides this entirely — same corrected
+  // Loading is the only state that hides the REAL content — same corrected
   // convention OnlineFriendsBar.tsx's own doc comment already establishes
   // ("a genuinely empty result now always shows the informational empty
   // state instead of disappearing"), direct ask to match it here too. A
@@ -56,7 +60,11 @@ export default function CurrentlyWatchingSection({ basePath }: { basePath: "/hom
   // rendering the section (title + toggle + ContentRail's own emptyText)
   // once loaded means there's never an orphaned divider, and the toggle
   // stays reachable regardless of which scope currently has nobody in it.
-  if (!loaded) return null;
+  // Before that, this used to return null outright — a silent gap that
+  // popped the whole section in once loaded instead of showing a shaped
+  // placeholder, unlike KesfetSection.tsx's own already-correct SkeletonRail
+  // use for the same "still fetching" moment.
+  if (!loaded) return <SkeletonRail />;
 
   return (
     <ContentRail

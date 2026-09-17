@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Easing,
   StyleSheet,
-  Image,
   useWindowDimensions,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
@@ -24,22 +23,17 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import PeoplePodiumCard from "./PeoplePodiumCard";
 import PodiumSkeletonSlot from "./PodiumSkeletonSlot";
+import UpgradeRibbon from "./UpgradeRibbon";
 import { getPeopleLeaderboard } from "../api/feedService";
 import { useAuth } from "../context/AuthContext";
 import type { ContentType, PeopleLeaderboardResult } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
-const CINEPHIX_LOGO = require("../../assets/cinephix_logo.png");
-
 // Bigger than an earlier round's own 44/34/34 (direct ask: "podyum
 // çerçevesini biraz büyüt") — matches LeaderboardPodium.tsx's own
 // TEASER_POSTER_WIDTH reasoning exactly.
 const TEASER_AVATAR_SIZE = { 1: 56, 2: 44, 3: 44 } as const;
-// Reserved height at the bottom of `adPage` for the upgrade button, kept
-// out of the frame row's own centering calculation — see LeaderboardPodium
-// .tsx's own `adPage` doc comment for the full reasoning (same design).
-const AD_BUTTON_ZONE = 36;
 // How often the ad page's whole skeleton row (frames + metric icon
 // together) cross-fades to the next teased category — when there are more
 // than 2 teased categories (Free's own 4), the banner text in `titleRow`
@@ -333,14 +327,15 @@ function PeoplePodium({ jumpToCategory }: Props) {
           justifyContent: "center",
         },
         // Ad page only — same design as LeaderboardPodium.tsx's own
-        // identical ad page (see that file's own `adPage` doc comment for
-        // the full "why paddingBottom + AD_BUTTON_ZONE, not a plain
-        // centered block" reasoning — same technique here). PODIUM_HEIGHT
-        // is 156px here — see this file's own comment on that constant for
-        // why it's snug.
-        adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingBottom: AD_BUTTON_ZONE, position: "relative" },
+        // identical ad page. Centers `adFrameRow` in the page's own full
+        // height now — no more reserved bottom zone for a button, since the
+        // Upgrade Now button became a corner ribbon instead (see that
+        // file's own `adPage` doc comment for the full reasoning). PODIUM_
+        // HEIGHT is 156px here — see this file's own comment on that
+        // constant for why it's snug.
+        adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, position: "relative" },
         adFrameRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12 },
-        adButtonWrap: { position: "absolute", left: 0, right: 0, bottom: 6, alignItems: "center" },
+        adRibbonWrap: { position: "absolute", top: 4, right: -30 },
         // Sits inside titleRow, replacing the plain category title while
         // the ad page is showing — direct ask ("başlık hizasında reklam
         // metni olacak"). This file's own mode toggle *is* a sibling here
@@ -348,17 +343,6 @@ function PeoplePodium({ jumpToCategory }: Props) {
         // keeps it from reserving flex width while hidden, the same fix
         // LeaderboardPodium.tsx's own toggle already needed.
         adBannerTitle: { flex: 1, fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.baseContent, textAlign: "center" },
-        upgradeButton: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 6,
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 18,
-          backgroundColor: colors.primary,
-        },
-        upgradeButtonText: { fontFamily: fonts.bold, fontSize: 12, color: colors.primaryContent },
-        upgradeButtonIcon: { width: 13, height: 13 },
       }),
     [colors, screenWidth]
   );
@@ -502,11 +486,8 @@ function PeoplePodium({ jumpToCategory }: Props) {
                       renderAdSlot(p.lockedKeys[adCategoryIndex % p.lockedKeys.length], rank, item)
                     )}
                   </Animated.View>
-                  <View style={styles.adButtonWrap}>
-                    <Pressable style={styles.upgradeButton} onPress={() => router.push("/match/subscription" as any)}>
-                      <Image source={CINEPHIX_LOGO} style={styles.upgradeButtonIcon} resizeMode="contain" />
-                      <Text style={styles.upgradeButtonText}>{t("Upgrade Now")}</Text>
-                    </Pressable>
+                  <View style={styles.adRibbonWrap}>
+                    <UpgradeRibbon onPress={() => router.push("/match/subscription" as any)} />
                   </View>
                 </View>
               )

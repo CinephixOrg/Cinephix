@@ -15,6 +15,7 @@ import { sendGroupMessageRest, sendGroupRichMessage } from "../api/groupService"
 import { createShare } from "../api/shareService";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import { useRecentShares } from "../context/RecentSharesContext";
 import { useToast } from "../context/ToastContext";
 import type { ProfileAnalysis, ProfileAnalysisItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
@@ -75,6 +76,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
   const router = useRouter();
   const { user } = useAuth();
   const { refreshConversations } = useChat();
+  const { announce: announceNewShare } = useRecentShares();
   const { showToast } = useToast();
   const styles = useMemo(() => buildStyles(colors), [colors]);
   const [optionsVisible, setOptionsVisible] = useState(false);
@@ -87,7 +89,8 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
     if (!data) return;
     setSharingToMedia(true);
     try {
-      await createShare({ type: "analysis", analysisData: data });
+      const share = await createShare({ type: "analysis", analysisData: data });
+      announceNewShare(share);
       setOptionsVisible(false);
       showToast(t("Shared to Medya"));
     } catch {

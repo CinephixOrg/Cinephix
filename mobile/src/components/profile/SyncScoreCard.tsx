@@ -7,14 +7,22 @@ import { SYNC_SCORE_FILTERS, getCachedSyncScore, prefetchSyncScore } from "../..
 import MatchPercentageRing from "../MatchPercentageRing";
 import MatchGradientTitle from "../match/MatchGradientTitle";
 import SyncAnalysisModal from "./SyncAnalysisModal";
-import type { MatchWithUserResult, SyncCandidate } from "../../types";
+import type { ContentType, MatchWithUserResult, SyncCandidate } from "../../types";
 import { sameShape } from "../../utils/cache";
+import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
 
 interface Props {
   userId: string;
+  // The CineGraph tab's own Movies/Series sub-tab (CineGraphSubTabSwitcher)
+  // — the score, and the analysis behind ⓘ, are computed against THIS
+  // type, not a fixed one. Real bug fix: this card used to always compute
+  // (and cache) the movie-based score regardless of which sub-tab was
+  // actually showing, so switching to Series never changed the number.
+  type: ContentType;
 }
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -76,16 +84,32 @@ function buildStyles(colors: ColorPalette) {
 // Previously this printed the score twice — once inside the ring and again
 // as "72% Compatibility" right beside it. The ring already says the number,
 // so the text beside it is now the feature's name instead.
-function SyncScoreCard({ userId }: Props) {
+function SyncScoreCard({ userId, type }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const styles = useMemo(() => buildStyles(colors), [colors]);
+  // Same filters the Sync page defaults to, just for whichever type this
+  // card's own caller currently has selected — SYNC_SCORE_FILTERS.type
+  // itself is only ever the fallback default now, not read directly.
+  const filters = useMemo(() => ({ ...SYNC_SCORE_FILTERS, type }), [type]);
+  // Free is blocked outright from this specific entry point — direct ask —
+  // rather than just cooldown-throttled the way the Sync page's own
+  // Analyze button stays for every tier (matchController.js's
+  // analyzeMatchWithUser, source:"profile" branch, is the real enforcement;
+  // this is purely so a Free viewer never even opens the modal/fires the
+  // request in the first place, matching MatchFilterStrip.tsx's own
+  // established "locked control shows a toast instead of navigating away"
+  // convention elsewhere in this same feature).
+  const tier = user?.accountTier;
+  const analysisLocked = tier === "free" || tier == null;
 
   // Seeded from the shared cache, which the profile screen starts filling
   // the moment it opens (api/publicProfileCache.ts) — so by the time this
   // tab is reached the number is usually already here, and this card renders
   // with it rather than mounting into a spinner.
-  const cached = getCachedSyncScore(userId);
+  const cached = getCachedSyncScore(userId, type);
   const [matchResult, setMatchResult] = useState<MatchWithUserResult | null>(cached ?? null);
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
@@ -93,15 +117,16 @@ function SyncScoreCard({ userId }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    const known = getCachedSyncScore(userId);
-    if (known) {
-      setMatchResult(known);
-      setLoading(false);
-    }
+    // Not stale-shown-then-corrected: switching type with no cached result
+    // yet for it must show the loading state, not the PREVIOUS type's
+    // number while the new one is still in flight.
+    const known = getCachedSyncScore(userId, type);
+    setMatchResult(known ?? null);
+    setLoading(!known);
     setError(null);
     // Joins the profile screen's in-flight prefetch when there is one, so
     // this never opens a second request for the same number.
-    prefetchSyncScore(userId)
+    prefetchSyncScore(userId, type)
       .then((result) => {
         // Identity-preserving so an unchanged score doesn't re-render the
         // card (and, through it, remount the analysis modal's candidate).
@@ -123,8 +148,19 @@ function SyncScoreCard({ userId }: Props) {
         // still in flight too. Deferring it costs nothing (nobody can tap
         // ⓘ before the card has rendered) and takes the score off the
         // queue behind it.
-        if (!cancelled) {
-          prefetchMatchAnalysis(userId, SYNC_SCORE_FILTERS).catch(() => {
+        //
+        // Only for Premium/dev (unlimited) now — Free/Plus skip this
+        // speculative warm-up entirely. Firing it unconditionally on every
+        // profile visit used to be harmless, but once the ⓘ analysis
+        // started counting against a real weekly quota (Plus), eagerly
+        // pre-running it on EVERY profile visited — even ones the viewer
+        // never taps ⓘ on — would silently burn quota on pure browsing.
+        // MatchAnalysisPanel's own on-demand fetch (only once the modal
+        // actually opens) still covers Free/Plus correctly; they just lose
+        // the instant-open optimization, a fine trade for not wasting a
+        // capped resource on speculation.
+        if (!cancelled && (tier === "premium" || tier === "dev")) {
+          prefetchMatchAnalysis(userId, filters).catch(() => {
             // Silent — the panel retries on its own, with its own handling.
           });
         }
@@ -132,7 +168,8 @@ function SyncScoreCard({ userId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, type]);
 
   if (loading) {
     return (
@@ -155,13 +192,20 @@ function SyncScoreCard({ userId }: Props) {
   }
 
   // MatchAnalysisPanel speaks in SyncCandidate, and everything it needs is
-  // already in the match result — matchInsights is optional and only
-  // populated for the Sync page's own queue.
+  // already in the match result — matchInsights now comes through too
+  // (getMatchWithUser's own response), not just from the Sync page's own
+  // getSyncCandidates. Without it, MatchAnalysisPanel's Shared Genres/
+  // Shared Favorites/Social Overlap cards were all silently absent here —
+  // each is gated on a piece of matchInsights specifically, not on
+  // anything else the candidate carries — leaving this entry point's deck
+  // real cards short of the Sync page's own full one for no reason other
+  // than this field never being threaded through.
   const candidate: SyncCandidate = {
     user: matchResult.targetUser,
-    contentType: SYNC_SCORE_FILTERS.type,
+    contentType: type,
     matchPercentage: matchResult.matchPercentage,
     breakdown: matchResult.breakdown,
+    matchInsights: matchResult.matchInsights,
   };
   const accent = scoreColor(matchResult.matchPercentage);
 
@@ -181,7 +225,7 @@ function SyncScoreCard({ userId }: Props) {
         </View>
         <Pressable
           style={styles.infoButton}
-          onPress={() => setModalVisible(true)}
+          onPress={() => (analysisLocked ? showToast(t("Upgrade to see your sync analyses")) : setModalVisible(true))}
           hitSlop={8}
           accessibilityLabel={t("Sync Analysis")}
         >
@@ -197,7 +241,7 @@ function SyncScoreCard({ userId }: Props) {
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
           candidate={candidate}
-          filters={SYNC_SCORE_FILTERS}
+          filters={filters}
         />
       )}
     </View>

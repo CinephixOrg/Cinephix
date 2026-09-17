@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, View, Text, Image, Pressable, Animated, ScrollView, StyleSheet } from "react-native";
+import { Modal, View, Text, Image, Pressable, Animated, ActivityIndicator, ScrollView, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
+
+// Identifies exactly which (family, key, tier) a Share of type "badge"
+// would be created for, mirroring createShare's own badgeFamily/badgeKey/
+// badgeTier body — this is the one piece of family-specific knowledge this
+// otherwise-generic component needs, kept as an opaque identifier rather
+// than exposing what family/key/tier actually mean.
+export interface BadgeShareTarget {
+  family: string;
+  key: string;
+  tier: string;
+}
 
 // One selectable rung in a volume badge's own tier strip (see `tiers`
 // below) — `tier` is kept a plain string rather than importing VolumeTier
@@ -14,6 +26,10 @@ export interface BadgeTierOption {
   title: string;
   description: string;
   earned: boolean;
+  // Only real, already-earned rungs get one — a user can tap back onto a
+  // past rung in the strip and share THAT specific achievement, same idea
+  // as genre's own devotee/master pair below.
+  shareTarget?: BadgeShareTarget;
 }
 
 // Generic across badge families on purpose — genre (2-tier) and volume
@@ -43,12 +59,32 @@ export interface BadgeDetailData {
   // one that was just earned (BadgeEarnedModal.tsx), not always the last
   // (highest) one.
   initialTierIndex?: number;
+  // Non-ladder (one-off) badges only — `tiers` above carries its own
+  // per-rung shareTarget instead, since those are the ones that can
+  // change as the user taps through the strip.
+  shareTarget?: BadgeShareTarget;
 }
+
+// "family:key:tier" — the exact same join ProfileBadgesTab.tsx uses to key
+// its own already-shared Set, kept here as the one shared piece of format
+// knowledge between the two.
+export const badgeShareTargetKey = (t: BadgeShareTarget) => `${t.family}:${t.key}:${t.tier}`;
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   badge: BadgeDetailData | null;
+  // Every "family:key:tier" the caller has ever shared — the modal itself
+  // resolves whether the CURRENTLY displayed tier (tiers?.[selectedIndex]'s
+  // own shareTarget, or badge.shareTarget for a one-off badge) is a member,
+  // so this stays correct as the user taps through the strip without the
+  // parent needing to know which rung is selected.
+  sharedKeys?: Set<string>;
+  // Which specific key currently has a share request in flight — compared
+  // against the displayed tier the same way `sharedKeys` is, so only the
+  // one row actually being shared shows a spinner.
+  sharingKey?: string | null;
+  onShare?: (target: BadgeShareTarget) => void;
 }
 
 // Same tint technique as the grid tile (ProfileBadgesTab.tsx) — a locked
@@ -68,8 +104,9 @@ const LOCKED_OPACITY = 0.55;
 // Worth reconsidering if a specific badge ever needs a genuinely bespoke
 // animation (e.g. a shine sweep, particles) that a spring scale can't
 // deliver — not the case for a first pass across these badges.
-export default function BadgeDetailModal({ visible, onClose, badge }: Props) {
+export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, sharingKey, onShare }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useMemo(() => buildStyles(colors), [colors]);
   const scale = useRef(new Animated.Value(0.4)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -107,6 +144,30 @@ export default function BadgeDetailModal({ visible, onClose, badge }: Props) {
   const displayTitle = activeTier?.title ?? badge.title;
   const displayDescription = activeTier?.description ?? badge.description;
   const displayEarned = activeTier?.earned ?? badge.earned;
+  const displayShareTarget = activeTier?.shareTarget ?? badge.shareTarget;
+  const shareKey = displayShareTarget ? badgeShareTargetKey(displayShareTarget) : null;
+  const isShared = !!shareKey && !!sharedKeys?.has(shareKey);
+  const isSharing = !!shareKey && sharingKey === shareKey;
+
+  // Bottom-center, direct ask — only ever rendered for an earned tier with
+  // a real shareTarget (locked/future rungs and the 3 badge families with
+  // no share support at all just don't get a button, no disabled ghost).
+  const shareButton =
+    displayEarned && displayShareTarget && onShare ? (
+      <Pressable
+        style={[styles.shareButton, isShared && styles.shareButtonDone]}
+        onPress={() => onShare(displayShareTarget)}
+        disabled={isSharing || isShared}
+      >
+        {isSharing ? (
+          <ActivityIndicator color={colors.primaryContent} size="small" />
+        ) : (
+          <Text style={[styles.shareButtonText, isShared && styles.shareButtonTextDone]}>
+            {isShared ? t("Shared") : t("Share to Medya")}
+          </Text>
+        )}
+      </Pressable>
+    ) : null;
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -130,20 +191,24 @@ export default function BadgeDetailModal({ visible, onClose, badge }: Props) {
             </Animated.View>
             <Text style={[styles.title, styles.centeredText]}>{displayTitle}</Text>
             <Text style={[styles.description, styles.centeredText]}>{displayDescription}</Text>
+            {shareButton}
           </View>
         ) : (
-          <View style={styles.card} pointerEvents="box-none">
-            <Animated.View style={[styles.imageWrap, { opacity, transform: [{ scale }] }]}>
-              <Image
-                source={displayImage}
-                style={[styles.image, !displayEarned && { tintColor: colors.placeholder, opacity: LOCKED_OPACITY }]}
-                resizeMode="contain"
-              />
-            </Animated.View>
-            <View style={styles.textCol}>
-              <Text style={styles.title}>{displayTitle}</Text>
-              <Text style={styles.description}>{displayDescription}</Text>
+          <View style={styles.cardOuter} pointerEvents="box-none">
+            <View style={styles.card}>
+              <Animated.View style={[styles.imageWrap, { opacity, transform: [{ scale }] }]}>
+                <Image
+                  source={displayImage}
+                  style={[styles.image, !displayEarned && { tintColor: colors.placeholder, opacity: LOCKED_OPACITY }]}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+              <View style={styles.textCol}>
+                <Text style={styles.title}>{displayTitle}</Text>
+                <Text style={styles.description}>{displayDescription}</Text>
+              </View>
             </View>
+            {shareButton}
           </View>
         )}
       </View>
@@ -155,6 +220,11 @@ function buildStyles(colors: ColorPalette) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: 24 },
     closeZone: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+    // Wraps `card` (the actual visible box) + the Share button below it —
+    // a separate layer so the button can sit bottom-center, outside the
+    // card's own row layout, without the row itself needing to become a
+    // column just to fit one more child under image+text.
+    cardOuter: { alignItems: "center" },
     card: {
       flexDirection: "row",
       alignItems: "center",
@@ -193,5 +263,19 @@ function buildStyles(colors: ColorPalette) {
     stackedImageWrap: { width: 84, height: 84, alignItems: "center", justifyContent: "center", marginTop: 14 },
     stackedImage: { width: 80, height: 80 },
     centeredText: { textAlign: "center", marginTop: 4 },
+    // Same shape/colors as BadgeEarnedModal.tsx's own share button, for a
+    // consistent Share/Shared visual language wherever a badge can be
+    // shared from.
+    shareButton: {
+      marginTop: 16,
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      alignSelf: "center",
+    },
+    shareButtonDone: { backgroundColor: colors.base300 },
+    shareButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 12.5 },
+    shareButtonTextDone: { color: colors.placeholder },
   });
 }

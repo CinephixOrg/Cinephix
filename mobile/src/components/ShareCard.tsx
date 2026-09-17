@@ -550,6 +550,56 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         pollResultTrailing: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 0 },
         pollResultPercent: { fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
         pollVoteCountLine: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.placeholder, marginTop: 2 },
+        // Poster-grid variant — a user-created "what should I watch next"
+        // poll (createShare's own "poll" branch, shareController.js),
+        // detected via the first option's own contentId. A row of 2-3
+        // poster cards instead of pollOptionsCol's stacked text rows,
+        // direct ask ("posterlerle oluşturmayı düşündüm").
+        pollPosterRow: { flexDirection: "row", gap: 8 },
+        // maxWidth caps a 2-option poll's own flex:1 growth at roughly what
+        // a 3-option row's own tiles naturally land on — real bug, reported
+        // live: a 2-option poll's posters stretched to fill the row (~50%
+        // each) while a 3-option poll's own (~33% each) looked right, so
+        // the two read as inconsistently sized instead of the same poster
+        // size regardless of how many options a poll has. flex:1 stays so
+        // gap-aware distribution (and a 3-option row's own exact sizing,
+        // already correct) is untouched — this only ever kicks in once
+        // there's spare room to grow into, i.e. fewer than 3 tiles.
+        pollPosterTile: { flex: 1, maxWidth: "32%" },
+        pollPosterWrap: {
+          borderRadius: 8,
+          overflow: "hidden",
+          borderWidth: 1.5,
+          borderColor: colors.border,
+        },
+        pollPosterWrapChosen: { borderColor: colors.primary },
+        pollPoster: { width: "100%", aspectRatio: 2 / 3, backgroundColor: colors.base300 },
+        // Bottom-anchored overlay, only shown once results are visible —
+        // same "percentage overlaid on the fill" idea pollResultRow already
+        // uses, just anchored to the poster's own bottom edge instead of a
+        // horizontal track.
+        pollPosterPercentBadge: {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          paddingVertical: 4,
+          alignItems: "center",
+        },
+        pollPosterPercentText: { fontFamily: fonts.bold, fontSize: 13, color: "#fff" },
+        pollPosterCheck: {
+          position: "absolute",
+          top: 4,
+          right: 4,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: colors.primary,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        pollPosterTitle: { fontFamily: fonts.medium, fontSize: 11, color: colors.baseContent, marginTop: 4, textAlign: "center" },
         // Just the view row lives here now — like moved out entirely to
         // its own floating corner sticker (see likeSticker below), and the
         // dark grouped-pill background from the previous round is gone
@@ -655,6 +705,17 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           bottom: 0,
           alignItems: "center",
           justifyContent: "center",
+          // Real bug, reported live: on some of Cinephix's own short posts
+          // (a text-only officialBox with no poster, short enough that its
+          // own height is under the heart's fixed 90px size), the bottom of
+          // the heart was getting cut off right at the box's own edge
+          // instead of overflowing visibly on top of whatever's below it.
+          // zIndex (both platforms) + elevation (Android's own separate
+          // mechanism for paint-order/compositing) forces this onto its own
+          // top layer regardless of sibling paint order or an ancestor's
+          // rounded-corner clipping, rather than trusting plain JSX order.
+          zIndex: 10,
+          elevation: 10,
         },
         // Shared dark drop-shadow for legibility over any background —
         // used by the burst heart.
@@ -928,6 +989,11 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
   const [pollOptions, setPollOptions] = useState<PollOption[]>(share.pollData?.options ?? []);
   const [userVoteIndex, setUserVoteIndex] = useState<number | null>(share.userVoteIndex ?? null);
   const pollTotalVotes = pollOptions.reduce((sum, o) => sum + o.voteCount, 0);
+  // A user-created "what should I watch" poll (createShare's own "poll"
+  // branch, shareController.js) vs. the official account's own plain
+  // text-option polls — the poster-grid layout only makes sense for the
+  // former. contentId is only ever set on the watchlist-poll's own options.
+  const isContentPoll = pollOptions.length > 0 && pollOptions[0].contentId != null;
 
   // No LayoutAnimation here (an earlier round added it, purely for a smooth
   // button-row -> result-bars transition) — real bug reported live: on a
@@ -1026,10 +1092,15 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
   // @mentions, ...) — purely a display convention for this one reserved
   // account, not a case-normalization of usernames in general.
   const displayUsername = share.user.isOfficial ? share.user.username.toUpperCase() : share.user.username;
+  // Tappable to the same Public Profile the avatar right next to it
+  // already opens (UserAvatar.tsx's own router.push) — previously only the
+  // avatar image itself was, direct ask to fix.
   const usernameEl = (
-    <Text style={[styles.username, share.user.isOfficial && styles.usernameOfficial]} numberOfLines={1}>
-      {displayUsername}
-    </Text>
+    <Pressable onPress={() => router.push(`/user/${share.user._id}` as any)} hitSlop={4}>
+      <Text style={[styles.username, share.user.isOfficial && styles.usernameOfficial]} numberOfLines={1}>
+        {displayUsername}
+      </Text>
+    </Pressable>
   );
 
   // Hollow rounded-rect stroke overlaid on the inner box (shareBox or
@@ -1514,41 +1585,82 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
       {share.type === "poll" && share.pollData && (
         <View style={styles.pollBox}>
           {officialBorder}
-          <Text style={styles.pollQuestion}>{share.pollData.question}</Text>
-          <View style={styles.pollOptionsCol}>
-            {pollOptions.map((option, i) => {
-              if (userVoteIndex == null) {
+          <Text style={styles.pollQuestion}>
+            {/* User-created watchlist polls store no question text server-side
+                (createShare's own "poll" branch) — kept empty specifically so
+                this reads correctly in every viewer's own language, rather
+                than one fixed string baked in at creation time. Detected the
+                same way the layout branch below is: the first option's own
+                contentId. */}
+            {isContentPoll ? t("Which one should I watch next?") : share.pollData.question}
+          </Text>
+          {isContentPoll ? (
+            <View style={styles.pollPosterRow}>
+              {pollOptions.map((option, i) => {
+                const percent = pollTotalVotes > 0 ? Math.round((option.voteCount / pollTotalVotes) * 100) : 0;
+                const isChosen = userVoteIndex === i;
                 return (
-                  // key includes "-btn" so the button->result-bar switch below
-                  // mounts a genuinely NEW Pressable instead of restyling the
-                  // one that's still mid-touch from the tap that just caused
-                  // this switch — reusing the same native instance is what
-                  // let Android's press/ripple state get stuck rendering
-                  // "dark" after the very first vote on a poll (only a full
-                  // reload, which remounts everything, ever cleared it).
-                  <Pressable key={`${i}-btn`} style={styles.pollOptionButton} onPress={() => handleVote(i)}>
-                    <Text style={styles.pollOptionButtonText}>{option.text}</Text>
+                  <Pressable key={i} style={styles.pollPosterTile} onPress={() => handleVote(i)}>
+                    <View style={[styles.pollPosterWrap, isChosen && styles.pollPosterWrapChosen]}>
+                      {option.posterUrl ? (
+                        <Image source={{ uri: `${POSTER_BASE}${option.posterUrl}` }} style={styles.pollPoster} />
+                      ) : (
+                        <View style={styles.pollPoster} />
+                      )}
+                      {userVoteIndex != null && (
+                        <View style={styles.pollPosterPercentBadge}>
+                          <Text style={styles.pollPosterPercentText}>{percent}%</Text>
+                        </View>
+                      )}
+                      {isChosen && (
+                        <View style={styles.pollPosterCheck}>
+                          <Ionicons name="checkmark" size={13} color={colors.primaryContent} />
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.pollPosterTitle} numberOfLines={2}>
+                      {option.text}
+                    </Text>
                   </Pressable>
                 );
-              }
-              const percent = pollTotalVotes > 0 ? Math.round((option.voteCount / pollTotalVotes) * 100) : 0;
-              const isChosen = userVoteIndex === i;
-              return (
-                <Pressable key={`${i}-result`} style={styles.pollResultTrack} onPress={() => handleVote(i)}>
-                  <View style={[styles.pollResultFill, { width: `${percent}%` }]} />
-                  <View style={styles.pollResultRow}>
-                    <Text style={[styles.pollResultLabel, isChosen && styles.pollResultLabelChosen]} numberOfLines={1}>
-                      {isChosen ? `✓ ${option.text}` : option.text}
-                    </Text>
-                    <View style={styles.pollResultTrailing}>
-                      {option.topVoters && option.topVoters.length > 0 && <StackedAvatars users={option.topVoters} size={16} max={5} />}
-                      <Text style={styles.pollResultPercent}>{percent}%</Text>
+              })}
+            </View>
+          ) : (
+            <View style={styles.pollOptionsCol}>
+              {pollOptions.map((option, i) => {
+                if (userVoteIndex == null) {
+                  return (
+                    // key includes "-btn" so the button->result-bar switch below
+                    // mounts a genuinely NEW Pressable instead of restyling the
+                    // one that's still mid-touch from the tap that just caused
+                    // this switch — reusing the same native instance is what
+                    // let Android's press/ripple state get stuck rendering
+                    // "dark" after the very first vote on a poll (only a full
+                    // reload, which remounts everything, ever cleared it).
+                    <Pressable key={`${i}-btn`} style={styles.pollOptionButton} onPress={() => handleVote(i)}>
+                      <Text style={styles.pollOptionButtonText}>{option.text}</Text>
+                    </Pressable>
+                  );
+                }
+                const percent = pollTotalVotes > 0 ? Math.round((option.voteCount / pollTotalVotes) * 100) : 0;
+                const isChosen = userVoteIndex === i;
+                return (
+                  <Pressable key={`${i}-result`} style={styles.pollResultTrack} onPress={() => handleVote(i)}>
+                    <View style={[styles.pollResultFill, { width: `${percent}%` }]} />
+                    <View style={styles.pollResultRow}>
+                      <Text style={[styles.pollResultLabel, isChosen && styles.pollResultLabelChosen]} numberOfLines={1}>
+                        {isChosen ? `✓ ${option.text}` : option.text}
+                      </Text>
+                      <View style={styles.pollResultTrailing}>
+                        {option.topVoters && option.topVoters.length > 0 && <StackedAvatars users={option.topVoters} size={16} max={5} />}
+                        <Text style={styles.pollResultPercent}>{percent}%</Text>
+                      </View>
                     </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
           <Text style={styles.pollVoteCountLine}>{t("vote_count", { count: pollTotalVotes })}</Text>
         </View>
       )}

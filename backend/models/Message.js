@@ -32,7 +32,7 @@ const messageSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["text", "recommendation", "analysis_share", "profile_share"],
+      enum: ["text", "recommendation", "analysis_share", "profile_share", "list_share"],
       default: "text",
     },
     // For recommendation messages
@@ -64,6 +64,15 @@ const messageSchema = new Schema(
       username: String,
       profile_pic_url: String,
       accountTier: String,
+    },
+    // For list sharing ("check out this list") — denormalized like
+    // profileData above, so a shared list still renders correctly even if
+    // it's later renamed or resized.
+    listData: {
+      listId: { type: Schema.Types.ObjectId, ref: "CustomList" },
+      name: String,
+      itemCount: Number,
+      previewPosters: [String],
     },
   },
   { timestamps: true }
