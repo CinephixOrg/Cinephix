@@ -248,6 +248,22 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
           showToast(t("See the badges you've earned"));
         },
       },
+      // 6th category, added after the fact — the one real gap the
+      // original 5 missed (Lists have their own separate "Share your
+      // list" action on ListDetailScreen.tsx's own CollectionToolbar, with
+      // no browse-then-pick landing page of its own until this pointed at
+      // one). Same "navigate + one-line hint, nothing else" rule as every
+      // other category here.
+      {
+        key: "list",
+        icon: "albums-outline",
+        label: t("List"),
+        onPress: () => {
+          setComposeMenuVisible(false);
+          router.navigate("/lists" as any);
+          showToast(t("Go to the list you want to share"));
+        },
+      },
     ],
     [t, router, showToast]
   );

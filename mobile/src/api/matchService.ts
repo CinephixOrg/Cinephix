@@ -114,6 +114,15 @@ export async function getMutualConnections(
   return { items: res.data, pagination: (res as any).pagination };
 }
 
+// Titles sitting in both sides' own to-watch queue right now — the Sync
+// analysis's "Watch Together" card. Not paginated: a real overlap between
+// two people's own queues is realistically small, unlike getSharedGenreContent's
+// rated-titles case.
+export async function getMutualToWatch(targetUserId: string): Promise<LightweightContent[]> {
+  const res = await API.get(API_ROUTES.MATCH.MUTUAL_TO_WATCH(targetUserId));
+  return res.data;
+}
+
 export async function getContentRatings(
   targetUserId: string,
   type: ContentType,

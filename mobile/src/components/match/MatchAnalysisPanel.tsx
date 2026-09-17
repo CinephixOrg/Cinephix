@@ -7,6 +7,9 @@ import {
   Pressable,
   ActivityIndicator,
   ScrollView,
+  FlatList,
+  Modal,
+  Image,
   StyleSheet,
   useWindowDimensions,
   type NativeSyntheticEvent,
@@ -15,9 +18,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MatchRadarChart from "./MatchRadarChart";
 import MatchSharedFavorites from "./MatchSharedFavorites";
 import PosterCoverflow from "./PosterCoverflow";
+import PosterRow from "./PosterRow";
 import MutualConnectionsGrid, { SOCIAL_LOCKED_VISIBLE_COUNT } from "./MutualConnectionsGrid";
 import LockedUnlockNote from "./LockedUnlockNote";
 import MatchVarietyRings from "./MatchVarietyRings";
@@ -27,7 +32,7 @@ import MatchCoverCard from "./MatchCoverCard";
 import MatchTierRow from "./MatchTierRow";
 import MatchSummarySwiper from "./MatchSummarySwiper";
 import { genreColor, hexLuminance } from "./CineMatchGenreRing";
-import { prefetchMatchAnalysis, getSharedGenreContent, getMutualConnections, type MatchFilters } from "../../api/matchService";
+import { prefetchMatchAnalysis, getSharedGenreContent, getMutualConnections, getMutualToWatch, type MatchFilters } from "../../api/matchService";
 import type { LightweightContent } from "../../api/contentService";
 import { useRevealAnimation } from "../../hooks/useRevealAnimation";
 import { formatFiveScale } from "../../utils/rating";
@@ -76,6 +81,12 @@ const HORIZONTAL_PADDING = 16;
 // prefetched/cached candidate resolves well under this, so the spinner
 // never flashes for one at all. See showAnalyzingSpinner below.
 const ANALYZING_SPINNER_DELAY_MS = 150;
+// Shared Genres card — a genre with more titles than this gets a "See All"
+// grid link next to the coverflow instead of relying on one-at-a-time
+// swiping alone.
+const SEE_ALL_POSTER_THRESHOLD = 20;
+const SEE_ALL_COLUMNS = 3;
+const SEE_ALL_POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 
 interface CardDef {
   key: string;
@@ -112,7 +123,8 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
   const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
-  const { height: screenHeight } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+  const insetsTop = useSafeAreaInsets().top;
   const cardHeight = Math.min(IDEAL_CARD_HEIGHT, screenHeight * MAX_CARD_HEIGHT_RATIO);
   const accountTier = user?.accountTier ?? "free";
   // Free: the deck below is replaced entirely with a single locked-teaser
@@ -192,6 +204,13 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
   const activeCandidateIdRef = useRef(candidate.user._id);
   const [genreContent, setGenreContent] = useState<Record<string, LightweightContent[]> | null>(null);
   const [genreContentLoading, setGenreContentLoading] = useState(false);
+  // "Watch Together" card — titles genuinely sitting in BOTH sides' own
+  // to-watch queue right now, not a guessed/recommended overlap. Fetched
+  // once in full per candidate, same shape as genreContent above (small
+  // enough that pagination would be overkill — a real queue intersection
+  // between two people is realistically a handful of titles at most).
+  const [mutualToWatch, setMutualToWatch] = useState<LightweightContent[]>([]);
+  const [mutualToWatchLoading, setMutualToWatchLoading] = useState(false);
   // Social Overlap card's mutual-connections grid — paginated/appendable
   // (unlike genreContent above, fetched once in full) so scrolling the card
   // can keep loading more from the bottom, Instagram-feed style.
@@ -219,6 +238,14 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
   // rating detail normally occupies. Tapping the pill again, an arrow, or
   // any poster/grid entry closes it back.
   const [showAllGenres, setShowAllGenres] = useState(false);
+  // A "See All" grid, direct ask — a shared genre like Drama can easily
+  // have 50-100+ mutually-rated titles (getSharedGenreContent has no cap),
+  // and one-at-a-time coverflow swiping through that many is genuinely bad
+  // UX for finding a specific one. Kept additive rather than restructuring
+  // the card: the coverflow stays the default browse experience for the
+  // common case, this only ever shows once a genre's own count crosses
+  // SEE_ALL_POSTER_THRESHOLD.
+  const [seeAllPostersVisible, setSeeAllPostersVisible] = useState(false);
   // scaleY (not translateY) — the whole grid grows open from its own
   // vertical center outward, rather than sliding down from above. RN scale
   // transforms are center-origin by default, so no extra transform-origin
@@ -260,6 +287,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
     genreSlideDir.current = dir;
     setGenreIndex((prev) => (prev + dir + total) % total);
     setShowAllGenres(false);
+    setSeeAllPostersVisible(false);
   };
 
   useEffect(() => {
@@ -285,6 +313,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
     setGenreIndex(0);
     setSelectedPosterId(null);
     setShowAllGenres(false);
+    setSeeAllPostersVisible(false);
   }, [candidate.user._id]);
 
   // prefetchMatchAnalysis (not analyzeMatchWithUser directly) — if
@@ -408,6 +437,28 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidate.user._id, candidate.contentType, sharedGenreNames.join(","), shouldLoadExtras, isFreeDeck]);
 
+  // "Watch Together" — same shouldLoadExtras/isFreeDeck gate as every other
+  // extra card, fetched once per candidate.
+  useEffect(() => {
+    setMutualToWatch([]);
+    if (!shouldLoadExtras || isFreeDeck) return;
+    let cancelled = false;
+    setMutualToWatchLoading(true);
+    getMutualToWatch(candidate.user._id)
+      .then((items) => {
+        if (!cancelled) setMutualToWatch(items);
+      })
+      .catch(() => {
+        if (!cancelled) setMutualToWatch([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMutualToWatchLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [candidate.user._id, shouldLoadExtras, isFreeDeck]);
+
   // First page of the mutual-connections grid, fetched once per candidate —
   // same trigger (and same shouldLoadExtras gate) as the
   // getSharedGenreContent effect above. Further pages load on demand via
@@ -506,6 +557,41 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
         genreDetail: { marginTop: 14 },
         genreDetailLoading: { flexDirection: "row", alignItems: "center", gap: 8 },
         genreEmptyText: { fontSize: 12.5, color: colors.placeholder, lineHeight: 18 },
+        seeAllPostersLink: { alignSelf: "center", marginTop: 8 },
+        watchTogetherHint: { fontSize: 12.5, color: colors.placeholder, lineHeight: 18, marginBottom: 12 },
+        seeAllPostersText: { fontSize: 12, fontFamily: fonts.bold, textDecorationLine: "underline" },
+        // The See All modal itself — a plain grid, not trying to match the
+        // coverflow's own visual language, since this is purely a fast-scan
+        // utility for a genre with too many titles to swipe through one at
+        // a time (SEE_ALL_POSTER_THRESHOLD).
+        seeAllOverlay: { flex: 1, backgroundColor: colors.base100 },
+        seeAllHeader: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          paddingBottom: 12,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.border,
+        },
+        seeAllTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
+        seeAllClose: { padding: 6 },
+        seeAllGrid: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 24 },
+        seeAllTile: { padding: 4 },
+        seeAllPoster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 8, backgroundColor: colors.base200 },
+        seeAllRatingBadge: {
+          position: "absolute",
+          bottom: 4,
+          right: 4,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 2,
+          backgroundColor: "rgba(0,0,0,0.65)",
+          borderRadius: 8,
+          paddingHorizontal: 5,
+          paddingVertical: 2,
+        },
+        seeAllRatingText: { color: "#fff", fontFamily: fonts.bold, fontSize: 10 },
         // A thin, fixed-position divider between the poster row and the
         // reserved detail area below it — a plain sibling, not part of
         // posterDetailReserve, so it can never shift regardless of which of
@@ -758,6 +844,13 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
                     }}
                     leadingEmptySlot
                   />
+                  {genreItems.length > SEE_ALL_POSTER_THRESHOLD && (
+                    <Pressable style={styles.seeAllPostersLink} onPress={() => setSeeAllPostersVisible(true)}>
+                      <Text style={[styles.seeAllPostersText, { color: currentColor }]}>
+                        {t("See all {{count}}", { count: genreItems.length })}
+                      </Text>
+                    </Pressable>
+                  )}
                   <View style={styles.posterDivider} />
                   <View style={styles.posterDetailReserve}>
                     {/* Always mounted, opacity-only — see the hintOpacity
@@ -840,6 +933,66 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
                 </Text>
               )}
             </View>
+
+            <Modal visible={seeAllPostersVisible} animationType="slide" onRequestClose={() => setSeeAllPostersVisible(false)}>
+              <View style={[styles.seeAllOverlay, { paddingTop: insetsTop }]}>
+                <View style={styles.seeAllHeader}>
+                  <Text style={styles.seeAllTitle}>{currentGenre}</Text>
+                  <Pressable style={styles.seeAllClose} onPress={() => setSeeAllPostersVisible(false)} hitSlop={8}>
+                    <Ionicons name="close" size={22} color={colors.baseContent} />
+                  </Pressable>
+                </View>
+                <FlatList
+                  data={genreItems ?? []}
+                  keyExtractor={(item) => item._id}
+                  numColumns={SEE_ALL_COLUMNS}
+                  contentContainerStyle={styles.seeAllGrid}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={[styles.seeAllTile, { width: screenWidth / SEE_ALL_COLUMNS }]}
+                      onPress={() => {
+                        setSelectedPosterId(item._id);
+                        setShowAllGenres(false);
+                        setSeeAllPostersVisible(false);
+                      }}
+                    >
+                      <View>
+                        {item.poster_path ? (
+                          <Image source={{ uri: `${SEE_ALL_POSTER_BASE}${item.poster_path}` }} style={styles.seeAllPoster} />
+                        ) : (
+                          <View style={styles.seeAllPoster} />
+                        )}
+                        {item.myRating != null && (
+                          <View style={styles.seeAllRatingBadge}>
+                            <Ionicons name="star" size={9} color={colors.warning} />
+                            <Text style={styles.seeAllRatingText}>{formatFiveScale(item.myRating)}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </Pressable>
+                  )}
+                />
+              </View>
+            </Modal>
+          </View>
+        ),
+      });
+    }
+
+    // "Watch Together" — genuinely sitting on BOTH sides' own to-watch
+    // queue right now (getMutualToWatch), not a recommendation guess.
+    // Omitted entirely when there's no real overlap, same rule every other
+    // card here follows — no "nothing in common yet" empty state to build.
+    if (!mutualToWatchLoading && mutualToWatch.length > 0) {
+      list.push({
+        key: "watch-together",
+        title: t("Watch Together"),
+        render: () => (
+          <View>
+            <Text style={styles.watchTogetherHint}>
+              {t("Already on both your watchlists — you could sync up and watch these together.")}
+            </Text>
+            <PosterRow items={mutualToWatch} />
           </View>
         ),
       });
@@ -935,6 +1088,11 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
     valueTranslateY,
     showAllGenres,
     gridOpacity,
+    seeAllPostersVisible,
+    screenWidth,
+    insetsTop,
+    mutualToWatch,
+    mutualToWatchLoading,
     mutualConnections,
     mutualLoadingMore,
     mutualInitialLoading,

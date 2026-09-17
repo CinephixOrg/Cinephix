@@ -128,6 +128,11 @@ export const API_ROUTES = {
     GET_MESSAGES: (slug) => `${API_BASE_URL}/groups/${slug}/messages`,
     SEND_MESSAGE: (slug) => `${API_BASE_URL}/groups/${slug}/messages`,
   },
+
+  // Landing page's own "notify me at launch" form
+  WAITLIST: {
+    JOIN: `${API_BASE_URL}/waitlist`,
+  },
 };
 
 /**
