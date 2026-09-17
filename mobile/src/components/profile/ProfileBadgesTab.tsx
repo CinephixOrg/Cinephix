@@ -2,30 +2,11 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import {
-  getGenreBadges,
-  getVolumeBadges,
-  getRatingCountBadge,
-  getReviewCountBadge,
-  getListCountBadge,
-  getFollowersBadge,
-  getInfluencerBadge,
-  getPodiumBadge,
-  getFirstSyncBadge,
-  getHighMatchBadge,
-  getSyncExplorerBadge,
-  getFoundingCinephileBadge,
-  getMembershipBadge,
-  getStreakBadge,
-  getTimeTravelerBadge,
-  getEclecticTasteBadge,
-  getDayOneViewerBadge,
-  getHiddenGemBadge,
-  getPollParticipantBadge,
-  getHalloweenViewerBadge,
-  getNewYearViewerBadge,
-  getAllBadgesForUser,
-} from "../../api/badgeService";
+import { getAllBadgesForUser } from "../../api/badgeService";
+import { createShare, getSharedBadges } from "../../api/shareService";
+import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import { useRecentShares } from "../../context/RecentSharesContext";
 import { GENRE_BADGE_DEFINITIONS } from "../../data/genreBadgeDefinitions";
 import { VOLUME_BADGE_DEFINITIONS, VOLUME_TIER_ORDER } from "../../data/volumeBadgeDefinitions";
 import { ACTIVITY_BADGE_DEFINITIONS, ACTIVITY_TIER_ORDER } from "../../data/activityBadgeDefinitions";
@@ -40,8 +21,8 @@ import {
 } from "../../data/loyaltyBadgeDefinitions";
 import { SEASONAL_BADGE_DEFINITIONS } from "../../data/seasonalBadgeDefinitions";
 import { SPECIAL_BADGE_DEFINITIONS } from "../../data/specialBadgeDefinitions";
-import BadgeDetailModal, { type BadgeDetailData, type BadgeTierOption } from "./BadgeDetailModal";
-import type { ActivityBadgeResponse, GenreBadge, GenreBadgesResponse, VolumeBadge, VolumeBadgesResponse, VolumeTier } from "../../types";
+import BadgeDetailModal, { badgeShareTargetKey, type BadgeDetailData, type BadgeShareTarget, type BadgeTierOption } from "./BadgeDetailModal";
+import type { ActivityBadgeResponse, AllBadgesResponse, GenreBadge, VolumeBadge, VolumeTier } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
@@ -191,6 +172,8 @@ function buildLadderTile(
     displayLabel = label,
     progressKey,
     unlockKey,
+    shareFamily,
+    shareKey,
     titleFor = (word, lbl) => `${word} ${lbl}`,
     buildEarnedText = (word, lbl) => t("You've earned the {{tier}} {{label}} badge!", { tier: word, label: lbl }),
     buildMaxedText = (word, lbl) =>
@@ -214,6 +197,14 @@ function buildLadderTile(
     displayLabel?: string;
     progressKey: string;
     unlockKey: string;
+    // The badgeFamily/badgeKey createShare expects for THIS ladder — key is
+    // the API's own returned key (e.g. ratingCount's badges report key
+    // "ratings", not "ratingCount"), never assumed equal to the family.
+    // Omitted only while the badge data hasn't loaded yet (count===0 with
+    // no real fetch back), in which case nothing's earned anyway and no
+    // rung gets a shareTarget.
+    shareFamily: string;
+    shareKey?: string;
     // Overrides how a rung's own title is built from its rank word + the
     // ladder's own `label` — every ladder besides streak wants "{{word}}
     // {{label}}" (e.g. "Amateur Movies"), but streak's own tier "words"
@@ -253,7 +244,14 @@ function buildLadderTile(
       description = t(unlockKey, { count, label, remaining: Math.max(threshold - count, 0), tier: word });
     }
 
-    return { tier: tierName, image: tierImages[tierName], title: titleFor(word, label), description, earned: tierIsEarned };
+    return {
+      tier: tierName,
+      image: tierImages[tierName],
+      title: titleFor(word, label),
+      description,
+      earned: tierIsEarned,
+      shareTarget: tierIsEarned && shareKey ? { family: shareFamily, key: shareKey, tier: tierName } : undefined,
+    };
   });
 
   const active = tierOptions[activeIndex];
@@ -306,11 +304,12 @@ interface Props {
   screenFocused?: boolean;
   // When set, this is the public-profile Badges tab for that user instead
   // of the viewer's own — everything below renders identically either way
-  // (same tiles, same tap-to-open detail popup), only `load()` changes:
-  // one bulk `getAllBadgesForUser` request instead of the 20 separate
-  // own-profile calls (see badgeService.ts's own comment on why that's a
-  // dedicated endpoint). PublicProfileCategoryTabs passes this straight
-  // through; there is no own-profile behavior change when omitted.
+  // (same tiles, same tap-to-open detail popup). Omitted for your own
+  // profile, in which case `load()` below falls back to the signed-in
+  // user's own id — both paths hit the exact same bulk `getAllBadgesForUser`
+  // endpoint now (see that function's own comment: this used to fire 20
+  // separate own-profile requests instead, the real reason this tab loaded
+  // noticeably slower than every other one).
   userId?: string;
 }
 
@@ -327,6 +326,14 @@ interface Props {
 function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const { announce: announceNewShare } = useRecentShares();
+  const targetUserId = userId ?? user?._id;
+  // Sharing a badge always shares the CALLER's own — only meaningful when
+  // this tab is actually showing the signed-in user's own profile, not
+  // someone else's public one.
+  const isOwnProfile = !userId || userId === user?._id;
   const { width: screenWidth } = useWindowDimensions();
   const [genreBadgesByKey, setGenreBadgesByKey] = useState<Record<string, GenreBadge> | null>(null);
   const [thresholds, setThresholds] = useState({ devotee: 15, master: 40 });
@@ -340,126 +347,52 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
   const [specialData, setSpecialData] = useState<Record<string, ActivityBadgeResponse> | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTile, setSelectedTile] = useState<BadgeDetailData | null>(null);
+  const [sharedKeys, setSharedKeys] = useState<Set<string>>(new Set());
+  const [sharingKey, setSharingKey] = useState<string | null>(null);
   const lastFetchedRef = useRef(0);
 
-  // Shared by both fetch paths below — same 8 setState calls regardless of
-  // whether the 20 fields came from 20 own-profile requests or one bulk
-  // public-profile response.
-  const applyResults = useCallback(
-    (
-      genreRes: GenreBadgesResponse,
-      volumeRes: VolumeBadgesResponse,
-      ratingRes: ActivityBadgeResponse,
-      reviewRes: ActivityBadgeResponse,
-      listRes: ActivityBadgeResponse,
-      followersRes: ActivityBadgeResponse,
-      influencerRes: ActivityBadgeResponse,
-      podiumRes: ActivityBadgeResponse,
-      firstSyncRes: ActivityBadgeResponse,
-      highMatchRes: ActivityBadgeResponse,
-      syncExplorerRes: ActivityBadgeResponse,
-      foundingRes: ActivityBadgeResponse,
-      membershipRes: ActivityBadgeResponse,
-      streakRes: ActivityBadgeResponse,
-      timeTravelerRes: ActivityBadgeResponse,
-      eclecticTasteRes: ActivityBadgeResponse,
-      dayOneViewerRes: ActivityBadgeResponse,
-      hiddenGemRes: ActivityBadgeResponse,
-      pollParticipantRes: ActivityBadgeResponse,
-      halloweenViewerRes: ActivityBadgeResponse,
-      newYearViewerRes: ActivityBadgeResponse
-    ) => {
-      const genreMap: Record<string, GenreBadge> = {};
-      genreRes.badges.forEach((b) => {
-        genreMap[b.key] = b;
-      });
-      setGenreBadgesByKey(genreMap);
-      setThresholds({ devotee: genreRes.devoteeThreshold, master: genreRes.masterThreshold });
+  // One bulk getAllBadgesForUser response → the same 8 setState calls this
+  // tab has always made, just no longer branching on whose id it is.
+  const applyResults = useCallback((res: AllBadgesResponse) => {
+    const genreMap: Record<string, GenreBadge> = {};
+    res.genre.badges.forEach((b) => {
+      genreMap[b.key] = b;
+    });
+    setGenreBadgesByKey(genreMap);
+    setThresholds({ devotee: res.genre.devoteeThreshold, master: res.genre.masterThreshold });
 
-      const volumeMap: Record<string, VolumeBadge> = {};
-      volumeRes.badges.forEach((b) => {
-        volumeMap[b.key] = b;
-      });
-      setVolumeBadgesByKey(volumeMap);
-      setVolumeTiers(volumeRes.tiers);
+    const volumeMap: Record<string, VolumeBadge> = {};
+    res.volume.badges.forEach((b) => {
+      volumeMap[b.key] = b;
+    });
+    setVolumeBadgesByKey(volumeMap);
+    setVolumeTiers(res.volume.tiers);
 
-      setActivityData({ ratingCount: ratingRes, reviewCount: reviewRes, listCount: listRes });
-      setSocialData({ followers: followersRes, influencer: influencerRes, podium: podiumRes });
-      setSyncData({ firstSync: firstSyncRes, highMatch: highMatchRes, syncExplorer: syncExplorerRes });
-      setLoyaltyData({ founding: foundingRes, membership: membershipRes, streak: streakRes });
-      setSeasonalData({ halloweenViewer: halloweenViewerRes, newYearViewer: newYearViewerRes });
-      setSpecialData({
-        timeTraveler: timeTravelerRes,
-        eclecticTaste: eclecticTasteRes,
-        dayOneViewer: dayOneViewerRes,
-        hiddenGem: hiddenGemRes,
-        pollParticipant: pollParticipantRes,
-      });
+    setActivityData({ ratingCount: res.ratingCount, reviewCount: res.reviewCount, listCount: res.listCount });
+    setSocialData({ followers: res.followers, influencer: res.influencer, podium: res.podium });
+    setSyncData({ firstSync: res.firstSync, highMatch: res.highMatch, syncExplorer: res.syncExplorer });
+    setLoyaltyData({ founding: res.founding, membership: res.membership, streak: res.streak });
+    setSeasonalData({ halloweenViewer: res.halloweenViewer, newYearViewer: res.newYearViewer });
+    setSpecialData({
+      timeTraveler: res.timeTraveler,
+      eclecticTaste: res.eclecticTaste,
+      dayOneViewer: res.dayOneViewer,
+      hiddenGem: res.hiddenGem,
+      pollParticipant: res.pollParticipant,
+    });
 
-      lastFetchedRef.current = Date.now();
-    },
-    []
-  );
+    lastFetchedRef.current = Date.now();
+  }, []);
 
   const load = useCallback(
     (withSpinner: boolean) => {
+      if (!targetUserId) return () => {};
       let cancelled = false;
       if (withSpinner) setLoading(true);
 
-      const request = userId
-        ? getAllBadgesForUser(userId).then((res) => {
-            return [
-              res.genre,
-              res.volume,
-              res.ratingCount,
-              res.reviewCount,
-              res.listCount,
-              res.followers,
-              res.influencer,
-              res.podium,
-              res.firstSync,
-              res.highMatch,
-              res.syncExplorer,
-              res.founding,
-              res.membership,
-              res.streak,
-              res.timeTraveler,
-              res.eclecticTaste,
-              res.dayOneViewer,
-              res.hiddenGem,
-              res.pollParticipant,
-              res.halloweenViewer,
-              res.newYearViewer,
-            ] as const;
-          })
-        : Promise.all([
-            getGenreBadges(),
-            getVolumeBadges(),
-            getRatingCountBadge(),
-            getReviewCountBadge(),
-            getListCountBadge(),
-            getFollowersBadge(),
-            getInfluencerBadge(),
-            getPodiumBadge(),
-            getFirstSyncBadge(),
-            getHighMatchBadge(),
-            getSyncExplorerBadge(),
-            getFoundingCinephileBadge(),
-            getMembershipBadge(),
-            getStreakBadge(),
-            getTimeTravelerBadge(),
-            getEclecticTasteBadge(),
-            getDayOneViewerBadge(),
-            getHiddenGemBadge(),
-            getPollParticipantBadge(),
-            getHalloweenViewerBadge(),
-            getNewYearViewerBadge(),
-          ] as const);
-
-      request
-        .then((results) => {
-          if (cancelled || !results) return;
-          applyResults(...results);
+      getAllBadgesForUser(targetUserId)
+        .then((res) => {
+          if (!cancelled) applyResults(res);
         })
         .finally(() => {
           if (!cancelled && withSpinner) setLoading(false);
@@ -468,10 +401,53 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         cancelled = true;
       };
     },
-    [userId, applyResults]
+    [targetUserId, applyResults]
   );
 
   useEffect(() => load(true), [load]);
+
+  // Own-profile only — fetches once per mount (matching `load`'s own
+  // shape), not on every tab revisit: unlike badge progress, a badge's
+  // shared-or-not state can't silently go stale from something ELSE
+  // changing, only from a share this same tab's own handleShare below
+  // already updates locally.
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    let cancelled = false;
+    getSharedBadges()
+      .then((keys) => {
+        if (!cancelled) setSharedKeys(new Set(keys));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile]);
+
+  const handleShare = useCallback(
+    async (target: BadgeShareTarget) => {
+      const key = badgeShareTargetKey(target);
+      if (sharingKey === key || sharedKeys.has(key)) return;
+      setSharingKey(key);
+      try {
+        const share = await createShare({ type: "badge", badgeFamily: target.family as any, badgeKey: target.key, badgeTier: target.tier });
+        announceNewShare(share);
+        setSharedKeys((prev) => new Set(prev).add(key));
+        showToast(t("Shared to Medya"));
+      } catch (err: any) {
+        // 409 = already shared (e.g. a race with the earn popup) — same
+        // end state the user wants, so this still marks it shared.
+        if (err?.response?.status === 409) {
+          setSharedKeys((prev) => new Set(prev).add(key));
+        } else {
+          showToast(t("Something went wrong. Please try again."));
+        }
+      } finally {
+        setSharingKey(null);
+      }
+    },
+    [sharingKey, sharedKeys, announceNewShare, showToast, t]
+  );
 
   // This tab stays mounted once visited (ProfileCategoryTabs keeps every
   // category alive so switching back is instant) — without this, the one
@@ -513,6 +489,7 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
               genre: def.label,
             }),
             earned: tier === "devotee" || tier === "master",
+            shareTarget: tier === "devotee" || tier === "master" ? { family: "genre", key: def.key, tier: "devotee" } : undefined,
           } as BadgeDetailData,
         },
         {
@@ -528,6 +505,7 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
               genre: def.label,
             }),
             earned: tier === "master",
+            shareTarget: tier === "master" ? { family: "genre", key: def.key, tier: "master" } : undefined,
           } as BadgeDetailData,
         },
       ];
@@ -547,6 +525,8 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         label: t(def.label),
         progressKey: VOLUME_PROGRESS_KEY,
         unlockKey: VOLUME_UNLOCK_KEY,
+        shareFamily: "volume",
+        shareKey: badge?.key,
       });
       return { id: def.key, ...built };
     });
@@ -566,6 +546,8 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         label: t(def.label),
         progressKey: ACTIVITY_PROGRESS_KEY,
         unlockKey: ACTIVITY_UNLOCK_KEY,
+        shareFamily: def.family,
+        shareKey: badge?.key,
       });
       return { id: def.family, ...built };
     });
@@ -585,6 +567,8 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         label: t(def.label),
         progressKey: ACTIVITY_PROGRESS_KEY,
         unlockKey: ACTIVITY_UNLOCK_KEY,
+        shareFamily: def.family,
+        shareKey: badge?.key,
       });
       return { id: def.family, ...built };
     });
@@ -630,7 +614,13 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         image: def.image,
         label: title,
         earned,
-        detail: { image: def.image, title, description, earned } as BadgeDetailData,
+        detail: {
+          image: def.image,
+          title,
+          description,
+          earned,
+          shareTarget: earned && badge ? { family: def.family, key: badge.key, tier: badge.tier! } : undefined,
+        } as BadgeDetailData,
       };
     });
   }, [syncData, t]);
@@ -655,7 +645,13 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
       image: FOUNDING_CINEPHILE_DEFINITION.image,
       label: title,
       earned,
-      detail: { image: FOUNDING_CINEPHILE_DEFINITION.image, title, description, earned } as BadgeDetailData,
+      detail: {
+        image: FOUNDING_CINEPHILE_DEFINITION.image,
+        title,
+        description,
+        earned,
+        shareTarget: earned && badge ? { family: "founding", key: badge.key, tier: badge.tier! } : undefined,
+      } as BadgeDetailData,
     };
   }, [loyaltyData, t]);
 
@@ -673,6 +669,8 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
       displayLabel: t("Membership"),
       progressKey: ACTIVITY_PROGRESS_KEY,
       unlockKey: ACTIVITY_UNLOCK_KEY,
+      shareFamily: "membership",
+      shareKey: badge?.key,
     });
     return { id: "membership", ...built };
   }, [loyaltyData, t]);
@@ -703,6 +701,8 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
       titleFor: (word) => word,
       buildEarnedText: (word) => t("You've earned the {{tier}} badge!", { tier: word }),
       buildMaxedText: (word) => t("You're a true cinephile! You've earned the {{tier}} badge — the highest tier!", { tier: word }),
+      shareFamily: "streak",
+      shareKey: badge?.key,
     });
     return { id: "streak", ...built };
   }, [loyaltyData, t]);
@@ -733,7 +733,13 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         image: def.image,
         label: title,
         earned,
-        detail: { image: def.image, title, description, earned } as BadgeDetailData,
+        detail: {
+          image: def.image,
+          title,
+          description,
+          earned,
+          shareTarget: earned && badge ? { family: def.family, key: badge.key, tier: badge.tier! } : undefined,
+        } as BadgeDetailData,
       };
     });
   }, [seasonalData, t]);
@@ -781,7 +787,13 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         image: def.image,
         label: title,
         earned,
-        detail: { image: def.image, title, description, earned } as BadgeDetailData,
+        detail: {
+          image: def.image,
+          title,
+          description,
+          earned,
+          shareTarget: earned && badge ? { family: def.family, key: badge.key, tier: badge.tier! } : undefined,
+        } as BadgeDetailData,
       };
     });
   }, [specialData, t]);
@@ -912,7 +924,14 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         ))}
       </View>
 
-      <BadgeDetailModal visible={!!selectedTile} onClose={() => setSelectedTile(null)} badge={selectedTile} />
+      <BadgeDetailModal
+        visible={!!selectedTile}
+        onClose={() => setSelectedTile(null)}
+        badge={selectedTile}
+        sharedKeys={isOwnProfile ? sharedKeys : undefined}
+        sharingKey={sharingKey}
+        onShare={isOwnProfile ? handleShare : undefined}
+      />
     </View>
   );
 }

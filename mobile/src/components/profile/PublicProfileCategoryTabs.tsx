@@ -6,13 +6,22 @@ import FavoriteCard from "./FavoriteCard";
 import ProfileSharingsTab from "./ProfileSharingsTab";
 import ProfileCinegraphsTab from "./ProfileCinegraphsTab";
 import ProfileBadgesTab from "./ProfileBadgesTab";
+import ProfileFaqTab from "./ProfileFaqTab";
 import SyncScoreCard from "./SyncScoreCard";
 import CineGraphSubTabSwitcher, { type CineGraphSubTab } from "./CineGraphSubTabSwitcher";
 import type { CineGraphData, Favorites, Share } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "react-i18next";
 
-export type Category = "sharings" | "favorites" | "cinegraph" | "badges";
+export type Category = "sharings" | "favorites" | "cinegraph" | "badges" | "faq";
+
+// The official Cinephix account's own tab set — direct ask: Favorites/
+// CineGraph/Badges are all meaningless for a bot account (it doesn't
+// watch or rate anything), so its profile shows just Sharings + a real
+// in-app FAQ (ProfileFaqTab.tsx) instead of the normal 4 tabs every real
+// user's public profile gets.
+const OFFICIAL_CATEGORIES: Category[] = ["sharings", "faq"];
+const DEFAULT_CATEGORIES: Category[] = ["sharings", "favorites", "cinegraph", "badges"];
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -32,14 +41,20 @@ interface Props {
   // renders content immediately rather than firing a second request and
   // sitting on a spinner after the profile itself already loaded.
   initialShares?: Share[];
+  // Forwarded straight through to ProfileSharingsTab.tsx — see
+  // profile/index.tsx's own comment (the own-profile equivalent of this
+  // screen) for the full "why."
+  nearBottomRef?: React.MutableRefObject<(() => void) | null>;
+  // Swaps the whole tab set to OFFICIAL_CATEGORIES above when true.
+  isOfficial?: boolean;
 }
 
-// Declaration order is tab order, left to right.
 const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
   sharings: { active: "grid", inactive: "grid-outline" },
   favorites: { active: "heart", inactive: "heart-outline" },
   cinegraph: { active: "pie-chart", inactive: "pie-chart-outline" },
   badges: { active: "ribbon", inactive: "ribbon-outline" },
+  faq: { active: "help-circle", inactive: "help-circle-outline" },
 };
 
 // Public-profile counterpart to ProfileCategoryTabs.tsx — Sharings/
@@ -54,10 +69,19 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
 // ProfileBadgesTab.tsx wholesale (passing `userId`) rather than a parallel
 // component — see that file's own `userId` prop comment for why one
 // component serves both profiles.
-export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId, initialCategory, initialShares }: Props) {
+export default function PublicProfileCategoryTabs({
+  favorites,
+  cineGraph,
+  userId,
+  initialCategory,
+  initialShares,
+  nearBottomRef,
+  isOfficial,
+}: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
+  const categories = isOfficial ? OFFICIAL_CATEGORIES : DEFAULT_CATEGORIES;
 
   const favoritesCardWidth = (screenWidth - FAVORITES_PADDING * 2 - FAVORITES_GAP * (FAVORITES_COLUMNS - 1)) / FAVORITES_COLUMNS;
   const favoritesRailHeight = Math.round(favoritesCardWidth * 1.5) + 60;
@@ -79,7 +103,9 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
     [colors]
   );
 
-  const [category, setCategory] = useState<Category>(initialCategory || "sharings");
+  const [category, setCategory] = useState<Category>(
+    initialCategory && categories.includes(initialCategory) ? initialCategory : "sharings"
+  );
   const [cinegraphSubTab, setCinegraphSubTab] = useState<CineGraphSubTab>("movie");
 
   // Same keep-alive as the own-profile tabs: a visited tab stays mounted and
@@ -99,7 +125,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
   return (
     <>
       <View style={styles.tabRow}>
-        {(Object.keys(CATEGORY_ICON) as Category[]).map((key) => {
+        {categories.map((key) => {
           const isActive = category === key;
           const icon = CATEGORY_ICON[key];
           return (
@@ -116,7 +142,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
 
       {hasVisited("cinegraph") && cineGraph && (
         <View style={visibility("cinegraph")}>
-          <SyncScoreCard userId={userId} />
+          <SyncScoreCard userId={userId} type={cinegraphSubTab} />
           <View style={styles.subFilterRow}>
             <CineGraphSubTabSwitcher activeTab={cinegraphSubTab} onChange={setCinegraphSubTab} />
           </View>
@@ -131,6 +157,7 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
               basePath={`/user/${userId}`}
               active={category === "sharings"}
               initialShares={initialShares}
+              nearBottomRef={nearBottomRef}
             />
           </View>
         )}
@@ -191,6 +218,12 @@ export default function PublicProfileCategoryTabs({ favorites, cineGraph, userId
         {hasVisited("badges") && (
           <View style={visibility("badges")}>
             <ProfileBadgesTab userId={userId} active={category === "badges"} />
+          </View>
+        )}
+
+        {hasVisited("faq") && (
+          <View style={visibility("faq")}>
+            <ProfileFaqTab />
           </View>
         )}
       </View>

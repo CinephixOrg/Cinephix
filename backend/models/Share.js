@@ -76,12 +76,26 @@ const shareSchema = new Schema(
     // type: "poll" — closed-option only (never open-ended/comment-inviting,
     // since this app has no comment-writing feature); Instagram-style live
     // percentage results, one vote per user, revoting swaps the vote rather
-    // than adding a second one.
+    // than adding a second one. `question` is left empty for a user-created
+    // watchlist poll (mobile synthesizes a translated fixed question
+    // client-side from the presence of `contentId` on the first option,
+    // ShareCard.tsx — storing one fixed English string here would fight
+    // per-viewer i18n) but always set for the official account's own
+    // text-only polls (officialContentService.js).
     pollData: {
       question: String,
       options: [
         {
           text: String,
+          // contentId/contentType/posterUrl — a watchlist-poll option only
+          // (createShare's own "poll" branch, shareController.js); absent
+          // for the official account's plain text-option polls. `title`
+          // doubles into `text` for these too, so any code that only knows
+          // about `text` (e.g. classifyOfficialDoc's own option-shape
+          // checks) still works unmodified.
+          contentId: String,
+          contentType: { type: String, enum: ["movie", "series"] },
+          posterUrl: String,
           votes: [{ type: Schema.Types.ObjectId, ref: "User" }],
         },
       ],

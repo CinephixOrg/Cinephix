@@ -2,6 +2,19 @@ export type ContentType = "movie" | "series";
 
 export type AccountTier = "free" | "plus" | "premium" | "dev";
 
+// Single active "Currently Watching" status — see backend's User.js own
+// field comment for the full TTL/auto-clear design. `startedAt` is an ISO
+// string here (over the wire), checked client-side against
+// CURRENTLY_WATCHING_TTL_MS (ContentDetailScreen.tsx) the same way the
+// server does, purely for local button-state display — the server stays
+// authoritative for the actual feed (GET /feed/currently-watching already
+// filters by its own TTL).
+export interface CurrentlyWatching {
+  itemId: string;
+  itemType: ContentType;
+  startedAt: string;
+}
+
 export interface User {
   _id: string;
   username: string;
@@ -10,6 +23,7 @@ export interface User {
   googleId?: string | null;
   isOAuthUser?: boolean;
   accountTier?: AccountTier;
+  currentlyWatching?: CurrentlyWatching | null;
   token: string;
 }
 
@@ -442,8 +456,10 @@ export interface CustomList {
   description: string;
   isPublic: boolean;
   items: CustomListItem[];
-  // Only hydrated by GET /lists/me (mirrors /discover, /popular) — absent
-  // (not just empty) from the create/update/detail responses.
+  // Hydrated by GET /lists/me (mirrors /discover, /popular) as a 5-item
+  // preview, and by GET /lists/:id (ListDetailScreen's own fetch) as EVERY
+  // item — absent (not just empty) from the create/update responses, which
+  // never return items at all in their own response shape.
   previewItems?: ListPreviewItem[];
   likeCount: number;
   order: number;
@@ -459,14 +475,21 @@ export interface CustomListDetail extends Omit<CustomList, "owner"> {
   owner: { _id: string; username: string; profile_pic_url?: string };
 }
 
-// Lightweight, bulk-hydrated {title, poster_path} for the first 5 items of
-// a list — returned by /discover and /popular for the Home-tab preview
-// cards, not the full per-item content shape ContentCard needs.
+// Lightweight, bulk-hydrated {title, poster_path} — either the first 5
+// items of a list (/discover, /popular, for the Home-tab preview cards) or
+// every item (/lists/:id, for ListDetailScreen's own grid) depending on the
+// caller; not the full per-item content shape ContentCard needs.
 export interface ListPreviewItem {
   itemId: string;
   itemType: ContentType;
   title: string;
   poster_path?: string;
+  // Present since hydratePreviewItems started projecting these too (added
+  // for ListDetailScreen's own CollectionEntry mapping — Release-date sort,
+  // popularity as a search tie-break); /discover, /popular, /for-content
+  // don't read either.
+  release_date?: string | null;
+  popularity?: number;
 }
 
 export interface MatchUser {
@@ -540,6 +563,14 @@ export interface MatchWithUserResult {
     diversity: number;
     bonus: number;
   };
+  // Added so SyncScoreCard.tsx's own synthesized SyncCandidate can carry
+  // it through to MatchAnalysisPanel — without it, the Shared Genres/
+  // Shared Favorites/Social Overlap cards (all gated on matchInsights)
+  // silently never appeared for the profile entry point, only for the
+  // Sync page's own getSyncCandidates-backed deck. computeMatchBreakdown
+  // (backend matchController.js) already computes this at zero extra
+  // query cost — getMatchWithUser used to just not return it.
+  matchInsights?: MatchInsights;
 }
 
 export interface MatchAnalysis {
@@ -858,7 +889,7 @@ export type ImportResult = ImportSummary | ImportFailure;
 
 export type RoomType = "dm" | "group";
 
-export type MessageType = "text" | "recommendation" | "analysis_share" | "profile_share";
+export type MessageType = "text" | "recommendation" | "analysis_share" | "profile_share" | "list_share";
 
 export interface MessageSender {
   _id: string;
@@ -893,6 +924,15 @@ export interface Message {
     username: string;
     profile_pic_url?: string | null;
     accountTier?: AccountTier | null;
+  };
+  // "check out this list" shares — denormalized at send time (see
+  // backend/models/Message.js), same reasoning as profileData above: still
+  // renders correctly even if the list is later renamed or resized.
+  listData?: {
+    listId: string;
+    name: string;
+    itemCount: number;
+    previewPosters: string[];
   };
   createdAt: string;
   // Local-only fields, never sent by the server.
@@ -1181,6 +1221,14 @@ export type OfficialContentCategory = "trivia" | "tip" | "highlight" | "on_this_
 
 export interface PollOption {
   text: string;
+  // Set only on a user-created "what should I watch" poll (createShare's
+  // own "poll" branch, shareController.js) — absent on the official
+  // account's plain text-option polls. Presence of `contentId` on the
+  // first option is what ShareCard.tsx uses to pick the poster-grid layout
+  // over the original text-row one.
+  contentId?: string;
+  contentType?: ContentType;
+  posterUrl?: string | null;
   voteCount: number;
   // First up to 5 voters for this option, same shape/purpose as Share's own
   // topViewers — only populated once results are visible (pre-vote option

@@ -239,7 +239,7 @@ export const markAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/conversations/:id/messages  (REST fallback)
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { text, type = "text", contentId, contentType, contentData, analysisData, profileData } = req.body;
+  const { text, type = "text", contentId, contentType, contentData, analysisData, profileData, listData } = req.body;
 
   // Validate message based on type
   if (type === "recommendation") {
@@ -252,6 +252,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
   } else if (type === "profile_share") {
     if (!profileData?.userId || !profileData?.username)
       return sendError(res, "Missing profile data", 400);
+  } else if (type === "list_share") {
+    if (!listData?.listId || !listData?.name) return sendError(res, "Missing list data", 400);
   } else {
     // text message
     if (!text?.trim() || text.length > 1000)
@@ -325,32 +327,44 @@ export const sendMessage = asyncHandler(async (req, res) => {
       profile_pic_url: profileData.profile_pic_url || null,
       accountTier: profileData.accountTier || null,
     };
+  } else if (type === "list_share") {
+    messageData.listData = {
+      listId: listData.listId,
+      name: listData.name,
+      itemCount: listData.itemCount || 0,
+      previewPosters: listData.previewPosters || [],
+    };
   }
 
   const message = await Message.create(messageData);
-
-  const populated = await Message.findById(message._id)
-    .populate("sender", "username profile_pic_url accountTier")
-    .lean();
 
   // Update conversation preview + unread count for the other participant
   const otherId = conversation.participants
     .find((p) => p.toString() !== userId)
     .toString();
 
-  await Conversation.findByIdAndUpdate(conversation._id, {
-    lastMessage: text.trim(),
-    lastMessageAt: new Date(),
-    $inc: { [`unreadCounts.${otherId}`]: 1 },
-  });
-
-  // The recipient's notification carries a preview of what was said.
-  const notification = await notifyMessage({
-    recipientId: otherId,
-    senderId: userId,
-    conversationId: conversation._id,
-    message,
-  });
+  // The 3 calls below are mutually independent (none reads another's
+  // result — populated just re-fetches `message` by its already-known id,
+  // the Conversation update only needs otherId/conversation._id, and
+  // notifyMessage creates its own Notification doc without reading the
+  // conversation) — parallelized instead of 3 sequential ~300ms round
+  // trips on every single message sent.
+  const [populated, , notification] = await Promise.all([
+    Message.findById(message._id)
+      .populate("sender", "username profile_pic_url accountTier")
+      .lean(),
+    Conversation.findByIdAndUpdate(conversation._id, {
+      lastMessage: text.trim(),
+      lastMessageAt: new Date(),
+      $inc: { [`unreadCounts.${otherId}`]: 1 },
+    }),
+    notifyMessage({
+      recipientId: otherId,
+      senderId: userId,
+      conversationId: conversation._id,
+      message,
+    }),
+  ]);
 
   // Broadcast via Socket.io
   const io = getIo();

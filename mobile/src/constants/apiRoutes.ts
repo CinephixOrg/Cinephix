@@ -61,6 +61,8 @@ export const API_ROUTES = {
     UPDATE_BIO: (id: string) => `/users/profile/${id}/bio`,
     UPLOAD_AVATAR: (id: string) => `/users/profile/${id}/upload-profile-pic`,
     UPDATE_PASSWORD: "/users/profile/password",
+    SET_CURRENTLY_WATCHING: "/users/me/currently-watching",
+    STOP_CURRENTLY_WATCHING: "/users/me/currently-watching",
     UPDATE_TIER: "/users/me/tier", // DEV-ONLY: simulates a tier purchase
     DELETE_ACCOUNT: "/users/profile",
     GET_FOLLOWING: "/users/me/following",
@@ -91,6 +93,7 @@ export const API_ROUTES = {
     VIEW: (id: string) => `/shares/${id}/view`,
     VOTE: (id: string) => `/shares/${id}/vote`,
     GET_USER_SHARES: (userId: string) => `/shares/user/${userId}`,
+    GET_SHARED_BADGES: "/shares/badges/shared",
     DELETE: (id: string) => `/shares/${id}`,
   },
   IMPORT: {
@@ -129,6 +132,8 @@ export const API_ROUTES = {
     MY_PODIUM_PLACEMENTS: "/feed/my-podium-placements",
     ACTIVITY: "/feed/activity",
     RECOMMENDATIONS: "/feed/recommendations",
+    NEW_RELEASES: "/feed/new-releases",
+    CURRENTLY_WATCHING: "/feed/currently-watching",
   },
   MATCH: {
     FIND: "/match",

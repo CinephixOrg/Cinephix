@@ -510,7 +510,18 @@ export const findMatches = asyncHandler(async (req, res) => {
 
   const cineKey = type === "movie" ? "movieCineGraph" : "seriesCineGraph";
 
-  const me = await User.findById(meId).lean();
+  // me, myRatings, and others are mutually independent (myRatings/others
+  // only need meId, already known) — parallelized instead of 3 sequential
+  // ~300ms round trips. The rare wasted work when `me` turns out invalid
+  // (no cinegraph) is worth the common-case win.
+  const [me, myRatings, others] = await Promise.all([
+    User.findById(meId).lean(),
+    Rating.find({ user: meId, contentType: type }).lean(),
+    User.find({ _id: { $ne: meId } })
+      .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries watchlist`)
+      .limit(1000)
+      .lean(),
+  ]);
   if (!me || !me[cineKey]) {
     return sendSuccess(res, [], 'No matches found', 200);
   }
@@ -518,15 +529,9 @@ export const findMatches = asyncHandler(async (req, res) => {
   const myGraph = me[cineKey];
 
   // ⚡ FETCH OPTIMIZATION FOR PEARSON CORRELATION
-  const myRatings = await Rating.find({ user: meId, contentType: type }).lean();
   const myRatingMap = {};
   myRatings.forEach(r => myRatingMap[r.contentId.toString()] = r.value);
   const myRatedIds = Object.keys(myRatingMap);
-
-  const others = await User.find({ _id: { $ne: meId } })
-    .select(`username profile_pic_url ${cineKey} following followers favoriteMovies favoriteSeries watchlist`)
-    .limit(1000)
-    .lean();
 
   const otherIds = others.map(u => u._id);
   const relevantRatings = await Rating.find({ 
@@ -725,13 +730,23 @@ export const getSyncCandidates = asyncHandler(async (req, res) => {
   // the recency window the bonus formula's activityRecency sub-signal uses.
   const RATING_RECENCY_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
   const ratingCutoff = new Date(Date.now() - RATING_RECENCY_WINDOW_MS);
-  const recentRatingsRaw = await Rating.find({
-    user: { $in: [meId, ...eligibleOthers.map((u) => u._id)] },
-    createdAt: { $gte: ratingCutoff },
-  })
-    .select("user contentId createdAt")
-    .sort({ createdAt: -1 })
-    .lean();
+  const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
+
+  // Both depend only on eligibleOthers (already resolved above), not on
+  // each other — parallelized instead of 2 sequential round trips.
+  const [recentRatingsRaw, favoriteGenreIds] = await Promise.all([
+    Rating.find({
+      user: { $in: [meId, ...eligibleOthers.map((u) => u._id)] },
+      createdAt: { $gte: ratingCutoff },
+    })
+      .select("user contentId createdAt")
+      .sort({ createdAt: -1 })
+      .lean(),
+    buildFavoriteGenreIdsMap(type, [
+      me[favField],
+      ...eligibleOthers.map((u) => u[favField]),
+    ]),
+  ]);
 
   const ratingsByUser = new Map();
   for (const r of recentRatingsRaw) {
@@ -740,12 +755,6 @@ export const getSyncCandidates = asyncHandler(async (req, res) => {
     ratingsByUser.get(uid).push(r);
   }
   const myRecentRatings = ratingsByUser.get(meId) || [];
-
-  const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
-  const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [
-    me[favField],
-    ...eligibleOthers.map((u) => u[favField]),
-  ]);
 
   const results = [];
   for (const u of eligibleOthers) {
@@ -1277,17 +1286,21 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
 
   try {
     const ratingCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-    const pairRatings = await Rating.find({ user: { $in: [meId, targetUserId] }, createdAt: { $gte: ratingCutoff } })
-      .select("user contentId createdAt")
-      .sort({ createdAt: -1 })
-      .lean();
+    const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
+
+    // Independent (both only need meId/targetUserId/me/target, already
+    // resolved above) — parallelized instead of 2 sequential round trips.
+    const [pairRatings, favoriteGenreIds] = await Promise.all([
+      Rating.find({ user: { $in: [meId, targetUserId] }, createdAt: { $gte: ratingCutoff } })
+        .select("user contentId createdAt")
+        .sort({ createdAt: -1 })
+        .lean(),
+      buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]),
+    ]);
     const myRecentRatings = pairRatings.filter((r) => r.user.toString() === meId);
     const targetRecentRatings = pairRatings.filter((r) => r.user.toString() === targetUserId);
 
-    const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
-    const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]);
-
-    const { matchPercentage, breakdown } = computeMatchBreakdown(
+    const { matchPercentage, breakdown, matchInsights } = computeMatchBreakdown(
       me,
       target,
       cineKey,
@@ -1303,6 +1316,19 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
     // breakdown. /analyze builds its own payload independently, so the work
     // was pure serialization and transfer cost on the one request the user
     // is actually waiting on.
+    //
+    // matchInsights, unlike llmInput above, IS worth returning — it's
+    // computeMatchBreakdown's own shared-genres/favorites-overlap/social-
+    // overlap detail, already computed as a side effect of the breakdown
+    // itself (zero extra queries), and mobile's MatchAnalysisPanel gates
+    // several of its own cards on it (Shared Genres, Shared Favorites,
+    // Social Overlap). Dropping it here — the same destructuring that
+    // dropped llmInput also silently dropped this — meant the profile
+    // entry point's own analysis deck (SyncScoreCard.tsx, backed by this
+    // endpoint) was always missing those 3 cards entirely, unlike the Sync
+    // page's own deck (backed by getSyncCandidates, which already returns
+    // matchInsights per candidate). Direct report: "analiz kartları eksik,
+    // hepsini koy."
     const payload = {
       matchPercentage,
       targetUser: {
@@ -1311,6 +1337,7 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
         profile_pic_url: target.profile_pic_url,
       },
       breakdown,
+      matchInsights,
     };
     matchScoreCache.set(cacheKey, payload);
     sendSuccess(res, payload, 'Match calculated successfully');
@@ -1327,9 +1354,16 @@ export const getMatchWithUser = asyncHandler(async (req, res) => {
 export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   const meId = req.user.id;
   const { targetUserId } = req.params;
-  const { type = 'movie', genres = [], useCount = true, useAvgRating = true, language: rawLanguage } = req.body;
+  const { type = 'movie', genres = [], useCount = true, useAvgRating = true, language: rawLanguage, source: rawSource } = req.body;
   const language = SUPPORTED_LANGUAGES[rawLanguage] ? rawLanguage : 'en';
   const languageName = SUPPORTED_LANGUAGES[language];
+  // Which UI entry point this call came from — "sync" (the Sync page's own
+  // Analyze button, default) or "profile" (a public profile's Sync Score
+  // card ⓘ, mobile/src/components/profile/SyncScoreCard.tsx). Only
+  // "profile" is ever gated any differently below; an unrecognized/absent
+  // value is treated as "sync" so this stays a no-op for every existing
+  // caller that never sends it.
+  const source = rawSource === 'profile' ? 'profile' : 'sync';
 
   const requestedMock = req.query.mock === 'true';
   const requestedProvider = req.query.provider;
@@ -1342,7 +1376,9 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   // candidates in one session is fine, re-analyzing the exact same one
   // repeatedly just re-burns a real LLM call for data that hasn't changed.
   // Checked before any of the DB/LLM work below, not after — fail fast.
-  const { matchAnalysisCooldownMinutes } = getTierLimits(req.user.accountTier);
+  // Applies identically regardless of `source` — the Sync page's own gate,
+  // untouched by the profile-specific one below.
+  const { matchAnalysisCooldownMinutes, profileSyncAnalysesPerWeek } = getTierLimits(req.user.accountTier);
   if (matchAnalysisCooldownMinutes > 0) {
     const lastAnalysis = await MatchAnalysisLog.findOne({ user: meId, targetUser: targetUserId })
       .sort({ createdAt: -1 })
@@ -1359,6 +1395,39 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     }
   }
 
+  // Direct ask: a public profile's own Sync Score card analysis is a
+  // stricter, SEPARATE gate from the Sync page's own Analyze flow above —
+  // Free is blocked outright (not just cooldown-throttled), Plus gets a
+  // real weekly cap, Premium/dev stay unlimited. Scoped to `source ===
+  // "profile"` only, so none of this ever applies to the Sync page's own
+  // calls (which never send `source`).
+  if (source === 'profile') {
+    if (profileSyncAnalysesPerWeek <= 0) {
+      return sendError(res, 'Upgrade to see your sync analyses', 403, { requiresUpgrade: true });
+    }
+    // Calendar week, Monday-start — same "resets at a fixed boundary"
+    // convention getSyncCandidates' own daily quota already uses, just a
+    // week wide instead of a day.
+    const weekStart = new Date();
+    weekStart.setHours(0, 0, 0, 0);
+    const day = weekStart.getDay();
+    weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1));
+    const usedThisWeek = await MatchAnalysisLog.countDocuments({
+      user: meId,
+      source: 'profile',
+      createdAt: { $gte: weekStart },
+    });
+    if (usedThisWeek >= profileSyncAnalysesPerWeek) {
+      const nextWeekStart = new Date(weekStart);
+      nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+      return sendError(res, 'Weekly sync analysis limit reached', 429, {
+        requiresUpgrade: true,
+        retryAfterMs: nextWeekStart.getTime() - Date.now(),
+        limit: profileSyncAnalysesPerWeek,
+      });
+    }
+  }
+
   const cineKey = type === 'movie' ? 'movieCineGraph' : 'seriesCineGraph';
 
   // Projected and parallel, same as getMatchWithUser — an unprojected `me`
@@ -1372,15 +1441,18 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   if (!me || !me[cineKey] || !target || !target[cineKey]) return sendError(res, 'Required data not found', 404);
 
   const ratingCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  const pairRatings = await Rating.find({ user: { $in: [meId, targetUserId] }, createdAt: { $gte: ratingCutoff } })
-    .select("user contentId createdAt")
-    .sort({ createdAt: -1 })
-    .lean();
+  const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
+
+  // Independent — same parallelization as getMatchWithUser above.
+  const [pairRatings, favoriteGenreIds] = await Promise.all([
+    Rating.find({ user: { $in: [meId, targetUserId] }, createdAt: { $gte: ratingCutoff } })
+      .select("user contentId createdAt")
+      .sort({ createdAt: -1 })
+      .lean(),
+    buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]),
+  ]);
   const myRecentRatings = pairRatings.filter((r) => r.user.toString() === meId);
   const targetRecentRatings = pairRatings.filter((r) => r.user.toString() === targetUserId);
-
-  const favField = type === "movie" ? "favoriteMovies" : "favoriteSeries";
-  const favoriteGenreIds = await buildFavoriteGenreIdsMap(type, [me[favField], target[favField]]);
 
   // Same helper getMatchWithUser uses, with the same filters the client
   // used for its Cinematch call — so the score referenced here matches what
@@ -1482,7 +1554,7 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   // Best-effort — a transient write failure here shouldn't fail an otherwise-
   // successful analysis the user is about to receive; it would just mean this
   // one call doesn't count toward the pair's cooldown.
-  MatchAnalysisLog.create({ user: meId, targetUser: targetUserId, score: matchPercentage }).catch((err) =>
+  MatchAnalysisLog.create({ user: meId, targetUser: targetUserId, score: matchPercentage, source }).catch((err) =>
     console.error("Failed to record MatchAnalysisLog entry:", err.message)
   );
 

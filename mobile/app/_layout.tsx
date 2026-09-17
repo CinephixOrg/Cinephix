@@ -1,7 +1,7 @@
 import "react-native-gesture-handler";
 import { useEffect, useMemo, useState } from "react";
 import { DarkTheme, Stack, ThemeProvider as NavigationThemeProvider } from "expo-router";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, LogBox } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -20,6 +20,7 @@ import { NotificationProvider } from "../src/context/NotificationContext";
 import { ChatProvider } from "../src/context/ChatContext";
 import { FollowGraphProvider } from "../src/context/FollowGraphContext";
 import { WatchlistGraphProvider } from "../src/context/WatchlistGraphContext";
+import { RecentSharesProvider } from "../src/context/RecentSharesContext";
 import { ProfileProvider } from "../src/context/ProfileContext";
 import { NetworkProvider } from "../src/context/NetworkContext";
 import { ToastProvider } from "../src/context/ToastContext";
@@ -32,6 +33,15 @@ import { fonts } from "../src/theme/typography";
 import OfflineBanner from "../src/components/OfflineBanner";
 import Toast from "../src/components/Toast";
 import { PushNotificationsBridge } from "../src/hooks/usePushNotifications";
+
+// react-native-draggable-flatlist@4.0.3 (Favorites' own drag-to-reorder,
+// ProfileCategoryTabs.tsx) calls RN's own InteractionManager internally —
+// already the latest published version, so this isn't something upgrading
+// the library fixes; it's an upstream deprecation warning with no app-code
+// path to it. Purely cosmetic (InteractionManager itself still works, RN
+// just wants it eventually replaced) — silenced here rather than left
+// firing on every drag.
+LogBox.ignoreLogs(["InteractionManager has been deprecated"]);
 
 // Nothing is switchable yet at this point (fonts/i18n/theme aren't resolved),
 // so the pre-boot loading screen always renders in the default palette —
@@ -182,13 +192,15 @@ export default function RootLayout() {
                 <AuthProvider>
                   <FollowGraphProvider>
                     <WatchlistGraphProvider>
-                      <ProfileProvider>
-                        <NotificationProvider>
-                          <ChatProvider>
-                            <RootNavigator />
-                          </ChatProvider>
-                        </NotificationProvider>
-                      </ProfileProvider>
+                      <RecentSharesProvider>
+                        <ProfileProvider>
+                          <NotificationProvider>
+                            <ChatProvider>
+                              <RootNavigator />
+                            </ChatProvider>
+                          </NotificationProvider>
+                        </ProfileProvider>
+                      </RecentSharesProvider>
                     </WatchlistGraphProvider>
                   </FollowGraphProvider>
                 </AuthProvider>

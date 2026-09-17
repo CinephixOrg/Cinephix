@@ -26,6 +26,16 @@ for (const path of ["tmdb_id", "id.tmdb", "tmdb", "imdb_id", "id.imdb", "imdb", 
   movieSchema.index({ [path]: 1 }, { sparse: true, name: `${path}_1_sparse` });
 }
 
+// feedController.js's getNewReleases filters this collection by a
+// release_date range AND sorts by it — with no index at all on a
+// 578k-document collection, that's a full collection scan followed by an
+// in-memory sort on every single request, the real reason Discover's own
+// New Releases rail measurably loaded slower than every sibling rail
+// (WhatToWatchRail and friends all filter/sort on something else that's
+// already indexed or a much smaller computed set). Descending to match the
+// query's own `.sort({release_date: -1})` exactly.
+movieSchema.index({ release_date: -1 }, { name: "release_date_-1" });
+
 export function createMovieModel(conn) {
   return conn.model("Movie", movieSchema, "movies");
 }

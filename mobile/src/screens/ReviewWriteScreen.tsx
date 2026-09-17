@@ -10,6 +10,7 @@ import { saveReview, deleteReview } from "../api/reviewService";
 import { createShare } from "../api/shareService";
 import { useToast } from "../context/ToastContext";
 import { useBadgeEarned } from "../context/BadgeEarnedContext";
+import { useRecentShares } from "../context/RecentSharesContext";
 import type { ContentType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -51,6 +52,7 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const { reportEarnedBadges } = useBadgeEarned();
+  const { announce: announceNewShare } = useRecentShares();
   const insets = useSafeAreaInsets();
   const { myReview, myReviewLoading } = useMyReview(contentId, user?._id);
 
@@ -87,7 +89,8 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
       reportEarnedBadges(saved.newlyEarnedBadges);
       if (alsoShare) {
         try {
-          await createShare({ type: "review", reviewId: saved._id });
+          const share = await createShare({ type: "review", reviewId: saved._id });
+          announceNewShare(share);
           showToast(t("Shared to Medya"));
         } catch (e: any) {
           // The review itself saved fine — a failed/blocked share (e.g. the

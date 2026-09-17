@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -117,6 +117,18 @@ export default function PublicProfileScreen() {
   // The slide-out drawer, the same one the own profile has: this person's
   // Watched List, Watchlist and Lists as full pages, and Report / Block.
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Same "single outer ScrollView reports near-bottom, only ProfileSharingsTab's
+  // own feed mode reacts" pattern as profile/index.tsx (own profile) — see
+  // that file's own comment for the full reasoning.
+  const NEAR_BOTTOM_THRESHOLD = 600;
+  const nearBottomRef = useRef<(() => void) | null>(null);
+  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number }; layoutMeasurement: { height: number }; contentSize: { height: number } } }) => {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - NEAR_BOTTOM_THRESHOLD) {
+      nearBottomRef.current?.();
+    }
+  }, []);
 
   useEffect(() => {
     navigation.setOptions({
@@ -354,7 +366,7 @@ export default function PublicProfileScreen() {
         onClose={() => setDrawerOpen(false)}
         renderDrawerContent={() => <PublicProfileDrawerContent userId={id} onNavigate={() => setDrawerOpen(false)} />}
       >
-        <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+        <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent} onScroll={handleScroll} scrollEventThrottle={200}>
           <ProfileHeaderInstagram
             profile={profile}
             targetUserId={id}
@@ -369,6 +381,8 @@ export default function PublicProfileScreen() {
             userId={id}
             initialShares={shares}
             initialCategory={tab === "favorites" ? "favorites" : undefined}
+            nearBottomRef={nearBottomRef}
+            isOfficial={profile.isOfficial}
           />
         </ScrollView>
       </ProfileDrawer>

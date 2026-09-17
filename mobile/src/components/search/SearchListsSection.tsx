@@ -3,6 +3,7 @@ import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-nativ
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { SkeletonListRow } from "../Skeleton";
 import { getPopularListsPaginated, type ListSort } from "../../api/listService";
 import SearchListCard from "./SearchListCard";
 import FilterBottomSheet from "./FilterBottomSheet";
@@ -140,8 +141,8 @@ export default function SearchListsSection({ query, showFilters, onCloseFilters,
 
   if (loading && !hasLoadedOnce) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: colors.base100, paddingHorizontal: 16, paddingTop: 4 }}>
+        {Array.from({ length: 5 }, (_, i) => <SkeletonListRow key={i} />)}
         {filterSheet}
       </View>
     );

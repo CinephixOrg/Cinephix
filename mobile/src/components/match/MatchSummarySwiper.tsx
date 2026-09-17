@@ -180,11 +180,15 @@ export default function MatchSummarySwiper({ analysis, strengths, weaknesses, co
             <View style={styles.columnsRow}>
               <View style={styles.column}>
                 <Text style={[styles.columnHeader, { color: colors.success }]}>{localeUpper(t("Strengths"))}</Text>
-                <AnimatedInsightList items={strengths.slice(0, MAX_ITEMS)} icon="checkmark-circle" iconColor={colors.success} />
+                {/* numberOfLines={0} (unlike every other AnimatedInsightList
+                    caller, which keeps its 2-line default) — direct ask:
+                    these should read fully, not clip a longer sentence with
+                    "…". */}
+                <AnimatedInsightList items={strengths.slice(0, MAX_ITEMS)} icon="checkmark-circle" iconColor={colors.success} numberOfLines={0} />
               </View>
               <View style={styles.column}>
                 <Text style={[styles.columnHeader, { color: colors.warning }]}>{localeUpper(t("Weaknesses"))}</Text>
-                <AnimatedInsightList items={weaknesses.slice(0, MAX_ITEMS)} icon="alert-circle" iconColor={colors.warning} />
+                <AnimatedInsightList items={weaknesses.slice(0, MAX_ITEMS)} icon="alert-circle" iconColor={colors.warning} numberOfLines={0} />
               </View>
             </View>
           </View>

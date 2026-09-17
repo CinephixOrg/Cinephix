@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, BackHandler, RefreshControl, StyleSheet, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Animated, BackHandler, Pressable, RefreshControl, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../context/ProfileContext";
@@ -14,6 +15,7 @@ import CollectionFilterSheet from "../components/collection/CollectionFilterShee
 import CollectionGrid from "../components/collection/CollectionGrid";
 import CollectionUndoBar from "../components/collection/CollectionUndoBar";
 import { CollectionSkeleton, CollectionStateView } from "../components/collection/CollectionStates";
+import CreatePollModal from "../components/collection/CreatePollModal";
 import { COLLECTION_GRID, useCollectionQuery, useGridMetrics } from "../components/collection/useCollectionQuery";
 import type { SortGroupSpec } from "../components/collection/filterLabels";
 
@@ -28,6 +30,10 @@ export interface CollectionConfig {
   basePath: string;
   sortGroups: SortGroupSpec[];
   showRatedFilter: boolean;
+  /** Only the Watchlist (to-watch queue) sets this — "what should I watch
+   * next?" polls only make sense against titles still queued, not already
+   * watched. Adds a small poll-icon accessory to the toolbar when set. */
+  allowPoll?: boolean;
   /** i18n keys. */
   strings: {
     searchPlaceholder: string;
@@ -72,6 +78,7 @@ function CollectionScreen({ config, onEntriesChange }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [undoEntry, setUndoEntry] = useState<CollectionEntry | null>(null);
+  const [pollModalVisible, setPollModalVisible] = useState(false);
 
   useEffect(() => cache.subscribe(setEntries), [cache]);
 
@@ -248,6 +255,16 @@ function CollectionScreen({ config, onEntriesChange }: Props) {
         screen: { flex: 1, backgroundColor: colors.base100 },
         top: { paddingHorizontal: COLLECTION_GRID.paddingX, paddingTop: 12, paddingBottom: 10, gap: 10 },
         loadingIndicator: { alignSelf: "flex-start", height: 36 },
+        pollButton: {
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.base200,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
       }),
     [colors]
   );
@@ -312,6 +329,18 @@ function CollectionScreen({ config, onEntriesChange }: Props) {
             narrowed={query.narrowed}
             filters={query.filters}
             onFilterAction={query.onFilterAction}
+            accessory={
+              config.allowPoll && !editing ? (
+                <Pressable
+                  style={styles.pollButton}
+                  onPress={() => setPollModalVisible(true)}
+                  disabled={entries.length < 2}
+                  accessibilityLabel={t("Create Poll")}
+                >
+                  <Ionicons name="stats-chart-outline" size={16} color={entries.length < 2 ? colors.placeholder : colors.baseContent} />
+                </Pressable>
+              ) : undefined
+            }
             editing={editing}
             canEdit={query.visible.length > 0}
             onToggleEdit={toggleEdit}
@@ -334,6 +363,10 @@ function CollectionScreen({ config, onEntriesChange }: Props) {
         sortGroups={sortGroups}
         showRatedFilter={showRatedFilter}
       />
+
+      {config.allowPoll && (
+        <CreatePollModal visible={pollModalVisible} entries={entries} onClose={() => setPollModalVisible(false)} />
+      )}
     </View>
   );
 }

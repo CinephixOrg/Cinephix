@@ -2,7 +2,6 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
-import User from "../models/User.js";
 import {
   getGenreBadges,
   getVolumeBadges,

@@ -144,6 +144,15 @@ export const createShare = asyncHandler(async (req, res) => {
       return sendError(res, "analysisData is required", 400);
     }
     const share = await Share.create({ user: userId, type: "analysis", analysisData });
+    // Real bug, reported live: Share.create()'s own return value only ever
+    // has `user` as a raw ObjectId, never populated — every OTHER read path
+    // (viewerShareQuery, getShareFeed's own $lookup) populates/joins it, but
+    // this fresh-create response never did. RecentSharesContext.tsx's own
+    // "see your new post at the top of the feed instantly" illusion feeds
+    // this response straight into ShareCard with no refetch, so a raw
+    // unpopulated `user` rendered as a "?" fallback avatar with no username
+    // for the few seconds until the next real feed fetch replaced it.
+    await share.populate("user", "username profile_pic_url accountTier isOfficial");
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
@@ -183,6 +192,8 @@ export const createShare = asyncHandler(async (req, res) => {
       contentType: review.contentType,
       contentData,
     });
+    // Populated for the reason the FIRST createShare branch above explains.
+    await share.populate("user", "username profile_pic_url accountTier isOfficial");
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
@@ -226,6 +237,8 @@ export const createShare = asyncHandler(async (req, res) => {
       contentData,
       note: note?.trim() || undefined,
     });
+    // Populated for the reason the FIRST createShare branch above explains.
+    await share.populate("user", "username profile_pic_url accountTier isOfficial");
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
@@ -250,6 +263,61 @@ export const createShare = asyncHandler(async (req, res) => {
         previewItems: hydrated.previewItems,
       },
     });
+    // Populated for the reason the FIRST createShare branch above explains.
+    await share.populate("user", "username profile_pic_url accountTier isOfficial");
+    return sendSuccess(res, share, "Shared to Medya", 201);
+  }
+
+  if (type === "poll") {
+    // "What should I watch next?" — a real, user-created poll (distinct
+    // from the official account's own text-option polls), 2 or 3 titles
+    // picked from the caller's own Watchlist, each option a poster+title
+    // instead of free text (direct ask — "posterlerle oluşturmayı
+    // düşündüm"). `question` is deliberately left empty here; ShareCard.tsx
+    // synthesizes a translated fixed question client-side once it sees
+    // `contentId` on the first option, so this reads correctly in every
+    // viewer's own language rather than one fixed string baked in at
+    // creation time.
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length < 2 || items.length > 3) {
+      return sendError(res, "A poll needs 2 or 3 titles", 400);
+    }
+    const seen = new Set();
+    for (const it of items) {
+      if (!it?.contentId || !["movie", "series"].includes(it?.contentType)) {
+        return sendError(res, "Each item needs a valid contentId and contentType", 400);
+      }
+      const key = `${it.contentType}:${it.contentId}`;
+      if (seen.has(key)) return sendError(res, "Each title can only appear once", 400);
+      seen.add(key);
+    }
+
+    // Re-verified server-side, never trusted from the client — same
+    // discipline the "badge" branch below already applies. The "what
+    // should I watch" framing only makes sense for titles the caller has
+    // actually queued — `toWatchList` (the to-watch queue mobile calls
+    // "Watchlist"), NOT `watchlist` (the already-Watched list, a
+    // same-app-different-generation naming collision this codebase has
+    // hit before — see WatchlistScreen.tsx's own `basePath: "/to-watch"`).
+    const user = await User.findById(userId).select("toWatchList").lean();
+    const queuedKeys = new Set((user?.toWatchList || []).map((w) => `${w.itemType}:${w.itemId}`));
+    const notQueued = items.find((it) => !queuedKeys.has(`${it.contentType}:${it.contentId}`));
+    if (notQueued) return sendError(res, "Every option must be on your own Watchlist", 400);
+
+    const hydrated = await Promise.all(items.map((it) => hydrateContentData(it.contentId, it.contentType)));
+    if (hydrated.some((h) => !h)) return sendError(res, "Content not found", 404);
+
+    const options = items.map((it, i) => ({
+      text: hydrated[i].title,
+      contentId: it.contentId,
+      contentType: it.contentType,
+      posterUrl: hydrated[i].posterUrl,
+      votes: [],
+    }));
+
+    const share = await Share.create({ user: userId, type: "poll", pollData: { question: "", options } });
+    // Populated for the reason the FIRST createShare branch above explains.
+    await share.populate("user", "username profile_pic_url accountTier isOfficial");
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
@@ -261,7 +329,7 @@ export const createShare = asyncHandler(async (req, res) => {
     // tampered client claim a tier it doesn't actually have. `badgeFamily`
     // picks which computation/threshold table to verify against — `key`
     // alone isn't guaranteed unique across families.
-    const { badgeFamily, badgeKey } = req.body;
+    const { badgeFamily, badgeKey, badgeTier } = req.body;
     const config = BADGE_FAMILIES[badgeFamily];
     if (!config || !badgeKey) {
       return sendError(res, "A valid badgeFamily and badgeKey are required", 400);
@@ -271,17 +339,64 @@ export const createShare = asyncHandler(async (req, res) => {
     const found = counts.find((c) => c.key === badgeKey);
     if (!found || !found.tier) return sendError(res, "Badge not earned", 400);
 
-    const threshold = config.thresholdFor ? config.thresholdFor(found.tier) : config.tiers.find((t) => t.tier === found.tier).threshold;
+    // Every tiered family's own detail popup lets the user tap back onto
+    // an earlier, already-surpassed rung (BadgeDetailModal.tsx's tier
+    // strip) and share THAT one specifically — `found.tier` is always
+    // whichever is CURRENTLY highest, so badgeTier carries which rung was
+    // actually tapped. Only real, already-reached rungs are accepted
+    // (index <= current tier's index in the family's own ascending tier
+    // order); omitted entirely for one-off (non-ladder) families and by
+    // BadgeEarnedModal's own always-current-tier share, both of which keep
+    // using `found.tier` as-is, unchanged from before this existed.
+    let tier = found.tier;
+    if (badgeTier && badgeTier !== found.tier) {
+      const tierOrder = badgeFamily === "genre" ? ["devotee", "master"] : config.tiers.map((t) => t.tier);
+      const requestedIndex = tierOrder.indexOf(badgeTier);
+      const currentIndex = tierOrder.indexOf(found.tier);
+      if (requestedIndex < 0 || requestedIndex > currentIndex) {
+        return sendError(res, "Badge not earned", 400);
+      }
+      tier = badgeTier;
+    }
+
+    // One share per distinct (family, key, tier) ever, direct ask ("her
+    // badge'i bir kez paylaşabiliriz... buton share değil shared olarak
+    // görünsün"). Checked here too, not just surfaced client-side, so a
+    // retried request or a second device can't create a duplicate.
+    const alreadyShared = await Share.exists({
+      user: userId,
+      type: "badge",
+      "badgeData.family": badgeFamily,
+      "badgeData.key": found.key,
+      "badgeData.tier": tier,
+    });
+    if (alreadyShared) return sendError(res, "Badge already shared", 409);
+
+    const threshold = config.thresholdFor ? config.thresholdFor(tier) : config.tiers.find((t) => t.tier === tier).threshold;
 
     const share = await Share.create({
       user: userId,
       type: "badge",
-      badgeData: { family: badgeFamily, key: found.key, tier: found.tier, count: found.count, threshold },
+      badgeData: { family: badgeFamily, key: found.key, tier, count: found.count, threshold },
     });
+    // Populated for the reason the FIRST createShare branch above explains.
+    await share.populate("user", "username profile_pic_url accountTier isOfficial");
     return sendSuccess(res, share, "Shared to Medya", 201);
   }
 
   return sendError(res, 'type must be "analysis", "review", "recommendation", "list", or "badge"', 400);
+});
+
+// ── GET /api/shares/badges/shared ──
+// Powers the Badges tab's Share/Shared button (BadgeDetailModal.tsx via
+// ProfileBadgesTab.tsx) — one bulk fetch of every "family:key:tier" the
+// caller has ever shared, so the tab can grey out an already-shared badge
+// without a per-tile round trip. Own-profile only (req.user.id), same as
+// every other badge-progress endpoint in badgeRoute.js.
+export const getSharedBadges = asyncHandler(async (req, res) => {
+  const shares = await Share.find({ user: req.user.id, type: "badge" }).select("badgeData.family badgeData.key badgeData.tier").lean();
+  const keys = shares.map((s) => `${s.badgeData.family}:${s.badgeData.key}:${s.badgeData.tier}`);
+  return sendSuccess(res, keys, "Shared badges fetched", 200);
 });
 
 // A like is worth ~20h of recency, following the author ~53h — real enough
@@ -457,6 +572,9 @@ const shareHydrationStages = (userId) => [
               as: "o",
               in: {
                 text: "$$o.text",
+                contentId: "$$o.contentId",
+                contentType: "$$o.contentType",
+                posterUrl: "$$o.posterUrl",
                 voteCount: { $size: "$$o.votes" },
                 topVoters: {
                   $map: {
@@ -527,7 +645,14 @@ export const getShareFeed = asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
   const scope = req.query.scope === "following" ? "following" : "all";
 
-  const currentUser = await User.findById(userId).select("following").lean();
+  // currentUser and officialCount are mutually independent (officialCount
+  // only depends on `scope`, a query param) — parallelized to pay one
+  // ~300ms cross-region round trip instead of two (see authMiddleware.js's
+  // own doc comment for the measured per-round-trip cost this is cutting).
+  const [currentUser, officialCount] = await Promise.all([
+    User.findById(userId).select("following").lean(),
+    scope === "all" ? Share.countDocuments({ isOfficialPost: true }) : Promise.resolve(0),
+  ]);
   const followingIds = currentUser?.following || [];
   const now = new Date();
 
@@ -535,8 +660,6 @@ export const getShareFeed = asyncHandler(async (req, res) => {
   // get fixed guaranteed positions instead of competing on engagement (see
   // officialSlotPositions above).
   const organicMatch = { isOfficialPost: { $ne: true }, ...(scope === "following" ? { user: { $in: followingIds } } : {}) };
-
-  const officialCount = scope === "all" ? await Share.countDocuments({ isOfficialPost: true }) : 0;
 
   // Which absolute feed positions in this page's own [pageStart, pageEnd)
   // window are official slots, and how many came before this page (needed
@@ -787,6 +910,9 @@ export const voteOnPoll = asyncHandler(async (req, res) => {
   const voterMap = new Map(voters.map((u) => [u._id.toString(), u]));
   const options = share.pollData.options.map((o) => ({
     text: o.text,
+    contentId: o.contentId,
+    contentType: o.contentType,
+    posterUrl: o.posterUrl,
     voteCount: o.votes.length,
     topVoters: o.votes.slice(0, 5).map((id) => voterMap.get(id.toString())).filter(Boolean),
   }));
@@ -794,12 +920,30 @@ export const voteOnPoll = asyncHandler(async (req, res) => {
 });
 
 // ── GET /api/shares/user/:userId?page=&limit= ──
+// Every real, user-creatable Share type — "official" deliberately excluded,
+// since it's never the poster's own profile that shows one.
+const FILTERABLE_SHARE_TYPES = ["analysis", "review", "recommendation", "list", "poll", "badge"];
+
 export const getUserShares = asyncHandler(async (req, res) => {
   const targetUserId = req.params.userId === "me" ? req.user.id : req.params.userId;
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
 
   const query = { user: targetUserId };
+  // Profile's own Sharings tab category filter (multi-select) — direct ask.
+  // Omitted (or every valid type present) means unfiltered, same as before
+  // this existed; an invalid type in the list is silently dropped rather
+  // than erroring, so a client-side typo just narrows less than intended
+  // instead of 400ing a whole page load.
+  if (req.query.types) {
+    const requested = String(req.query.types)
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => FILTERABLE_SHARE_TYPES.includes(t));
+    if (requested.length > 0 && requested.length < FILTERABLE_SHARE_TYPES.length) {
+      query.type = { $in: requested };
+    }
+  }
   const [items, total] = await Promise.all([
     viewerShareQuery(Share.find(query).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit)),
     Share.countDocuments(query),
@@ -854,20 +998,24 @@ async function withViewerMeta(items, requesterId) {
       for (const o of s.pollData.options) (o.votes || []).slice(0, 5).forEach((id) => allVoterIds.add(id.toString()));
     }
   }
-  const voters = allVoterIds.size ? await User.find({ _id: { $in: [...allVoterIds] } }).select("username profile_pic_url").lean() : [];
+  // Run together, not sequentially — neither query depends on the other's
+  // result, so there's no reason to pay two separate round trips back to
+  // back. Direct ask to speed up profile load paths after measuring this
+  // app's own DB round trip cost at a flat ~300ms regardless of query
+  // complexity (cross-region latency to this app's Atlas cluster) — every
+  // sequential hop removed here is a real ~300ms cut on every call.
+  const [voters, likedRows] = await Promise.all([
+    allVoterIds.size ? User.find({ _id: { $in: [...allVoterIds] } }).select("username profile_pic_url").lean() : Promise.resolve([]),
+    // One id-only query for the whole page, rather than trusting an in-memory
+    // `likes` array — the query above already caps it to 0 elements
+    // (.slice("likes", 0)), so reading it directly would always report
+    // liked:false regardless of the real state.
+    Share.find({ _id: { $in: items.map((s) => s._id) }, likes: requesterId })
+      .select("_id")
+      .lean(),
+  ]);
   const voterMap = new Map(voters.map((u) => [u._id.toString(), u]));
-
-  // One id-only query for the whole page, rather than trusting an in-memory
-  // `likes` array — the query above already caps it to 0 elements
-  // (.slice("likes", 0)), so reading it directly would always report
-  // liked:false regardless of the real state.
-  const likedIds = new Set(
-    (
-      await Share.find({ _id: { $in: items.map((s) => s._id) }, likes: requesterId })
-        .select("_id")
-        .lean()
-    ).map((s) => s._id.toString())
-  );
+  const likedIds = new Set(likedRows.map((s) => s._id.toString()));
 
   return items.map((s) => {
     const liked = likedIds.has(s._id.toString());
@@ -881,6 +1029,19 @@ async function withViewerMeta(items, requesterId) {
         if (o.votes.some((id) => id.toString() === requesterId.toString())) userVoteIndex = i;
         return {
           text: o.text,
+          // Present on a user-created "which should I watch?" poll's
+          // options, absent on the official account's own plain
+          // text-option polls — same fields getShareFeed's own aggregation
+          // projects (see its "pollData.options" $map above). Missing here
+          // before was a real bug: ShareCard.tsx's isContentPoll check
+          // (pollOptions[0].contentId != null) silently fell back to the
+          // plain text layout for every poll viewed through this path
+          // (Profile's own Sharings tab, a single share-by-id page) even
+          // though the main Shares feed rendered the exact same poll with
+          // its real poster grid.
+          contentId: o.contentId,
+          contentType: o.contentType,
+          posterUrl: o.posterUrl,
           voteCount: o.votes.length,
           topVoters: o.votes.slice(0, 5).map((id) => voterMap.get(id.toString())).filter(Boolean),
         };

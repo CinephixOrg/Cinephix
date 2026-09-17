@@ -2,14 +2,20 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Pressable, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "expo-router";
 import { getShareFeed, toggleShareLike } from "../../api/shareService";
 import { getSuggestions } from "../../api/userService";
 import ShareCard from "../ShareCard";
 import OnlineFriendsBar from "./OnlineFriendsBar";
 import PeoplePodium from "../PeoplePodium";
+import CurrentlyWatchingSection from "./CurrentlyWatchingSection";
 import SuggestedUsersBox from "../SuggestedUsersBox";
+import PostComposeMenu, { type ComposeCategory } from "./PostComposeMenu";
+import { SkeletonShareCard } from "../Skeleton";
 import type { Share, SuggestedUser } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import { useRecentShares } from "../../context/RecentSharesContext";
+import { useToast } from "../../context/ToastContext";
 import { fonts } from "../../theme/typography";
 
 // One row of the rendered feed is either a real post or (every
@@ -122,6 +128,20 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: colors.border,
         },
+        // The "+" compose-hub button, same pill footprint as scopeToggle
+        // right next to it in titleRow (gap:10 from that row already
+        // applies) — a single circular icon, no text label, opening
+        // PostComposeMenu on tap.
+        composeButton: {
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.base200,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.border,
+        },
         // Renders between *every* pair of adjacent rows (FlatList's own
         // ItemSeparatorComponent, not a border baked into ShareCard/
         // SuggestedUsersBox individually) — the only way to get a line
@@ -143,6 +163,23 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   );
 
   const [items, setItems] = useState<Share[]>([]);
+  const { pending: pendingNewShares, consume: consumeNewShares } = useRecentShares();
+  // Instagram-style "your own post shows up at the top right after
+  // posting" — client-side only, see RecentSharesContext.tsx's own doc
+  // comment for the full reasoning. A real pull-to-refresh (or the scope
+  // toggle, which re-runs `load` below) still replaces `items` from the
+  // server's own ranked response, so a prepended post that hasn't earned
+  // enough real rank yet can legitimately fall out of view on the next
+  // fetch — that's the intended behavior, not a bug.
+  useEffect(() => {
+    if (pendingNewShares.length === 0) return;
+    setItems((prev) => {
+      const existingIds = new Set(prev.map((s) => s._id));
+      const fresh = pendingNewShares.filter((s) => !existingIds.has(s._id));
+      return fresh.length > 0 ? [...fresh, ...prev] : prev;
+    });
+    consumeNewShares();
+  }, [pendingNewShares, consumeNewShares]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -151,6 +188,69 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [scope, setScope] = useState<"all" | "following">(initialScope || "all");
   const cycleScope = () => setScope((prev) => (prev === "all" ? "following" : "all"));
+
+  // "+" compose-hub menu — a pure navigate+toast dispatcher per direct spec,
+  // never a real composer (see PostComposeMenu.tsx's own doc comment). Each
+  // category just lands the user on an existing screen with a one-line
+  // hint; what happens after that is entirely on the user.
+  const router = useRouter();
+  const { showToast } = useToast();
+  const [composeMenuVisible, setComposeMenuVisible] = useState(false);
+  const composeCategories: ComposeCategory[] = useMemo(
+    () => [
+      {
+        key: "recommendation",
+        icon: "gift-outline",
+        label: t("Recommendation"),
+        onPress: () => {
+          setComposeMenuVisible(false);
+          router.navigate("/search" as any);
+          showToast(t("Choose a movie or series to recommend"));
+        },
+      },
+      {
+        key: "review",
+        icon: "star-outline",
+        label: t("Review"),
+        onPress: () => {
+          setComposeMenuVisible(false);
+          router.navigate("/search" as any);
+          showToast(t("Choose a movie or series to review"));
+        },
+      },
+      {
+        key: "analyze",
+        icon: "document-text-outline",
+        label: t("Analyze"),
+        onPress: () => {
+          setComposeMenuVisible(false);
+          router.navigate("/profile?tab=analyses" as any);
+          showToast(t("Share one of your analyses"));
+        },
+      },
+      {
+        key: "poll",
+        icon: "stats-chart-outline",
+        label: t("Poll"),
+        onPress: () => {
+          setComposeMenuVisible(false);
+          router.navigate("/to-watch" as any);
+          showToast(t("Tap the poll button to create your post"));
+        },
+      },
+      {
+        key: "badge",
+        icon: "ribbon-outline",
+        label: t("Badge"),
+        onPress: () => {
+          setComposeMenuVisible(false);
+          router.navigate("/profile?tab=badges" as any);
+          showToast(t("See the badges you've earned"));
+        },
+      },
+    ],
+    [t, router, showToast]
+  );
 
   // Used to only ever fetch once per mount — since this section stays
   // mounted for the whole session (React.memo'd, never remounts on tab
@@ -325,6 +425,12 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
             <View style={styles.podiumInset}>
               <PeoplePodium jumpToCategory={jumpToPodiumCategory} />
             </View>
+            {/* Moved from Discover, direct ask — a live status roster
+                belongs next to OnlineFriendsBar's own kind of content, not
+                the catalog-browse rails Discover otherwise holds. Placed
+                after the podium, not before it ("podyum başta olmalı her
+                zaman"). */}
+            <CurrentlyWatchingSection basePath="/home" />
             <View style={styles.titleDivider} />
             {/* Title row always renders (not gated behind `loading` like
                 the spinner/error below it used to be entirely) so the
@@ -342,9 +448,14 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
                 <Ionicons name="globe-outline" size={16} color={scope === "all" ? colors.primary : colors.placeholder} />
                 <Ionicons name="people-outline" size={16} color={scope === "following" ? colors.primary : colors.placeholder} />
               </Pressable>
+              <Pressable style={styles.composeButton} onPress={() => setComposeMenuVisible(true)} hitSlop={8}>
+                <Ionicons name="add" size={20} color={colors.baseContent} />
+              </Pressable>
             </View>
             {loading ? (
-              <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
+              <View style={{ marginTop: 8 }}>
+                {Array.from({ length: 3 }, (_, i) => <SkeletonShareCard key={i} />)}
+              </View>
             ) : (
               error && <Text style={styles.error}>{error}</Text>
             )}
@@ -361,6 +472,11 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={!loading ? <Text style={styles.empty}>{t("No shares yet.")}</Text> : null}
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}
+      />
+      <PostComposeMenu
+        visible={composeMenuVisible}
+        onClose={() => setComposeMenuVisible(false)}
+        categories={composeCategories}
       />
     </View>
   );

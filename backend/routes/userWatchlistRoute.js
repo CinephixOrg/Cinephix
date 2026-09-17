@@ -114,10 +114,38 @@ router.post("/watchlist", authMiddleware, async (req, res) => {
       }
     }
 
+    // Auto-clears "Currently Watching" the moment the SAME item lands on
+    // the Watched List — the natural "I finished it" signal, direct ask —
+    // without needing a separate explicit stop action for this case (a
+    // manual stop still exists for the "paused partway through, haven't
+    // finished yet" case, see userController.js's stopCurrentlyWatching).
+    if (
+      user.currentlyWatching &&
+      user.currentlyWatching.itemId?.toString() === contentId?.toString() &&
+      user.currentlyWatching.itemType === contentType
+    ) {
+      user.currentlyWatching = undefined;
+    }
+
     await user.save();
     await refreshUserCineGraph(userId);
 
-    return res.status(201).json({ message: "Added", watchlist: user.watchlist, newlyEarnedBadges });
+    // Included so the mobile client can sync its own cached "Currently
+    // Watching" button state locally (AuthContext.updateUser) without a
+    // second round trip whenever this add just auto-cleared it above.
+    // `?.itemId ? ... : null` rather than a plain `?? null` — Mongoose
+    // auto-vivifies an unset single-nested-object schema path (like
+    // currentlyWatching) into `{}` the moment it's accessed on a document
+    // instance, even when nothing was ever actually set (confirmed via
+    // direct testing), so a bare `?? null` would ship a misleading `{}`
+    // instead of `null` for the (very common) case of a user who's never
+    // used this feature at all.
+    return res.status(201).json({
+      message: "Added",
+      watchlist: user.watchlist,
+      newlyEarnedBadges,
+      currentlyWatching: user.currentlyWatching?.itemId ? user.currentlyWatching : null,
+    });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }

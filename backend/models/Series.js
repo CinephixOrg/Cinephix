@@ -21,6 +21,10 @@ for (const path of ["tmdb_id", "id.tmdb", "tmdb", "imdb_id", "id.imdb", "imdb", 
   seriesSchema.index({ [path]: 1 }, { sparse: true, name: `${path}_1_sparse` });
 }
 
+// Same reasoning as Movie.js's own release_date index — getNewReleases
+// filters+sorts Series by first_air_date with nothing to back either.
+seriesSchema.index({ first_air_date: -1 }, { name: "first_air_date_-1" });
+
 export function createSeriesModel(conn) {
   return conn.model("Series", seriesSchema, "series");
 }

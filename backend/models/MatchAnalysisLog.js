@@ -26,11 +26,25 @@ const matchAnalysisLogSchema = new Schema({
   // badge's own compute function treats a missing score the same as any
   // other row that didn't clear the threshold, not an error.
   score: { type: Number, min: 0, max: 100 },
+  // Which UI entry point triggered this analysis — "sync" (the Sync page's
+  // own Analyze button, the default) or "profile" (a public profile's Sync
+  // Score card ⓘ). Added so analyzeMatchWithUser can enforce a SEPARATE,
+  // stricter Free/Plus/Premium gate on the "profile" entry point (direct
+  // ask: block Free entirely, cap Plus per week) without touching the Sync
+  // page's own existing per-pair-cooldown gate, which stays exactly as it
+  // was for every tier. Absent on every row created before this field
+  // existed — those are all "sync" in effect (this field didn't exist yet
+  // to distinguish anything), so the query that counts "profile" rows for
+  // the weekly quota naturally never counts them.
+  source: { type: String, enum: ["sync", "profile"], default: "sync" },
 });
 
 // "Most recent analysis of this exact pair" is the only query this model
 // ever serves.
 matchAnalysisLogSchema.index({ user: 1, targetUser: 1, createdAt: -1 });
+// The weekly "profile" quota's own query shape — every profile-sourced row
+// for one user within the current week.
+matchAnalysisLogSchema.index({ user: 1, source: 1, createdAt: -1 });
 
 const MatchAnalysisLog = mongoose.model("MatchAnalysisLog", matchAnalysisLogSchema);
 export default MatchAnalysisLog;

@@ -15,18 +15,20 @@ const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
 
 // GET /api/groups
 export const getAllGroups = asyncHandler(async (req, res) => {
-  const groups = await Group.find({})
-    .select("-members")
-    .sort({ memberCount: -1 })
-    .lean();
-
-  let joinedIds = new Set();
-  if (req.user) {
-    const joined = await Group.find({ "members.user": req.user._id })
-      .select("_id")
-      .lean();
-    joinedIds = new Set(joined.map((g) => g._id.toString()));
-  }
+  // groups and joined are independent queries — parallelized instead of
+  // two sequential ~300ms round trips.
+  const [groups, joined] = await Promise.all([
+    Group.find({})
+      .select("-members")
+      .sort({ memberCount: -1 })
+      .lean(),
+    req.user
+      ? Group.find({ "members.user": req.user._id })
+          .select("_id")
+          .lean()
+      : Promise.resolve([]),
+  ]);
+  const joinedIds = new Set(joined.map((g) => g._id.toString()));
 
   const result = groups.map((g) => ({
     ...g,
@@ -165,7 +167,7 @@ export const markGroupAsRead = asyncHandler(async (req, res) => {
 
 // POST /api/groups/:slug/messages
 export const sendGroupMessage = asyncHandler(async (req, res) => {
-  const { text, type = "text", contentId, contentType, contentData, analysisData } = req.body;
+  const { text, type = "text", contentId, contentType, contentData, analysisData, listData } = req.body;
 
   // Validate message based on type
   if (type === "recommendation") {
@@ -175,6 +177,8 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
       return sendError(res, "Invalid recommendation data", 400);
   } else if (type === "analysis_share") {
     if (!analysisData) return sendError(res, "Missing analysis data", 400);
+  } else if (type === "list_share") {
+    if (!listData?.listId || !listData?.name) return sendError(res, "Missing list data", 400);
   } else {
     // text message
     if (!text?.trim() || text.length > 1000) {
@@ -250,13 +254,16 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     }
   } else if (type === "analysis_share") {
     messageData.analysisData = analysisData;
+  } else if (type === "list_share") {
+    messageData.listData = {
+      listId: listData.listId,
+      name: listData.name,
+      itemCount: listData.itemCount || 0,
+      previewPosters: listData.previewPosters || [],
+    };
   }
 
   const message = await Message.create(messageData);
-
-  const populated = await Message.findById(message._id)
-    .populate("sender", "username profile_pic_url accountTier")
-    .lean();
 
   // This REST path (used for one-off sends like recommendation/analysis-share
   // that don't go through the socket) has no socket equivalent to update the
@@ -273,12 +280,20 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
   });
   const previewText = text.trim();
   const lastMessageAt = new Date();
-  await Group.findByIdAndUpdate(group._id, {
-    lastMessage: previewText,
-    lastMessageAt,
-    lastMessageSenderId: senderId,
-    ...(Object.keys(incrObj).length > 0 && { $inc: incrObj }),
-  });
+
+  // populated (re-fetches `message` by its already-known id) and the Group
+  // update are independent — parallelized instead of 2 sequential round trips.
+  const [populated] = await Promise.all([
+    Message.findById(message._id)
+      .populate("sender", "username profile_pic_url accountTier")
+      .lean(),
+    Group.findByIdAndUpdate(group._id, {
+      lastMessage: previewText,
+      lastMessageAt,
+      lastMessageSenderId: senderId,
+      ...(Object.keys(incrObj).length > 0 && { $inc: incrObj }),
+    }),
+  ]);
 
   // Broadcast to all connected room members in real-time
   const io = getIo();

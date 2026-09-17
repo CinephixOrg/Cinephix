@@ -27,6 +27,21 @@ export const GENRE_BADGES = [
   { key: "thriller", movieGenres: ["Thriller"], seriesGenres: [] },
   { key: "scifi", movieGenres: ["Science Fiction"], seriesGenres: ["Sci-Fi & Fantasy"] },
   { key: "documentary", movieGenres: ["Documentary"], seriesGenres: ["Documentary"] },
+  // 10 more added later, same rule as horror/romance/thriller above: a
+  // movie genre whose series equivalent is already claimed by another
+  // badge (Adventure/Fantasy -> series' merged "Action & Adventure" /
+  // "Sci-Fi & Fantasy", already counted by action/scifi) stays movie-only
+  // rather than double-counting the same series episodes under two badges.
+  { key: "adventure", movieGenres: ["Adventure"], seriesGenres: [] },
+  { key: "animation", movieGenres: ["Animation"], seriesGenres: ["Animation"] },
+  { key: "crime", movieGenres: ["Crime"], seriesGenres: ["Crime"] },
+  { key: "family", movieGenres: ["Family"], seriesGenres: ["Family"] },
+  { key: "fantasy", movieGenres: ["Fantasy"], seriesGenres: [] },
+  { key: "history", movieGenres: ["History"], seriesGenres: [] },
+  { key: "musical", movieGenres: ["Music"], seriesGenres: [] },
+  { key: "mystery", movieGenres: ["Mystery"], seriesGenres: ["Mystery"] },
+  { key: "war", movieGenres: ["War"], seriesGenres: ["War & Politics"] },
+  { key: "western", movieGenres: ["Western"], seriesGenres: ["Western"] },
 ];
 
 export const DEVOTEE_THRESHOLD = 15;
@@ -547,18 +562,23 @@ export const getTimeTravelerBadge = asyncHandler(async (req, res) => {
   sendSuccess(res, { badges, tiers: TIME_TRAVELER_TIERS }, "Time traveler badge fetched", 200);
 });
 
-// Eclectic Taste — reuses the SAME unified 8-genre system GENRE_BADGES
+// Eclectic Taste — reuses the SAME unified genre system GENRE_BADGES
 // already establishes (not raw TMDB genre_ids, which would count e.g.
 // movie "Action" and series "Action & Adventure" as two separate genres)
 // so this can never quietly disagree with what the Genre badges tab
-// itself shows. Earned once at least MIN_GENRES of those 8 keys have any
-// real count at all — deliberately NOT requiring devotee-level counts in
-// each, since this badge is about BREADTH of taste, not depth in any one.
+// itself shows. Earned once at least MIN_GENRES of those keys (18, as of
+// the adventure/animation/crime/family/fantasy/history/musical/mystery/
+// war/western expansion) have any real count at all — deliberately NOT
+// requiring devotee-level counts in each, since this badge is about
+// BREADTH of taste, not depth in any one. MIN_GENRES stays 6 (unchanged
+// by that expansion — still a meaningful "genuinely eclectic" bar, not
+// automatically raised just because more genres exist to draw from).
 export const ECLECTIC_TASTE_MIN_GENRES = 6;
 // threshold is the real gating number here (unlike every other one-off
 // badge's own dummy `1`) since `count` is a genuinely meaningful number
-// for this one (distinct genres touched, out of 8 possible) — the share
-// payload's own `threshold` field should reflect that, not a placeholder.
+// for this one (distinct genres touched, out of GENRE_BADGES.length
+// possible) — the share payload's own `threshold` field should reflect
+// that, not a placeholder.
 export const ECLECTIC_TASTE_TIERS = [{ tier: "tier1", threshold: ECLECTIC_TASTE_MIN_GENRES }];
 
 export async function computeEclecticTasteBadge(userId) {
@@ -633,9 +653,18 @@ export async function computeHiddenGemBadge(userId) {
   const movieIds = highRatings.filter((r) => r.contentType === "movie").map((r) => new mongoose.Types.ObjectId(r.contentId));
   const seriesIds = highRatings.filter((r) => r.contentType === "series").map((r) => new mongoose.Types.ObjectId(r.contentId));
 
+  // A `$match` before `$unwind` — narrowing to users whose watchlist has
+  // at least one of these specific items (via `$elemMatch`, evaluated
+  // in-place against the array, no unwind needed to check it) — lets
+  // MongoDB skip unwinding the (potentially long) watchlist of every
+  // OTHER user first. Unwinding the whole users collection's watchlists
+  // up front, every time this ran, was a real, measured contributor to
+  // the Badges tab's own reported slowness (it runs on every load,
+  // regardless of whether this specific badge is even close to earned).
   const [movieWatcherCounts, seriesWatcherCounts] = await Promise.all([
     movieIds.length
       ? User.aggregate([
+          { $match: { watchlist: { $elemMatch: { itemType: "movie", itemId: { $in: movieIds } } } } },
           { $unwind: "$watchlist" },
           { $match: { "watchlist.itemType": "movie", "watchlist.itemId": { $in: movieIds } } },
           { $group: { _id: "$watchlist.itemId", count: { $sum: 1 } } },
@@ -643,6 +672,7 @@ export async function computeHiddenGemBadge(userId) {
       : [],
     seriesIds.length
       ? User.aggregate([
+          { $match: { watchlist: { $elemMatch: { itemType: "series", itemId: { $in: seriesIds } } } } },
           { $unwind: "$watchlist" },
           { $match: { "watchlist.itemType": "series", "watchlist.itemId": { $in: seriesIds } } },
           { $group: { _id: "$watchlist.itemId", count: { $sum: 1 } } },

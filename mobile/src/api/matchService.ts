@@ -24,13 +24,21 @@ export async function getMatchWithUser(
 // return, but only if given the same inputs, so passing a different/partial
 // filter set here would reintroduce the "two different scores" bug this was
 // built to fix.
+// `source: "profile"` marks a call made from a public profile's Sync Score
+// card ⓘ (SyncScoreCard.tsx) rather than the Sync page's own Analyze
+// button — the backend enforces a separate, stricter Free/Plus/Premium
+// gate only for that source (see analyzeMatchWithUser's own comment,
+// backend/controllers/matchController.js). Omitted (the default) for
+// every other caller, which stays exactly as it always was.
 export async function analyzeMatchWithUser(
   targetUserId: string,
-  filters: MatchFilters
+  filters: MatchFilters,
+  source?: "profile"
 ): Promise<MatchAnalysis> {
   const res = await API.post(API_ROUTES.MATCH.ANALYZE(targetUserId), {
     ...filters,
     language: i18next.language,
+    ...(source ? { source } : {}),
   });
   return res.data;
 }
@@ -60,11 +68,16 @@ function analysisCacheKey(targetUserId: string, filters: MatchFilters) {
 // joins the same promise. A failed attempt is evicted rather than cached,
 // so a real retry (e.g. the panel's own effect re-running) gets a fresh
 // LLM call instead of being stuck replaying the same rejection.
-export function prefetchMatchAnalysis(targetUserId: string, filters: MatchFilters): Promise<MatchAnalysis> {
+// `source` is NOT part of the cache key — the generated analysis itself is
+// identical either way (source only changes which quota gets checked on a
+// genuine network call), so a candidate already fetched via the Sync
+// page's own flow is free to reuse from a profile visit too, and vice
+// versa, with no second LLM call and no second quota deduction.
+export function prefetchMatchAnalysis(targetUserId: string, filters: MatchFilters, source?: "profile"): Promise<MatchAnalysis> {
   const key = analysisCacheKey(targetUserId, filters);
   let cached = analysisCache.get(key);
   if (!cached) {
-    cached = analyzeMatchWithUser(targetUserId, filters);
+    cached = analyzeMatchWithUser(targetUserId, filters, source);
     analysisCache.set(key, cached);
     cached.catch(() => analysisCache.delete(key));
   }

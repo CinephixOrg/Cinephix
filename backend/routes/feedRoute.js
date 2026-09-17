@@ -4,6 +4,8 @@ import {
   getFeed,
   getTopPicks,
   getRecommendations,
+  getNewReleases,
+  getCurrentlyWatchingFeed,
   getPopularThisWeek,
   getPopularWithFriends,
   getLeaderboard,
@@ -18,6 +20,8 @@ const router = express.Router();
 router.get("/", authMiddleware, getFeed);
 router.get("/top-picks", authMiddleware, getTopPicks);
 router.get("/recommendations", authMiddleware, getRecommendations);
+router.get("/new-releases", authMiddleware, getNewReleases);
+router.get("/currently-watching", authMiddleware, getCurrentlyWatchingFeed);
 router.get("/popular-this-week", authMiddleware, getPopularThisWeek);
 router.get("/popular-with-friends", authMiddleware, getPopularWithFriends);
 router.get("/leaderboard", authMiddleware, getLeaderboard);

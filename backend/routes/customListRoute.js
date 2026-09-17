@@ -307,10 +307,13 @@ router.post("/", authMiddleware, async (req, res) => {
     // list (no upsert on this endpoint), so no "was this an edit" guard is
     // needed the way rating/review counts need one.
     const newlyEarnedBadges = [];
-    const streakBadge = await bumpStreak(req.user._id);
+    // bumpStreak (a write) and listCount (a read) are independent —
+    // parallelized instead of 2 sequential round trips.
+    const [streakBadge, listCount] = await Promise.all([
+      bumpStreak(req.user._id),
+      CustomList.countDocuments({ owner: req.user._id }),
+    ]);
     if (streakBadge) newlyEarnedBadges.push(streakBadge);
-
-    const listCount = await CustomList.countDocuments({ owner: req.user._id });
     const crossedTier = crossedActivityTier(listCount, LIST_COUNT_TIERS);
     if (crossedTier) {
       const threshold = LIST_COUNT_TIERS.find((t) => t.tier === crossedTier).threshold;
@@ -343,7 +346,16 @@ router.get("/:id", optionalAuth, async (req, res) => {
     const likes = list.likes || [];
     const hasLiked = req.user ? likes.some((id) => id.toString() === req.user._id.toString()) : false;
 
-    return res.json({ list: { ...list, likeCount: likes.length }, isOwner: !!isOwner, hasLiked });
+    // Hydrate every item's title/poster server-side in one aggregation
+    // (hydratePreviewItems, shared with /discover etc. above — just given a
+    // limit covering the whole list instead of a preview slice) instead of
+    // returning bare {itemId, itemType} refs. Mobile used to hydrate this
+    // itself with one getMovieById/getSeriesById call PER item — this
+    // page's own real slowness, not a rendering problem: a 30-item list
+    // meant 30 extra round trips just to get posters on screen.
+    const [hydratedList] = list.items.length > 0 ? await hydratePreviewItems([list], list.items.length) : [{ ...list, previewItems: [] }];
+
+    return res.json({ list: { ...hydratedList, likeCount: likes.length }, isOwner: !!isOwner, hasLiked });
   } catch {
     return res.status(500).json({ message: "Server error" });
   }

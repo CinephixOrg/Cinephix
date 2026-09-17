@@ -133,6 +133,27 @@ seriesCineGraph: {
   currentStreak: { type: Number, default: 0 },
   lastStreakDate: { type: Date },
 
+  // Single active "Currently Watching" status — a real explicit user
+  // action (a button on Content Detail, not inferred from rating/
+  // watchlist-add, which both mean "finished," the opposite signal), one
+  // at a time (setting a new one replaces the old one, no array — keeps
+  // the "who's watching what" feed one row per person). `startedAt` is a
+  // real timestamp (not day-truncated like the streak fields above) since
+  // this is read as "how long ago," shown to other viewers, not compared
+  // by calendar day. Lazily expired on every read against a 1-day TTL
+  // (userController.js's own isCurrentlyWatchingActive) rather than a cron
+  // job — same "computed fresh, never physically cleared by a schedule"
+  // convention `lastStreakDate`'s own decay already established — and
+  // cleared for real (not just lazily) the moment the same item is added
+  // to the Watched List (userWatchlistRoute.js's watchlist-add), the
+  // natural "I finished it" signal, or the user manually stops it via the
+  // same Content Detail button.
+  currentlyWatching: {
+    itemId: { type: Schema.Types.ObjectId },
+    itemType: { type: String, enum: ["movie", "series"] },
+    startedAt: { type: Date },
+  },
+
   // Devices receiving this account's push notifications, newest first, at most
   // MAX_PUSH_TOKENS (utils/pushMessages.js). Left out of every query unless
   // asked for with select("+pushTokens"), so no profile or user response can

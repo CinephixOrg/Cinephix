@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
@@ -12,44 +12,84 @@ import { TIER_FRAME_STYLES } from "../../../src/theme/tierFrames";
 import type { AccountTier } from "../../../src/types";
 import { localeUpper } from "../../../src/utils/text";
 
-// Sync-specific plan comparison — the rest of the app's tier gates
-// (Profile Analysis schema/history/cooldown) aren't shown here, this page
-// is scoped to what the user asked to level first. TIER_FRAME_STYLES
-// (theme/tierFrames.ts) already carries the same silver/gold identity used
-// for the avatar ring on Plus/Premium — this page's own accent colors
-// below deliberately match those so a Plus card reads as the same "Plus"
-// everywhere in the app. Also now the one shared subscription entry point
-// for Medya/Shares' own locked podium (PeoplePodium.tsx) — still Sync-
-// flavored copy below, reused as-is per scope (not asked to generalize it).
+// The one shared subscription entry point for every tier-gated feature in
+// the app (CineMatch's own locked filters/results, Medya's locked podium
+// categories, Discover's locked leaderboard categories, Profile Analysis's
+// schema/history/cooldown) — direct ask to list ALL of Cinephix's own
+// tier leveling here, not just the Sync-specific slice this page used to
+// show. Every number below is copied by hand from backend/config/tiers.js
+// and the mobile-side OPEN_KEYS_BY_TIER tables in LeaderboardPodium.tsx/
+// PeoplePodium.tsx — there's no shared import between the two codebases,
+// same reason every other hardcoded tier number already on this page (the
+// old featuresFor's own "15 sync searches per day" etc.) was hardcoded
+// too. If those source-of-truth numbers ever change, this page's own
+// copy needs a matching manual update — not new to this rewrite, just
+// now covering more ground than it used to.
 const PLAN_ORDER: AccountTier[] = ["free", "plus", "premium"];
 
-interface PlanFeature {
-  label: string;
-  included: boolean;
+interface FeatureSection {
+  heading: string;
+  items: string[];
 }
 
-function featuresFor(tier: AccountTier, t: (k: string, opts?: any) => string): PlanFeature[] {
+function sectionsFor(tier: AccountTier, t: (k: string, opts?: any) => string): FeatureSection[] {
   if (tier === "free") {
     return [
-      { label: t("1 sync search per day"), included: true },
-      { label: t("Movies and series share the same daily search"), included: true },
-      { label: t("Choose type & genres"), included: false },
-      { label: t("Weight by watch count / avg rating"), included: false },
+      { heading: t("Sync"), items: [t("1 sync search per day")] },
+      { heading: t("Sync Results"), items: [t("Your #1 match stays locked — see the other 4")] },
+      {
+        heading: t("Sync Analysis"),
+        items: [
+          t("View analysis with a {{minutes}}-minute cooldown per person", { minutes: 60 }),
+          t("Sync analysis from a profile: locked"),
+        ],
+      },
+      { heading: t("Profile Analysis"), items: [t("Basic analysis, once a day")] },
+      {
+        heading: t("Leaderboards"),
+        items: [
+          t("{{count}} of {{total}} leaderboard categories unlocked", { count: 1, total: 5 }),
+          t("{{count}} of {{total}} leaderboard categories unlocked", { count: 1, total: 6 }),
+        ],
+      },
     ];
   }
   if (tier === "plus") {
     return [
-      { label: t("3 sync searches per day"), included: true },
-      { label: t("Choose type & genres"), included: true },
-      { label: t("Weight by watch count / avg rating"), included: false },
-      { label: t("Faster analysis cooldown"), included: true },
+      { heading: t("Sync"), items: [t("3 sync searches per day"), t("Choose type & genre filters")] },
+      { heading: t("Sync Results"), items: [t("Your top 3 matches fully unlocked")] },
+      {
+        heading: t("Sync Analysis"),
+        items: [
+          t("View analysis with a {{minutes}}-minute cooldown per person", { minutes: 15 }),
+          t("5 sync analyses per week from profiles"),
+        ],
+      },
+      { heading: t("Profile Analysis"), items: [t("Richer analysis with history, every 6 hours")] },
+      {
+        heading: t("Leaderboards"),
+        items: [
+          t("{{count}} of {{total}} leaderboard categories unlocked", { count: 3, total: 5 }),
+          t("{{count}} of {{total}} leaderboard categories unlocked", { count: 3, total: 6 }),
+        ],
+      },
     ];
   }
   return [
-    { label: t("15 sync searches per day"), included: true },
-    { label: t("Choose type & genres"), included: true },
-    { label: t("Weight by watch count / avg rating"), included: true },
-    { label: t("Fastest analysis cooldown"), included: true },
+    {
+      heading: t("Sync"),
+      items: [t("15 sync searches per day"), t("Choose type & genre filters"), t("Weight matches by watch count or average rating")],
+    },
+    { heading: t("Sync Results"), items: [t("All 5 matches fully unlocked")] },
+    {
+      heading: t("Sync Analysis"),
+      items: [
+        t("View analysis with a {{minutes}}-minute cooldown per person", { minutes: 5 }),
+        t("Unlimited sync analyses from profiles"),
+      ],
+    },
+    { heading: t("Profile Analysis"), items: [t("Richer analysis with history and advanced cards, every hour")] },
+    { heading: t("Leaderboards"), items: [t("All leaderboard categories unlocked")] },
   ];
 }
 
@@ -57,7 +97,7 @@ function featuresFor(tier: AccountTier, t: (k: string, opts?: any) => string): P
 // silver/gold pair the avatar ring and post-card gradient name already use
 // (theme/tierFrames.ts), instead of this page's own separate hardcoded
 // hex pair. `glowColor` doubles as a flat representative tone for the
-// checkmark icons/plan name (those don't need a full gradient).
+// section headings (those don't need a full gradient).
 const accentFor = (tier: AccountTier): string | null => (tier === "free" ? null : TIER_FRAME_STYLES[tier]?.glowColor ?? null);
 const gradientFor = (tier: AccountTier): [string, string] | null => (tier === "free" ? null : TIER_FRAME_STYLES[tier]?.gradient ?? null);
 
@@ -108,29 +148,28 @@ export default function SubscriptionScreen() {
           marginBottom: 4,
         },
         errorText: { fontSize: 12.5, color: colors.error, textAlign: "center" },
-        // Free/Plus share one row, 50/50 (flex:1 each) — default
-        // alignItems:"stretch" on a row's cross axis is what makes both
-        // cards start and end at the same height regardless of which one's
-        // content happens to be taller, no extra height math needed.
-        planRow: { flexDirection: "row", gap: 12 },
-        cardHalf: { flex: 1 },
-        // Shared visual content (background/padding/radius) for every card,
-        // independent of how its border/frame is drawn — Free gets a plain
-        // flat border straight on this, Plus/Premium wrap it inside a
-        // gradient frame instead (cardGradientWrap/cardGradientInner below).
+        // Every plan stacked in one column now, full width — direct ask
+        // ("free ile plus yan yana olmasın, alt alta dizilsin"): each
+        // card's own feature list grew from a flat 4-line list to 5
+        // grouped sections once this page started covering every tier-
+        // gated feature in the app, not just Sync's own 4 — two cards
+        // side by side at half width would have made that content
+        // cramped/scroll-within-a-card, which a single stacked column
+        // avoids entirely.
+        planStack: { gap: 14 },
         cardBase: { borderRadius: 16, backgroundColor: colors.base200, padding: 18 },
         cardFlatBorder: { borderWidth: 1.5, borderColor: colors.border },
         cardCurrent: { borderColor: colors.primary },
         // The metallic-frame treatment for Plus/Premium — same silver/gold
-        // gradient pair as the avatar ring and post-card name, direct ask
-        // ("çerçevelerini de... metalik dolgu ile yap"). RN has no gradient
-        // borderColor, so this is the standard "gradient background behind
-        // an inset content view" trick: the outer LinearGradient's own
-        // 2px padding is what actually reads as the border.
+        // gradient pair as the avatar ring and post-card name. RN has no
+        // gradient borderColor, so this is the standard "gradient
+        // background behind an inset content view" trick: the outer
+        // LinearGradient's own 2px padding is what actually reads as the
+        // border.
         cardGradientWrap: { borderRadius: 16, padding: 2 },
         cardGradientInner: { borderRadius: 14 },
         cardHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
-        planName: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.baseContent },
+        planName: { fontFamily: fonts.extrabold, fontSize: 20, color: colors.baseContent },
         currentBadge: {
           backgroundColor: colors.primary,
           borderRadius: 999,
@@ -138,42 +177,40 @@ export default function SubscriptionScreen() {
           paddingVertical: 3,
         },
         currentBadgeText: { fontFamily: fonts.bold, fontSize: 10.5, color: colors.primaryContent },
-        featureRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
-        featureText: { fontSize: 13, color: colors.baseContent, flex: 1 },
-        featureTextLocked: { color: colors.placeholder },
+        sectionBlock: { marginTop: 14 },
+        sectionHeading: { fontFamily: fonts.bold, fontSize: 12.5, letterSpacing: 0.4, marginBottom: 6 },
+        featureRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 6 },
+        featureText: { fontSize: 13.5, color: colors.baseContent, flex: 1, lineHeight: 18 },
         selectButton: {
-          marginTop: 16,
+          marginTop: 18,
           borderRadius: 10,
-          paddingVertical: 12,
+          paddingVertical: 13,
           alignItems: "center",
           backgroundColor: colors.primary,
         },
         // Plus/Premium's own select button fills with the same metallic
-        // gradient instead of a flat accent color — the gradient View
-        // itself carries the shape/padding here since it's the outermost
-        // element in that case (see selectButtonGradientText below for why
-        // the label needs its own color override).
+        // gradient instead of a flat accent color.
         selectButtonGradient: {
-          marginTop: 16,
+          marginTop: 18,
           borderRadius: 10,
-          paddingVertical: 12,
+          paddingVertical: 13,
           alignItems: "center",
         },
         selectButtonText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primaryContent },
         // Premium's gold and Plus's silver are both light/near-white at one
         // end of their gradient — the default primaryContent label color
-        // (usually a light color meant for a solid colors.primary
-        // background) could wash out against that. Dark, fixed, both tiers.
+        // could wash out against that. Dark, fixed, both tiers.
         selectButtonGradientText: { fontFamily: fonts.bold, fontSize: 14, color: "#1A1A1A" },
       }),
     [colors]
   );
 
-  const renderCardBody = (tier: AccountTier) => {
+  const renderCard = (tier: AccountTier) => {
     const isCurrent = tier === currentTier;
     const accent = accentFor(tier);
     const gradient = gradientFor(tier);
-    return (
+
+    const body = (
       <>
         <View style={styles.cardHeaderRow}>
           <Text style={[styles.planName, accent ? { color: accent } : null]}>
@@ -186,14 +223,15 @@ export default function SubscriptionScreen() {
           )}
         </View>
 
-        {featuresFor(tier, t).map((f) => (
-          <View key={f.label} style={styles.featureRow}>
-            <Ionicons
-              name={f.included ? "checkmark-circle" : "lock-closed"}
-              size={16}
-              color={f.included ? (accent ?? colors.success) : colors.placeholder}
-            />
-            <Text style={[styles.featureText, !f.included && styles.featureTextLocked]}>{f.label}</Text>
+        {sectionsFor(tier, t).map((section) => (
+          <View key={section.heading} style={styles.sectionBlock}>
+            <Text style={[styles.sectionHeading, { color: accent ?? colors.placeholder }]}>{localeUpper(section.heading)}</Text>
+            {section.items.map((item) => (
+              <View key={item} style={styles.featureRow}>
+                <Ionicons name="checkmark-circle" size={15} color={accent ?? colors.success} style={{ marginTop: 1 }} />
+                <Text style={styles.featureText}>{item}</Text>
+              </View>
+            ))}
           </View>
         ))}
 
@@ -223,23 +261,19 @@ export default function SubscriptionScreen() {
           ))}
       </>
     );
-  };
 
-  const renderCard = (tier: AccountTier, containerStyle?: StyleProp<ViewStyle>) => {
-    const isCurrent = tier === currentTier;
-    const gradient = gradientFor(tier);
     if (gradient) {
       return (
-        <View key={tier} style={containerStyle}>
+        <View key={tier}>
           <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradientWrap}>
-            <View style={[styles.cardBase, styles.cardGradientInner]}>{renderCardBody(tier)}</View>
+            <View style={[styles.cardBase, styles.cardGradientInner]}>{body}</View>
           </LinearGradient>
         </View>
       );
     }
     return (
-      <View key={tier} style={[styles.cardBase, styles.cardFlatBorder, isCurrent && styles.cardCurrent, containerStyle]}>
-        {renderCardBody(tier)}
+      <View key={tier} style={[styles.cardBase, styles.cardFlatBorder, isCurrent && styles.cardCurrent]}>
+        {body}
       </View>
     );
   };
@@ -248,23 +282,12 @@ export default function SubscriptionScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View>
         <Text style={styles.headerTitle}>{t("Subscription Plans")}</Text>
-        <Text style={styles.headerSubtitle}>
-          {t("Search more often, unlock filters, and fine-tune how your matches are ranked.")}
-        </Text>
+        <Text style={styles.headerSubtitle}>{t("See what's included at every level, and upgrade any time.")}</Text>
         <Text style={styles.demoNotice}>{t("Demo only — no real billing yet, this switches your plan instantly.")}</Text>
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
 
-      {/* Free/Plus side by side (50/50, same start/end via the row's own
-          default stretch), Premium — the most-featured plan — spans the
-          full width below instead of competing for half a row, with the
-          content container's own `gap` (not a touching/adjacent layout)
-          keeping it separated from the row above. */}
-      <View style={styles.planRow}>
-        {renderCard("free", styles.cardHalf)}
-        {renderCard("plus", styles.cardHalf)}
-      </View>
-      {renderCard("premium")}
+      <View style={styles.planStack}>{PLAN_ORDER.map((tier) => renderCard(tier))}</View>
     </ScrollView>
   );
 }

@@ -5,17 +5,29 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 // (home/index.tsx); it needs gesture-handler's pan resolution to keep
 // working, see that file's comment for why.
 import { FlatList } from "react-native-gesture-handler";
+import DraggableFlatList from "react-native-draggable-flatlist";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+
+// Passed as renderItem's 3rd argument only when dragEnabled — undefined for
+// every other caller of this rail, and for the (non-draggable) empty
+// add-slots a Favorites caller renders via `footer` instead of `data`.
+// `onActivate` (renamed from an original `onLongPress`) is meant to be
+// wired to the card's own onPressIn, not onLongPress — direct ask, picking
+// a card up should start the instant a press lands, no hold-and-wait.
+export interface RailDragHandle {
+  onActivate: () => void;
+  isActive: boolean;
+}
 
 interface Props<T> {
   title: string;
   subtitle?: string;
   data: T[];
   keyExtractor: (item: T) => string;
-  renderItem: (item: T, index: number) => React.ReactNode;
+  renderItem: (item: T, index: number, drag?: RailDragHandle) => React.ReactNode;
   emptyText: string;
   // Optional trailing link next to the title (e.g. "See all" pointing at the
   // full screen this rail is a preview of).
@@ -30,6 +42,26 @@ interface Props<T> {
   // height) — keeps a group of rails visually uniform regardless of how
   // much content or empty-state text each one has.
   height?: number;
+  // Arbitrary trailing content next to the title, alongside (or instead
+  // of) See all/Edit — added for CurrentlyWatchingSection.tsx's own All/
+  // Friends mode toggle, which isn't a link or an edit action so neither
+  // existing slot fit it.
+  headerRight?: React.ReactNode;
+  // Makes `data` itself drag-to-reorder (long-press a card to pick it up),
+  // added for the profile Favorites rails' own edit mode — direct ask,
+  // "watchedlistteki gibi" but for reordering rather than removal. Off by
+  // default; every other caller of this shared rail is unaffected.
+  dragEnabled?: boolean;
+  // Called with the FULL reordered array once a drag ends — the caller
+  // owns persisting it (an optimistic local update + an API call), same
+  // division of responsibility as onEditPress/onRemove elsewhere in this
+  // app; this component never talks to the network itself.
+  onReorder?: (data: T[]) => void;
+  // Fixed, non-draggable content rendered after `data` — the Favorites
+  // rails' own empty "+" add-slots, which stay in place while real items
+  // around them get reordered, same as this rail's normal (non-dragging)
+  // behavior already has them trailing every real item.
+  footer?: React.ReactNode;
 }
 
 // First horizontal poster-rail pattern in the app — generic over item type
@@ -47,6 +79,10 @@ export default function ContentRail<T>({
   onEditPress,
   editLabel,
   height,
+  headerRight,
+  dragEnabled,
+  onReorder,
+  footer,
 }: Props<T>) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -96,12 +132,26 @@ export default function ContentRail<T>({
               <Ionicons name="pencil" size={16} color={colors.baseContent} />
             </Pressable>
           )}
+          {headerRight}
         </View>
       </View>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       <View style={height ? { height } : undefined}>
-        {data.length === 0 ? (
+        {data.length === 0 && !footer ? (
           <Text style={styles.empty}>{emptyText}</Text>
+        ) : dragEnabled ? (
+          <DraggableFlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={data}
+            keyExtractor={(item, index) => keyExtractor(item) || String(index)}
+            contentContainerStyle={styles.railContent}
+            renderItem={({ item, getIndex, drag, isActive }) => (
+              <>{renderItem(item, getIndex() ?? 0, { onActivate: drag, isActive })}</>
+            )}
+            onDragEnd={({ data: reordered }) => onReorder?.(reordered)}
+            ListFooterComponent={footer ? () => <>{footer}</> : undefined}
+          />
         ) : (
           <FlatList
             horizontal
@@ -110,6 +160,7 @@ export default function ContentRail<T>({
             keyExtractor={keyExtractor}
             contentContainerStyle={styles.railContent}
             renderItem={({ item, index }) => <>{renderItem(item, index)}</>}
+            ListFooterComponent={footer ? () => <>{footer}</> : undefined}
           />
         )}
       </View>
