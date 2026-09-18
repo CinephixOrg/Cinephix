@@ -33,8 +33,11 @@ const app = express();
 app.set('query parser', 'extended');
 app.use(helmet());
 
+// FRONTEND_URL may list several origins, comma-separated. A browser's Origin
+// never has a trailing slash or path, so those are trimmed off — a pasted
+// "https://site.com/" would otherwise match nothing and block every request.
 const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL]
+  ? process.env.FRONTEND_URL.split(",").map((url) => url.trim().replace(/\/+$/, "")).filter(Boolean)
   : ["http://localhost:5173", "http://127.0.0.1:5173"];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
