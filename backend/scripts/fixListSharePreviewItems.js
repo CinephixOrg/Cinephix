@@ -1,7 +1,7 @@
 // One-off, re-runnable dev/test-database fix — NOT for production. Direct
-// bug report: list-type Shares in Medya only ever showed ~5 posters in
+// bug report: list-type Shares in Media only ever showed ~5 posters in
 // their film strip even when the underlying list had far more, and there
-// was nothing to scroll to reveal the rest. Root cause: seedMedyaActivity.js's
+// was nothing to scroll to reveal the rest. Root cause: seedMediaActivity.js's
 // own list-share creation step built `listData.previewItems` with a
 // hardcoded `.slice(0, 5)`, unlike the real `POST /shares` list-share
 // endpoint (shareController.js), which already deliberately uses

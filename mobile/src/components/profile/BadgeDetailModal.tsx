@@ -163,7 +163,7 @@ export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, 
           <ActivityIndicator color={colors.primaryContent} size="small" />
         ) : (
           <Text style={[styles.shareButtonText, isShared && styles.shareButtonTextDone]}>
-            {isShared ? t("Shared") : t("Share to Medya")}
+            {isShared ? t("Shared") : t("Share to Media")}
           </Text>
         )}
       </Pressable>

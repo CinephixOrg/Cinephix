@@ -1,4 +1,5 @@
 // controllers/userController.js
+import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -261,6 +262,9 @@ export const followUser = asyncHandler(async (req, res) => {
   );
 
   await notifyFollow({ recipientId: userToFollowId, senderId: loggedInUserId });
+  // For the follower's own Activity page. Best effort: the follow stands
+  // either way.
+  await recordFootprint(loggedInUserId, "followed", userToFollowId).catch(() => {});
 
   return sendSuccess(res, { type: 'following' }, 'User followed successfully', 200);
 });
@@ -288,6 +292,7 @@ export const unfollowUser = asyncHandler(async (req, res) => {
   );
 
   await retractFollow({ recipientId: userToUnfollowId, senderId: loggedInUserId });
+  await clearFootprint(loggedInUserId, "followed", userToUnfollowId).catch(() => {});
 
   sendSuccess(res, null, 'User unfollowed successfully', 200);
 });
@@ -312,6 +317,8 @@ export const removeFollower = asyncHandler(async (req, res) => {
     { _id: followerId },
     { $pull: { following: userId } }
   );
+  // They no longer follow this user, so their Activity shouldn't say they do.
+  await clearFootprint(followerId, "followed", userId).catch(() => {});
 
   return res.status(200).json({ success: true, message: "Follower removed successfully" });
 });
@@ -1476,7 +1483,7 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
   sendSuccess(res, result, 'Suggestions fetched');
 });
 
-// @desc    Which of the people I follow are currently connected (Medya's
+// @desc    Which of the people I follow are currently connected (Media's
 //          online-friends bar) — backed by presenceService's in-memory
 //          socket refcount, not a persisted field.
 // @route   GET /api/users/online

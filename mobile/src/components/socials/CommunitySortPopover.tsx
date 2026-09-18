@@ -3,7 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { sortDirection, sortPriority, type CommunityAction, type CommunityFilters, type CommunitySortKey } from "../../utils/communities";
-import HeaderPopover, { PopoverLabel, PopoverReset, usePopoverStyles } from "./HeaderPopover";
+import HeaderPopover, { PopoverLabel, PopoverReset, usePopoverStyles } from "../popover/HeaderPopover";
 
 interface Props {
   filters: CommunityFilters;

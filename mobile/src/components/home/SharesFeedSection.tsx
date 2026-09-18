@@ -33,7 +33,7 @@ const SUGGESTED_INTERVAL = 5;
 
 const PAGE_LIMIT = 20;
 
-// The Medya feed. Previously had its own Sort (Recent/Popular/Network) +
+// The Media feed. Previously had its own Sort (Recent/Popular/Network) +
 // Type filter UI — the user found it cluttered and asked for the same
 // treatment Discover's own tab bar got earlier this session: remove the
 // control, don't need one at all. The backend blends recency + engagement

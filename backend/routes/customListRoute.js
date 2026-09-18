@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
@@ -419,6 +420,10 @@ router.post("/:id/like", authMiddleware, async (req, res) => {
       list.likes.push(userId);
     }
     await list.save();
+    // For the liker's own Activity page — best effort, the like stands either way.
+    await (alreadyLiked ? clearFootprint(userId, "list_liked", list._id) : recordFootprint(userId, "list_liked", list._id)).catch(
+      () => {}
+    );
 
     return res.json({ likeCount: list.likes.length, hasLiked: !alreadyLiked });
   } catch {

@@ -78,7 +78,14 @@ export async function sendGroupRichMessage(
     | {
         text: string;
         type: "list_share";
-        listData: { listId: string; name: string; itemCount: number; previewPosters: string[] };
+        listData: {
+          listId: string;
+          name: string;
+          itemCount: number;
+          previewPosters: string[];
+          description?: string;
+          ownerUsername?: string;
+        };
       }
 ): Promise<Message> {
   const res = await API.post(API_ROUTES.GROUPS.SEND_MESSAGE(groupId), payload);

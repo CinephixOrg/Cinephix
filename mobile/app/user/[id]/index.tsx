@@ -27,6 +27,7 @@ import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import type { CineGraphData, Favorites, FollowStatus, PublicProfile } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
+import { snippet, topGenresFrom } from "../../../src/utils/shareCards";
 
 export default function PublicProfileScreen() {
   const { colors } = useTheme();
@@ -327,6 +328,11 @@ export default function PublicProfileScreen() {
               username: profile.username,
               profile_pic_url: profile.profile_pic_url,
               accountTier: profile.accountTier,
+              // A snapshot for the chat card: a line of bio, followers, and
+              // what they watch most (this page's CineGraph, already loaded).
+              bio: snippet(profile.bio),
+              followersCount: profile.followers.length,
+              topGenres: topGenresFrom(cineGraph),
             },
           });
         })

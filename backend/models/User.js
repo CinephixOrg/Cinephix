@@ -73,7 +73,7 @@ const userSchema = new Schema({
     default: Date.now
   },
   // Marks the single official Cinephix account (auto-posts trivia/tips/
-  // polls/etc. to Medya via the officialContentService cron job) — a
+  // polls/etc. to Media via the officialContentService cron job) — a
   // separate concern from accountTier (billing/subscription), not
   // overloaded onto it, so tier-gating logic elsewhere is untouched.
   isOfficial: {

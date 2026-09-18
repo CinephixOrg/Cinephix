@@ -64,6 +64,10 @@ const messageSchema = new Schema(
       username: String,
       profile_pic_url: String,
       accountTier: String,
+      // A snapshot for the chat card, like the rest of profileData.
+      bio: String,
+      followersCount: Number,
+      topGenres: [String],
     },
     // For list sharing ("check out this list") — denormalized like
     // profileData above, so a shared list still renders correctly even if
@@ -73,6 +77,9 @@ const messageSchema = new Schema(
       name: String,
       itemCount: Number,
       previewPosters: [String],
+      // Newer shares only — see utils/listShareData.js.
+      description: String,
+      ownerUsername: String,
     },
   },
   { timestamps: true }

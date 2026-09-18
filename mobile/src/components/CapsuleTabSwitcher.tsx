@@ -25,7 +25,7 @@ interface Props<K extends string> {
   // (in pixels, 0 at options[0] through pagerWidth at options[1]) so the
   // window slides in the same frame as the finger instead of only tweening
   // after the pager's page state commits (which reads as the pill trailing
-  // behind a manual swipe). Home's Medya switcher is the one consumer of
+  // behind a manual swipe). Home's Media switcher is the one consumer of
   // this; other callers (Profile's CineGraph toggle, Socials' Messages/
   // Community toggle) have no external drag to track and should leave both
   // unset, keeping the existing tap-triggered tween.
@@ -45,7 +45,7 @@ function hexToRgba(hex: string, alpha: number): string {
 // capsule, muted-gray translucent background, a real sliding Animated.View
 // window measured off each slot's own onLayout (not just a background-color
 // swap). The inactive side shows only its icon; the active side shows its
-// label as text. Originally Home's Medya header control (Paylaşımlar/
+// label as text. Originally Home's Media header control (Paylaşımlar/
 // Keşfet); every screen that needs this exact look/transition should use
 // this component directly rather than re-implementing it — Home, Profile's
 // CineGraph movie/series toggle, and Socials' Messages/Community toggle all

@@ -1,3 +1,4 @@
+import { listShareData } from "../utils/listShareData.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { getIo } from "../services/socketService.js";
@@ -14,7 +15,7 @@ import { notifyMessage } from "../services/notifications.js";
 const INITIAL_MESSAGE_PAGE = 50;
 
 // Same value/reasoning as shareController.js's own RECOMMENDATION_COOLDOWN_MS
-// (Medya) and groupController.js's own copy (group chat) — kept as 3
+// (Media) and groupController.js's own copy (group chat) — kept as 3
 // independent per-file constants rather than one shared import, matching
 // this codebase's existing convention for cooldown constants (see
 // shareController.js's REVIEW_SHARE_COOLDOWN_MS).
@@ -272,8 +273,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
   if (!isParticipant) return sendError(res, "Not a participant", 403);
 
   // Anti-spam cooldown, same shape/window as shareController.js's own
-  // RECOMMENDATION_COOLDOWN_MS for a Medya recommendation — direct ask:
-  // recommending the same title to Medya, a person, and a group in one
+  // RECOMMENDATION_COOLDOWN_MS for a Media recommendation — direct ask:
+  // recommending the same title to Media, a person, and a group in one
   // sitting must all still work independently, only re-recommending the
   // SAME title to this SAME conversation within the window is blocked.
   if (type === "recommendation") {
@@ -326,14 +327,15 @@ export const sendMessage = asyncHandler(async (req, res) => {
       username: profileData.username,
       profile_pic_url: profileData.profile_pic_url || null,
       accountTier: profileData.accountTier || null,
+      // Optional card extras, bounded so a message can't carry an essay.
+      bio: typeof profileData.bio === "string" ? profileData.bio.slice(0, 200) : undefined,
+      followersCount: Number.isFinite(profileData.followersCount) ? Math.max(0, Math.floor(profileData.followersCount)) : undefined,
+      topGenres: Array.isArray(profileData.topGenres)
+        ? profileData.topGenres.filter((g) => typeof g === "string").slice(0, 3).map((g) => g.slice(0, 40))
+        : undefined,
     };
   } else if (type === "list_share") {
-    messageData.listData = {
-      listId: listData.listId,
-      name: listData.name,
-      itemCount: listData.itemCount || 0,
-      previewPosters: listData.previewPosters || [],
-    };
+    messageData.listData = listShareData(listData);
   }
 
   const message = await Message.create(messageData);

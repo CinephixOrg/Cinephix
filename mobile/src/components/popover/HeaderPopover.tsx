@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-// The header button is gesture handler's Pressable (see MessagesSection.tsx
-// for why); the menu inside the Modal keeps React Native's, since a freshly
+import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+// The header button is gesture handler's Pressable (see
+// socials/MessagesSection.tsx for why); the menu inside the Modal keeps React Native's, since a freshly
 // opened Modal measures correctly and gesture handler needs its own root there.
 import { Pressable as HeaderPressable } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,7 +10,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 import { localeUpper } from "../../utils/text";
 import { placePopover, type AnchorRect } from "../../utils/popover";
-import { isDarkTheme } from "./communityCategory";
+import { isDarkTheme } from "../socials/communityCategory";
 
 const MENU_WIDTH = 272;
 const CARET = 12;
@@ -20,6 +20,17 @@ type Colors = ReturnType<typeof useTheme>["colors"];
 export function createPopoverStyles(colors: Colors, dark: boolean, screenWidth: number) {
   return StyleSheet.create({
     button: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+    pill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      height: 32,
+      borderRadius: 16,
+      paddingLeft: 12,
+      paddingRight: 9,
+      backgroundColor: colors.base300,
+    },
+    pillText: { fontFamily: fonts.bold, fontSize: 13, color: colors.baseContent },
     badge: {
       position: "absolute",
       top: 2,
@@ -113,6 +124,11 @@ export function usePopoverStyles() {
 
 interface Props {
   icon: keyof typeof Ionicons.glyphMap;
+  /**
+   * Shown beside the icon as a pill ("This Week ⌄") — for a menu whose
+   * current choice is worth seeing without opening it.
+   */
+  text?: string;
   /** The button's accessibility label. */
   label: string;
   /** Shown as a badge on the button, and tints its icon, when above 0. */
@@ -125,9 +141,9 @@ interface Props {
 // button, closes a little faster, and a tap anywhere outside closes it.
 // Choices inside apply the moment they're tapped, so the list underneath
 // updates live while the menu stays open.
-function HeaderPopover({ icon, label, count, children }: Props) {
+function HeaderPopover({ icon, text, label, count, children }: Props) {
   const { styles, colors } = usePopoverStyles();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const anchorRef = useRef<View>(null);
   const [anchor, setAnchor] = useState<AnchorRect | null>(null);
   const [open, setOpen] = useState(false);
@@ -167,9 +183,18 @@ function HeaderPopover({ icon, label, count, children }: Props) {
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ expanded: open }}
-        style={({ pressed }) => [styles.button, (pressed || open) && { backgroundColor: colors.base300 }]}
+        style={({ pressed }) =>
+          text
+            ? [styles.pill, (pressed || open) && { opacity: 0.8 }]
+            : [styles.button, (pressed || open) && { backgroundColor: colors.base300 }]
+        }
       >
-        <Ionicons name={icon} size={22} color={count > 0 ? colors.primary : colors.baseContent} />
+        {text ? (
+          <Text style={styles.pillText} numberOfLines={1}>
+            {text}
+          </Text>
+        ) : null}
+        <Ionicons name={icon} size={text ? 16 : 22} color={count > 0 ? colors.primary : colors.baseContent} />
         {count > 0 ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{count}</Text>
@@ -193,7 +218,14 @@ function HeaderPopover({ icon, label, count, children }: Props) {
             ]}
           >
             <View style={[styles.caret, { left: placement.caretX - CARET / 2 }]} />
-            {children}
+            {/* A long menu scrolls rather than running off the bottom of the screen. */}
+            <ScrollView
+              style={{ maxHeight: screenHeight - placement.top - 32 }}
+              bounces={false}
+              showsVerticalScrollIndicator={false}
+            >
+              {children}
+            </ScrollView>
           </Animated.View>
         </Modal>
       ) : null}

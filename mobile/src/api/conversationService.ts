@@ -32,6 +32,9 @@ interface ProfileSharePayload {
     username: string;
     profile_pic_url?: string | null;
     accountTier?: string | null;
+    bio?: string;
+    followersCount?: number;
+    topGenres?: string[];
   };
 }
 
@@ -43,6 +46,8 @@ interface ListSharePayload {
     name: string;
     itemCount: number;
     previewPosters: string[];
+    description?: string;
+    ownerUsername?: string;
   };
 }
 

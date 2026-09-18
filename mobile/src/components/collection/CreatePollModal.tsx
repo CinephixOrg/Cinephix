@@ -72,7 +72,7 @@ export default function CreatePollModal({ visible, entries, onClose }: Props) {
         items: selected.map((s) => ({ contentId: s.id, contentType: s.type })),
       });
       announceNewShare(share);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
       reset();
       onClose();
     } catch (e: any) {

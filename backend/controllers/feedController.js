@@ -615,7 +615,7 @@ async function hydratePeopleEntries(raw, metricKey) {
 }
 
 // @route GET /api/feed/people-leaderboard
-// Medya/Shares' own podium — ranks people, not content, so it lives on
+// Media/Shares' own podium — ranks people, not content, so it lives on
 // the social tab rather than Discover (Discover's podium above is
 // deliberately content-only; a "top users" ranking doesn't help anyone
 // find something to watch, which is Discover's whole point). Most

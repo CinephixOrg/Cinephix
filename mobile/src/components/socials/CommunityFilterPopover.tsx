@@ -14,7 +14,7 @@ import {
 } from "../../utils/communities";
 import { communitiesSnapshot, subscribeCommunities } from "../../api/communitiesStore";
 import { categoryTone } from "./communityCategory";
-import HeaderPopover, { PopoverLabel, PopoverReset, usePopoverStyles } from "./HeaderPopover";
+import HeaderPopover, { PopoverLabel, PopoverReset, usePopoverStyles } from "../popover/HeaderPopover";
 
 interface Props {
   filters: CommunityFilters;

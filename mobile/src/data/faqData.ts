@@ -55,7 +55,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do I share my badges?",
         answer:
-          "Open any earned badge from your Profile's Badges tab and tap Share to post it to Medya.",
+          "Open any earned badge from your Profile's Badges tab and tap Share to post it to Media.",
       },
       {
         question: "How do I get on the \"Most Badges\" podium?",
@@ -80,7 +80,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do I share my Sync result?",
         answer:
-          "After running an analysis, use the Share button to post it to Medya or send it directly to the person you synced with.",
+          "After running an analysis, use the Share button to post it to Media or send it directly to the person you synced with.",
       },
       {
         question: "What Sync-related badges are there?",
@@ -115,10 +115,10 @@ export const FAQ_SECTIONS: FaqSection[] = [
     ],
   },
   {
-    title: "Medya (Shares) & Posts",
+    title: "Media (Shares) & Posts",
     items: [
       {
-        question: "What can I share on Medya?",
+        question: "What can I share on Media?",
         answer:
           "Reviews, recommendations, lists, your Profile Analysis or Sync results, earned badges, and polls built from your Watchlist — each renders as its own kind of post in the feed.",
       },
@@ -130,7 +130,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What do the like and view counts mean?",
         answer:
-          "Views count everyone who's seen the post in their feed; likes are a direct signal from people who tapped the heart — both also factor into how prominently a post ranks in Medya.",
+          "Views count everyone who's seen the post in their feed; likes are a direct signal from people who tapped the heart — both also factor into how prominently a post ranks in Media.",
       },
     ],
   },
@@ -140,7 +140,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do I create a poll from my Watchlist?",
         answer:
-          "Open your Watchlist and tap the poll icon in the toolbar, pick your titles, then tap Create Poll — it posts straight to Medya with real posters, not just text.",
+          "Open your Watchlist and tap the poll icon in the toolbar, pick your titles, then tap Create Poll — it posts straight to Media with real posters, not just text.",
       },
       {
         question: "How many titles can I add to a poll?",
@@ -160,7 +160,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do I recommend a movie or series?",
         answer:
-          "From any Content Detail page, tap the gift icon to send it to a specific person, a group, or straight to Medya.",
+          "From any Content Detail page, tap the gift icon to send it to a specific person, a group, or straight to Media.",
       },
     ],
   },
@@ -190,7 +190,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What's the difference between the plans?",
         answer:
-          "Free, Plus, and Premium mainly differ in Sync limits (how many searches/analyses per day, and how often you can re-run them), Profile Analysis depth and history, search/match filters, and a few visual perks like frame color and extra podium categories across Discover and Medya.",
+          "Free, Plus, and Premium mainly differ in Sync limits (how many searches/analyses per day, and how often you can re-run them), Profile Analysis depth and history, search/match filters, and a few visual perks like frame color and extra podium categories across Discover and Media.",
       },
       {
         question: "How do I upgrade or switch plans?",

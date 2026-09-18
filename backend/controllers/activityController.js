@@ -7,6 +7,10 @@ import Group from "../models/Group.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
 import Notification from "../models/Notification.js";
 import Share from "../models/Share.js";
+import FootprintEvent from "../models/FootprintEvent.js";
+import MatchAnalysisLog from "../models/MatchAnalysisLog.js";
+import ProfileAnalysis from "../models/ProfileAnalysis.js";
+import { compareEvents, mergeActivityPage, mergeFollowEvents, parseActivityQuery } from "../utils/activityFeed.js";
 import { getPeopleThreePodiums } from "./feedController.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
@@ -16,124 +20,254 @@ const getSeries = () => mongoose.connection.model("Series");
 
 const MAX_LIMIT = 50;
 
-// ── GET /api/users/me/activity?range=week|month&page=&limit= ──
-// The caller's own activity across ratings, reviews, review likes,
-// watchlist/to-watch adds, list creation, and group joins — modeled
-// directly on feedController.js's getFeed, scoped to the caller instead
-// of their following list.
+// ── GET /api/users/me/activity?range=week|month|all&categories=&page=&limit= ──
+// The caller's own footprint in the app: ratings, reviews, likes (of
+// reviews and lists), follows, lists, watched/watchlist adds, favorites,
+// communities joined, Media shares and CineMatch/CineGraph analyses.
+//
+// Built for "All time" over big libraries (an import can add thousands of
+// ratings): each requested source is asked only for its newest page×limit
+// rows, the sources are merged in one stable order (utils/activityFeed.js),
+// and titles and people are looked up afterwards for just the page being
+// returned. Categories the caller filtered out aren't queried at all.
 export const getMyActivity = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(parseInt(req.query.limit) || 10, MAX_LIMIT);
-  const range = req.query.range === "month" ? "month" : "week";
+  const userId = req.user._id;
+  const { cutoff, page, limit, types } = parseActivityQuery(req.query);
+  const cap = page * limit;
+  const since = (field) => (cutoff ? { [field]: { $gte: cutoff } } : {});
+  const wants = (type) => types.has(type);
 
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - (range === "month" ? 30 : 7));
-
-  const [ratings, reviews, likedReviews, meDoc, lists, groups] = await Promise.all([
-    Rating.find({ user: userId, createdAt: { $gte: cutoff } }).sort({ createdAt: -1 }).lean(),
-    Review.find({ user: userId, createdAt: { $gte: cutoff } }).sort({ createdAt: -1 }).lean(),
-    Review.find({ likeEvents: { $elemMatch: { user: userId, likedAt: { $gte: cutoff } } } })
-      .select("contentId contentType likeEvents")
-      .lean(),
-    User.findById(userId).select("watchlist toWatchList").lean(),
-    CustomList.find({ owner: userId, createdAt: { $gte: cutoff } })
-      .select("name createdAt")
-      .sort({ createdAt: -1 })
-      .lean(),
-    Group.find({ members: { $elemMatch: { user: userId, joinedAt: { $gte: cutoff } } } })
-      .select("name slug coverImage members.$")
-      .lean(),
+  const sources = await Promise.all([
+    wants("rated") &&
+      Rating.find({ user: userId, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .select("contentId contentType value createdAt")
+        .lean()
+        .then((rows) =>
+          rows.map((r) => ({ key: `rated:${r._id}`, type: "rated", createdAt: r.createdAt, contentRef: [r.contentId, r.contentType], value: r.value }))
+        ),
+    wants("reviewed") &&
+      Review.find({ user: userId, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .select("contentId contentType text createdAt")
+        .lean()
+        .then((rows) =>
+          rows.map((r) => ({
+            key: `reviewed:${r._id}`,
+            type: "reviewed",
+            createdAt: r.createdAt,
+            contentRef: [r.contentId, r.contentType],
+            excerpt: r.text?.slice(0, 160),
+          }))
+        ),
+    wants("review_liked") &&
+      Review.aggregate([
+        { $match: { "likeEvents.user": userId } },
+        { $unwind: "$likeEvents" },
+        { $match: { "likeEvents.user": userId, ...(cutoff ? { "likeEvents.likedAt": { $gte: cutoff } } : {}) } },
+        { $sort: { "likeEvents.likedAt": -1, _id: -1 } },
+        { $limit: cap },
+        { $project: { contentId: 1, contentType: 1, user: 1, likedAt: "$likeEvents.likedAt" } },
+      ]).then((rows) =>
+        rows.map((r) => ({
+          key: `review_liked:${r._id}`,
+          type: "review_liked",
+          createdAt: r.likedAt,
+          contentRef: [r.contentId, r.contentType],
+          userRef: r.user,
+        }))
+      ),
+    // The auth middleware has already loaded the caller's own document, so
+    // their watched list and watchlist are read from it rather than fetched
+    // again — for a big imported library that re-fetch was the slowest part.
+    [
+      ...(wants("watchlist_added") ? addedEvents(req.user.watchlist, "watchlist_added", cutoff, cap) : []),
+      ...(wants("towatch_added") ? addedEvents(req.user.toWatchList, "towatch_added", cutoff, cap) : []),
+    ],
+    wants("favorited") &&
+      FavoriteEvent.find({ user: userId, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .lean()
+        .then((rows) =>
+          rows.map((r) => ({ key: `favorited:${r._id}`, type: "favorited", createdAt: r.createdAt, contentRef: [r.contentId, r.contentType] }))
+        ),
+    wants("list_created") &&
+      CustomList.find({ owner: userId, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .select("name createdAt")
+        .lean()
+        .then((rows) =>
+          rows.map((l) => ({ key: `list_created:${l._id}`, type: "list_created", createdAt: l.createdAt, listId: l._id.toString(), listName: l.name }))
+        ),
+    wants("list_liked") &&
+      FootprintEvent.find({ user: userId, type: "list_liked", ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .populate({ path: "list", select: "name owner", populate: { path: "owner", select: "username profile_pic_url accountTier" } })
+        .lean()
+        .then((rows) =>
+          rows
+            .filter((r) => r.list)
+            .map((r) => ({
+              key: `list_liked:${r._id}`,
+              type: "list_liked",
+              createdAt: r.createdAt,
+              listId: r.list._id.toString(),
+              listName: r.list.name,
+              targetUser: publicUser(r.list.owner),
+            }))
+        ),
+    wants("followed") && followEvents(req.user, cutoff, cap),
+    wants("group_joined") &&
+      Group.find({ members: { $elemMatch: { user: userId, ...(cutoff ? { joinedAt: { $gte: cutoff } } : {}) } } })
+        .select("name slug coverImage members.$")
+        .lean()
+        .then((rows) =>
+          rows
+            .map((g) => ({
+              key: `group_joined:${g._id}`,
+              type: "group_joined",
+              createdAt: g.members?.[0]?.joinedAt || g.createdAt,
+              groupSlug: g.slug,
+              groupName: g.name,
+              groupCoverImage: g.coverImage || undefined,
+            }))
+            .sort(compareEvents)
+            .slice(0, cap)
+        ),
+    wants("shared") &&
+      Share.find({ user: userId, isOfficialPost: { $ne: true }, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .select("type contentData.title listData.name createdAt")
+        .lean()
+        .then((rows) =>
+          rows.map((s) => ({
+            key: `shared:${s._id}`,
+            type: "shared",
+            shareId: s._id.toString(),
+            createdAt: s.createdAt,
+            shareType: s.type,
+            shareTitle: s.contentData?.title || s.listData?.name || undefined,
+          }))
+        ),
+    wants("match_analyzed") &&
+      MatchAnalysisLog.find({ user: userId, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .lean()
+        .then((rows) =>
+          rows.map((r) => ({
+            key: `match_analyzed:${r._id}`,
+            type: "match_analyzed",
+            createdAt: r.createdAt,
+            userRef: r.targetUser,
+            score: typeof r.score === "number" ? Math.round(r.score) : undefined,
+          }))
+        ),
+    wants("profile_analyzed") &&
+      ProfileAnalysis.find({ user: userId, ...since("createdAt") })
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(cap)
+        .select("result.nickname createdAt")
+        .lean()
+        .then((rows) =>
+          rows.map((r) => ({
+            key: `profile_analyzed:${r._id}`,
+            type: "profile_analyzed",
+            createdAt: r.createdAt,
+            nickname: r.result?.nickname || undefined,
+          }))
+        ),
   ]);
 
-  const watchlistEvents = (meDoc?.watchlist || []).filter(
-    (item) => item.addedAt && new Date(item.addedAt) >= cutoff
-  );
-  const toWatchEvents = (meDoc?.toWatchList || []).filter(
-    (item) => item.addedAt && new Date(item.addedAt) >= cutoff
+  const { items, hasMore } = mergeActivityPage(
+    sources.filter(Array.isArray).map((events) => ({ events })),
+    { page, limit, cap }
   );
 
+  sendSuccess(res, { items: await hydrateActivity(items), page, hasMore }, "Activity fetched");
+});
+
+// Titles added to the watched list or watchlist, newest first, from the
+// user document's own arrays.
+function addedEvents(items, type, cutoff, cap) {
+  return (items || [])
+    .filter((item) => item.addedAt && (!cutoff || new Date(item.addedAt) >= cutoff))
+    .map((item) => ({ key: `${type}:${item.itemType}:${item.itemId}`, type, createdAt: item.addedAt, contentRef: [item.itemId, item.itemType] }))
+    .sort(compareEvents)
+    .slice(0, cap);
+}
+
+const publicUser = (u) =>
+  u ? { _id: u._id.toString(), username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier } : undefined;
+
+const MAX_FOLLOW_EVENTS = 5000;
+
+// Everyone the caller follows now, with when they followed them: the
+// footprint log where it has the follow, otherwise the follow notification
+// sent at the time (for follows from before the log existed).
+async function followEvents(me, cutoff, cap) {
+  const following = new Set((me.following || []).map((id) => id.toString()));
+  if (following.size === 0) return [];
+  const range = cutoff ? { createdAt: { $gte: cutoff } } : {};
+  const [logged, notified] = await Promise.all([
+    // Not capped per page like the rest: every page must see the same time
+    // for the same follow, or a follow could jump between days as more pages
+    // load. Bounded anyway — one row per person currently followed.
+    FootprintEvent.find({ user: me._id, type: "followed", ...range }).sort({ createdAt: -1 }).limit(MAX_FOLLOW_EVENTS).lean(),
+    Notification.find({ sender: me._id, type: "follow", ...range }).sort({ createdAt: -1 }).limit(cap).select("user createdAt").lean(),
+  ]);
+  return mergeFollowEvents(
+    logged.map((r) => ({ key: `followed:${r.targetUser}`, type: "followed", createdAt: r.createdAt, targetId: r.targetUser, userRef: r.targetUser })),
+    notified.map((n) => ({ key: `followed:${n.user}`, type: "followed", createdAt: n.createdAt, targetId: n.user, userRef: n.user })),
+    following
+  ).slice(0, cap);
+}
+
+// Titles and people for one page of events: one query per collection, for
+// only what this page shows. An event whose title no longer exists is
+// dropped rather than shown half-empty.
+async function hydrateActivity(events) {
   const movieIds = new Set();
   const seriesIds = new Set();
-  const addId = (contentId, contentType) => {
-    if (contentType === "movie") movieIds.add(contentId.toString());
-    else seriesIds.add(contentId.toString());
-  };
-  for (const r of ratings) addId(r.contentId, r.contentType);
-  for (const r of reviews) addId(r.contentId, r.contentType);
-  for (const r of likedReviews) addId(r.contentId, r.contentType);
-  for (const item of watchlistEvents) addId(item.itemId, item.itemType);
-  for (const item of toWatchEvents) addId(item.itemId, item.itemType);
-
-  const [movies, seriesList] = await Promise.all([
-    movieIds.size ? getMovie().find({ _id: { $in: [...movieIds] } }).select("_id title name poster_path").lean() : [],
-    seriesIds.size ? getSeries().find({ _id: { $in: [...seriesIds] } }).select("_id title name poster_path").lean() : [],
+  const userIds = new Set();
+  for (const e of events) {
+    if (e.contentRef) (e.contentRef[1] === "movie" ? movieIds : seriesIds).add(String(e.contentRef[0]));
+    if (e.userRef) userIds.add(String(e.userRef));
+  }
+  const valid = (ids) => [...ids].filter((id) => mongoose.isValidObjectId(id));
+  const [movies, series, users] = await Promise.all([
+    movieIds.size ? getMovie().find({ _id: { $in: valid(movieIds) } }).select("title name poster_path").lean() : [],
+    seriesIds.size ? getSeries().find({ _id: { $in: valid(seriesIds) } }).select("title name poster_path").lean() : [],
+    userIds.size ? User.find({ _id: { $in: valid(userIds) } }).select("username profile_pic_url accountTier").lean() : [],
   ]);
-  const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
-  const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
+  const byId = (rows) => new Map(rows.map((row) => [row._id.toString(), row]));
+  const movieMap = byId(movies);
+  const seriesMap = byId(series);
+  const userMap = byId(users);
 
-  const resolveContent = (contentId, contentType) => {
-    const item = contentType === "movie" ? movieMap[contentId.toString()] : seriesMap[contentId.toString()];
-    if (!item) return null;
-    return { id: contentId.toString(), title: item.title || item.name, poster_path: item.poster_path, type: contentType };
-  };
-
-  const events = [];
-
-  for (const r of ratings) {
-    const content = resolveContent(r.contentId, r.contentType);
-    if (!content) continue;
-    events.push({ type: "rated", content, value: r.value, createdAt: r.createdAt });
+  const result = [];
+  for (const { contentRef, userRef, targetId, ...event } of events) {
+    if (contentRef) {
+      const [id, type] = contentRef;
+      const doc = (type === "movie" ? movieMap : seriesMap).get(String(id));
+      if (!doc) continue;
+      event.content = { id: String(id), title: doc.title || doc.name, poster_path: doc.poster_path, type };
+    }
+    if (userRef) {
+      const user = userMap.get(String(userRef));
+      if (!user && event.type !== "review_liked") continue;
+      event.targetUser = publicUser(user);
+    }
+    result.push(event);
   }
-
-  for (const r of reviews) {
-    const content = resolveContent(r.contentId, r.contentType);
-    if (!content) continue;
-    events.push({ type: "reviewed", content, excerpt: r.text?.substring(0, 150), createdAt: r.createdAt });
-  }
-
-  for (const r of likedReviews) {
-    const content = resolveContent(r.contentId, r.contentType);
-    if (!content) continue;
-    const myEvent = r.likeEvents.find((e) => e.user.toString() === userId.toString() && new Date(e.likedAt) >= cutoff);
-    if (!myEvent) continue;
-    events.push({ type: "review_liked", content, createdAt: myEvent.likedAt });
-  }
-
-  for (const item of watchlistEvents) {
-    const content = resolveContent(item.itemId, item.itemType);
-    if (!content) continue;
-    events.push({ type: "watchlist_added", content, createdAt: item.addedAt });
-  }
-
-  for (const item of toWatchEvents) {
-    const content = resolveContent(item.itemId, item.itemType);
-    if (!content) continue;
-    events.push({ type: "towatch_added", content, createdAt: item.addedAt });
-  }
-
-  for (const l of lists) {
-    events.push({ type: "list_created", listId: l._id.toString(), listName: l.name, createdAt: l.createdAt });
-  }
-
-  for (const g of groups) {
-    const member = (g.members || [])[0];
-    events.push({
-      type: "group_joined",
-      groupSlug: g.slug,
-      groupName: g.name,
-      groupCoverImage: g.coverImage,
-      createdAt: member?.joinedAt || g.createdAt,
-    });
-  }
-
-  events.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const start = (page - 1) * limit;
-  const items = events.slice(start, start + limit);
-
-  sendSuccess(res, { items, page, hasMore: start + limit < events.length }, "Activity fetched");
-});
+  return result;
+}
 
 // ── GET /api/feed/activity?page=&limit= ── Discover's own "Friends'
 // Activity" section: a chronological feed of the people you follow's real
@@ -396,11 +530,11 @@ export const getNetworkActivity = asyncHandler(async (req, res) => {
       .populate("sender", "username profile_pic_url accountTier")
       .populate("user", "username profile_pic_url accountTier")
       .lean(),
-    // Medya shares — no per-share-type content preview here (a share's own
+    // Media shares — no per-share-type content preview here (a share's own
     // real content shape varies a lot by type — recommendation/review carry
     // contentData, list carries listData, analysis carries neither); this
     // just announces "X shared a Y", the actual post is one tap away in
-    // Medya's own feed. Same actorLookupStages $lookup as every aggregation
+    // Media's own feed. Same actorLookupStages $lookup as every aggregation
     // above.
     Share.aggregate([
       { $match: { user: { $in: followingIds }, createdAt: { $gte: cutoff } } },

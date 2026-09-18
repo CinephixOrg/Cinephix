@@ -55,5 +55,8 @@ reviewSchema.index({ user: 1 });
 // Compound index for sorting reviews by creation time
 reviewSchema.index({ contentId: 1, createdAt: -1 });
 
+// The Activity page's "reviews you liked" lookup.
+reviewSchema.index({ "likeEvents.user": 1 });
+
 const Review = mongoose.model('Review', reviewSchema);
 export default Review;

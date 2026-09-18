@@ -1,3 +1,4 @@
+import { listShareData } from "../utils/listShareData.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { getIo } from "../services/socketService.js";
@@ -6,7 +7,7 @@ import Group from "../models/Group.js";
 import Message from "../models/Message.js";
 
 // Same value/reasoning as shareController.js's own RECOMMENDATION_COOLDOWN_MS
-// (Medya) and conversationController.js's own copy (DMs) — see
+// (Media) and conversationController.js's own copy (DMs) — see
 // sendGroupMessage's own recommendation branch below for the direct ask
 // this satisfies. Kept as 3 independent per-file constants rather than one
 // shared import, matching this codebase's existing convention for cooldown
@@ -225,9 +226,9 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
   if (!isMember) return sendError(res, "Not a member of this group", 403);
 
   // Anti-spam cooldown, same shape/window as shareController.js's own
-  // RECOMMENDATION_COOLDOWN_MS for a Medya recommendation and
+  // RECOMMENDATION_COOLDOWN_MS for a Media recommendation and
   // conversationController.js's own copy for a DM — direct ask:
-  // recommending the same title to Medya, a person, and a group in one
+  // recommending the same title to Media, a person, and a group in one
   // sitting must all still work independently, only re-recommending the
   // SAME title to this SAME group within the window is blocked.
   if (type === "recommendation") {
@@ -274,12 +275,7 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
   } else if (type === "analysis_share") {
     messageData.analysisData = analysisData;
   } else if (type === "list_share") {
-    messageData.listData = {
-      listId: listData.listId,
-      name: listData.name,
-      itemCount: listData.itemCount || 0,
-      previewPosters: listData.previewPosters || [],
-    };
+    messageData.listData = listShareData(listData);
   }
 
   const message = await Message.create(messageData);

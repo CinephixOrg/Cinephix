@@ -92,7 +92,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
       const share = await createShare({ type: "analysis", analysisData: data });
       announceNewShare(share);
       setOptionsVisible(false);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch {
       showToast(t("Something went wrong. Please try again."));
     } finally {

@@ -64,7 +64,7 @@ export default function AppLayout() {
       >
         <Tabs.Screen
           name="home"
-          options={{ title: t("Medya"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
+          options={{ title: t("Media"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
         />
         <Tabs.Screen
           name="search"
