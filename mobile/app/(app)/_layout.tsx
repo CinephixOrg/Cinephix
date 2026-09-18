@@ -54,6 +54,9 @@ export default function AppLayout() {
           headerShown: false,
           tabBarShowLabel: false,
           tabBarStyle: { backgroundColor: colors.base200, borderTopColor: colors.border },
+          // Typing shouldn't push the tab bar up above the keyboard (it sat
+          // between a chat's composer and the keyboard).
+          tabBarHideOnKeyboard: true,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.placeholder,
           tabBarLabelStyle: { fontFamily: fonts.medium },

@@ -13,13 +13,28 @@ import Message from "../models/Message.js";
 // constants (see shareController.js's REVIEW_SHARE_COOLDOWN_MS).
 const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
 
+// How many of the people the viewer follows are members of each group
+// (matching `match`), keyed by group id — for the app's "Friends Joined"
+// sort. One aggregation over the member arrays, which never leave the
+// database; nobody signed in, or following nobody, skips it entirely.
+async function friendsJoinedByGroup(user, match = {}) {
+  const followingIds = user?.following ?? [];
+  if (followingIds.length === 0) return new Map();
+  const rows = await Group.aggregate([
+    { $match: match },
+    { $project: { friendsJoined: { $size: { $setIntersection: [{ $ifNull: ["$members.user", []] }, followingIds] } } } },
+  ]);
+  return new Map(rows.map((row) => [row._id.toString(), row.friendsJoined]));
+}
+
 // GET /api/groups
 export const getAllGroups = asyncHandler(async (req, res) => {
-  // groups and joined are independent queries — parallelized instead of
-  // two sequential ~300ms round trips.
-  const [groups, joined] = await Promise.all([
+  // Independent queries — parallelized instead of sequential round trips.
+  const [groups, joined, friendsJoined] = await Promise.all([
+    // Not members or unreadCounts: the list only needs each group's own
+    // details, and unreadCounts holds every member's private unread count.
     Group.find({})
-      .select("-members")
+      .select("-members -unreadCounts")
       .sort({ memberCount: -1 })
       .lean(),
     req.user
@@ -27,12 +42,14 @@ export const getAllGroups = asyncHandler(async (req, res) => {
           .select("_id")
           .lean()
       : Promise.resolve([]),
+    friendsJoinedByGroup(req.user),
   ]);
   const joinedIds = new Set(joined.map((g) => g._id.toString()));
 
   const result = groups.map((g) => ({
     ...g,
     isMember: joinedIds.has(g._id.toString()),
+    friendsJoined: friendsJoined.get(g._id.toString()) ?? 0,
   }));
 
   sendSuccess(res, result, "Groups fetched");
@@ -41,18 +58,20 @@ export const getAllGroups = asyncHandler(async (req, res) => {
 // GET /api/groups/:slug
 export const getGroupBySlug = asyncHandler(async (req, res) => {
   const group = await Group.findOne({ slug: req.params.slug })
-    .select("-members")
+    .select("-members -unreadCounts")
     .lean();
   if (!group) return sendError(res, "Group not found", 404);
 
-  const isMember = req.user
-    ? !!(await Group.exists({
-        slug: req.params.slug,
-        "members.user": req.user._id,
-      }))
-    : false;
+  const [isMember, friendsJoined] = await Promise.all([
+    req.user ? Group.exists({ slug: req.params.slug, "members.user": req.user._id }).then(Boolean) : false,
+    friendsJoinedByGroup(req.user, { _id: group._id }),
+  ]);
 
-  sendSuccess(res, { ...group, isMember }, "Group fetched");
+  sendSuccess(
+    res,
+    { ...group, isMember, friendsJoined: friendsJoined.get(group._id.toString()) ?? 0 },
+    "Group fetched"
+  );
 });
 
 // POST /api/groups/:slug/join
@@ -306,6 +325,8 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
       lastMessage: previewText,
       lastMessageAt,
       senderId,
+      // Lets an open inbox label the preview ("ana: …") without refetching.
+      senderUsername: req.user.username,
     };
     memberIds.forEach((memberId) => {
       io.to(`user:${memberId}`).emit("conversation-updated", payload);

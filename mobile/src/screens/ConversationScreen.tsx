@@ -142,6 +142,7 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
 
   return (
     <ChatRoom
+      key={conversationId}
       roomType="dm"
       roomId={conversationId}
       canChat={true}

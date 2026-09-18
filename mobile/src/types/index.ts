@@ -1006,6 +1006,8 @@ export interface GroupUpdatedPayload {
   lastMessage: string;
   lastMessageAt: string;
   senderId: string;
+  // Sent by current servers; an older one leaves it out.
+  senderUsername?: string;
 }
 
 export type RoomUpdatedPayload = ConversationUpdatedPayload | GroupUpdatedPayload;
@@ -1021,6 +1023,8 @@ export interface Group {
   tags: string[];
   memberCount: number;
   isMember: boolean;
+  /** How many people you follow are members. Absent from older servers. */
+  friendsJoined?: number;
   isPreset: boolean;
   createdAt: string;
   updatedAt: string;

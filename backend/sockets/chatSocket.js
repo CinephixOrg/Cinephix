@@ -179,6 +179,8 @@ export const setupChat = (io) => {
               lastMessage: text.trim(),
               lastMessageAt: new Date(),
               senderId: senderId,
+              // Lets an open inbox label the preview ("ana: …") without refetching.
+              senderUsername: socket.user.username,
             };
 
             memberIds.forEach((memberId) => {

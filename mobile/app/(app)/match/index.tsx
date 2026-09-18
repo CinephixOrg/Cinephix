@@ -73,16 +73,19 @@ export default function MatchScreen() {
   // state, hiding the intro for an account that had genuinely never seen
   // it. Re-runs if the signed-in user changes (account switch without a
   // full app reload) rather than only once on mount.
+  //
+  // "_" joins the two, not ":" — SecureStore only accepts letters, digits,
+  // ".", "-" and "_" in a key, and rejects anything else with a thrown error.
   const [showIntro, setShowIntro] = useState(false);
   useEffect(() => {
     if (!user?._id) return;
-    SecureStore.getItemAsync(`${STORAGE_KEYS.SYNC_INTRO_SEEN}:${user._id}`).then((seen) => {
-      setShowIntro(!seen);
-    });
+    SecureStore.getItemAsync(`${STORAGE_KEYS.SYNC_INTRO_SEEN}_${user._id}`)
+      .then((seen) => setShowIntro(!seen))
+      .catch(() => {});
   }, [user?._id]);
   const dismissIntro = useCallback(() => {
     setShowIntro(false);
-    if (user?._id) SecureStore.setItemAsync(`${STORAGE_KEYS.SYNC_INTRO_SEEN}:${user._id}`, "1");
+    if (user?._id) SecureStore.setItemAsync(`${STORAGE_KEYS.SYNC_INTRO_SEEN}_${user._id}`, "1").catch(() => {});
   }, [user?._id]);
 
   const [filters, setFilters] = useState<MatchFilters>(DEFAULT_FILTERS);
