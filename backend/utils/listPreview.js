@@ -10,7 +10,7 @@ import mongoose from "mongoose";
 // `limit` defaults to 5, but /discover, /popular, and /for-content all now
 // pass 20 explicitly — DiscoverListCard.tsx's own poster preview switched
 // from a small fixed-count cascade to a scrollable "film strip" (same
-// technique as Medya's own list-post box, see shareController.js's
+// technique as Media's own list-post box, see shareController.js's
 // createShare), so a fixed 5-item cap now silently truncated real content
 // and made a strip with nothing to scroll past on lists that had more.
 // /me stays at the bare default (5) — that route backs list *management*,

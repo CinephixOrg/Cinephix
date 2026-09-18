@@ -163,3 +163,23 @@ export function chatRows(messages: readonly Message[]): ChatRow[] {
   });
   return rows;
 }
+
+/**
+ * A day as a heading: the caller's words for today and yesterday, the
+ * weekday within the last week, then the date (with the year only when it
+ * isn't this year) — shared by chat separators and the Activity page.
+ */
+export function dayHeading(iso: string, now: Date, locale: string | undefined, words: { today: string; yesterday: string }): string {
+  const label = dayLabel(iso, now);
+  const date = new Date(iso);
+  switch (label.kind) {
+    case "today":
+      return words.today;
+    case "yesterday":
+      return words.yesterday;
+    case "weekday":
+      return date.toLocaleDateString(locale, { weekday: "long" });
+    default:
+      return date.toLocaleDateString(locale, { day: "numeric", month: "long", ...(label.withYear ? { year: "numeric" } : {}) });
+  }
+}

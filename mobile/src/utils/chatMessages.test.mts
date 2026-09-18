@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   chatRows,
   confirmedOnly,
+  dayHeading,
   dayLabel,
   formatInboxTime,
   inboxTimeKind,
@@ -125,4 +126,13 @@ test("separators read Today, Yesterday, a weekday this week, then a date", () =>
   assert.deepEqual(dayLabel(new Date(2026, 8, 12, 9, 0).toISOString(), now), { kind: "weekday" });
   assert.deepEqual(dayLabel(new Date(2026, 8, 3, 9, 0).toISOString(), now), { kind: "date", withYear: false });
   assert.deepEqual(dayLabel(new Date(2025, 11, 31, 9, 0).toISOString(), now), { kind: "date", withYear: true });
+});
+
+test("day headings use the caller's words for today and yesterday, dates otherwise", () => {
+  const now = new Date(2026, 8, 18, 12, 0);
+  const words = { today: "Bugün", yesterday: "Dün" };
+  assert.equal(dayHeading(new Date(2026, 8, 18, 1).toISOString(), now, "tr", words), "Bugün");
+  assert.equal(dayHeading(new Date(2026, 8, 17, 1).toISOString(), now, "tr", words), "Dün");
+  assert.match(dayHeading(new Date(2026, 8, 3, 9).toISOString(), now, "en-GB", words), /3 September/);
+  assert.match(dayHeading(new Date(2025, 11, 31, 9).toISOString(), now, "en-GB", words), /2025/);
 });

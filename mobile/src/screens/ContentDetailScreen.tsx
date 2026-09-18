@@ -822,10 +822,10 @@ export default function ContentDetailScreen() {
       const share = await createShare({ type: "recommendation", contentId: id, contentType: type });
       announceNewShare(share);
       setGiftMenuVisible(false);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch (e: any) {
       // Surfaces the backend's own cooldown message ("You just recommended
-      // this to Medya...") when that's the reason, same convention
+      // this to Media...") when that's the reason, same convention
       // ReviewWriteScreen.tsx's own Save-and-Share error handling uses.
       showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
     } finally {

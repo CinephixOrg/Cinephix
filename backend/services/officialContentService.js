@@ -221,7 +221,7 @@ async function generateDbNativeTrivia() {
 
 // ── Fully dynamic categories (no pool, generated fresh each post) ───────
 // Deliberately restricted to ONLY the two rankings that are free-tier-open
-// on BOTH podiums (Discover's "Highest Rated" and Medya's "Most Reviewed")
+// on BOTH podiums (Discover's "Highest Rated" and Media's "Most Reviewed")
 // — a real tier-integrity issue caught live: the original 5-candidate
 // version included Most Favorited/Most Recommended (content) and Most
 // Followed/Top Recommenders (people), three of which are Premium-only (and

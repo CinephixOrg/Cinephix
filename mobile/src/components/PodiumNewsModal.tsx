@@ -110,7 +110,7 @@ export default function PodiumNewsModal() {
 
   const dismiss = () => setPlacement(null);
   // router.navigate, not router.push — this modal shows right at app
-  // launch, when the Medya/Home tab (and its own SharesFeedSection/
+  // launch, when the Media/Home tab (and its own SharesFeedSection/
   // PeoplePodium, already fetching or already loaded) is almost always
   // already mounted underneath it. `push` always stacks a *new* screen
   // instance regardless, which was a real reported bug: a second

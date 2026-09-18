@@ -18,7 +18,7 @@ import { useChat } from "../context/ChatContext";
 import { useToast } from "../context/ToastContext";
 import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 import { cachedRoom, rememberRoom, roomKey, roomPrefetch } from "../api/chatCache";
-import { chatRows, dayLabel, mergeLatestPage, upsertMessage, type ChatRow } from "../utils/chatMessages";
+import { chatRows, dayHeading, mergeLatestPage, upsertMessage, type ChatRow } from "../utils/chatMessages";
 import { SkeletonChatBubbles } from "./Skeleton";
 import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
@@ -28,7 +28,7 @@ import ListShareMessageCard from "./ListShareMessageCard";
 import ProfileAnalysisShareMessageCard from "./ProfileAnalysisShareMessageCard";
 import AnalyzeModal from "./AnalyzeModal";
 import ProfileAnalysisModal from "./ProfileAnalysisModal";
-import type { MatchAnalysis, Message, MessagePagination, ProfileAnalysis, RoomType } from "../types";
+import type { MatchAnalysis, Message, MessagePagination, MessageSender, ProfileAnalysis, RoomType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
@@ -43,6 +43,8 @@ interface Props {
   emptyText: string;
   /** Shown instead of the chat when `canChat` is false (a community you haven't joined). */
   lockedContent?: ReactNode;
+  /** The other person in a DM, for cards that picture both people (a shared Sync). */
+  counterpart?: MessageSender;
   // A first page the caller already has, so this room can render straight
   // into it instead of mounting and immediately fetching what its opener
   // was just handed. Used when a DM is opened from a profile, where the
@@ -133,6 +135,7 @@ const MessageRow = memo(function MessageRow({
   last,
   isOwn,
   showName,
+  counterpart,
   onOpenAnalysis,
   onOpenProfileAnalysis,
   styles,
@@ -144,6 +147,7 @@ const MessageRow = memo(function MessageRow({
   last: boolean;
   isOwn: boolean;
   showName: boolean;
+  counterpart?: MessageSender;
   onOpenAnalysis: (message: Message) => void;
   onOpenProfileAnalysis: (message: Message) => void;
   styles: Styles;
@@ -161,7 +165,9 @@ const MessageRow = memo(function MessageRow({
   } else if (message.type === "analysis_share" && (message.analysisData as { type?: string } | undefined)?.type === "profile") {
     body = <ProfileAnalysisShareMessageCard message={message} isOwn={isOwn} onPress={() => onOpenProfileAnalysis(message)} />;
   } else if (message.type === "analysis_share") {
-    body = <SyncShareMessageCard message={message} isOwn={isOwn} onPress={() => onOpenAnalysis(message)} />;
+    body = (
+      <SyncShareMessageCard message={message} isOwn={isOwn} counterpart={counterpart} onPress={() => onOpenAnalysis(message)} />
+    );
   } else {
     body = (
       <View
@@ -219,20 +225,7 @@ const MessageRow = memo(function MessageRow({
 /** "Today", "Yesterday", "Monday", "3 September" — WhatsApp's names for a day, between that day's messages and the last. */
 const DaySeparator = memo(function DaySeparator({ iso, styles }: { iso: string; styles: Styles }) {
   const { t, i18n } = useTranslation();
-  const label = dayLabel(iso, new Date());
-  const date = new Date(iso);
-  const text =
-    label.kind === "today"
-      ? t("Today")
-      : label.kind === "yesterday"
-        ? t("Yesterday")
-        : label.kind === "weekday"
-          ? date.toLocaleDateString(i18n.language, { weekday: "long" })
-          : date.toLocaleDateString(i18n.language, {
-              day: "numeric",
-              month: "long",
-              ...(label.withYear ? { year: "numeric" } : {}),
-            });
+  const text = dayHeading(iso, new Date(), i18n.language, { today: t("Today"), yesterday: t("Yesterday") });
   return (
     <View style={styles.day} accessibilityRole="header">
       <View style={styles.dayPill}>
@@ -260,6 +253,7 @@ export default function ChatRoom({
   canChat,
   emptyText,
   lockedContent,
+  counterpart,
   initialMessages,
   fetchMessages,
   markRead,
@@ -418,13 +412,14 @@ export default function ChatRoom({
           last={item.last}
           isOwn={isOwn}
           showName={showNames && !isOwn}
+          counterpart={counterpart}
           onOpenAnalysis={openAnalysis}
           onOpenProfileAnalysis={openProfileAnalysis}
           styles={styles}
         />
       );
     },
-    [userId, showNames, openAnalysis, openProfileAnalysis, styles]
+    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, styles]
   );
 
   if (!canChat) {

@@ -11,7 +11,7 @@ const AVATAR_SIZE = 46;
 
 // Instagram-stories-bar-style row at the very top of Paylaşımlar — only
 // people you follow who currently have a live socket connection. Polled on
-// mount/focus rather than pushed live (Medya isn't a real-time chat
+// mount/focus rather than pushed live (Media isn't a real-time chat
 // surface), matching this app's largely-REST architecture elsewhere.
 //
 // Wrapped in React.memo — zero props, same reasoning as

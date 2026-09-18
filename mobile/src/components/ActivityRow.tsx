@@ -363,17 +363,17 @@ export default function ActivityRow({ event, basePath }: Props) {
               <Ionicons name={ICON.shared} size={11} color={colors.primary} />
             </View>
             <Text style={styles.sentence} numberOfLines={2}>
-              {/* {{medya}} pulls the already-translated "Medya" nav-tab
+              {/* {{media}} pulls the already-translated "Media" nav-tab
                   label (theme/typography's own convention elsewhere in
                   this file — reuse an existing key for a proper-noun/brand
                   word rather than re-translating it inside 4 new keys). */}
               {event.shareType === "review"
-                ? t("Shared a review to {{medya}}", { medya: t("Medya") })
+                ? t("Shared a review to {{media}}", { media: t("Media") })
                 : event.shareType === "recommendation"
-                  ? t("Shared a recommendation to {{medya}}", { medya: t("Medya") })
+                  ? t("Shared a recommendation to {{media}}", { media: t("Media") })
                   : event.shareType === "list"
-                    ? t("Shared a list to {{medya}}", { medya: t("Medya") })
-                    : t("Shared an analysis to {{medya}}", { medya: t("Medya") })}
+                    ? t("Shared a list to {{media}}", { media: t("Media") })
+                    : t("Shared an analysis to {{media}}", { media: t("Media") })}
             </Text>
           </View>
         )}

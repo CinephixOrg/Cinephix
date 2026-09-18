@@ -11,7 +11,7 @@ import { useTheme } from "../../../src/context/ThemeContext";
 type OuterTab = "shares" | "discover";
 const TABS: OuterTab[] = ["shares", "discover"];
 
-// Medya's shell: Paylaşımlar (new social feed) | Keşfet (the former entire
+// Media's shell: Paylaşımlar (new social feed) | Keşfet (the former entire
 // Home tab, moved verbatim into KesfetSection.tsx). Same lazy-mount-then-
 // display:none pattern KesfetSection's own inner tabs (and Search's/
 // Socials' outer shells) already use — now living *inside* a real

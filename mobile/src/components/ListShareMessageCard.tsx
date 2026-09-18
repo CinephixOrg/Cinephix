@@ -1,96 +1,141 @@
-import { useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { memo } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import PremiumChatCard, { CARD, PremiumPill, cardText } from "./chat/PremiumChatCard";
 import type { Message } from "../types";
-import { useTheme } from "../context/ThemeContext";
-import { fonts } from "../theme/typography";
 
-const CARD_WIDTH = 220;
 const POSTER_BASE = "https://image.tmdb.org/t/p/w154";
+// Blurred beyond recognition, so the smallest size TMDB serves (see
+// RecommendationMessageCard.tsx).
+const BACKDROP_BASE = "https://image.tmdb.org/t/p/w92";
+const POSTER_WIDTH = 56;
+const POSTER_HEIGHT = POSTER_WIDTH * 1.5;
+const FAN_STEP = 20;
+// Back to front: the first poster sits on top, the others fan out behind it.
+const FAN_ROTATION = ["-7deg", "0deg", "7deg"];
+
+const styles = StyleSheet.create({
+  bottomRow: { flexDirection: "row", alignItems: "flex-end", gap: 14, padding: 12, paddingTop: 0 },
+  fan: { height: POSTER_HEIGHT + 6, justifyContent: "flex-end" },
+  poster: {
+    position: "absolute",
+    bottom: 0,
+    width: POSTER_WIDTH,
+    height: POSTER_HEIGHT,
+    borderRadius: 8,
+    backgroundColor: "#1E1E28",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.28)",
+    shadowColor: "#000",
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  emptyTile: {
+    width: POSTER_WIDTH,
+    height: POSTER_HEIGHT,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: CARD.line,
+  },
+  info: { flex: 1, minWidth: 0, paddingBottom: 2 },
+});
+
+function posterUri(path: string, base: string): string {
+  return path.startsWith("/") ? `${base}${path}` : path;
+}
+
+/** Up to three posters fanned out like cards in a hand; a list icon when there are none. */
+function PosterFan({ posters }: { posters: string[] }) {
+  if (posters.length === 0) {
+    return (
+      <View style={styles.emptyTile}>
+        <Ionicons name="albums" size={24} color={CARD.faint} />
+      </View>
+    );
+  }
+  const width = POSTER_WIDTH + FAN_STEP * (posters.length - 1);
+  return (
+    <View style={[styles.fan, { width }]}>
+      {posters
+        .map((path, i) => (
+          <Image
+            key={`${i}:${path}`}
+            source={{ uri: posterUri(path, POSTER_BASE) }}
+            style={[
+              styles.poster,
+              { left: i * FAN_STEP, transform: [{ rotate: posters.length > 1 ? FAN_ROTATION[i] : "0deg" }] },
+            ]}
+          />
+        ))
+        // Drawn last-first so the first poster ends up on top.
+        .reverse()}
+    </View>
+  );
+}
 
 interface Props {
   message: Message;
   isOwn: boolean;
 }
 
-// Rendered inside a chat bubble in place of plain text for "check out this
-// list" shares — a fanned mini poster stack (up to 3, from the same
-// previewPosters snapshot ShareCard.tsx's own list-post box uses) plus the
-// name and item count. Tap opens the list itself. Same own/other
-// bubble-tint convention as ProfileShareMessageCard/RecommendationMessageCard.
-export default function ListShareMessageCard({ message, isOwn }: Props) {
-  const { colors } = useTheme();
+// A shared custom list: its first poster blurred into the backdrop, up to
+// three posters fanned out in front, the list's name, who made it, how many
+// titles it holds and a line of its description. Older shares carry only
+// the name, count and posters, and show just those.
+function ListShareMessageCard({ message, isOwn }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        card: {
-          width: CARD_WIDTH,
-          borderRadius: 14,
-          overflow: "hidden",
-          backgroundColor: isOwn ? colors.primary : colors.base200,
-          ...(isOwn ? { borderBottomRightRadius: 4 } : { borderBottomLeftRadius: 4 }),
-        },
-        row: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
-        posterStack: { width: 44, height: 44, justifyContent: "center" },
-        poster: {
-          position: "absolute",
-          width: 30,
-          height: 44,
-          borderRadius: 5,
-          backgroundColor: colors.base300,
-          borderWidth: 1.5,
-          borderColor: isOwn ? colors.primary : colors.base200,
-        },
-        listIconFallback: {
-          width: 44,
-          height: 44,
-          borderRadius: 10,
-          backgroundColor: isOwn ? `${colors.primaryContent}22` : colors.base300,
-          alignItems: "center",
-          justifyContent: "center",
-        },
-        textCol: { flex: 1 },
-        name: { fontFamily: fonts.bold, fontSize: 14, color: isOwn ? colors.primaryContent : colors.baseContent },
-        hint: { fontSize: 12, color: isOwn ? colors.primaryContent : colors.placeholder, marginTop: 2 },
-      }),
-    [colors, isOwn]
-  );
+  const list = message.listData;
+  if (!list?.listId) return null;
 
-  const listData = message.listData;
-  if (!listData?.listId) return null;
-
-  const posters = listData.previewPosters.slice(0, 3);
+  const posters = (list.previewPosters ?? []).filter(Boolean).slice(0, 3);
+  const count = typeof list.itemCount === "number" ? list.itemCount : null;
+  const countLabel = count !== null ? t("item_count", { count }) : null;
+  const owner = list.ownerUsername?.trim();
+  const name = list.name || t("Untitled");
 
   return (
-    <Pressable style={styles.card} onPress={() => router.push(`/lists/${listData.listId}` as any)}>
-      <View style={styles.row}>
-        {posters.length > 0 ? (
-          <View style={styles.posterStack}>
-            {posters.map((path, i) => (
-              <Image
-                key={i}
-                source={{ uri: `${POSTER_BASE}${path}` }}
-                style={[styles.poster, { left: i * 7, zIndex: posters.length - i }]}
-              />
-            ))}
+    <PremiumChatCard
+      isOwn={isOwn}
+      eyebrow={t("Shared a List")}
+      eyebrowIcon="albums"
+      topRight={countLabel ? <PremiumPill icon="film" text={countLabel} iconColor={CARD.white} /> : null}
+      backdropUri={posters[0] ? posterUri(posters[0], BACKDROP_BASE) : null}
+      heroHeight={POSTER_HEIGHT + 64}
+      hero={
+        <View style={styles.bottomRow}>
+          <PosterFan posters={posters} />
+          <View style={styles.info}>
+            <Text style={cardText.title} numberOfLines={3}>
+              {name}
+            </Text>
+            {owner ? (
+              <Text style={cardText.meta} numberOfLines={1}>
+                {t("by @{{username}}", { username: owner })}
+              </Text>
+            ) : null}
           </View>
-        ) : (
-          <View style={styles.listIconFallback}>
-            <Ionicons name="albums" size={20} color={isOwn ? colors.primaryContent : colors.primary} />
-          </View>
-        )}
-        <View style={styles.textCol}>
-          <Text style={styles.name} numberOfLines={1}>
-            {listData.name}
-          </Text>
-          <Text style={styles.hint}>{t("item_count", { count: listData.itemCount })}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={isOwn ? colors.primaryContent : colors.placeholder} />
-      </View>
-    </Pressable>
+      }
+      body={
+        list.description ? (
+          <Text style={cardText.body} numberOfLines={2}>
+            {list.description}
+          </Text>
+        ) : null
+      }
+      ctaLabel={t("View List")}
+      onPress={() => router.push(`/lists/${list.listId}` as never)}
+      accessibilityLabel={`${t("Shared a List")}: ${name}${owner ? `, @${owner}` : ""}${countLabel ? `, ${countLabel}` : ""}`}
+    />
   );
 }
+
+export default memo(ListShareMessageCard);

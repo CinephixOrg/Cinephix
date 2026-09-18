@@ -22,7 +22,7 @@ const RIBBON_HEIGHT = 26;
 
 // A corner "sale banner"-style ribbon, not a regular button — direct ask,
 // replacing every plain Upgrade badge/button this app had (Sync's own
-// filter card, both Discover/Medya podium ad pages) with the same diagonal
+// filter card, both Discover/Media podium ad pages) with the same diagonal
 // treatment. The gold gradient is Premium's own TIER_FRAME_STYLES pair
 // (matching the avatar ring + ShareCard's gold post-frame), with a bright
 // center stop added — the same "dark → bright → dark" shine-sweep 3-stop

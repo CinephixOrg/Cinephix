@@ -1,78 +1,99 @@
-import { useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { memo } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import PremiumChatCard, { PremiumChips, cardText } from "./chat/PremiumChatCard";
 import TierAvatarFrame from "./TierAvatarFrame";
 import type { Message } from "../types";
-import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
-const CARD_WIDTH = 220;
-const AVATAR_SIZE = 44;
+const AVATAR_SIZE = 64;
+
+const styles = StyleSheet.create({
+  bottomRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, paddingTop: 0 },
+  avatarShadow: {
+    borderRadius: AVATAR_SIZE / 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
+  },
+  fallback: { backgroundColor: "#262633", alignItems: "center", justifyContent: "center" },
+  fallbackText: { fontFamily: fonts.bold, fontSize: 20, color: "#FFFFFF" },
+  info: { flex: 1, minWidth: 0 },
+});
 
 interface Props {
   message: Message;
   isOwn: boolean;
 }
 
-// Rendered inside a chat bubble in place of plain text for "hey, do you
-// know this person?" shares — a compact avatar+username row (not a full
-// profile preview) since there's nothing else worth previewing about a
-// profile the way a poster previews a movie. Tap opens their Public
-// Profile. Same own/other bubble-tint convention as RecommendationMessageCard.
-export default function ProfileShareMessageCard({ message, isOwn }: Props) {
-  const { colors } = useTheme();
+// A shared person, as a digital business card: their picture blurred into
+// the backdrop, the picture itself (in their tier's frame), @username,
+// followers, a line of bio and their top genres. Older shares only carry
+// the name and picture, and simply show less.
+function ProfileShareMessageCard({ message, isOwn }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        card: {
-          width: CARD_WIDTH,
-          borderRadius: 14,
-          overflow: "hidden",
-          backgroundColor: isOwn ? colors.primary : colors.base200,
-          ...(isOwn ? { borderBottomRightRadius: 4 } : { borderBottomLeftRadius: 4 }),
-        },
-        row: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
-        avatarFallback: { backgroundColor: colors.base300, alignItems: "center", justifyContent: "center" },
-        avatarFallbackText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
-        textCol: { flex: 1 },
-        username: { fontFamily: fonts.bold, fontSize: 14, color: isOwn ? colors.primaryContent : colors.baseContent },
-        hint: { fontSize: 12, color: isOwn ? colors.primaryContent : colors.placeholder, marginTop: 2 },
-      }),
-    [colors, isOwn]
-  );
+  const profile = message.profileData;
+  if (!profile?.userId) return null;
 
-  const profileData = message.profileData;
-  if (!profileData?.userId) return null;
+  const followers =
+    typeof profile.followersCount === "number"
+      ? t(profile.followersCount === 1 ? "{{count}} follower" : "{{count}} followers", { count: profile.followersCount })
+      : null;
+  const genres = (profile.topGenres ?? []).slice(0, 3).map((genre) => t(genre));
 
   return (
-    <Pressable style={styles.card} onPress={() => router.push(`/user/${profileData.userId}`)}>
-      <View style={styles.row}>
-        <TierAvatarFrame tier={profileData.accountTier} size={AVATAR_SIZE}>
-          {(innerSize) =>
-            profileData.profile_pic_url ? (
-              <Image
-                source={{ uri: profileData.profile_pic_url }}
-                style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
-              />
-            ) : (
-              <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                <Text style={styles.avatarFallbackText}>{profileData.username.slice(0, 2).toUpperCase()}</Text>
-              </View>
-            )
-          }
-        </TierAvatarFrame>
-        <View style={styles.textCol}>
-          <Text style={styles.username} numberOfLines={1}>
-            {profileData.username}
-          </Text>
-          <Text style={styles.hint}>{t("View Profile")}</Text>
+    <PremiumChatCard
+      isOwn={isOwn}
+      eyebrow={t("Profile")}
+      eyebrowIcon="person-circle"
+      backdropUri={profile.profile_pic_url}
+      heroHeight={AVATAR_SIZE + 62}
+      hero={
+        <View style={styles.bottomRow}>
+          <View style={styles.avatarShadow}>
+            <TierAvatarFrame tier={profile.accountTier ?? undefined} size={AVATAR_SIZE}>
+              {(inner) =>
+                profile.profile_pic_url ? (
+                  <Image source={{ uri: profile.profile_pic_url }} style={{ width: inner, height: inner, borderRadius: inner / 2 }} />
+                ) : (
+                  <View style={[styles.fallback, { width: inner, height: inner, borderRadius: inner / 2 }]}>
+                    <Text style={styles.fallbackText}>{profile.username.slice(0, 2).toUpperCase()}</Text>
+                  </View>
+                )
+              }
+            </TierAvatarFrame>
+          </View>
+          <View style={styles.info}>
+            <Text style={cardText.title} numberOfLines={1}>
+              @{profile.username}
+            </Text>
+            <Text style={cardText.meta} numberOfLines={1}>
+              {followers ?? t("On Cinephix")}
+            </Text>
+          </View>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={isOwn ? colors.primaryContent : colors.placeholder} />
-      </View>
-    </Pressable>
+      }
+      body={
+        profile.bio || genres.length > 0 ? (
+          <>
+            {profile.bio ? (
+              <Text style={cardText.body} numberOfLines={2}>
+                {profile.bio}
+              </Text>
+            ) : null}
+            <PremiumChips items={genres} />
+          </>
+        ) : null
+      }
+      ctaLabel={t("View Profile")}
+      onPress={() => router.push(`/user/${profile.userId}`)}
+      accessibilityLabel={`${t("Profile")}: @${profile.username}${followers ? `, ${followers}` : ""}`}
+    />
   );
 }
+
+export default memo(ProfileShareMessageCard);

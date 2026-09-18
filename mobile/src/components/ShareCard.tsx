@@ -24,7 +24,7 @@ import {
 // this: a *plain* react-native Pressable directly wrapping a
 // gesture-handler ScrollView doesn't participate in gesture-handler's own
 // touch negotiation at all (different systems), so the drag kept getting
-// claimed by the outer Medya pager instead of ever reaching the strip.
+// claimed by the outer Media pager instead of ever reaching the strip.
 // Every Pressable directly ancestor to a gesture-handler scroller needs to
 // itself be gesture-handler's version, not just the scroller — plain
 // react-native's `Pressable` (imported below) is still fine for every

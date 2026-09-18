@@ -15,7 +15,7 @@ type Scope = "all" | "friends";
 
 // Shares' "Currently Watching" section — who's actively watching what
 // right now (4-hour TTL, feedController.js's getCurrentlyWatchingFeed), a
-// live status roster rather than a Medya post, direct ask. Lives between
+// live status roster rather than a Media post, direct ask. Lives between
 // the podium and the "Shares" post-feed title (moved from Discover — same
 // reasoning OnlineFriendsBar.tsx already established for living here: a
 // live status roster, not a catalog-browse rail). The All/Friends

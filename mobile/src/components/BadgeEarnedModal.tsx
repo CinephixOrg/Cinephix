@@ -117,7 +117,7 @@ export default function BadgeEarnedModal() {
       const share = await createShare({ type: "badge", badgeFamily: badge.family, badgeKey: badge.key, badgeTier: badge.tier });
       announceNewShare(share);
       setShared(true);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch (err: any) {
       // 409 = already shared (e.g. shared from the Badges tab moments
       // earlier) — the end state the user wants is identical either way,
@@ -163,7 +163,7 @@ export default function BadgeEarnedModal() {
               <ActivityIndicator color={colors.primaryContent} size="small" />
             ) : (
               <Text style={[styles.shareButtonText, shared && styles.shareButtonTextDone]}>
-                {shared ? t("Shared") : t("Share to Medya")}
+                {shared ? t("Shared") : t("Share to Media")}
               </Text>
             )}
           </Pressable>

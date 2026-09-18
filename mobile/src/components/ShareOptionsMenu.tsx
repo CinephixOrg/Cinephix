@@ -14,7 +14,7 @@ interface Props {
 }
 
 // Small 2-option popover shared by every "share" entry point that already
-// has a real DM/community picker (Analysis, Recommendation) — "Medya'da
+// has a real DM/community picker (Analysis, Recommendation) — "Media'da
 // Paylaş" is the one genuinely new option, "Kişiye/Topluluğa Gönder" just
 // opens the existing UserSharePickerModal flow unchanged. Reviews don't use
 // this component — they get a simpler Save/Save+Share toggle instead,
