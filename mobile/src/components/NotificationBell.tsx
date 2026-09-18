@@ -1,5 +1,7 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+// Gesture handler's Pressable: see src/components/socials/MessagesSection.tsx for why.
+import { Pressable } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useNotifications } from "../context/NotificationContext";

@@ -52,6 +52,8 @@ import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
+import { genreNames } from "../utils/recommend";
+import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../constants/contentGenreIds";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 // Smaller than POSTER_BASE — every "Similar" rail poster is a small
@@ -772,7 +774,7 @@ export default function ContentDetailScreen() {
       const contentData = {
         title,
         posterUrl: posterPath ?? undefined,
-        genres: [] as string[],
+        genres: genreNames(content?.genre_ids, type === "movie" ? MOVIE_GENRE_OPTIONS : SERIES_GENRE_OPTIONS),
         releaseYear: releaseDate ? Number(releaseDate.slice(0, 4)) : undefined,
         overview,
         rating: content?.vote_average,

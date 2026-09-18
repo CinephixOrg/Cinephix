@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import UserAvatar from "./UserAvatar";
 import { getFollowers, getFollowing, searchUsers } from "../api/userService";
-import { getAllGroups } from "../api/groupService";
+import { loadCommunities } from "../api/communitiesStore";
 import { useTheme } from "../context/ThemeContext";
 import type { Connection, Group, UserSearchResult } from "../types";
 import { fonts } from "../theme/typography";
@@ -63,7 +63,8 @@ export default function UserSharePickerModal({ visible, title, onClose, sending,
   useEffect(() => {
     if (!visible || !allowGroups) return;
     setGroupsLoading(true);
-    getAllGroups()
+    // The Communities page's cached list, when it has one.
+    loadCommunities()
       .then((all) => setGroups(all.filter((g) => g.isMember)))
       .catch(() => setGroups([]))
       .finally(() => setGroupsLoading(false));
