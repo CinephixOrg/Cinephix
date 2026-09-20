@@ -1,5 +1,6 @@
 import { useCallback, useState, useMemo } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, Alert, StyleSheet } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, Alert, StyleSheet } from "react-native";
+import Pressable from "../../../src/components/common/TapSafePressable";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

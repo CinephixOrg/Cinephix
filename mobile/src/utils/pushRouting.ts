@@ -9,8 +9,15 @@
 
 import type { NotificationType } from "../types";
 
+/**
+ * A push's own type. Every in-app notification type, plus "ticket_update",
+ * which is pushed without a feed row behind it (backend
+ * utils/pushMessages.js buildTicketPushMessage).
+ */
+export type PushType = NotificationType | "ticket_update";
+
 export interface PushData {
-  type: NotificationType;
+  type: PushType;
   notificationId?: string;
   /** The account the push was sent to. */
   recipientId?: string;
@@ -19,10 +26,12 @@ export interface PushData {
   senderAvatar?: string;
   conversationId?: string;
   shareId?: string;
+  /** type "ticket_update": the ticket to open. */
+  ticketId?: string;
 }
 
-const TYPES: ReadonlySet<string> = new Set<NotificationType>(["follow", "message", "share_like"]);
-const FIELDS = ["notificationId", "recipientId", "senderId", "senderUsername", "senderAvatar", "conversationId", "shareId"] as const;
+const TYPES: ReadonlySet<string> = new Set<PushType>(["follow", "message", "share_like", "ticket_update"]);
+const FIELDS = ["notificationId", "recipientId", "senderId", "senderUsername", "senderAvatar", "conversationId", "shareId", "ticketId"] as const;
 
 /**
  * A push's data as ours, or null for anything else (another sender, a local
@@ -42,7 +51,7 @@ export function parsePushData(raw: unknown): PushData | null {
   const record = value as Record<string, unknown>;
   if (typeof record.type !== "string" || !TYPES.has(record.type)) return null;
 
-  const data: PushData = { type: record.type as NotificationType };
+  const data: PushData = { type: record.type as PushType };
   for (const field of FIELDS) {
     const fieldValue = record[field];
     if (typeof fieldValue === "string" && fieldValue.length > 0) data[field] = fieldValue;
@@ -59,8 +68,12 @@ export function isForViewer(data: PushData, viewerId: string | null | undefined)
   return Boolean(viewerId) && (!data.recipientId || data.recipientId === viewerId);
 }
 
-/** The in-app notification's routing shape, for destinationFor. */
-export function toRoutable(data: PushData) {
+/**
+ * The in-app notification's routing shape, for destinationFor. Only for a
+ * push that has a feed row behind it — "ticket_update" doesn't, and opens
+ * its ticket directly (src/hooks/usePushNotifications.ts).
+ */
+export function toRoutable(data: PushData & { type: NotificationType }) {
   return {
     type: data.type,
     sender: data.senderId

@@ -1,4 +1,5 @@
-import { Platform, Pressable } from "react-native";
+import { Platform } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

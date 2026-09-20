@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +14,7 @@ import { usePosterReveal } from "../context/PosterRevealContext";
 import type { PopularReview } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import MoreButton from "./safety/MoreButton";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 export const POSTER_WIDTH = 84;
@@ -215,6 +217,7 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
               {hasLiked ? t("Liked") : t("Like?")} {likeCount}
             </Text>
           </Pressable>
+          <MoreButton entityType="Review" entityId={review._id} author={review.user} size={15} />
         </View>
         {review.rating != null && (
           <Pressable style={styles.rating} onPress={close}>

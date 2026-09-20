@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, View, Text, Pressable, StyleSheet } from "react-native";
+import { Animated, Easing, View, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import Svg, { Polygon, Line, Circle } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { CATEGORY_KEYS, categoryMeta } from "./matchCategoryMeta";

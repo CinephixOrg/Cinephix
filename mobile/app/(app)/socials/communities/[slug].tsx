@@ -4,13 +4,13 @@ import {
   Text,
   Image,
   FlatList,
-  Pressable,
   ActivityIndicator,
   Animated,
   ScrollView,
   StyleSheet,
   type LayoutChangeEvent,
 } from "react-native";
+import Pressable from "../../../../src/components/common/TapSafePressable";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

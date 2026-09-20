@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "./common/GestureModal";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";

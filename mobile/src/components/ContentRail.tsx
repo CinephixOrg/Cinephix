@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this rail's own
 // horizontal scroll nests inside Discover's outer horizontal page-switcher
 // (home/index.tsx); it needs gesture-handler's pan resolution to keep

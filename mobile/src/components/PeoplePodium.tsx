@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   Animated,
   ActivityIndicator,
   Easing,
@@ -11,6 +10,8 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this podium's own
 // horizontal paging nests inside Media's outer horizontal page-switcher
 // (home/index.tsx, via SharesFeedSection's vertical FlatList — orthogonal

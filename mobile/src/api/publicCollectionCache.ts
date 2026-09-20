@@ -79,3 +79,9 @@ export function invalidatePublicCollections(userId: string): void {
   cache.delete(keyOf(userId, "watched"));
   cache.delete(keyOf(userId, "watchlist"));
 }
+
+/** All cached lists, e.g. on sign-out. */
+export function clearPublicCollectionCache(): void {
+  cache.clear();
+  inFlight.clear();
+}

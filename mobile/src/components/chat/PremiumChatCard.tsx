@@ -1,5 +1,6 @@
 import { memo, useMemo, useRef, type ReactNode } from "react";
-import { Animated, Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
@@ -120,6 +121,8 @@ interface Props {
   ctaLabel: string;
   ctaIcon?: IconName;
   onPress: () => void;
+  /** Report / block, from a chat (ChatRoom passes it for other people's messages). */
+  onLongPress?: () => void;
   accessibilityLabel: string;
 }
 
@@ -148,6 +151,7 @@ function PremiumChatCard({
   ctaLabel,
   ctaIcon = "arrow-forward",
   onPress,
+  onLongPress,
   accessibilityLabel,
 }: Props) {
   const { colors } = useTheme();
@@ -199,6 +203,8 @@ function PremiumChatCard({
       <Pressable
         style={frame.card}
         onPress={onPress}
+        onLongPress={onLongPress}
+        delayLongPress={350}
         onPressIn={() => pressTo(0.97)}
         onPressOut={() => pressTo(1)}
         accessibilityRole="button"

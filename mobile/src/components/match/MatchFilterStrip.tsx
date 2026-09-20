@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, Switch, StyleSheet } from "react-native";
+import { View, Text, Switch, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useTranslation } from "react-i18next";

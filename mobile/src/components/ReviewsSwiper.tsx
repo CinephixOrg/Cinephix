@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   Animated,
   Easing,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this rail's own
 // horizontal paging nests inside Discover's outer horizontal page-switcher
 // (home/index.tsx), same reason every other horizontal scroller on this
@@ -21,6 +21,9 @@ import ReviewSwipeCard, { POSTER_HEIGHT } from "./ReviewSwipeCard";
 import type { PopularReview } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { useWithoutBlocked } from "../hooks/useBlocked";
+
+const reviewAuthor = (review: PopularReview) => review.user?._id;
 
 const SIDE_PADDING = 16;
 const HINT_BOB_MS = 900;
@@ -46,7 +49,9 @@ interface Props {
 // comment). "See all" was removed a few rounds back, then reinstated —
 // `/home/reviews` still exists and works, it was just unreachable in the
 // meantime; this rail's own cap (10) stays the same either way.
-export default function ReviewsSwiper({ reviews, basePath, onSeeAllPress }: Props) {
+export default function ReviewsSwiper({ reviews: allReviews, basePath, onSeeAllPress }: Props) {
+  // Reviews by someone blocked just now vanish at once.
+  const reviews = useWithoutBlocked(allReviews, reviewAuthor);
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();

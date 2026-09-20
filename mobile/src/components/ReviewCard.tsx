@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
 import StarRatingDisplay from "./StarRatingDisplay";
@@ -9,6 +10,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { useTranslation } from "react-i18next";
 import { fonts } from "../theme/typography";
+import MoreButton from "./safety/MoreButton";
 
 interface Props {
   review: Review;
@@ -84,6 +86,7 @@ export default function ReviewCard({ review, truncated, onPress }: Props) {
           />
           <Text style={[styles.likeCount, hasLiked && styles.likeCountActive]}>{likeCount}</Text>
         </Pressable>
+        <MoreButton entityType="Review" entityId={review._id} author={review.user} />
       </View>
 
       <Text style={styles.text} numberOfLines={truncated ? 5 : undefined} ellipsizeMode="tail">

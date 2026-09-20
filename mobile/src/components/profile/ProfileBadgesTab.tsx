@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, Image, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { getAllBadgesForUser } from "../../api/badgeService";

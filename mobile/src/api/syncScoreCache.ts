@@ -63,3 +63,9 @@ export function prefetchSyncScore(userId: string, type: ContentType = "movie"): 
   request.catch(() => {}).finally(() => inFlight.delete(key));
   return request;
 }
+
+/** Scores are between you and them: none survive a change of account. */
+export function clearSyncScores() {
+  scores.clear();
+  inFlight.clear();
+}

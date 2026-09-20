@@ -70,6 +70,7 @@ import {
 // why (it's built entirely out of that file's own podium ranking, and
 // importing it back the other way would be circular).
 import { getPodiumBadge, computePodiumBadge, PODIUM_TIERS } from "../controllers/feedController.js";
+import { notHiddenUser } from "../middleware/blockFilter.js";
 
 const router = express.Router();
 
@@ -192,6 +193,6 @@ router.get("/poll-participant", authMiddleware, getPollParticipantBadge);
 router.get("/halloween-viewer", authMiddleware, getHalloweenViewerBadge);
 router.get("/new-year-viewer", authMiddleware, getNewYearViewerBadge);
 
-router.get("/user/:id", authMiddleware, getAllBadgesForUser);
+router.get("/user/:id", authMiddleware, notHiddenUser("id"), getAllBadgesForUser);
 
 export default router;

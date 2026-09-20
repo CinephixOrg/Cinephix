@@ -63,6 +63,9 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const loadingRef = useRef(false);
   const lastFetchedAtRef = useRef(0);
+  // Bumped when the account changes: a response for the previous account
+  // that lands afterwards is dropped instead of shown.
+  const sessionRef = useRef(0);
 
   const refresh = useCallback(
     async (options?: { force?: boolean }) => {
@@ -80,6 +83,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       // app boot) onto the one request already in flight.
       if (loadingRef.current) return;
       loadingRef.current = true;
+      const session = sessionRef.current;
       try {
         const [profileData, cineGraphData, favoritesData, sharesData] = await Promise.all([
           getUserProfile(user._id),
@@ -87,6 +91,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
           getFavorites(user._id),
           getUserShares("me", 1, 1),
         ]);
+        if (session !== sessionRef.current) return;
         lastFetchedAtRef.current = Date.now();
         // Identity-preserving: a revalidation that comes back byte-identical
         // (the common case) keeps the previous object, so React bails out of
@@ -101,12 +106,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         setError(null);
         setLoaded(true);
       } catch (e: any) {
+        if (session !== sessionRef.current) return;
         // A failed background refresh leaves whatever was already loaded on
         // screen (stale-but-visible beats an error screen replacing working
         // data) — the error is only surfaced when there's nothing loaded yet.
         setError(e?.response?.data?.message || "Failed to load profile.");
       } finally {
-        loadingRef.current = false;
+        if (session === sessionRef.current) loadingRef.current = false;
       }
     },
     [user?._id]
@@ -126,8 +132,21 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     // A different account's bundle is not a stale copy of this one, it's the
     // wrong data — drop the freshness stamp so the TTL can't hold it on
     // screen after a logout/login inside the same window.
+    //
+    // And the previous account's data itself goes, straight away: the
+    // Profile tab shows its skeleton until this account's data arrives,
+    // never someone else's profile in the meantime.
+    sessionRef.current += 1;
     lastFetchedAtRef.current = 0;
-    if (user) ensureLoaded();
+    loadingRef.current = false;
+    setProfile(null);
+    setCineGraph(null);
+    setFavorites(null);
+    setShareCount(undefined);
+    setLoaded(false);
+    setError(null);
+    // Not ensureLoaded: its `loaded` is still the previous account's.
+    if (user) refresh({ force: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id]);
 

@@ -33,6 +33,7 @@ import { fonts } from "../src/theme/typography";
 import OfflineBanner from "../src/components/OfflineBanner";
 import Toast from "../src/components/Toast";
 import { PushNotificationsBridge } from "../src/hooks/usePushNotifications";
+import { SafetyProvider } from "../src/context/SafetyContext";
 
 // react-native-draggable-flatlist@4.0.3 (Favorites' own drag-to-reorder,
 // ProfileCategoryTabs.tsx) calls RN's own InteractionManager internally —
@@ -196,7 +197,9 @@ export default function RootLayout() {
                         <ProfileProvider>
                           <NotificationProvider>
                             <ChatProvider>
-                              <RootNavigator />
+                              <SafetyProvider>
+                                <RootNavigator />
+                              </SafetyProvider>
                             </ChatProvider>
                           </NotificationProvider>
                         </ProfileProvider>

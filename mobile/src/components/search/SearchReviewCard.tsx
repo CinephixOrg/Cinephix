@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
-import { View, Text, Image, Pressable, Modal, ScrollView, useWindowDimensions, StyleSheet } from "react-native";
+import { View, Text, Image, ScrollView, useWindowDimensions, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "../common/GestureModal";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
@@ -114,7 +117,8 @@ export default function SearchReviewCard({ review, basePath }: Props) {
 
       <Modal transparent animationType="fade" visible={fullReviewVisible} onRequestClose={() => setFullReviewVisible(false)}>
         <Pressable style={styles.modalRoot} onPress={() => setFullReviewVisible(false)}>
-          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+          {/* Swallows taps so they don't reach the backdrop and close the card. */}
+          <Pressable style={styles.modalCard} onPress={() => {}}>
             {review.content.poster_path ? (
               <Image source={{ uri: `${POSTER_BASE}${review.content.poster_path}` }} style={styles.modalPoster} />
             ) : null}

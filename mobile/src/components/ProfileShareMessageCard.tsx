@@ -27,13 +27,14 @@ const styles = StyleSheet.create({
 interface Props {
   message: Message;
   isOwn: boolean;
+  onLongPress?: () => void;
 }
 
 // A shared person, as a digital business card: their picture blurred into
 // the backdrop, the picture itself (in their tier's frame), @username,
 // followers, a line of bio and their top genres. Older shares only carry
 // the name and picture, and simply show less.
-function ProfileShareMessageCard({ message, isOwn }: Props) {
+function ProfileShareMessageCard({ message, isOwn, onLongPress }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const profile = message.profileData;
@@ -48,6 +49,7 @@ function ProfileShareMessageCard({ message, isOwn }: Props) {
   return (
     <PremiumChatCard
       isOwn={isOwn}
+      onLongPress={onLongPress}
       eyebrow={t("Profile")}
       eyebrowIcon="person-circle"
       backdropUri={profile.profile_pic_url}

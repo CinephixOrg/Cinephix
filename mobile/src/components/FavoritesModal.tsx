@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { View, Text, Image, FlatList, Pressable, ActivityIndicator, Modal, StyleSheet } from "react-native";
+import { View, Text, Image, FlatList, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "./common/GestureModal";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getFavorites, updateFavorites } from "../api/favoriteService";

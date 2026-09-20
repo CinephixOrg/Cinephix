@@ -55,6 +55,8 @@ import { authRateLimiter } from "../middleware/rateLimiter.js";
 import multer from "multer";
 import cloudinary from "../config/cloudinaryConfig.js";
 import User from "../models/User.js";
+import { blockedProfileStub, notHiddenUser } from "../middleware/blockFilter.js";
+import { block, listBlocked, officialAccounts, unblock } from "../controllers/moderationController.js";
 
 const router = express.Router();
 const upload = multer({
@@ -162,6 +164,8 @@ router.post("/:id/follow", authMiddleware, followUser);
 router.post("/:id/unfollow", authMiddleware, unfollowUser);
 
 // Following and followers (yours, or another user's with ?userId=)
+router.get("/me/blocked", authMiddleware, listBlocked);
+router.get("/official", authMiddleware, officialAccounts);
 router.get("/me/following", authMiddleware, getMyFollowing);
 router.get("/me/followers", authMiddleware, getMyFollowers);
 
@@ -187,24 +191,27 @@ router.put("/me/favorites", authMiddleware, validateRequest(validationSchemas.up
 router.get("/search", authMiddleware, searchUsers);
 
 // Get user profile and related data
-router.get("/profile/:id", authMiddleware, getUserProfile);
-router.get("/favorites/:id", authMiddleware, getUserFavorites);
+// Blocking: either person disappears for the other (services/blockService.js).
+router.post("/:id/block", authMiddleware, block);
+router.delete("/:id/block", authMiddleware, unblock);
+router.get("/profile/:id", authMiddleware, blockedProfileStub("id"), notHiddenUser("id"), getUserProfile);
+router.get("/favorites/:id", authMiddleware, notHiddenUser("id"), getUserFavorites);
 
 // Lists + watched list + watchlist in one call, for the public profile's
 // Lists tab.
-router.get("/collections/:id", authMiddleware, getUserCollections);
+router.get("/collections/:id", authMiddleware, notHiddenUser("id"), getUserCollections);
 // Every entry of one of those lists (kind: watched | watchlist), for the
 // profile's full-list sheet.
-router.get("/collections/:id/:kind", authMiddleware, getUserCollectionEntries);
+router.get("/collections/:id/:kind", authMiddleware, notHiddenUser("id"), getUserCollectionEntries);
 
 router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchemas.updateProfile), updateUserBio);
 router.post("/me/currently-watching", authMiddleware, setCurrentlyWatching);
 router.delete("/me/currently-watching", authMiddleware, stopCurrentlyWatching);
 router.patch("/me/tier", authMiddleware, setOwnAccountTier); // DEV-ONLY: simulates a tier purchase, disabled in production
 
-router.get("/ratings/:id", authMiddleware, getUserRatings);
-router.get("/cinegraph-data/:id", authMiddleware, getUserCineGraph);
-router.get("/:id/genre-detail", authMiddleware, getUserGenreDetail);
+router.get("/ratings/:id", authMiddleware, notHiddenUser("id"), getUserRatings);
+router.get("/cinegraph-data/:id", authMiddleware, notHiddenUser("id"), getUserCineGraph);
+router.get("/:id/genre-detail", authMiddleware, notHiddenUser("id"), getUserGenreDetail);
 
 // Matching
 router.post("/matches", authMiddleware, validateRequest(validationSchemas.findMatches), findMatches);

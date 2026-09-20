@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Image, Text, Pressable, StyleSheet } from "react-native";
+import { View, Image, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 // Plain RN ScrollView loses horizontal pan gestures to the outer card-paging
 // ScrollView this row lives inside (a real, reported bug — same-axis nested

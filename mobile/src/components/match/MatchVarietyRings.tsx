@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { View, Text, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import Svg, { Circle, Line } from "react-native-svg";
 // Same fix as PosterCoverflow.tsx: this row nests inside MatchAnalysisPanel's
 // own card-paging ScrollView (same horizontal axis) — a plain RN ScrollView

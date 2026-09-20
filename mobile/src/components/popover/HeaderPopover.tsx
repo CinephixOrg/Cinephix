@@ -1,5 +1,8 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Easing, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "../common/GestureModal";
 // The header button is gesture handler's Pressable (see
 // socials/MessagesSection.tsx for why); the menu inside the Modal keeps React Native's, since a freshly
 // opened Modal measures correctly and gesture handler needs its own root there.

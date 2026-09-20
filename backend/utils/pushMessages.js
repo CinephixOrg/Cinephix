@@ -154,6 +154,45 @@ export function buildPushMessage({ notification, sender, token, locale, badge })
   return message;
 }
 
+const TICKET_STATUS_PHRASE = {
+  Open: "Your ticket was reopened",
+  "In Progress": "Your ticket is in progress",
+  Resolved: "Your ticket has been resolved",
+  Closed: "Your ticket has been closed",
+};
+
+/**
+ * One device's push about a support ticket, in that device's language: the
+ * new status, or that support has answered. `changed` says which of the two
+ * happened — both at once reads as the answer, since that's what the person
+ * will want to open.
+ *
+ * Its data carries the ticket's id, so tapping it opens that ticket
+ * (mobile/src/utils/pushRouting.ts).
+ */
+export function buildTicketPushMessage({ ticket, token, locale, badge, replied, statusChanged }) {
+  const phrase = replied ? "Support replied to your ticket" : statusChanged ? TICKET_STATUS_PHRASE[ticket.status] : null;
+  if (!phrase) return null;
+  const message = {
+    to: token,
+    sound: "default",
+    priority: "high",
+    title: pushPhrase(locale, "Cinephix Support"),
+    body: `${pushPhrase(locale, phrase)}: ${ticket.title}`,
+    channelId: PUSH_CHANNELS.activity,
+    data: {
+      type: "ticket_update",
+      ticketId: id(ticket._id),
+      recipientId: id(ticket.userId),
+    },
+    // A newer update about the same ticket replaces the older one in the tray.
+    tag: `ticket-${id(ticket._id)}`,
+  };
+  message.collapseId = message.tag;
+  if (Number.isInteger(badge) && badge >= 0) message.badge = badge;
+  return message;
+}
+
 // ---------------------------------------------------------------------------
 // Tickets and receipts
 // ---------------------------------------------------------------------------

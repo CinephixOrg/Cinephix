@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Pressable, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { TIER_FRAME_STYLES } from "../theme/tierFrames";

@@ -3,15 +3,15 @@ import {
   View,
   Text,
   Image,
-  Pressable,
-  Modal,
   Animated,
   ActivityIndicator,
   StyleSheet,
   useWindowDimensions,
 } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "../common/GestureModal";
+import Pressable from "../common/TapSafePressable";
 import {
-  GestureHandlerRootView,
   PinchGestureHandler,
   State,
   type PinchGestureHandlerGestureEvent,
@@ -136,7 +136,7 @@ export default function ProfilePhotoViewerModal({ visible, onClose, imageUri, fa
           — without a second one here, react-native-gesture-handler
           recognizes no gestures at all inside a Modal, which is why pinch
           previously did nothing. */}
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         {/* Tapping anywhere counts as "outside the photo" and closes it —
             the photo itself (below) sits in its own Pressable with a no-op
             press so a tap there doesn't fall through to this one. Action
@@ -179,7 +179,7 @@ export default function ProfilePhotoViewerModal({ visible, onClose, imageUri, fa
             </View>
           )}
         </Pressable>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 }

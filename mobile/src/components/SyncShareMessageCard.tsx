@@ -26,6 +26,7 @@ const styles = StyleSheet.create({
 interface Props {
   message: Message;
   isOwn: boolean;
+  onLongPress?: () => void;
   onPress: () => void;
   /** The other person in this chat — the second face of the pair. */
   counterpart?: MessageSender;
@@ -36,7 +37,7 @@ interface Props {
 // low — and the match's own title. A Sync is always between the two people
 // in the DM it was sent to, so the pair is the sender and whoever else is in
 // this chat.
-function SyncShareMessageCard({ message, isOwn, onPress, counterpart }: Props) {
+function SyncShareMessageCard({ message, isOwn, onPress, counterpart, onLongPress }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const analysis = message.analysisData as MatchAnalysis | undefined;
@@ -56,6 +57,7 @@ function SyncShareMessageCard({ message, isOwn, onPress, counterpart }: Props) {
   return (
     <PremiumChatCard
       isOwn={isOwn}
+      onLongPress={onLongPress}
       eyebrow={t("CineMatch Sync")}
       eyebrowIcon="pulse"
       eyebrowColor={tone}

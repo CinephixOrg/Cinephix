@@ -3,14 +3,15 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import Pressable from "../../src/components/common/TapSafePressable";
 import { Link } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";
 import { signInWithGoogle } from "../../src/api/googleAuth";
+import { openLegal } from "../../src/constants/legal";
 import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
 
@@ -51,17 +52,31 @@ export default function LoginScreen() {
     marginTop: 4,
   },
   googleButtonText: { color: colors.baseContent, fontFamily: fonts.medium, fontSize: 16 },
+  notice: {
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: `${colors.error}1A`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${colors.error}55`,
+  },
+  noticeText: { fontSize: 13.5, lineHeight: 19, color: colors.error, textAlign: "center" },
+  legal: { fontSize: 12, lineHeight: 17, color: colors.placeholder, textAlign: "center", marginTop: 10 },
+  legalLink: { color: colors.primary },
   error: { color: colors.error },
   link: { textAlign: "center", marginTop: 16, color: colors.secondary },
   forgotLink: { textAlign: "right", color: colors.secondary, fontSize: 13 },
 }), [colors]);
   const { t } = useTranslation();
-  const { login, completeOAuthLogin } = useAuth();
+  const { login, completeOAuthLogin, signedOutReason, clearSignedOutReason } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
+
+  const dismissNotice = () => {
+    if (signedOutReason) clearSignedOutReason();
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -98,7 +113,10 @@ export default function LoginScreen() {
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(next) => {
+          dismissNotice();
+          setEmail(next);
+        }}
       />
       <TextInput
         style={styles.input}
@@ -111,6 +129,14 @@ export default function LoginScreen() {
       <Link href="/forgot-password" style={styles.forgotLink}>
         {t("Forgot password?")}
       </Link>
+
+      {/* A suspended account is signed out mid-session; this is where it
+          finds out why (src/api/client.ts). */}
+      {signedOutReason ? (
+        <View style={styles.notice}>
+          <Text style={styles.noticeText}>{signedOutReason}</Text>
+        </View>
+      ) : null}
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -137,6 +163,18 @@ export default function LoginScreen() {
           <Text style={styles.googleButtonText}>{t("Sign in with Google")}</Text>
         )}
       </Pressable>
+
+      <Text style={styles.legal}>
+        {t("By continuing you agree to our")}{" "}
+        <Text style={styles.legalLink} onPress={() => openLegal("terms")}>
+          {t("Terms of Service")}
+        </Text>{" "}
+        {t("and")}{" "}
+        <Text style={styles.legalLink} onPress={() => openLegal("privacy")}>
+          {t("Privacy Policy")}
+        </Text>
+        .
+      </Text>
 
       <Link href="/register" style={styles.link}>
         {t("Don't have an account? Register")}

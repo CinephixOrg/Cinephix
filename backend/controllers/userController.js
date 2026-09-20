@@ -14,6 +14,7 @@ import Review from "../models/Review.js";
 import { notifyFollow, retractFollow } from "../services/notifications.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
 import Share from "../models/Share.js";
+import { TERMS_VERSION } from "../utils/legal.js";
 import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { refreshUserCineGraph } from "../utils/cineGraph.js";
@@ -103,6 +104,13 @@ export const registerUser = asyncHandler(async (req, res) => {
     return sendError(res, 'Password must be at least 6 characters', 400);
   }
 
+  // Apple's guideline on user-generated content expects agreement to the
+  // terms at sign-up, so the API refuses a registration without it rather
+  // than trusting the app's own checkbox.
+  if (req.body.acceptedTerms !== true) {
+    return sendError(res, 'Please accept the Terms of Service and Privacy Policy', 400);
+  }
+
   // Check if user already exists
   const userExists = await User.findOne({ email: normalizedEmail });
   if (userExists) {
@@ -125,6 +133,8 @@ export const registerUser = asyncHandler(async (req, res) => {
       username: normalizedUsername,
       email: normalizedEmail,
       password: hashedPassword,
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
     });
   } catch (err) {
     if (err?.code === 11000) {
@@ -244,6 +254,11 @@ export const followUser = asyncHandler(async (req, res) => {
 
   const userToFollow = await User.findById(userToFollowId);
   if (!userToFollow) {
+    return sendError(res, 'User not found', 404);
+  }
+
+  // Someone hidden by a block can't be followed (or found).
+  if (req.hiddenUsers?.has(String(userToFollowId))) {
     return sendError(res, 'User not found', 404);
   }
 
@@ -546,7 +561,11 @@ export const updateFavorites = async (req, res) => {
  */
 export const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password').lean();
+    // Who someone blocked is theirs alone; the admin flag isn't public either.
+    const user = await User.findById(req.params.id).select('-password -blockedUsers -isAdmin').lean();
+    // Nor is their email address: only a moderator reading this through
+    // routes/adminRoute.js (showPrivate) gets it.
+    if (user && !req.showPrivate) delete user.email;
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -690,7 +709,9 @@ export const getUserCollections = asyncHandler(async (req, res) => {
     return sendError(res, 'User not found', 404);
   }
 
-  const isOwner = req.user.id.toString() === String(targetUserId);
+  // routes/adminRoute.js sets showPrivate: a moderator looking into a
+  // report sees this person's lists as they are, private ones included.
+  const isOwner = req.user.id.toString() === String(targetUserId) || req.showPrivate === true;
   // Someone else's lists marked not public stay hidden — isPublic is a
   // per-list setting. Viewing your own profile shows both.
   const listQuery = isOwner ? { owner: targetUserId } : { owner: targetUserId, isPublic: true };

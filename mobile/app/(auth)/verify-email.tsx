@@ -3,10 +3,10 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import Pressable from "../../src/components/common/TapSafePressable";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/context/AuthContext";

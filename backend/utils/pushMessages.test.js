@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   MAX_PUSH_TOKENS,
   buildPushMessage,
+  buildTicketPushMessage,
   createCooldown,
   isExpoPushToken,
   parseRegistration,
@@ -159,4 +160,37 @@ test("the cooldown lets one push through per window", () => {
   assert.equal(cooldown.tryAcquire("s2"), true);
   clock = 1000;
   assert.equal(cooldown.tryAcquire("s1"), true);
+});
+
+// ---- Support tickets ---------------------------------------------------------
+
+const TICKET = { _id: "6ab0000000000000000000cc", userId: RECIPIENT, title: "Feed taps dead", status: "Resolved" };
+
+test("a ticket's push says what happened to it, and carries the ticket to open", () => {
+  const push = buildTicketPushMessage({ ticket: TICKET, token: TOKEN, locale: "en", badge: 2, statusChanged: true });
+  assert.equal(push.title, "Cinephix Support");
+  assert.equal(push.body, "Your ticket has been resolved: Feed taps dead");
+  assert.deepEqual(push.data, { type: "ticket_update", ticketId: TICKET._id, recipientId: RECIPIENT });
+  assert.equal(push.badge, 2);
+  // A newer update about the same ticket replaces the older one in the tray.
+  assert.equal(push.tag, `ticket-${TICKET._id}`);
+  assert.equal(push.collapseId, push.tag);
+});
+
+test("an answer is what the push says, even when the status moved too", () => {
+  const push = buildTicketPushMessage({ ticket: TICKET, token: TOKEN, locale: "en", replied: true, statusChanged: true });
+  assert.equal(push.body, "Support replied to your ticket: Feed taps dead");
+});
+
+test("each status has its own wording, in the device's language", () => {
+  const body = (status, locale) => buildTicketPushMessage({ ticket: { ...TICKET, status }, token: TOKEN, locale, statusChanged: true }).body;
+  assert.equal(body("Open", "en"), "Your ticket was reopened: Feed taps dead");
+  assert.equal(body("In Progress", "en"), "Your ticket is in progress: Feed taps dead");
+  assert.equal(body("Closed", "en"), "Your ticket has been closed: Feed taps dead");
+  assert.equal(body("Resolved", "tr"), "Talebin çözüldü: Feed taps dead");
+});
+
+test("nothing is pushed when nothing actually changed", () => {
+  assert.equal(buildTicketPushMessage({ ticket: TICKET, token: TOKEN, locale: "en" }), null);
+  assert.equal(buildTicketPushMessage({ ticket: { ...TICKET, status: "Nonsense" }, token: TOKEN, locale: "en", statusChanged: true }), null);
 });

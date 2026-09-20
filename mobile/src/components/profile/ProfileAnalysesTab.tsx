@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";

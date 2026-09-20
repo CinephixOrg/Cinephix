@@ -4,25 +4,23 @@ import {
   Text,
   TextInput,
   Image,
-  Pressable,
-  Modal,
   KeyboardAvoidingView,
   Keyboard,
   Platform,
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "../common/GestureModal";
+import Pressable from "../common/TapSafePressable";
 // FlatList + touchables come from gesture-handler, not react-native: RN's
 // own touch-responder path never delivered a first tap here while the
 // keyboard was up (it was consumed by keyboard dismissal before reaching
 // the row, regardless of keyboardShouldPersistTaps). Gesture-handler's
 // versions recognize touches natively instead of going through that
-// negotiation, so a single tap lands. They need their own
-// GestureHandlerRootView inside the Modal — RN Modals render in a separate
-// native window, outside the app's root one (same reason the profile photo
-// viewer's pinch needed its own).
+// negotiation, so a single tap lands. They work inside a Modal because
+// common/GestureModal gives every Modal its own gesture root.
 import {
-  GestureHandlerRootView,
   FlatList as GHFlatList,
   TouchableOpacity as GHTouchableOpacity,
 } from "react-native-gesture-handler";
@@ -192,7 +190,7 @@ export default function AddFavoriteModal({ visible, type, excludeIds, onClose, o
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <GestureHandlerRootView style={styles.container}>
+      <View style={styles.container}>
         {/* RN's Modal is its own separate native window, so it doesn't
             inherit the app's normal keyboard-resize behavior the way a
             regular screen does — without this the keyboard just overlaps
@@ -272,7 +270,7 @@ export default function AddFavoriteModal({ visible, type, excludeIds, onClose, o
           />
         )}
         </KeyboardAvoidingView>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 }

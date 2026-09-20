@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
 interface Props {
   message: Message;
   isOwn: boolean;
+  onLongPress?: () => void;
 }
 
 function posterUri(posterUrl: string | undefined, base = POSTER_BASE): string | null {
@@ -53,7 +54,7 @@ function posterUri(posterUrl: string | undefined, base = POSTER_BASE): string | 
 // sharp poster over it, then the title, year, genres, rating and a line of
 // synopsis. The frame is PremiumChatCard's, shared with every other rich
 // chat item.
-function RecommendationMessageCard({ message, isOwn }: Props) {
+function RecommendationMessageCard({ message, isOwn, onLongPress }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -72,6 +73,7 @@ function RecommendationMessageCard({ message, isOwn }: Props) {
   return (
     <PremiumChatCard
       isOwn={isOwn}
+      onLongPress={onLongPress}
       eyebrow={eyebrow}
       eyebrowIcon="sparkles"
       topRight={rating ? <PremiumPill icon="star" text={rating} /> : null}

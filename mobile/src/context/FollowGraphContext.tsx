@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { getFollowing } from "../api/userService";
 
@@ -22,16 +22,28 @@ export function FollowGraphProvider({ children }: { children: React.ReactNode })
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const loadedRef = useRef(false);
   const loadingRef = useRef(false);
+  const sessionRef = useRef(0);
+
+  // Another account's follows are simply wrong: drop them the moment the
+  // user changes (sign-out included), and any answer still on its way.
+  useEffect(() => {
+    sessionRef.current += 1;
+    loadedRef.current = false;
+    loadingRef.current = false;
+    setFollowingIds(new Set());
+  }, [user?._id]);
 
   const refresh = useCallback(async () => {
     if (!user) return;
+    const session = sessionRef.current;
     loadingRef.current = true;
     try {
       const following = await getFollowing(1, 1000);
+      if (session !== sessionRef.current) return;
       setFollowingIds(new Set(following.items.map((u) => u._id)));
       loadedRef.current = true;
     } finally {
-      loadingRef.current = false;
+      if (session === sessionRef.current) loadingRef.current = false;
     }
   }, [user?._id]);
 

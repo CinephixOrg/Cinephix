@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, StyleSheet, useWindowDimensions, type GestureResponderEvent } from "react-native";
+import { View, Text, Animated, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import Svg, { Circle, G, Line } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import type { CineGraphRatings, CineGraphStats } from "../types";
@@ -511,7 +512,7 @@ export default function CineGraphDonut({ stats, genreRatings, onDetailPress, typ
   // for why that picked the wrong slice. The band is a little wider than the
   // stroke so a tap on a slice's edge or on the popped-out selected slice
   // still counts.
-  const onRingPress = (event: GestureResponderEvent) => {
+  const onRingPress = (event: { nativeEvent: { locationX: number; locationY: number } }) => {
     const { locationX, locationY } = event.nativeEvent;
     const genre = sliceAtPoint(
       locationX,

@@ -159,3 +159,8 @@ export async function getSyncCandidates(filters?: MatchFilters): Promise<SyncCan
   });
   return res.data;
 }
+
+/** Analyses are of you and them: none survive a change of account. */
+export function clearMatchAnalyses() {
+  analysisCache.clear();
+}

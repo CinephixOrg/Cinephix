@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { blockSets } from "../services/blockService.js";
 
 // Every authenticated request looks its caller up here, and the mobile app
 // routinely fires a burst of ~5-9 independent requests the instant a tab
@@ -50,6 +51,11 @@ function findUserById(id) {
   return pending;
 }
 
+/** Forgets a cached user, so a change to their account applies immediately. */
+export function invalidateUserCache(id) {
+  userCache.delete(String(id));
+}
+
 export default async function authMiddleware(req, res, next) {
   try {
     // Authorization header: "Bearer <token>"
@@ -65,12 +71,21 @@ export default async function authMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded?.id) return res.status(401).json({ message: "Invalid token" });
 
-    // Find user by ID
-    const user = await findUserById(decoded.id);
+    // The user, and everyone hidden from them by a block (in parallel —
+    // both only need the id), for services/blockService.js's filtering.
+    const [user, blocks] = await Promise.all([findUserById(decoded.id), blockSets(decoded.id)]);
     if (!user) return res.status(404).json({ message: "User not found" });
+    // A suspended account keeps its token but loses the app: every
+    // authenticated request is refused, and 401 is what makes the client
+    // sign itself out rather than retry (mobile/src/api/client.ts).
+    if (user.isSuspended) {
+      return res.status(401).json({ message: "Your account has been suspended.", code: "account_suspended" });
+    }
 
     // Attach user to request
     req.user = user;
+    req.hiddenUsers = blocks.hidden;
+    req.blockedByMe = blocks.blockedByMe;
 
     next();
   } catch (err) {
@@ -87,8 +102,12 @@ export const optionalAuth = async (req, res, next) => {
       const token = authHeader.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       if (decoded?.id) {
-        const user = await findUserById(decoded.id);
-        if (user) req.user = user;
+        const [user, blocks] = await Promise.all([findUserById(decoded.id), blockSets(decoded.id)]);
+        if (user && !user.isSuspended) {
+          req.user = user;
+          req.hiddenUsers = blocks.hidden;
+          req.blockedByMe = blocks.blockedByMe;
+        }
       }
     }
   } catch {

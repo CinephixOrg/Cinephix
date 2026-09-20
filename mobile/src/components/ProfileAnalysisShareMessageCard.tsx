@@ -73,6 +73,7 @@ const MiniDonut = memo(function MiniDonut({ top, other }: { top: GenreSlice[]; o
 interface Props {
   message: Message;
   isOwn: boolean;
+  onLongPress?: () => void;
   onPress: () => void;
 }
 
@@ -80,7 +81,7 @@ interface Props {
 // three genres with their shares, the analysis's nickname ("The Auteur") and
 // whose it is. The genres are the analysis's own computed breakdown, never
 // invented; an older analysis without one shows the nickname alone.
-function ProfileAnalysisShareMessageCard({ message, isOwn, onPress }: Props) {
+function ProfileAnalysisShareMessageCard({ message, isOwn, onPress, onLongPress }: Props) {
   const { t } = useTranslation();
   const analysis = message.analysisData as ProfileAnalysis | undefined;
   const { top, other } = useMemo(() => cineGraphSlices(analysis?.stats?.genreBreakdown), [analysis]);
@@ -90,6 +91,7 @@ function ProfileAnalysisShareMessageCard({ message, isOwn, onPress }: Props) {
   return (
     <PremiumChatCard
       isOwn={isOwn}
+      onLongPress={onLongPress}
       eyebrow={t("CineGraph Analysis")}
       eyebrowIcon="pie-chart"
       eyebrowColor={ACCENT}

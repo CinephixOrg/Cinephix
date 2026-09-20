@@ -1,15 +1,21 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
-import { useToast } from "../../context/ToastContext";
+import { useSafety } from "../../context/SafetyContext";
+import { isProtectedAccount } from "../../api/blockStore";
 import { fonts } from "../../theme/typography";
 
 interface Props {
   userId: string;
+  /** Who this is — for Report / Block. */
+  username?: string;
+  /** The official Cinephix account has no Report / Block. */
+  isOfficial?: boolean;
   onNavigate: () => void;
 }
 
@@ -31,13 +37,14 @@ const ITEMS: MenuItem[] = [
 // the signed-in user's own (ProfileDrawerContent), holding this person's
 // library. Each item opens a full, read-only page in this profile's stack.
 //
-// Report / Block sits apart at the bottom. It's a placeholder: there's no
-// reporting or blocking backend yet, so it only says so.
-export default function PublicProfileDrawerContent({ userId, onNavigate }: Props) {
+// Report / Block sits apart at the bottom and opens the app's Report / Block
+// sheet (SafetyContext). Blocking leaves the profile, which no longer exists
+// for either of you.
+export default function PublicProfileDrawerContent({ userId, username, isOfficial, onNavigate }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
-  const { showToast } = useToast();
+  const { openUserActions } = useSafety();
 
   const styles = useMemo(
     () =>
@@ -72,18 +79,24 @@ export default function PublicProfileDrawerContent({ userId, onNavigate }: Props
         ))}
       </View>
 
-      <View style={styles.divider} />
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-        accessibilityRole="button"
-        onPress={() => {
-          onNavigate();
-          showToast(t("Reporting and blocking are coming soon."));
-        }}
-      >
-        <Ionicons name="flag-outline" size={20} color={colors.error} />
-        <Text style={styles.danger}>{t("Report / Block")}</Text>
-      </Pressable>
+      {isProtectedAccount({ _id: userId, isOfficial }) ? null : (
+        <>
+          <View style={styles.divider} />
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            accessibilityRole="button"
+            disabled={!username}
+            onPress={() => {
+              if (!username) return;
+              onNavigate();
+              openUserActions({ _id: userId, username }, { onBlocked: () => (router.canGoBack() ? router.back() : router.replace("/home")) });
+            }}
+          >
+            <Ionicons name="flag-outline" size={20} color={colors.error} />
+            <Text style={styles.danger}>{t("Report / Block")}</Text>
+          </Pressable>
+        </>
+      )}
     </SafeAreaView>
   );
 }

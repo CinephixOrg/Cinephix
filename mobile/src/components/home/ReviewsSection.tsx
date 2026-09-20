@@ -7,6 +7,9 @@ import SlidingUnderlineTabs from "../SlidingUnderlineTabs";
 import { SkeletonBox } from "../Skeleton";
 import type { PopularReview } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import { useWithoutBlocked } from "../../hooks/useBlocked";
+
+const reviewAuthor = (review: PopularReview) => review.user?._id;
 
 const PAGE_LIMIT = 15;
 type ReviewMode = "all" | "friends" | "liked";
@@ -33,6 +36,7 @@ export default function ReviewsSection() {
 
   const [mode, setMode] = useState<ReviewMode>("all");
   const [items, setItems] = useState<PopularReview[]>([]);
+  const visibleItems = useWithoutBlocked(items, reviewAuthor);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -104,7 +108,7 @@ export default function ReviewsSection() {
       ) : (
         <FlatList
           style={styles.container}
-          data={items}
+          data={visibleItems}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}

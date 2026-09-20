@@ -1,5 +1,8 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ActivityIndicator, Pressable, Modal, ScrollView, StyleSheet, useWindowDimensions, type LayoutChangeEvent } from "react-native";
+import { View, Text, ActivityIndicator, ScrollView, StyleSheet, useWindowDimensions, type LayoutChangeEvent } from "react-native";
+import Pressable from "../common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "../common/GestureModal";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { getUserShares, toggleShareLike, SHARES_PREVIEW_LIMIT } from "../../api/shareService";

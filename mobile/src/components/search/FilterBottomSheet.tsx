@@ -1,5 +1,8 @@
 import { useMemo, type ReactNode } from "react";
-import { View, Text, Pressable, Modal, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "../common/GestureModal";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -74,7 +77,8 @@ export default function FilterBottomSheet({ visible, onClose, onClear, hasActive
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+        {/* Swallows taps so they don't reach the backdrop and close the sheet. */}
+        <Pressable style={styles.sheet} onPress={() => {}}>
           <View style={styles.grabber} />
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>

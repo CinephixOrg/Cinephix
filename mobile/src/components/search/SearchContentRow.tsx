@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";

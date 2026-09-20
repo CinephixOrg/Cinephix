@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, BackHandler, Pressable, RefreshControl, StyleSheet, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Animated, BackHandler, RefreshControl, StyleSheet, View, useWindowDimensions } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

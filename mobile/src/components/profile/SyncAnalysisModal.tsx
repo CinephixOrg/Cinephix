@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { View, Pressable, Modal, StyleSheet, type LayoutChangeEvent } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { View, StyleSheet, type LayoutChangeEvent } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "../common/GestureModal";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import MatchAnalysisPanel from "../match/MatchAnalysisPanel";
@@ -59,11 +61,7 @@ export default function SyncAnalysisModal({ visible, onClose, candidate, filters
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      {/* An RN Modal is its own native window, outside the app-root
-          GestureHandlerRootView — without a second one here the panel's
-          horizontal poster rows (gesture-handler ScrollViews) wouldn't
-          scroll at all. */}
-      <GestureHandlerRootView style={styles.overlay}>
+      <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.panelWrap} onLayout={handleLayout}>
             {panelWidth > 0 && (
@@ -77,7 +75,7 @@ export default function SyncAnalysisModal({ visible, onClose, candidate, filters
             </Pressable>
           </View>
         </View>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 }

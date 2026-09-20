@@ -76,6 +76,20 @@ export const API_ROUTES = {
     // This device's Expo push token: registered on sign-in, removed on sign-out.
     PUSH_TOKENS: "/users/me/push-tokens",
     PUSH_TOKEN: (token: string) => `/users/me/push-tokens/${encodeURIComponent(token)}`,
+    // Blocking: POST to block, DELETE to unblock; the list is who you've blocked.
+    BLOCK: (id: string) => `/users/${id}/block`,
+    BLOCKED: "/users/me/blocked",
+    OFFICIAL: "/users/official",
+  },
+  REPORTS: {
+    CREATE: "/reports",
+  },
+  // Help & Feedback: your own support tickets (backend routes/ticketRoute.js).
+  TICKETS: {
+    CREATE: "/tickets",
+    MINE: "/tickets/me",
+    GET: (id: string) => `/tickets/${id}`,
+    READ: (id: string) => `/tickets/${id}/read`,
   },
   ACTIVITY_LOG: {
     GET_ALL: "/users/me/logs",
