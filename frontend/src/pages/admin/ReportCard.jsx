@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
-import { FiCheck, FiCopy, FiRotateCcw, FiSlash, FiTrash2, FiX } from "react-icons/fi";
-import { deleteContent, setSuspension } from "../../api/adminService.js";
+import { FiCheck, FiCopy, FiRotateCcw, FiTrash2, FiX } from "react-icons/fi";
+import { deleteContent } from "../../api/adminService.js";
+import SuspendControl from "./SuspendControl.jsx";
+import { DELETABLE } from "./moderationMeta.js";
 import DangerButton from "./DangerButton.jsx";
 
 // Mirrors backend models/Report.js REPORT_REASONS, worded as the app words them.
@@ -15,7 +17,6 @@ const REASON_LABEL = {
   other: "Something else",
 };
 const TYPE_LABEL = { User: "Profile", Review: "Review", Share: "Media post", List: "List", Message: "Message", Comment: "Comment" };
-const DELETABLE = { Review: "review", Share: "share", List: "list", Message: "message" };
 const STATUS_STYLE = {
   pending: "bg-amber-400/15 text-amber-300",
   resolved: "bg-emerald-400/15 text-emerald-300",
@@ -59,19 +60,8 @@ export default function ReportCard({ report, onDecide, onRemoved, onSuspended, c
     }
   };
 
-  const suspend = async () => {
-    setBusy("suspend");
-    try {
-      const result = await setSuspension(report.reportedUserId._id, true, `Reported for ${report.reason}`);
-      toast.success(`@${result.username} suspended`);
-      onSuspended?.(report, result);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Couldn't suspend that account");
-    } finally {
-      setBusy(null);
-    }
-  };
-
+  // entityExists comes from the API; `gone` covers a removal just made here.
+  const alreadyGone = gone || report.entityExists === false;
   const reported = report.reportedUserId;
   const reporter = report.reporterId;
   const pending = report.status === "pending";
@@ -159,23 +149,28 @@ export default function ReportCard({ report, onDecide, onRemoved, onSuspended, c
         {/* The actions that change the app itself, kept apart from the
             verdict buttons and asking twice (DangerButton.jsx). */}
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-800/70 pt-3">
-          {DELETABLE[report.entityType] && (
-            <DangerButton
-              label={gone ? "Removed" : `Delete ${TYPE_LABEL[report.entityType].toLowerCase()}`}
-              confirmLabel="Delete for good?"
-              icon={<FiTrash2 />}
-              busy={busy === "delete"}
-              disabled={gone}
-              onConfirm={removeContent}
-            />
-          )}
+          {DELETABLE[report.entityType] &&
+            (alreadyGone ? (
+              // The content is gone — removed here, or by an earlier
+              // decision. Reopening a report about it is still fine.
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                <FiTrash2 className="h-3 w-3" /> Content already removed
+              </span>
+            ) : (
+              <DangerButton
+                label={`Delete ${TYPE_LABEL[report.entityType].toLowerCase()}`}
+                confirmLabel="Delete for good?"
+                icon={<FiTrash2 />}
+                busy={busy === "delete"}
+                onConfirm={removeContent}
+              />
+            ))}
           {reported && !reported.isSuspended && (
-            <DangerButton
-              label={`Suspend @${reported.username}`}
-              confirmLabel="Suspend this account?"
-              icon={<FiSlash />}
-              busy={busy === "suspend"}
-              onConfirm={suspend}
+            <SuspendControl
+              userId={reported._id}
+              defaultReason={`Reported for ${report.reason}`}
+              compact
+              onChanged={(result) => onSuspended?.(report, result)}
             />
           )}
           {reported?.isSuspended && <span className="text-xs font-medium text-red-300">Account suspended</span>}

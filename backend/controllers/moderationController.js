@@ -13,7 +13,7 @@ import FootprintEvent from "../models/FootprintEvent.js";
 import { blockUser, unblockUser } from "../services/blockService.js";
 import { removeShareNotifications } from "../services/notifications.js";
 import { invalidateUserCache } from "../middleware/authMiddleware.js";
-import { ENTITY_TYPE_OF, parseDeleteTarget, parseSuspension, resolutionNote, suspensionRefusal } from "../utils/moderationActions.js";
+import { ENTITY_TYPE_OF, parseDeleteTarget, parseSuspension, resolutionNote, suspendedUntil, suspensionRefusal } from "../utils/moderationActions.js";
 import { REPORTS_PER_HOUR, parseDecision, parseQueueQuery, parseReportInput } from "../utils/reportRules.js";
 
 // ─── Blocking ────────────────────────────────────────────────────────────────
@@ -157,6 +157,40 @@ export const createReport = asyncHandler(async (req, res) => {
 
 // ─── Moderation (admins only; see routes/adminRoute.js) ─────────────────────
 
+/**
+ * Marks each report with whether the thing it is about still exists.
+ *
+ * A moderator can remove reported content, and the report outlives it (its
+ * snapshot is the record). Without this the dashboard would keep offering
+ * Delete for something already gone, and answer with a bare 404 — which is
+ * exactly what it did before. One query per entity type, not per report.
+ */
+async function withEntityExistence(reports) {
+  const models = { Review, Share, List: CustomList, Message, User };
+  const byType = new Map();
+  for (const report of reports) {
+    if (!models[report.entityType]) continue;
+    if (!byType.has(report.entityType)) byType.set(report.entityType, new Set());
+    byType.get(report.entityType).add(String(report.reportedEntityId));
+  }
+
+  const alive = new Set();
+  await Promise.all(
+    [...byType].map(async ([entityType, ids]) => {
+      const found = await models[entityType]
+        .find({ _id: { $in: [...ids] } })
+        .select("_id")
+        .lean();
+      for (const doc of found) alive.add(`${entityType}:${doc._id}`);
+    })
+  );
+
+  return reports.map((report) => ({
+    ...report,
+    entityExists: models[report.entityType] ? alive.has(`${report.entityType}:${report.reportedEntityId}`) : null,
+  }));
+}
+
 // GET /api/admin/reports?status=&entityType=&reportedUserId=&page=&limit=
 export const listReports = asyncHandler(async (req, res) => {
   const { filter, page, limit } = parseQueueQuery(req.query);
@@ -171,7 +205,7 @@ export const listReports = asyncHandler(async (req, res) => {
       .lean(),
     Report.countDocuments(filter),
   ]);
-  sendSuccess(res, { items, page, limit, total, hasMore: page * limit < total }, "Reports fetched");
+  sendSuccess(res, { items: await withEntityExistence(items), page, limit, total, hasMore: page * limit < total }, "Reports fetched");
 });
 
 // GET /api/admin/reports/stats — queue sizes, for the dashboard's header.
@@ -194,7 +228,7 @@ export const adminUserSummary = asyncHandler(async (req, res) => {
   const id = new mongoose.Types.ObjectId(req.params.id);
   const [user, against, filed] = await Promise.all([
     User.findById(id)
-      .select("username email bio profile_pic_url accountTier isOfficial isAdmin isSuspended suspendedAt suspensionReason createdAt followers following")
+      .select("username email bio profile_pic_url accountTier isOfficial isAdmin isSuspended suspendedUntil suspendedAt suspensionReason createdAt followers following")
       .lean(),
     Report.aggregate([{ $match: { reportedUserId: id } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
     Report.countDocuments({ reporterId: id }),
@@ -272,7 +306,8 @@ export const deleteContent = asyncHandler(async (req, res) => {
   if (error) return sendError(res, error, 400);
 
   const removed = await removeContent(value.type, value.id);
-  if (!removed) return sendError(res, "Content not found", 404);
+  // Most often this means a moderator already removed it.
+  if (!removed) return sendError(res, "That content has already been removed", 404);
 
   // Every pending report about this thing is now answered by its removal.
   const entityType = ENTITY_TYPE_OF[value.type];
@@ -297,14 +332,25 @@ export const setSuspension = asyncHandler(async (req, res) => {
   const { value, error } = parseSuspension(req.body);
   if (error) return sendError(res, error, 400);
 
-  const target = await User.findById(req.params.id).select("_id username isOfficial isAdmin isSuspended").lean();
+  const target = await User.findById(req.params.id).select("_id username isOfficial isAdmin isSuspended suspendedUntil").lean();
   const refusal = suspensionRefusal(target, req.user._id);
   if (refusal) return sendError(res, refusal, refusal === "User not found" ? 404 : 403);
 
   const now = new Date();
+  const until = value.suspended ? suspendedUntil(value.hours, now) : null;
   const update = value.suspended
-    ? { $set: { isSuspended: true, suspendedAt: now, suspendedBy: req.user._id, suspensionReason: value.reason } }
-    : { $set: { isSuspended: false }, $unset: { suspendedAt: 1, suspendedBy: 1, suspensionReason: 1 } };
+    ? {
+        $set: {
+          isSuspended: true,
+          suspendedAt: now,
+          suspendedBy: req.user._id,
+          suspensionReason: value.reason,
+          // A permanent suspension simply has no end date.
+          ...(until ? { suspendedUntil: until } : {}),
+        },
+        ...(until ? {} : { $unset: { suspendedUntil: 1 } }),
+      }
+    : { $set: { isSuspended: false }, $unset: { suspendedUntil: 1, suspendedAt: 1, suspendedBy: 1, suspensionReason: 1 } };
   await User.updateOne({ _id: target._id }, update);
   // The auth middleware holds a user for a few seconds; drop it so the
   // suspension bites on their very next request rather than the one after.
@@ -334,10 +380,11 @@ export const setSuspension = asyncHandler(async (req, res) => {
       username: target.username,
       isSuspended: value.suspended,
       suspendedAt: value.suspended ? now : null,
+      suspendedUntil: until,
       suspensionReason: value.suspended ? value.reason : null,
       reportsResolved,
     },
-    value.suspended ? "Account suspended" : "Suspension lifted"
+    value.suspended ? (until ? "Account suspended temporarily" : "Account suspended permanently") : "Suspension lifted"
   );
 });
 
@@ -417,7 +464,10 @@ export const decideReport = asyncHandler(async (req, res) => {
       .populate("reviewedBy", "username")
       .lean();
     if (!report) return sendError(res, "Report not found", 404);
-    sendSuccess(res, report, "Report updated");
+    // Reopening never touches the reported content — a report about something
+    // already removed reopens fine, and says so through entityExists.
+    const [withExistence] = await withEntityExistence([report]);
+    sendSuccess(res, withExistence, "Report updated");
   } catch (err) {
     // Reopening while the same person has a newer pending report on it.
     if (err?.code === 11000) return sendError(res, "A pending report for this already exists", 409);

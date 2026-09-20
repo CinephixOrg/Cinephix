@@ -192,14 +192,11 @@ function ProfileSharingsTab({ userId = "me", basePath = "/profile", active = tru
         // in both contexts.
         modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", paddingHorizontal: 16, paddingVertical: 20 },
         modalContent: { maxHeight: "85%" },
+        modalHeader: { flexDirection: "row", justifyContent: "flex-end", paddingBottom: 8 },
         modalClose: {
-          position: "absolute",
-          top: 8,
-          right: 8,
-          zIndex: 10,
-          width: 30,
-          height: 30,
-          borderRadius: 15,
+          width: 34,
+          height: 34,
+          borderRadius: 17,
           backgroundColor: "rgba(0,0,0,0.55)",
           alignItems: "center",
           justifyContent: "center",
@@ -437,12 +434,22 @@ function ProfileSharingsTab({ userId = "me", basePath = "/profile", active = tru
       <Modal visible={!!selectedShare} transparent animationType="fade" onRequestClose={() => setSelectedShareId(null)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            {/* Above the card, not over it: the card's own header carries the
+                "..." menu at its top right, which this used to sit on top of. */}
+            <View style={styles.modalHeader}>
+              <Pressable
+                style={styles.modalClose}
+                onPress={() => setSelectedShareId(null)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t("Close")}
+              >
+                <Ionicons name="close" size={19} color="#fff" />
+              </Pressable>
+            </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               {selectedShare && <ShareCard share={selectedShare} onToggleLike={handleToggleLike} basePath={basePath} />}
             </ScrollView>
-            <Pressable style={styles.modalClose} onPress={() => setSelectedShareId(null)}>
-              <Ionicons name="close" size={18} color="#fff" />
-            </Pressable>
           </View>
         </View>
       </Modal>

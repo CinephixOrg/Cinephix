@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { blockSets } from "../services/blockService.js";
+import { suspensionActive } from "../utils/moderationActions.js";
 
 // Every authenticated request looks its caller up here, and the mobile app
 // routinely fires a burst of ~5-9 independent requests the instant a tab
@@ -51,6 +52,22 @@ function findUserById(id) {
   return pending;
 }
 
+/** What a suspended person is told: until when, or that it has no end. */
+function suspensionMessage(until) {
+  if (!until) return "Your account has been suspended.";
+  const when = new Date(until).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return `Your account is suspended until ${when}.`;
+}
+
+/** Clears a temporary suspension that has run out, and the cached copy of it. */
+async function liftExpiredSuspension(userId) {
+  await User.updateOne(
+    { _id: userId },
+    { $set: { isSuspended: false }, $unset: { suspendedUntil: 1, suspendedAt: 1, suspendedBy: 1, suspensionReason: 1 } }
+  );
+  invalidateUserCache(userId);
+}
+
 /** Forgets a cached user, so a change to their account applies immediately. */
 export function invalidateUserCache(id) {
   userCache.delete(String(id));
@@ -78,8 +95,21 @@ export default async function authMiddleware(req, res, next) {
     // A suspended account keeps its token but loses the app: every
     // authenticated request is refused, and 401 is what makes the client
     // sign itself out rather than retry (mobile/src/api/client.ts).
+    //
+    // A temporary suspension lifts itself here, on the first request after
+    // it runs out — no scheduled job, and the account is clean in the
+    // database rather than only looking unsuspended.
     if (user.isSuspended) {
-      return res.status(401).json({ message: "Your account has been suspended.", code: "account_suspended" });
+      if (suspensionActive(user)) {
+        return res.status(401).json({
+          message: suspensionMessage(user.suspendedUntil),
+          code: "account_suspended",
+          suspendedUntil: user.suspendedUntil ?? null,
+        });
+      }
+      await liftExpiredSuspension(user._id);
+      user.isSuspended = false;
+      user.suspendedUntil = undefined;
     }
 
     // Attach user to request

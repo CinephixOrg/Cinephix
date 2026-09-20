@@ -116,8 +116,11 @@ export async function deleteContent(type, id, reason) {
   return res.data;
 }
 
-/** Suspends or restores an account. Suspending requires a reason. */
-export async function setSuspension(userId, suspended, reason) {
-  const res = await API.patch(`/admin/users/${userId}/suspension`, { suspended, reason });
+/**
+ * Suspends or restores an account. Suspending requires a reason;
+ * `durationHours` null means permanent.
+ */
+export async function setSuspension(userId, suspended, reason, durationHours = null) {
+  const res = await API.patch(`/admin/users/${userId}/suspension`, { suspended, reason, durationHours });
   return res.data;
 }

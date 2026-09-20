@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { FiAlertTriangle, FiArrowLeft, FiSlash, FiTrash2 } from "react-icons/fi";
 import DangerButton from "./DangerButton.jsx";
+import SuspendControl from "./SuspendControl.jsx";
 import {
   getAdminCineGraph,
   getAdminCollections,
@@ -172,17 +173,15 @@ function ProfileHeader({ profile, summary, genres, onSuspensionChanged }) {
   const pending = summary?.reportsAgainst?.pending ?? 0;
   const suspended = Boolean(summary?.isSuspended);
   const [busy, setBusy] = useState(false);
-  const [reason, setReason] = useState("");
 
-  const change = async (next) => {
+  const lift = async () => {
     setBusy(true);
     try {
-      const result = await setSuspension(profile._id, next, reason.trim());
-      toast.success(next ? `@${result.username} suspended` : "Suspension lifted");
-      setReason("");
+      const result = await setSuspension(profile._id, false);
+      toast.success("Suspension lifted");
       onSuspensionChanged?.(result);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Couldn't change the suspension");
+      toast.error(err?.response?.data?.message || "Couldn't lift the suspension");
     } finally {
       setBusy(false);
     }
@@ -192,9 +191,12 @@ function ProfileHeader({ profile, summary, genres, onSuspensionChanged }) {
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5 sm:p-6">
       {suspended && (
         <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
-          <span className="font-semibold">Account suspended</span>
+          <span className="font-semibold">
+            {summary?.suspendedUntil
+              ? `Suspended until ${format(new Date(summary.suspendedUntil), "d MMM yyyy, HH:mm")}`
+              : "Suspended permanently"}
+          </span>
           {summary?.suspensionReason ? ` — ${summary.suspensionReason}` : ""}
-          {summary?.suspendedAt ? ` · ${format(new Date(summary.suspendedAt), "d MMM yyyy")}` : ""}
         </div>
       )}
       {pending > 0 && (
@@ -257,27 +259,11 @@ function ProfileHeader({ profile, summary, genres, onSuspensionChanged }) {
       {profile.isOfficial || summary?.isAdmin ? null : (
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-zinc-800 pt-4">
           {suspended ? (
-            <button disabled={busy} onClick={() => change(false)} className="btn btn-sm gap-1.5">
+            <button disabled={busy} onClick={lift} className="btn btn-sm gap-1.5">
               {busy ? <span className="loading loading-spinner loading-xs" /> : <FiSlash />} Lift suspension
             </button>
           ) : (
-            <>
-              <input
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                maxLength={500}
-                placeholder="Reason for suspending (required)"
-                className="input input-sm input-bordered w-full max-w-xs bg-zinc-900"
-              />
-              <DangerButton
-                label="Suspend account"
-                confirmLabel="Suspend this account?"
-                icon={<FiSlash />}
-                busy={busy}
-                disabled={!reason.trim()}
-                onConfirm={() => change(true)}
-              />
-            </>
+            <SuspendControl userId={profile._id} onChanged={onSuspensionChanged} />
           )}
         </div>
       )}

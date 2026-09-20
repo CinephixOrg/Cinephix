@@ -88,11 +88,16 @@ const userSchema = new Schema({
   },
   // Suspended by a moderator: the account still exists, but every
   // authenticated request is refused (middleware/authMiddleware.js), which
-  // signs the app out on the spot. Only an admin can lift it.
+  // signs the app out on the spot.
+  //
+  // A suspension is temporary when suspendedUntil is set and permanent when
+  // it isn't. A temporary one lifts itself on the first request after it
+  // expires; a permanent one only an admin can lift.
   isSuspended: {
     type: Boolean,
     default: false,
   },
+  suspendedUntil: { type: Date },
   suspendedAt: { type: Date },
   suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
   suspensionReason: { type: String, trim: true, maxlength: 500 },

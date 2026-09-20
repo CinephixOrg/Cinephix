@@ -11,6 +11,17 @@ export const ENTITY_TYPE_OF = { review: "Review", share: "Share", list: "List", 
 
 export const MAX_REASON = 500;
 
+/** What the dashboard offers; `null` hours means permanent. */
+export const SUSPENSION_DURATIONS = [
+  { key: "24h", label: "24 hours", hours: 24 },
+  { key: "3d", label: "3 days", hours: 72 },
+  { key: "1w", label: "1 week", hours: 168 },
+  { key: "permanent", label: "Permanent", hours: null },
+];
+
+/** A year, so a typo can't suspend someone into the next century. */
+const MAX_HOURS = 8760;
+
 const text = (value, max) => (typeof value === "string" ? value.trim().slice(0, max) : "");
 
 /**
@@ -35,7 +46,32 @@ export function parseSuspension(body = {}) {
   if (typeof body.suspended !== "boolean") return { error: "suspended must be true or false" };
   const reason = text(body.reason, MAX_REASON);
   if (body.suspended && !reason) return { error: "Please give a reason for the suspension" };
-  return { value: { suspended: body.suspended, reason: reason || undefined } };
+
+  // Absent or null hours = permanent; anything else must be a sane number.
+  let hours = null;
+  if (body.suspended && body.durationHours !== undefined && body.durationHours !== null) {
+    hours = Number(body.durationHours);
+    if (!Number.isFinite(hours) || !Number.isInteger(hours) || hours < 1 || hours > MAX_HOURS) {
+      return { error: "That suspension length isn't allowed" };
+    }
+  }
+
+  return { value: { suspended: body.suspended, reason: reason || undefined, hours } };
+}
+
+/** When a suspension of this many hours ends, or null for permanent. */
+export function suspendedUntil(hours, now = new Date()) {
+  return hours === null || hours === undefined ? null : new Date(now.getTime() + hours * 60 * 60 * 1000);
+}
+
+/**
+ * Whether a suspension still stands. A temporary one that has run out no
+ * longer does, which is what lets it lift itself.
+ */
+export function suspensionActive(user, now = new Date()) {
+  if (!user?.isSuspended) return false;
+  if (!user.suspendedUntil) return true;
+  return new Date(user.suspendedUntil) > now;
 }
 
 /**
