@@ -21,6 +21,7 @@ import TierAvatarFrame from "../TierAvatarFrame";
 import type { Conversation, GroupConversationRow } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { useBlockedIds } from "../../hooks/useBlocked";
 
 const AVATAR_SIZE = 52;
 
@@ -181,9 +182,11 @@ export default function MessagesSection() {
   const { user } = useAuth();
   const { conversations, groupConversations, inboxLoaded, refreshConversations } = useChat();
 
+  // A DM with someone blocked just now leaves the inbox at once.
+  const blocked = useBlockedIds();
   const rows = useMemo(() => {
     const now = new Date();
-    return [...conversations, ...groupConversations]
+    return [...conversations.filter((c) => !blocked.has(c.otherUser._id)), ...groupConversations]
       .sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime())
       .map((item) => {
         let preview = item.lastMessage || t("No messages yet");
@@ -198,7 +201,7 @@ export default function MessagesSection() {
           time: item.lastMessageAt ? formatInboxTime(item.lastMessageAt, now, i18n.language) : null,
         };
       });
-  }, [conversations, groupConversations, t, i18n.language, user?._id]);
+  }, [conversations, groupConversations, blocked, t, i18n.language, user?._id]);
 
   useFocusEffect(
     useCallback(() => {

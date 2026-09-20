@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { Animated, Easing, View, Text, Pressable, StyleSheet } from "react-native";
+import { Animated, Easing, View, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";

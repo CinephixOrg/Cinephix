@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, StyleSheet, Text, TextInput, View } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";

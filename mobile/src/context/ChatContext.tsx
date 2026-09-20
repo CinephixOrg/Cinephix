@@ -4,6 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { getConversations } from "../api/conversationService";
 import { clearRooms } from "../api/chatCache";
+import { unreadChatCount } from "../utils/chatMessages";
 import type { Conversation, GroupConversationRow, Message, RoomType, RoomUpdatedPayload } from "../types";
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || "http://localhost:5000";
@@ -13,7 +14,8 @@ interface ChatContextValue {
   groupConversations: GroupConversationRow[];
   /** False until the inbox has been fetched once for this sign-in — the only time it's worth a skeleton. */
   inboxLoaded: boolean;
-  totalUnread: number;
+  /** Chats with unread messages — what the Socials tab badge shows. */
+  unreadChats: number;
   connected: boolean;
   refreshConversations: () => Promise<void>;
   joinRoom: (roomType: RoomType, roomId: string) => void;
@@ -177,10 +179,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user?._id]);
 
-  const totalUnread = useMemo(
-    () =>
-      conversations.reduce((sum, c) => sum + c.unreadCount, 0) +
-      groupConversations.reduce((sum, g) => sum + g.unreadCount, 0),
+  const unreadChats = useMemo(
+    () => unreadChatCount(conversations, groupConversations),
     [conversations, groupConversations]
   );
 
@@ -226,7 +226,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       conversations,
       groupConversations,
       inboxLoaded,
-      totalUnread,
+      unreadChats,
       connected,
       refreshConversations,
       joinRoom,
@@ -240,7 +240,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       conversations,
       groupConversations,
       inboxLoaded,
-      totalUnread,
+      unreadChats,
       connected,
       refreshConversations,
       joinRoom,

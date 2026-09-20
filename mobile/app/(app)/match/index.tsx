@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, View, Text, Pressable, ScrollView, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
+import { Animated, Easing, View, Text, ScrollView, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "../../../src/components/common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import * as SecureStore from "expo-secure-store";

@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   Animated,
-  Pressable,
   ActivityIndicator,
   BackHandler,
   StyleSheet,
   useWindowDimensions,
 } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -37,6 +37,7 @@ import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 import { snippet } from "../utils/shareCards";
 import { VisibilityToggle } from "../components/lists/ListEditorParts";
+import MoreButton from "../components/safety/MoreButton";
 
 const GRID_PADDING_BOTTOM = 110;
 const UNDO_MS = 4000;
@@ -87,6 +88,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
         center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
         header: { paddingHorizontal: 16, paddingTop: 16 },
         ownerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+        ownerLine: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
         ownerName: { fontSize: 13, color: colors.placeholder, fontFamily: fonts.medium },
         titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 },
         title: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent },
@@ -493,16 +495,25 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
-          <UserAvatar
-            userId={list.owner._id}
-            username={list.owner.username}
-            profilePicUrl={list.owner.profile_pic_url}
-            size={28}
-            disabled
+        <View style={styles.ownerLine}>
+          <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
+            <UserAvatar
+              userId={list.owner._id}
+              username={list.owner.username}
+              profilePicUrl={list.owner.profile_pic_url}
+              size={28}
+              disabled
+            />
+            <Text style={styles.ownerName}>{list.owner.username}</Text>
+          </Pressable>
+          {/* Report the list, or block its owner — which also leaves it. */}
+          <MoreButton
+            entityType="List"
+            entityId={list._id}
+            author={list.owner}
+            onBlocked={() => (router.canGoBack() ? router.back() : router.replace("/profile/lists" as never))}
           />
-          <Text style={styles.ownerName}>{list.owner.username}</Text>
-        </Pressable>
+        </View>
 
         <View style={styles.titleRow}>
           {editing && isOwner ? (

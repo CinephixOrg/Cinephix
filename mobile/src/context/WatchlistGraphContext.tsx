@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { getToWatchList } from "../api/toWatchService";
 import type { ContentType, WatchlistItem } from "../types";
@@ -34,18 +34,29 @@ export function WatchlistGraphProvider({ children }: { children: React.ReactNode
   const [itemIds, setItemIds] = useState<Set<string>>(new Set());
   const loadedRef = useRef(false);
   const loadingRef = useRef(false);
+  const sessionRef = useRef(0);
+
+  // Another account's watchlist goes the moment the user changes.
+  useEffect(() => {
+    sessionRef.current += 1;
+    loadedRef.current = false;
+    loadingRef.current = false;
+    setItemIds(new Set());
+  }, [user?._id]);
 
   const ensureLoaded = useCallback(() => {
     if (loadedRef.current || loadingRef.current || !user) return;
     loadingRef.current = true;
+    const session = sessionRef.current;
     getToWatchList()
       .then((items) => {
+        if (session !== sessionRef.current) return;
         setItemIds(new Set(items.map((w) => itemKey(w.itemId, w.itemType))));
         loadedRef.current = true;
       })
       .catch(() => {})
       .finally(() => {
-        loadingRef.current = false;
+        if (session === sessionRef.current) loadingRef.current = false;
       });
   }, [user?._id]);
 

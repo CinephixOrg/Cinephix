@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/User.js';
+import { TERMS_VERSION } from '../utils/legal.js';
 
 export const configurePassport = () => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -35,12 +36,17 @@ export const configurePassport = () => {
                 .toLowerCase()
                 .replace(/[^a-z0-9_]/g, '');
               const suffix = Math.random().toString(36).slice(2, 6);
+              // Signing in with Google is itself the agreement: the button
+              // carries the same "by continuing you agree" line the register
+              // screen shows (mobile/app/(auth)).
               user = await User.create({
                 googleId: profile.id,
                 username: `${baseUsername}_${suffix}`,
                 email: profile.emails[0].value,
                 profile_pic_url: profile.photos?.[0]?.value || '',
                 isEmailVerified: true,
+                termsAcceptedAt: new Date(),
+                termsVersion: TERMS_VERSION,
               });
               return done(null, user, { isNewOAuthUser: true });
             }

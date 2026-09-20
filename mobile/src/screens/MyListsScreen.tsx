@@ -5,13 +5,13 @@ import {
   BackHandler,
   FlatList,
   LayoutAnimation,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
   type ListRenderItem,
 } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

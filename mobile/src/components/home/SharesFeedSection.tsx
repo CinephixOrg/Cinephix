@@ -1,5 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
@@ -17,6 +19,9 @@ import { useTheme } from "../../context/ThemeContext";
 import { useRecentShares } from "../../context/RecentSharesContext";
 import { useToast } from "../../context/ToastContext";
 import { fonts } from "../../theme/typography";
+import { useWithoutBlocked } from "../../hooks/useBlocked";
+
+const shareAuthor = (share: Share) => share.user?._id;
 
 // One row of the rendered feed is either a real post or (every
 // SUGGESTED_INTERVAL posts) a suggested-users insert — woven into the post
@@ -291,10 +296,12 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   // session. Recomputes from scratch whenever `items` changes (fresh load
   // or a loadMore append), so insert positions stay correct without ever
   // duplicating.
+  // Someone blocked just now vanishes from the feed at once.
+  const visibleItems = useWithoutBlocked(items, shareAuthor);
   const feedRows: FeedRow[] = useMemo(() => {
     const rows: FeedRow[] = [];
     let occurrence = 0;
-    items.forEach((share, i) => {
+    visibleItems.forEach((share, i) => {
       rows.push({ kind: "share", share });
       if (suggestions.length > 0 && (i + 1) % SUGGESTED_INTERVAL === 0) {
         rows.push({ kind: "suggested", occurrence });
@@ -302,7 +309,7 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
       }
     });
     return rows;
-  }, [items, suggestions]);
+  }, [visibleItems, suggestions]);
 
   // Guards against out-of-order responses — same reasoning as Search's own
   // fetch-driven components (SearchContentRows.tsx etc.): rapidly toggling
@@ -397,104 +404,104 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   }, []);
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Previously branched `loading ? <View>…<PeoplePodium/>…</View> : <FlatList ListHeaderComponent={…<PeoplePodium/>…}>` —
-          two structurally different trees, each with its own <PeoplePodium/>. React's
-          reconciler doesn't diff across a ternary's two branches, so the moment this
-          section's own feed fetch finished and `loading` flipped, it unmounted the
-          first PeoplePodium (destroying its already-fetched data) and mounted a brand
-          new one — which then had to fetch and load all over again. That's the exact
-          "podyum yüklenip gidiyor, sonra tekrar yükleniyor" bug: the podium loading
-          twice wasn't it being slow, it was being torn down and rebuilt once this
-          section's own unrelated feed happened to finish. Fix: the FlatList (and
-          PeoplePodium/OnlineFriendsBar inside its header) is now always mounted —
-          `loading` only swaps content *inside* the header, never the tree position of
-          PeoplePodium itself, so it mounts once and keeps its own state regardless of
-          how this section's own feed load is going. */}
-      <FlatList
-        ref={flatListRef}
-        style={styles.container}
-        data={feedRows}
-        // Suffixed with `index` (not just `share._id`) for share rows —
-        // the official Cinephix account's own posts are deliberately
-        // recycled once getShareFeed's fixed-position rotation (see that
-        // function's own comment) runs through its whole pool, which a
-        // small pool (a handful of posts early on) can do within a single
-        // scroll session. The SAME official Share _id then legitimately
-        // occupies two different rows at once, which without the index
-        // suffix is a duplicate FlatList key — React can't tell the two
-        // rows apart while reconciling, which is exactly what the real,
-        // reported "sayfa saçmalıyor, yukarı aşağı zıplıyor" bug was.
-        // Safe to always include the index: `items` only ever grows via
-        // `loadMore`'s append or gets wholesale-replaced by `load`/
-        // `onRefresh` — existing rows never reorder or get spliced out in
-        // place, so a row's own index is as stable as its `_id` here.
-        keyExtractor={(row, index) => (row.kind === "share" ? `${row.share._id}-${index}` : `suggested-${row.occurrence}`)}
-        contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-        ListHeaderComponent={
-          <>
-            <View style={styles.onlineFriendsInset}>
-              <OnlineFriendsBar />
-            </View>
-            <View style={styles.podiumInset}>
-              <PeoplePodium jumpToCategory={jumpToPodiumCategory} />
-            </View>
-            {/* Moved from Discover, direct ask — a live status roster
-                belongs next to OnlineFriendsBar's own kind of content, not
-                the catalog-browse rails Discover otherwise holds. Placed
-                after the podium, not before it ("podyum başta olmalı her
-                zaman"). */}
-            <CurrentlyWatchingSection basePath="/home" />
-            <View style={styles.titleDivider} />
-            {/* Title row always renders (not gated behind `loading` like
-                the spinner/error below it used to be entirely) so the
-                toggle stays tappable/visible through a reload, not just
-                popping in once the first fetch finishes. */}
-            <View style={styles.titleRow}>
-              <Text style={styles.postsTitle}>{t("Shares")}</Text>
-              {/* One Pressable wrapping both icons, same interaction as
-                  PeoplePodium's own modeToggle — a single tap anywhere on
-                  the pill cycles scope, not two independently tappable
-                  icons. Globe = everyone's posts, people = just your
-                  network's — same "outline glyph, active one tinted
-                  primary" language as that toggle's own film/tv icons. */}
-              <Pressable style={styles.scopeToggle} onPress={cycleScope} hitSlop={8}>
-                <Ionicons name="globe-outline" size={16} color={scope === "all" ? colors.primary : colors.placeholder} />
-                <Ionicons name="people-outline" size={16} color={scope === "following" ? colors.primary : colors.placeholder} />
-              </Pressable>
-              <Pressable style={styles.composeButton} onPress={() => setComposeMenuVisible(true)} hitSlop={8}>
-                <Ionicons name="add" size={20} color={colors.baseContent} />
-              </Pressable>
-            </View>
-            {loading ? (
-              <View style={{ marginTop: 8 }}>
-                {Array.from({ length: 3 }, (_, i) => <SkeletonShareCard key={i} />)}
+      <View style={{ flex: 1 }}>
+        {/* Previously branched `loading ? <View>…<PeoplePodium/>…</View> : <FlatList ListHeaderComponent={…<PeoplePodium/>…}>` —
+            two structurally different trees, each with its own <PeoplePodium/>. React's
+            reconciler doesn't diff across a ternary's two branches, so the moment this
+            section's own feed fetch finished and `loading` flipped, it unmounted the
+            first PeoplePodium (destroying its already-fetched data) and mounted a brand
+            new one — which then had to fetch and load all over again. That's the exact
+            "podyum yüklenip gidiyor, sonra tekrar yükleniyor" bug: the podium loading
+            twice wasn't it being slow, it was being torn down and rebuilt once this
+            section's own unrelated feed happened to finish. Fix: the FlatList (and
+            PeoplePodium/OnlineFriendsBar inside its header) is now always mounted —
+            `loading` only swaps content *inside* the header, never the tree position of
+            PeoplePodium itself, so it mounts once and keeps its own state regardless of
+            how this section's own feed load is going. */}
+        <FlatList
+          ref={flatListRef}
+          style={styles.container}
+          data={feedRows}
+          // Suffixed with `index` (not just `share._id`) for share rows —
+          // the official Cinephix account's own posts are deliberately
+          // recycled once getShareFeed's fixed-position rotation (see that
+          // function's own comment) runs through its whole pool, which a
+          // small pool (a handful of posts early on) can do within a single
+          // scroll session. The SAME official Share _id then legitimately
+          // occupies two different rows at once, which without the index
+          // suffix is a duplicate FlatList key — React can't tell the two
+          // rows apart while reconciling, which is exactly what the real,
+          // reported "sayfa saçmalıyor, yukarı aşağı zıplıyor" bug was.
+          // Safe to always include the index: `items` only ever grows via
+          // `loadMore`'s append or gets wholesale-replaced by `load`/
+          // `onRefresh` — existing rows never reorder or get spliced out in
+          // place, so a row's own index is as stable as its `_id` here.
+          keyExtractor={(row, index) => (row.kind === "share" ? `${row.share._id}-${index}` : `suggested-${row.occurrence}`)}
+          contentContainerStyle={styles.list}
+          ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+          ListHeaderComponent={
+            <>
+              <View style={styles.onlineFriendsInset}>
+                <OnlineFriendsBar />
               </View>
+              <View style={styles.podiumInset}>
+                <PeoplePodium jumpToCategory={jumpToPodiumCategory} />
+              </View>
+              {/* Moved from Discover, direct ask — a live status roster
+                  belongs next to OnlineFriendsBar's own kind of content, not
+                  the catalog-browse rails Discover otherwise holds. Placed
+                  after the podium, not before it ("podyum başta olmalı her
+                  zaman"). */}
+              <CurrentlyWatchingSection basePath="/home" />
+              <View style={styles.titleDivider} />
+              {/* Title row always renders (not gated behind `loading` like
+                  the spinner/error below it used to be entirely) so the
+                  toggle stays tappable/visible through a reload, not just
+                  popping in once the first fetch finishes. */}
+              <View style={styles.titleRow}>
+                <Text style={styles.postsTitle}>{t("Shares")}</Text>
+                {/* One Pressable wrapping both icons, same interaction as
+                    PeoplePodium's own modeToggle — a single tap anywhere on
+                    the pill cycles scope, not two independently tappable
+                    icons. Globe = everyone's posts, people = just your
+                    network's — same "outline glyph, active one tinted
+                    primary" language as that toggle's own film/tv icons. */}
+                <Pressable style={styles.scopeToggle} onPress={cycleScope} hitSlop={8}>
+                  <Ionicons name="globe-outline" size={16} color={scope === "all" ? colors.primary : colors.placeholder} />
+                  <Ionicons name="people-outline" size={16} color={scope === "following" ? colors.primary : colors.placeholder} />
+                </Pressable>
+                <Pressable style={styles.composeButton} onPress={() => setComposeMenuVisible(true)} hitSlop={8}>
+                  <Ionicons name="add" size={20} color={colors.baseContent} />
+                </Pressable>
+              </View>
+              {loading ? (
+                <View style={{ marginTop: 8 }}>
+                  {Array.from({ length: 3 }, (_, i) => <SkeletonShareCard key={i} />)}
+                </View>
+              ) : (
+                error && <Text style={styles.error}>{error}</Text>
+              )}
+            </>
+          }
+          renderItem={({ item: row }) =>
+            row.kind === "suggested" ? (
+              <SuggestedUsersBox pool={suggestions} occurrence={row.occurrence} />
             ) : (
-              error && <Text style={styles.error}>{error}</Text>
-            )}
-          </>
-        }
-        renderItem={({ item: row }) =>
-          row.kind === "suggested" ? (
-            <SuggestedUsersBox pool={suggestions} occurrence={row.occurrence} />
-          ) : (
-            <ShareCard share={row.share} basePath="/home" onToggleLike={handleToggleLike} />
-          )
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>{t("No shares yet.")}</Text> : null}
-        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}
-      />
-      <PostComposeMenu
-        visible={composeMenuVisible}
-        onClose={() => setComposeMenuVisible(false)}
-        categories={composeCategories}
-      />
-    </View>
+              <ShareCard share={row.share} basePath="/home" onToggleLike={handleToggleLike} />
+            )
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={!loading ? <Text style={styles.empty}>{t("No shares yet.")}</Text> : null}
+          ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}
+        />
+        <PostComposeMenu
+          visible={composeMenuVisible}
+          onClose={() => setComposeMenuVisible(false)}
+          categories={composeCategories}
+        />
+      </View>
   );
 }
 

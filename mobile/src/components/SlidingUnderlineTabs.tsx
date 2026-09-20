@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { View, Text, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 

@@ -13,6 +13,9 @@ import { SkeletonBox } from "../Skeleton";
 import type { ActivityEvent } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { useWithoutBlocked } from "../../hooks/useBlocked";
+
+const activityActor = (event: ActivityEvent) => event.actor?._id;
 
 // Fetches enough for a real scroll (not just the visible 6) — the box
 // itself is capped to roughly 6 rows tall and scrolls internally for the
@@ -52,6 +55,7 @@ export default function ActivitySection({ onSeeAllPress }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const [items, setItems] = useState<ActivityEvent[]>([]);
+  const visibleItems = useWithoutBlocked(items, activityActor);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -110,21 +114,21 @@ export default function ActivitySection({ onSeeAllPress }: Props) {
             <SkeletonBox key={i} width="100%" height={60} borderRadius={8} />
           ))}
         </View>
-      ) : items.length === 0 ? (
+      ) : visibleItems.length === 0 ? (
         <Text style={styles.empty}>{t("No activity yet.")}</Text>
       ) : (
         <>
           <ScrollView style={styles.box} nestedScrollEnabled showsVerticalScrollIndicator={false}>
             <View style={styles.list}>
-              {items.map((event, i) => (
+              {visibleItems.map((event, i) => (
                 <View key={eventKey(event)}>
                   <ActivityRow event={event} basePath="/home" />
-                  {i < items.length - 1 && <View style={styles.divider} />}
+                  {i < visibleItems.length - 1 && <View style={styles.divider} />}
                 </View>
               ))}
             </View>
           </ScrollView>
-          {items.length > VISIBLE_ROWS && (
+          {visibleItems.length > VISIBLE_ROWS && (
             <View style={styles.scrollHint}>
               <Ionicons name="chevron-down" size={16} color={colors.placeholder} />
             </View>

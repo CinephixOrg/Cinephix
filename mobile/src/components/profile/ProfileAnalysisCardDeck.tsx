@@ -3,13 +3,13 @@ import {
   Animated,
   View,
   Text,
-  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import Pressable from "../common/TapSafePressable";
 // Only the deck's own top-level card pager needs this — same same-axis
 // nesting fix as AnalysisPosterRow's own ScrollView (see its own comment):
 // this deck now also renders embedded inside ShareCard's feed row, itself
@@ -17,8 +17,7 @@ import {
 // pager, so the card pager has to participate in GH's own pan arbitration
 // or the outer pager simply eats every horizontal drag before it reaches
 // this component. Harmless in ProfileAnalysisModal's Modal context too,
-// which already mounts its own GestureHandlerRootView for AnalysisPosterRow's
-// identical need.
+// which carries its own gesture root (common/GestureModal).
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

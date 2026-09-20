@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   Animated,
   Easing,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this rail's own
 // horizontal paging nests inside Discover's outer horizontal page-switcher
 // (home/index.tsx), same reason ReviewsSwiper.tsx/LeaderboardPodium.tsx
@@ -22,6 +22,9 @@ import DiscoverListCard from "./DiscoverListCard";
 import type { DiscoverListItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { useWithoutBlocked } from "../hooks/useBlocked";
+
+const listOwner = (list: DiscoverListItem) => list.owner?._id;
 
 const SIDE_PADDING = 16;
 const HINT_BOB_MS = 900;
@@ -51,7 +54,9 @@ interface Props {
 // DiscoverListCard.tsx has no side margin of its own (its usual home,
 // ListsSection.tsx, supplies that via its own ScrollView padding instead) —
 // `page` below adds it directly since this pager's ScrollView doesn't.
-export default function ListsSwiper({ lists, basePath, onSeeAllPress }: Props) {
+export default function ListsSwiper({ lists: allLists, basePath, onSeeAllPress }: Props) {
+  // Lists by someone blocked just now vanish at once.
+  const lists = useWithoutBlocked(allLists, listOwner);
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();

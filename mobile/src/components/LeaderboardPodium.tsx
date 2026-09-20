@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   Animated,
   ActivityIndicator,
   Easing,
@@ -11,6 +10,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this podium's own
 // horizontal paging nests inside Discover's outer horizontal page-switcher
 // (home/index.tsx); it needs gesture-handler's pan resolution to keep

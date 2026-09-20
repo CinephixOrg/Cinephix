@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { Animated, View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import ContentRail from "../ContentRail";

@@ -1,16 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  chatRows,
-  confirmedOnly,
-  dayHeading,
-  dayLabel,
-  formatInboxTime,
-  inboxTimeKind,
-  mergeLatestPage,
-  messageRuns,
-  upsertMessage,
-} from "./chatMessages.ts";
+import { chatRows, confirmedOnly, dayHeading, dayLabel, formatInboxTime, inboxTimeKind, mergeLatestPage, messageRuns, unreadChatCount, upsertMessage } from "./chatMessages.ts";
 import type { Message } from "../types/index.ts";
 
 function message(id: string, minute: number, extra: Partial<Message> = {}): Message {
@@ -135,4 +125,14 @@ test("day headings use the caller's words for today and yesterday, dates otherwi
   assert.equal(dayHeading(new Date(2026, 8, 17, 1).toISOString(), now, "tr", words), "Dün");
   assert.match(dayHeading(new Date(2026, 8, 3, 9).toISOString(), now, "en-GB", words), /3 September/);
   assert.match(dayHeading(new Date(2025, 11, 31, 9).toISOString(), now, "en-GB", words), /2025/);
+});
+
+test("the Socials badge counts chats with something new, not messages", () => {
+  const dms = [{ unreadCount: 45 }, { unreadCount: 0 }, { unreadCount: 2 }];
+  const groups = [{ unreadCount: 0 }, { unreadCount: 1 }];
+  // One busy community is one thing to look at, not 45.
+  assert.equal(unreadChatCount(dms, groups), 3);
+  assert.equal(unreadChatCount([{ unreadCount: 99 }], []), 1);
+  assert.equal(unreadChatCount([], []), 0);
+  assert.equal(unreadChatCount([{ unreadCount: 0 }], [{ unreadCount: 0 }]), 0);
 });

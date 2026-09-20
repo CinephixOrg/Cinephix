@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "../common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import { getCurrentlyWatchingFeed, type CurrentlyWatchingFeedItem } from "../../api/feedService";
 import ContentRail from "../ContentRail";

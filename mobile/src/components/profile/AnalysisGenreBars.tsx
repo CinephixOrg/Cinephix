@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, View, Text, Pressable, StyleSheet } from "react-native";
+import { Animated, Easing, View, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { genreColor } from "../match/CineMatchGenreRing";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const ROW_STAGGER_MS = 70;
 const FILL_DURATION_MS = 620;
@@ -77,13 +76,11 @@ export default function AnalysisGenreBars({ items, bgLuminance, active, selected
         const trending = typeof item.delta === "number" && item.delta >= DELTA_NOISE_FLOOR;
         const cooling = typeof item.delta === "number" && item.delta <= -DELTA_NOISE_FLOOR;
         const isSelected = selectedGenre === item.genre;
-        const Row = onSelectGenre ? AnimatedPressable : Animated.View;
-        return (
-          <Row
-            key={item.genre}
-            {...(onSelectGenre ? { onPress: () => onSelectGenre(item.genre) } : {})}
-            style={[styles.row, isSelected && styles.rowSelected, { opacity: anims[i] }]}
-          >
+        // The row fades in; only some lists make it tappable. The animation
+        // sits on the inner view either way, so the tappable wrapper stays a
+        // plain Pressable (see common/TapSafePressable.tsx).
+        const row = (
+          <Animated.View style={[styles.row, isSelected && styles.rowSelected, { opacity: anims[i] }]}>
             <Text style={[styles.label, isSelected && styles.labelSelected]} numberOfLines={1}>
               {item.genre}
             </Text>
@@ -110,7 +107,14 @@ export default function AnalysisGenreBars({ items, bgLuminance, active, selected
                 {trending ? `↑${item.delta}%` : cooling ? `↓${Math.abs(item.delta as number)}%` : "•"}
               </Text>
             )}
-          </Row>
+          </Animated.View>
+        );
+        return onSelectGenre ? (
+          <Pressable key={item.genre} onPress={() => onSelectGenre(item.genre)}>
+            {row}
+          </Pressable>
+        ) : (
+          <View key={item.genre}>{row}</View>
         );
       })}
     </View>

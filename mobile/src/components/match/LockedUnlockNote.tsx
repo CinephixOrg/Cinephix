@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Pressable, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";

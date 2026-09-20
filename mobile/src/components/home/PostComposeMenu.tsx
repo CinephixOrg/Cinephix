@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "../common/GestureModal";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";

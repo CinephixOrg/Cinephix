@@ -183,3 +183,12 @@ export function dayHeading(iso: string, now: Date, locale: string | undefined, w
       return date.toLocaleDateString(locale, { day: "numeric", month: "long", ...(label.withYear ? { year: "numeric" } : {}) });
   }
 }
+
+/**
+ * What the Socials tab's badge counts: chats with something new in them, not
+ * messages. One community with 45 unread messages is one thing to look at,
+ * and reading the badge as "45" made a busy chat look like a crisis.
+ */
+export function unreadChatCount(...rooms: readonly { unreadCount: number }[][]): number {
+  return rooms.reduce((total, list) => total + list.filter((room) => room.unreadCount > 0).length, 0);
+}

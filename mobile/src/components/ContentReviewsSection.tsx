@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, FlatList, RefreshControl, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, FlatList, RefreshControl, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import { getContentReviews, getFriendsReviews } from "../api/reviewService";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +11,9 @@ import { SkeletonBox } from "./Skeleton";
 import type { Review } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { useWithoutBlocked } from "../hooks/useBlocked";
+
+const reviewAuthor = (review: Review) => review.user?._id;
 
 const PAGE_LIMIT = 20;
 export type ReviewMode = "popular" | "friends" | "you" | "liked";
@@ -120,8 +124,10 @@ export default function ContentReviewsSection({ contentId, initialMode, scrollTo
     }
   };
 
-  const activeReviews =
+  const modeReviews =
     mode === "friends" ? friendsReviews : mode === "you" ? (myReview ? [myReview] : []) : mode === "liked" ? likedReviews : popularReviews;
+  // Reviews by someone blocked just now vanish at once.
+  const activeReviews = useWithoutBlocked(modeReviews, reviewAuthor);
 
   // One-shot: scrolls to the tapped preview review once its mode's data has
   // actually arrived, then never again (a later refresh/load-more shouldn't

@@ -8,6 +8,9 @@ import SlidingUnderlineTabs from "../SlidingUnderlineTabs";
 import { SkeletonRail } from "../Skeleton";
 import type { DiscoverListItem } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import { useWithoutBlocked } from "../../hooks/useBlocked";
+
+const listOwner = (list: DiscoverListItem) => list.owner?._id;
 
 const PAGE_LIMIT = 20;
 
@@ -43,6 +46,7 @@ export default function ListsSection() {
 
   const [mode, setMode] = useState<ListMode>("all");
   const [lists, setLists] = useState<DiscoverListItem[]>([]);
+  const visibleLists = useWithoutBlocked(lists, listOwner);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -101,7 +105,7 @@ export default function ListsSection() {
       ) : (
         <FlatList
           style={styles.container}
-          data={lists}
+          data={visibleLists}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.list}
           ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}

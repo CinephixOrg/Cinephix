@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import type { Share } from "../types";
 
 interface RecentSharesContextValue {
@@ -34,7 +35,13 @@ const RecentSharesContext = createContext<RecentSharesContextValue | undefined>(
 // exists specifically to paper over that gap for the person who JUST
 // posted, the same way Instagram's own feed does.
 export function RecentSharesProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [pending, setPending] = useState<Share[]>([]);
+
+  // Just-posted items belong to the account that posted them.
+  useEffect(() => {
+    setPending([]);
+  }, [user?._id]);
 
   const announce = useCallback((share: Share) => {
     setPending((prev) => [share, ...prev]);

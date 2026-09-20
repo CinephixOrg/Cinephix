@@ -8,6 +8,7 @@ import AboutPage from "./pages/AboutPage.jsx";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage.jsx";
 import TermsOfServicePage from "./pages/TermsOfServicePage.jsx";
 import LegalPageLayout from "./components/landing/LegalPageLayout.jsx";
+import AdminPage from "./pages/admin/AdminPage.jsx";
 
 // The web app itself is retired — Cinephix is mobile-only now, and this
 // site is a marketing page for it (LandingPage.jsx), not a second client.
@@ -18,6 +19,7 @@ import LegalPageLayout from "./components/landing/LegalPageLayout.jsx";
 // (the landing page + the 2 legal pages + About, all public — no login
 // required to read a privacy policy) plus a catch-all back to "/" for
 // every retired path (old bookmarks, old links) instead of a dead 404.
+// The one exception is /admin, the internal moderation dashboard.
 export default function App() {
   return (
     <ErrorBoundary>
@@ -27,6 +29,10 @@ export default function App() {
           <Route path="/about" element={<LegalPageLayout><AboutPage /></LegalPageLayout>} />
           <Route path="/privacy" element={<LegalPageLayout><PrivacyPolicyPage /></LegalPageLayout>} />
           <Route path="/terms" element={<LegalPageLayout><TermsOfServicePage /></LegalPageLayout>} />
+          {/* Moderation dashboard — signed-in admins only (checked by the server). */}
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/users/:id" element={<AdminPage view="user" />} />
+          <Route path="/admin/tickets" element={<AdminPage view="tickets" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 

@@ -1347,3 +1347,32 @@ export interface DiscoverListItem {
   // this list, needed for SearchListCard.tsx's interactive heart.
   hasLiked?: boolean;
 }
+
+// ─── Support tickets ────────────────────────────────────────────────────────
+// Help & Feedback: what someone wrote to support, and how it was answered.
+// The strings are the server's own enums (backend/models/Ticket.js), so they
+// travel unchanged; the app translates them for display.
+
+export type TicketType = "Bug Report" | "Feature Request" | "General Support" | "Other";
+export type TicketStatus = "Open" | "In Progress" | "Resolved" | "Closed";
+
+export interface TicketReply {
+  text: string;
+  createdAt: string;
+}
+
+export interface Ticket {
+  _id: string;
+  type: TicketType;
+  title: string;
+  description: string;
+  status: TicketStatus;
+  /** The latest answer, the one the ticket shows. */
+  adminReply?: string | null;
+  replies: TicketReply[];
+  repliedAt?: string | null;
+  /** An answer arrived that they haven't opened yet. */
+  hasUnreadReply: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

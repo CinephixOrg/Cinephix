@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { getOnlineFriends } from "../../api/userService";

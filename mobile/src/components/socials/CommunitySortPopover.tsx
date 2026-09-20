@@ -1,5 +1,6 @@
 import { memo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { sortDirection, sortPriority, type CommunityAction, type CommunityFilters, type CommunitySortKey } from "../../utils/communities";

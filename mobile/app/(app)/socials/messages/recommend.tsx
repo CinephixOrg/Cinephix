@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, FlatList, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import Pressable from "../../../../src/components/common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";

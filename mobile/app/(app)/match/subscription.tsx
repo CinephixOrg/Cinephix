@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "../../../src/components/common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";

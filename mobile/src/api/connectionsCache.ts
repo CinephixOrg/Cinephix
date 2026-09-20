@@ -31,3 +31,8 @@ export function invalidateConnections(userId: string) {
   pages.delete(key(userId, "followers"));
   pages.delete(key(userId, "following"));
 }
+
+/** All cached pages, e.g. on sign-out. */
+export function clearConnections() {
+  pages.clear();
+}

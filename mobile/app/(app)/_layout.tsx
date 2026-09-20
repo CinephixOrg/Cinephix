@@ -19,7 +19,7 @@ function TabIcon(focusedName: IconName, unfocusedName: IconName) {
 
 export default function AppLayout() {
   const { user } = useAuth();
-  const { totalUnread } = useChat();
+  const { unreadChats } = useChat();
   const { t } = useTranslation();
   const { colors } = useTheme();
 
@@ -103,7 +103,7 @@ export default function AppLayout() {
           options={{
             title: t("Socials"),
             tabBarIcon: TabIcon("people", "people-outline"),
-            tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+            tabBarBadge: unreadChats > 0 ? unreadChats : undefined,
           }}
         />
         <Tabs.Screen

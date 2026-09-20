@@ -3,13 +3,13 @@ import {
   Animated,
   Easing,
   Image,
-  Pressable,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
   type AccessibilityActionEvent,
 } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import {
   PanGestureHandler,
   State,

@@ -69,3 +69,9 @@ export function prefetchActivity(filters: ActivityFilters) {
     })
     .catch(() => {});
 }
+
+/** Drops every cached feed — e.g. after a block, which changes who appears in them. */
+export function clearActivityCache() {
+  feeds.clear();
+  inFlight.clear();
+}

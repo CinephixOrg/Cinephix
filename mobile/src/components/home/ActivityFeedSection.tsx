@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { View, Text, Pressable, FlatList, ActivityIndicator, RefreshControl, StyleSheet } from "react-native";
+import { View, Text, FlatList, ActivityIndicator, RefreshControl, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { getNetworkActivity } from "../../api/feedService";
@@ -7,6 +8,9 @@ import ActivityRow from "../ActivityRow";
 import { SkeletonBox } from "../Skeleton";
 import type { ActivityEvent } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import { useWithoutBlocked } from "../../hooks/useBlocked";
+
+const activityActor = (event: ActivityEvent) => event.actor?._id;
 
 const PAGE_LIMIT = 20;
 
@@ -71,6 +75,7 @@ export default function ActivityFeedSection() {
   const [category, setCategory] = useState<Category>("all");
   const [filterMenuVisible, setFilterMenuVisible] = useState(false);
   const [items, setItems] = useState<ActivityEvent[]>([]);
+  const visibleItems = useWithoutBlocked(items, activityActor);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -193,7 +198,7 @@ export default function ActivityFeedSection() {
       {filterBar}
       <FlatList
         style={styles.container}
-        data={items}
+        data={visibleItems}
         keyExtractor={eventKey}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}

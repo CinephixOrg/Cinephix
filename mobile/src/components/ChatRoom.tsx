@@ -5,18 +5,21 @@ import {
   Image,
   FlatList,
   TextInput,
-  Pressable,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
 } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useToast } from "../context/ToastContext";
 import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
+import { useBlockedIds } from "../hooks/useBlocked";
+import { isProtectedAccount } from "../api/blockStore";
+import { useSafety } from "../context/SafetyContext";
 import { cachedRoom, rememberRoom, roomKey, roomPrefetch } from "../api/chatCache";
 import { chatRows, dayHeading, mergeLatestPage, upsertMessage, type ChatRow } from "../utils/chatMessages";
 import { SkeletonChatBubbles } from "./Skeleton";
@@ -138,6 +141,7 @@ const MessageRow = memo(function MessageRow({
   counterpart,
   onOpenAnalysis,
   onOpenProfileAnalysis,
+  onLongPress,
   styles,
 }: {
   message: Message;
@@ -150,36 +154,56 @@ const MessageRow = memo(function MessageRow({
   counterpart?: MessageSender;
   onOpenAnalysis: (message: Message) => void;
   onOpenProfileAnalysis: (message: Message) => void;
+  /** Report / block — offered on other people's messages only. */
+  onLongPress?: (message: Message) => void;
   styles: Styles;
 }) {
   const { t } = useTranslation();
   const pending = message.status === "pending";
+  const longPress = !isOwn && !pending && onLongPress && !isProtectedAccount(message.sender) ? () => onLongPress(message) : undefined;
 
   let body: ReactNode;
   if (message.type === "recommendation") {
-    body = <RecommendationMessageCard message={message} isOwn={isOwn} />;
+    body = <RecommendationMessageCard message={message} isOwn={isOwn} onLongPress={longPress} />;
   } else if (message.type === "profile_share") {
-    body = <ProfileShareMessageCard message={message} isOwn={isOwn} />;
+    body = <ProfileShareMessageCard message={message} isOwn={isOwn} onLongPress={longPress} />;
   } else if (message.type === "list_share") {
-    body = <ListShareMessageCard message={message} isOwn={isOwn} />;
+    body = <ListShareMessageCard message={message} isOwn={isOwn} onLongPress={longPress} />;
   } else if (message.type === "analysis_share" && (message.analysisData as { type?: string } | undefined)?.type === "profile") {
-    body = <ProfileAnalysisShareMessageCard message={message} isOwn={isOwn} onPress={() => onOpenProfileAnalysis(message)} />;
+    body = (
+      <ProfileAnalysisShareMessageCard
+        message={message}
+        isOwn={isOwn}
+        onPress={() => onOpenProfileAnalysis(message)}
+        onLongPress={longPress}
+      />
+    );
   } else if (message.type === "analysis_share") {
     body = (
-      <SyncShareMessageCard message={message} isOwn={isOwn} counterpart={counterpart} onPress={() => onOpenAnalysis(message)} />
+      <SyncShareMessageCard
+        message={message}
+        isOwn={isOwn}
+        counterpart={counterpart}
+        onPress={() => onOpenAnalysis(message)}
+        onLongPress={longPress}
+      />
     );
   } else {
     body = (
-      <View
-        style={[
+      <Pressable
+        onLongPress={longPress}
+        delayLongPress={350}
+        disabled={!longPress}
+        style={({ pressed }) => [
           styles.bubble,
           isOwn ? styles.bubbleOwn : styles.bubbleOther,
           last && (isOwn ? styles.tailOwn : styles.tailOther),
           pending && styles.bubblePending,
+          pressed && longPress && { opacity: 0.75 },
         ]}
       >
         <Text style={isOwn ? styles.textOwn : styles.textOther}>{message.text}</Text>
-      </View>
+      </Pressable>
     );
   }
 
@@ -388,7 +412,23 @@ export default function ChatRoom({
   };
 
   // Inverted list: newest first.
-  const rows = useMemo(() => chatRows(messages).reverse(), [messages]);
+  // Someone blocked in this session disappears from the chat at once (their
+  // live messages in a community included); the server does the rest.
+  const blocked = useBlockedIds();
+  const rows = useMemo(
+    () => chatRows(blocked.size ? messages.filter((m) => !blocked.has(m.sender._id)) : messages).reverse(),
+    [messages, blocked]
+  );
+  const { openContentActions } = useSafety();
+  const reportMessage = useCallback(
+    (message: Message) =>
+      openContentActions({
+        entityType: "Message",
+        entityId: message._id,
+        author: { _id: message.sender._id, username: message.sender.username },
+      }),
+    [openContentActions]
+  );
 
   const openAnalysis = useCallback(
     (message: Message) => setViewingAnalysis((message.analysisData as MatchAnalysis) ?? null),
@@ -415,11 +455,12 @@ export default function ChatRoom({
           counterpart={counterpart}
           onOpenAnalysis={openAnalysis}
           onOpenProfileAnalysis={openProfileAnalysis}
+          onLongPress={reportMessage}
           styles={styles}
         />
       );
     },
-    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, styles]
+    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, reportMessage, styles]
   );
 
   if (!canChat) {

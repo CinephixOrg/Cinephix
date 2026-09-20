@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { View, Pressable, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { useLocalSearchParams, useNavigation, useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../context/ChatContext";

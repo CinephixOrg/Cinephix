@@ -4,11 +4,11 @@ import {
   Text,
   TextInput,
   Image,
-  Pressable,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
 } from "react-native";
+import Pressable from "../src/components/common/TapSafePressable";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "react-i18next";

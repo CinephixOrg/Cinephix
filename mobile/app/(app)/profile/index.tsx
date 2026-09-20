@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
+import Pressable from "../../../src/components/common/TapSafePressable";
 import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";

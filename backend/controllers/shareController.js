@@ -958,6 +958,8 @@ export const getShareById = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, "Share not found", 404);
   const share = await viewerShareQuery(Share.findOne({ _id: req.params.id }));
   if (!share) return sendError(res, "Share not found", 404);
+  // A post by someone hidden by a block reads as not found, even by link.
+  if (req.hiddenUsers?.has(String(share.user?._id ?? share.user))) return sendError(res, "Share not found", 404);
   const [withMeta] = await withViewerMeta([share], req.user.id);
   sendSuccess(res, withMeta, "Share fetched");
 });

@@ -50,11 +50,16 @@ export const getConversations = asyncHandler(async (req, res) => {
     unreadCount: conv.unreadCounts?.[userId.toString()] ?? 0,
   }));
 
-  const groupResults = groups.map((group) => ({
-    ...group,
-    type: "group",
-    unreadCount: group.unreadCounts?.[userId.toString()] ?? 0,
-  }));
+  const groupResults = groups.map((group) => {
+    const row = { ...group, type: "group", unreadCount: group.unreadCounts?.[userId.toString()] ?? 0 };
+    // The community stays in the inbox, but a last message from someone
+    // hidden by a block isn't previewed.
+    if (group.lastMessageSenderId && req.hiddenUsers?.has(String(group.lastMessageSenderId._id ?? group.lastMessageSenderId))) {
+      row.lastMessage = "";
+      row.lastMessageSenderId = null;
+    }
+    return row;
+  });
 
   // Merge and sort by most recent message (both DMs and groups)
   const allChats = [...dmResults, ...groupResults].sort(
@@ -76,6 +81,8 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
   if (participantId === userId.toString())
     return sendError(res, "Cannot DM yourself", 400);
 
+  // Someone hidden by a block can't be messaged (or found).
+  if (req.hiddenUsers?.has(String(participantId))) return sendError(res, "User not found", 404);
   const other = await User.findById(participantId).select("_id").lean();
   if (!other) return sendError(res, "User not found", 404);
 
@@ -164,6 +171,9 @@ export const getMessages = asyncHandler(async (req, res) => {
       (p) => p.toString() === req.user._id.toString()
     );
     if (!isParticipant) return sendError(res, "Not a participant", 403);
+    // A chat with someone hidden by a block is gone, history included.
+    if (conversation.participants.some((p) => req.hiddenUsers?.has(p.toString())))
+      return sendError(res, "Conversation not found", 404);
 
     const messages = dmMessages;
 
@@ -271,6 +281,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
     (p) => p.toString() === userId
   );
   if (!isParticipant) return sendError(res, "Not a participant", 403);
+  if (conversation.participants.some((p) => req.hiddenUsers?.has(p.toString())))
+    return sendError(res, "You can't message this person", 403);
 
   // Anti-spam cooldown, same shape/window as shareController.js's own
   // RECOMMENDATION_COOLDOWN_MS for a Media recommendation — direct ask:

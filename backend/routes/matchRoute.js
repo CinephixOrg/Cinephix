@@ -12,6 +12,7 @@ import {
   getMutualToWatch,
 } from "../controllers/matchController.js";
 import { validateRequest, validationSchemas } from "../middleware/validation.js";
+import { notHiddenUser } from "../middleware/blockFilter.js";
 
 const router = express.Router();
 
@@ -24,18 +25,18 @@ router.post("/", authMiddleware, validateRequest(validationSchemas.findMatches),
 router.get("/sync/candidates", authMiddleware, getSyncCandidates);
 
 // NEW: Calculate match with single user
-router.post("/:targetUserId", authMiddleware, getMatchWithUser);
+router.post("/:targetUserId", authMiddleware, notHiddenUser("targetUserId"), getMatchWithUser);
 // Analyze match (LLM) - mock by default
-router.post("/:targetUserId/analyze", authMiddleware, analyzeMatchWithUser);
+router.post("/:targetUserId/analyze", authMiddleware, notHiddenUser("targetUserId"), analyzeMatchWithUser);
 // Shared-genre "you both loved this" titles, for the analysis panel's tappable genre chips
-router.post("/:targetUserId/shared-genre-content", authMiddleware, getSharedGenreContent);
+router.post("/:targetUserId/shared-genre-content", authMiddleware, notHiddenUser("targetUserId"), getSharedGenreContent);
 // Both users' own rating (if any) for an arbitrary set of content ids — the Favorites card's detail box
-router.post("/:targetUserId/content-ratings", authMiddleware, getContentRatings);
+router.post("/:targetUserId/content-ratings", authMiddleware, notHiddenUser("targetUserId"), getContentRatings);
 // Titles both sides rated within the last 30 days — the Activity card's poster feed
-router.post("/:targetUserId/recent-activity", authMiddleware, getRecentSharedActivity);
+router.post("/:targetUserId/recent-activity", authMiddleware, notHiddenUser("targetUserId"), getRecentSharedActivity);
 // Paginated list of users both the requester and targetUserId follow — the Social Overlap card's avatar grid
-router.get("/:targetUserId/mutual-connections", authMiddleware, getMutualConnections);
+router.get("/:targetUserId/mutual-connections", authMiddleware, notHiddenUser("targetUserId"), getMutualConnections);
 // Titles sitting in both sides' own to-watch queue right now — the "Watch Together" card
-router.get("/:targetUserId/mutual-to-watch", authMiddleware, getMutualToWatch);
+router.get("/:targetUserId/mutual-to-watch", authMiddleware, notHiddenUser("targetUserId"), getMutualToWatch);
 
 export default router;

@@ -83,13 +83,14 @@ function PosterFan({ posters }: { posters: string[] }) {
 interface Props {
   message: Message;
   isOwn: boolean;
+  onLongPress?: () => void;
 }
 
 // A shared custom list: its first poster blurred into the backdrop, up to
 // three posters fanned out in front, the list's name, who made it, how many
 // titles it holds and a line of its description. Older shares carry only
 // the name, count and posters, and show just those.
-function ListShareMessageCard({ message, isOwn }: Props) {
+function ListShareMessageCard({ message, isOwn, onLongPress }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const list = message.listData;
@@ -104,6 +105,7 @@ function ListShareMessageCard({ message, isOwn }: Props) {
   return (
     <PremiumChatCard
       isOwn={isOwn}
+      onLongPress={onLongPress}
       eyebrow={t("Shared a List")}
       eyebrowIcon="albums"
       topRight={countLabel ? <PremiumPill icon="film" text={countLabel} iconColor={CARD.white} /> : null}
