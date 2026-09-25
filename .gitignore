@@ -1,13 +1,22 @@
-.venv/
-backend/.env
-frontend/.env
-node_modules/
-backend/node_modules/
-backup/backend/node_modules/
-backup/frontend/cinephix/node_modules/
-mobile/.dev-logs/
-# Cleanup-script backups contain full user documents (ratings, reviews).
-backend/backups/
-# Firebase Admin SDK service-account keys are private keys: upload them to EAS
-# (eas credentials) and keep them out of the repository.
+# --- Secrets ---------------------------------------------------------------
+# Gerçek değerler asla repoya girmez; yalnızca .env.example commit'lenir.
+.env
+.env.*
+!.env.example
+
+# Firebase Admin SDK anahtarları özel anahtardır (EAS credentials'a yükleyin).
 **/*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+
+# --- Üretilen / yerel dosyalar ---------------------------------------------
+node_modules/
+.expo/
+*.log
+.venv/
+dist/
+build/
+mobile/.dev-logs/
+
+# Temizlik betiği yedekleri tam kullanıcı belgeleri içerir (puanlar, yorumlar).
+backend/backups/
