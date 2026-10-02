@@ -1,8 +1,11 @@
 import fetch from "node-fetch";
 import fs from "fs";
 import pLimit from "p-limit";
+import dotenv from "dotenv";
 
-const API_KEY = "REMOVED_TMDB_KEY";
+dotenv.config();
+
+const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
 const limit = pLimit(5); // aynı anda max 5 istek
 
