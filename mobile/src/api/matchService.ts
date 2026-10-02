@@ -45,7 +45,7 @@ export async function analyzeMatchWithUser(
 
 // analyzeMatchWithUser's own call is a real LLM round-trip (a genuine few
 // seconds, not a client-side bug — see the backend's own analyzeMatchWithUser
-// controller, which calls a real Gemini/Groq/OpenRouter/OpenAI provider with
+// controller, which calls a real Gemini/OpenRouter/OpenAI provider with
 // no caching of its own). The one real lever on the client side: prefetch it
 // *before* the user actually asks for it, so the common case (tapping the
 // #1-ranked match, the one already centered in the results cloud) doesn't

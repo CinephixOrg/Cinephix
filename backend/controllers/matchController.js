@@ -1491,14 +1491,13 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
   const explicitProvider =
     (useMock && 'mock') ||
     requestedProvider ||
-    (['gemini', 'groq', 'openrouter', 'openai', 'mock'].includes(process.env.LLM_MODE) && process.env.LLM_MODE) ||
+    (['gemini', 'openrouter', 'openai', 'mock'].includes(process.env.LLM_MODE) && process.env.LLM_MODE) ||
     null;
 
   const providerCandidates = explicitProvider
     ? [explicitProvider]
     : [
         process.env.GEMINI_API_KEY && 'gemini',
-        process.env.GROQ_API_KEY && 'groq',
         process.env.OPENROUTER_API_KEY && 'openrouter',
         process.env.OPENAI_API_KEY && 'openai',
         'mock',
@@ -1508,13 +1507,11 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     system: `You are the Cinephix match assistant. Address the user directly, in a warm, concise tone, writing naturally in ${languageName}. Do not speak in third person. Do not give technical explanations.`,
     // Conciseness constraints (word cap on `analysis`, item caps on the
     // three lists, the trailing "Be concise" line) are a real, live-tested
-    // fix, not a style preference: DEFAULT_GROQ_MODEL (llmAdapter.js) runs
-    // meaningfully more verbose than the previous Groq model when not
-    // explicitly constrained, and a real test run of this exact prompt
-    // without these limits hit finish_reason:"length" (truncated mid-JSON,
-    // unparseable) at 500 completion tokens; with them, repeated real runs
-    // landed around 150-200 tokens every time — comfortably inside the
-    // budget in callGroq.
+    // fix, not a style preference — an earlier real test run of this exact
+    // prompt without these limits hit finish_reason:"length" (truncated
+    // mid-JSON, unparseable); with them, repeated real runs landed
+    // comfortably inside budget every time. Kept regardless of which
+    // provider ends up serving a given request.
     instruction: [
       "Based on the following data, return ONLY valid JSON.",
       "Fields: analysis, strengths, weaknesses, conversation_starters, graph_ascii, match_title.",

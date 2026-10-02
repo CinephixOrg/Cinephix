@@ -7,7 +7,7 @@ const { Schema } = mongoose;
 // Analysis (userController.js:getProfileAnalysis, gated by
 // analysisCooldownHours + ProfileAnalysis), the CineMatch "Analyze" button
 // could be spammed with zero throttling, each tap burning a real LLM call
-// (Groq/Gemini/etc.) for what's usually an identical result — the underlying
+// (Gemini/OpenRouter/OpenAI) for what's usually an identical result — the underlying
 // data (CineGraph, ratings, favorites, social graph) rarely changes minute
 // to minute. Deliberately scoped per (user, targetUser) pair, not one
 // cooldown per user globally — the legitimate use case is analyzing several
