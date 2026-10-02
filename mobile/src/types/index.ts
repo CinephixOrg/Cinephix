@@ -574,7 +574,7 @@ export interface MatchWithUserResult {
 }
 
 export interface MatchAnalysis {
-  provider: "mock" | "gemini" | "groq" | "openrouter" | "openai";
+  provider: "mock" | "gemini" | "openrouter" | "openai";
   // Absent on analyses shared before this field existed (old chat messages'
   // stored analysisData) — callers must treat it as optional. Same number
   // getMatchWithUser's matchPercentage would return for the same pair/filters.

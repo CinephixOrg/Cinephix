@@ -15,35 +15,6 @@ import crypto from "crypto";
 
 const DEFAULT_MODEL = process.env.LLM_DEFAULT_MODEL || "gpt-3.5-turbo";
 const DEFAULT_OPENROUTER_MODEL = process.env.OPENROUTER_DEFAULT_MODEL || "qwen-7b";
-// A real bug, not a guess: llama-3.1-8b-instant (the previous default) was
-// returning a live 404 "model_not_found" from Groq's own API — verified
-// directly against this project's real key, not assumed — meaning every
-// single analyzeMatchWithUser request was silently failing over to the
-// 'mock' provider on every call, wasting a real network round-trip to Groq
-// first and (per this codebase's own live backend.log) adding roughly a
-// second to every request before the mock fallback ever ran.
-//
-// Landed on qwen/qwen3.8-27b after live-testing two candidates against
-// this project's real key and this exact feature's real prompt shape, not
-// picking the first thing that returned 200: openai/gpt-oss-20b (tried
-// first) has two separate, real reliability problems on Groq's own stack —
-// it sometimes puts its entire answer in the response's separate
-// `reasoning` field and leaves `content` empty even on finish_reason:
-// "stop" (not truncated, just never wrote anything to the field this
-// codebase actually reads), and separately, sometimes tries to emit a tool
-// call even with no tools offered, which Groq's API rejects outright as a
-// 400. qwen/qwen3.8-27b hit neither failure across repeated live runs once
-// the prompt template itself was tightened for conciseness (see
-// matchController.js's own promptTemplate.instruction) — it's more
-// verbose by default than gpt-oss-20b, which is what the conciseness
-// instructions and the larger max_tokens below (see callGroq) are for.
-// Same class of problem this file's own DEFAULT_GEMINI_MODEL comment
-// already documents once for Gemini (a pinned model version going stale)
-// — Groq doesn't offer a "-latest" alias to dodge this the way Gemini's
-// flash tier does, so this pin can go stale again the same way; if
-// analyze requests start silently falling back to mock again, check
-// Groq's own /v1/models list first.
-const DEFAULT_GROQ_MODEL = process.env.GROQ_DEFAULT_MODEL || "qwen/qwen3.8-27b";
 // "latest" alias rather than a pinned version (e.g. gemini-2.5-flash) —
 // verified live against this project's key that a pinned 2.5-flash/
 // 2.5-flash-lite already 404s with "no longer available to new users" as of
@@ -53,7 +24,7 @@ const DEFAULT_GROQ_MODEL = process.env.GROQ_DEFAULT_MODEL || "qwen/qwen3.8-27b";
 const DEFAULT_GEMINI_MODEL = process.env.GEMINI_DEFAULT_MODEL || "gemini-flash-latest";
 const CACHE_TTL_MS = 60 * 1000; // 60s
 const RATE_LIMIT_PER_MIN = parseInt(process.env.LLM_RATE_LIMIT_PER_MIN || "60", 10);
-// None of the four provider calls below had any timeout at all — a hung
+// None of the three provider calls below had any timeout at all — a hung
 // (not erroring, just never responding) provider would leave the request
 // waiting indefinitely, and worse, analyzeMatchWithUser's own provider
 // fallback loop (matchController.js) tries each candidate in sequence on a
@@ -246,73 +217,10 @@ async function callGemini({ messages, model = DEFAULT_GEMINI_MODEL } = {}) {
   return { raw: json, content };
 }
 
-// max_tokens raised from the old default of 300 — verified live (real key,
-// real request matching this feature's actual analyze prompt) that
-// openai/gpt-oss-20b (the new DEFAULT_GROQ_MODEL, see its own comment)
-// spends a real chunk of its own budget on invisible internal "reasoning"
-// tokens (its own response field, separate from the visible `content`)
-// before producing the actual JSON output — a live test came back at 287
-// of 300 completion_tokens used, uncomfortably close to truncating the
-// real JSON response before `finish_reason` even reaches "stop". The
-// previous model (llama-3.1-8b-instant) wasn't a reasoning-style model and
-// didn't have this overhead, which is why 300 was safe for it.
-// max_tokens raised from the old default of 300 — live-tested against
-// DEFAULT_GROQ_MODEL's own real, tightened-for-conciseness prompt
-// (matchController.js's promptTemplate.instruction): typical real
-// responses land around 150-200 completion tokens, but qwen/qwen3.8-27b
-// (the current default) runs meaningfully more verbose than the previous
-// model when the prompt doesn't explicitly constrain length, and an
-// earlier live test without those conciseness instructions hit
-// finish_reason:"length" (truncated, broken JSON) at 500 — 600 leaves
-// real headroom above the ~200 actually observed rather than sitting
-// right at the edge of what was already once seen to truncate.
-async function callGroq({ messages, model = DEFAULT_GROQ_MODEL, max_tokens = 600, temperature = 0.7, top_p = 1.0 } = {}) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) throw new Error('GROQ_API_KEY not configured');
-
-  const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-  // reasoning_effort: 'low' — kept as a defensive default even though the
-  // current DEFAULT_GROQ_MODEL (qwen/qwen3.8-27b) didn't need it in
-  // testing the way the previous candidate (openai/gpt-oss-20b, a
-  // reasoning-style model that could leave `content` empty in favor of a
-  // separate `reasoning` field — see DEFAULT_GROQ_MODEL's own comment) did
-  // — harmless for a model that doesn't recognize the param, and still a
-  // real safeguard if this default ever changes to another reasoning-style
-  // model again.
-  const body = JSON.stringify({ model, messages, max_tokens, temperature, top_p, reasoning_effort: 'low' });
-
-  const res = await fetchWithTimeout(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Groq error: ${res.status} ${text}`);
-  }
-
-  const json = await res.json();
-  const message = json.choices && json.choices[0] && json.choices[0].message;
-  // Safety net alongside reasoning_effort above, not a replacement for it:
-  // if `content` still comes back empty for some input reasoning_effort
-  // didn't fully prevent it for, `reasoning` at least holds real,
-  // on-topic prose in this exact failure mode (verified live) — a better
-  // fallback for normalizeLLMAnalysis's own `source.analysis || fallbackText
-  // || ...` chain (matchController.js) than falling all the way to its
-  // final "could not be generated" string.
-  const content = (message && message.content) || (message && message.reasoning) || '';
-  return { raw: json, content };
-}
-
 /**
- * callLLM: generic entry. provider currently supports 'openai', 'openrouter', 'groq'.
+ * callLLM: generic entry. provider currently supports 'openai', 'openrouter', 'gemini'.
  * options:
- *  - provider: 'openai' | 'openrouter' | 'groq' | 'mock'
+ *  - provider: 'openai' | 'openrouter' | 'gemini' | 'mock'
  *  - promptTemplate: { instruction, required_output_keys }
  */
 export async function callLLM(payload = {}, options = {}) {
@@ -371,22 +279,6 @@ export async function callLLM(payload = {}, options = {}) {
     const resp = await callOpenRouter({ messages, model: options.model });
 
     const out = { provider: 'openrouter', raw: resp.raw, text: resp.content };
-    setCached(key, out);
-    return out;
-  }
-
-  if (provider === 'groq') {
-    const system = promptTemplate.system || 'You are an assistant that analyzes user compatibility based on JSON input.';
-    const instruction = promptTemplate.instruction || '';
-
-    const messages = [
-      { role: 'system', content: system },
-      { role: 'user', content: instruction + "\n\n" + JSON.stringify(payload) },
-    ];
-
-    const resp = await callGroq({ messages, model: options.model });
-
-    const out = { provider: 'groq', raw: resp.raw, text: resp.content };
     setCached(key, out);
     return out;
   }
