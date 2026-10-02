@@ -109,3 +109,12 @@ export function invalidatePublicProfile(userId: string) {
   collections.delete(userId);
   invalidatePublicCollections(userId);
 }
+
+/** Everything cached about other people, e.g. on sign-out (what you see of
+ * them depends on who you are: follows, blocks). */
+export function clearPublicProfiles() {
+  bundles.clear();
+  collections.clear();
+  inFlight.clear();
+  collectionsInFlight.clear();
+}

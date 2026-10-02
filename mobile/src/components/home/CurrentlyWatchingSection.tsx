@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "../common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import { getCurrentlyWatchingFeed, type CurrentlyWatchingFeedItem } from "../../api/feedService";
 import ContentRail from "../ContentRail";
@@ -15,7 +17,7 @@ type Scope = "all" | "friends";
 
 // Shares' "Currently Watching" section — who's actively watching what
 // right now (4-hour TTL, feedController.js's getCurrentlyWatchingFeed), a
-// live status roster rather than a Medya post, direct ask. Lives between
+// live status roster rather than a Media post, direct ask. Lives between
 // the podium and the "Shares" post-feed title (moved from Discover — same
 // reasoning OnlineFriendsBar.tsx already established for living here: a
 // live status roster, not a catalog-browse rail). The All/Friends

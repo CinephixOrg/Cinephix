@@ -15,10 +15,18 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://cinephix-backend-2aa6.onrender.com/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://cinephix-backend-2aa6.onrender.com"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://cinephix-backend-2aa6.onrender.com/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://cinephix-backend-2aa6.onrender.com"
+      }
     }
   },
   "submit": {

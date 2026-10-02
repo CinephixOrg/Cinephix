@@ -73,13 +73,42 @@ const userSchema = new Schema({
     default: Date.now
   },
   // Marks the single official Cinephix account (auto-posts trivia/tips/
-  // polls/etc. to Medya via the officialContentService cron job) — a
+  // polls/etc. to Media via the officialContentService cron job) — a
   // separate concern from accountTier (billing/subscription), not
   // overloaded onto it, so tier-gating logic elsewhere is untouched.
   isOfficial: {
     type: Boolean,
     default: false,
   },
+  // Can use the moderation API (/api/admin). Granted only from the server
+  // (scripts/setAdmin.js), never through any user-facing endpoint.
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
+  // Suspended by a moderator: the account still exists, but every
+  // authenticated request is refused (middleware/authMiddleware.js), which
+  // signs the app out on the spot.
+  //
+  // A suspension is temporary when suspendedUntil is set and permanent when
+  // it isn't. A temporary one lifts itself on the first request after it
+  // expires; a permanent one only an admin can lift.
+  isSuspended: {
+    type: Boolean,
+    default: false,
+  },
+  suspendedUntil: { type: Date },
+  suspendedAt: { type: Date },
+  suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
+  suspensionReason: { type: String, trim: true, maxlength: 500 },
+  // When this account accepted the Terms of Service and Privacy Policy, and
+  // which version — recorded at registration, which the API requires.
+  termsAcceptedAt: { type: Date },
+  termsVersion: { type: String },
+  // People this user has blocked. Blocking is mutual in effect — neither
+  // sees the other anywhere (services/blockService.js) — but it's recorded
+  // on the blocker only, so only they can undo it.
+  blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
   toWatchList: { type: [WatchItemSchema], default: [] },
 
@@ -175,6 +204,8 @@ userSchema.index({ username: "text", email: "text" });
 // Fast lookups for user profiles and connections
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
+// "Who has blocked me?" — the other half of every block check.
+userSchema.index({ blockedUsers: 1 });
 
 // Compound index for efficient watchlist queries
 userSchema.index({ _id: 1, watchlist: 1 });

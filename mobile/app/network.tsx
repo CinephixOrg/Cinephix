@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, Image, FlatList, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "../src/components/common/TapSafePressable";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { getFollowers, getFollowing, getSuggestions, removeFollower } from "../src/api/userService";

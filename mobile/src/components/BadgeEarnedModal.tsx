@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, View, Text, Image, Pressable, Animated, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, Image, Animated, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "./common/GestureModal";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
@@ -117,7 +120,7 @@ export default function BadgeEarnedModal() {
       const share = await createShare({ type: "badge", badgeFamily: badge.family, badgeKey: badge.key, badgeTier: badge.tier });
       announceNewShare(share);
       setShared(true);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch (err: any) {
       // 409 = already shared (e.g. shared from the Badges tab moments
       // earlier) — the end state the user wants is identical either way,
@@ -163,7 +166,7 @@ export default function BadgeEarnedModal() {
               <ActivityIndicator color={colors.primaryContent} size="small" />
             ) : (
               <Text style={[styles.shareButtonText, shared && styles.shareButtonTextDone]}>
-                {shared ? t("Shared") : t("Share to Medya")}
+                {shared ? t("Shared") : t("Share to Media")}
               </Text>
             )}
           </Pressable>

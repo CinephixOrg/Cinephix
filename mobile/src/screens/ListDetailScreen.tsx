@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   Animated,
-  Pressable,
   ActivityIndicator,
   BackHandler,
   StyleSheet,
   useWindowDimensions,
 } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -35,6 +35,9 @@ import type { CollectionEntry } from "../utils/collectionQuery";
 import type { CustomListDetail, ListPreviewItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { snippet } from "../utils/shareCards";
+import { VisibilityToggle } from "../components/lists/ListEditorParts";
+import MoreButton from "../components/safety/MoreButton";
 
 const GRID_PADDING_BOTTOM = 110;
 const UNDO_MS = 4000;
@@ -85,6 +88,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
         center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
         header: { paddingHorizontal: 16, paddingTop: 16 },
         ownerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+        ownerLine: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
         ownerName: { fontSize: 13, color: colors.placeholder, fontFamily: fonts.medium },
         titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 },
         title: { fontFamily: fonts.bold, fontSize: 22, color: colors.baseContent },
@@ -158,6 +162,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   // geçsin", replacing the old separate "Edit List" button/screen entirely.
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editPublic, setEditPublic] = useState(true);
   const [savingMeta, setSavingMeta] = useState(false);
 
   const [likeCount, setLikeCount] = useState(0);
@@ -302,27 +307,27 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
     Animated.timing(editProgress, { toValue: editing ? 1 : 0, duration: 200, useNativeDriver: true }).start();
   }, [editing, editProgress]);
 
-  // Saves name/description if either changed, called whenever edit mode
-  // turns off (the toolbar's own "Done" tap, or the auto-exit below). Silent
-  // no-op if nothing changed — most Edit/Done cycles are just item removal.
+  // Saves name/description/visibility if any changed, called whenever edit
+  // mode turns off (the toolbar's own "Done" tap, or the auto-exit below).
+  // Silent no-op if nothing changed — most Edit/Done cycles are just item removal.
   const commitMetaEdits = useCallback(async () => {
     if (!list) return;
     const trimmedName = editName.trim();
     const trimmedDescription = editDescription.trim();
-    if (trimmedName === list.name && trimmedDescription === (list.description || "")) return;
+    if (trimmedName === list.name && trimmedDescription === (list.description || "") && editPublic === list.isPublic) return;
     // An emptied-out name is dropped silently rather than saved — same
     // "Name is required" rule the backend already enforces (customListRoute.js).
     if (!trimmedName) return;
     setSavingMeta(true);
     try {
-      await updateList(targetListId, { name: trimmedName, description: trimmedDescription });
-      setList((prev) => (prev ? { ...prev, name: trimmedName, description: trimmedDescription } : prev));
+      await updateList(targetListId, { name: trimmedName, description: trimmedDescription, isPublic: editPublic });
+      setList((prev) => (prev ? { ...prev, name: trimmedName, description: trimmedDescription, isPublic: editPublic } : prev));
     } catch (e: any) {
       showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
     } finally {
       setSavingMeta(false);
     }
-  }, [list, editName, editDescription, targetListId, showToast, t]);
+  }, [list, editName, editDescription, editPublic, targetListId, showToast, t]);
 
   // Nothing left to edit — leave edit mode rather than showing a lone "Done".
   useEffect(() => {
@@ -340,6 +345,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
       if (list) {
         setEditName(list.name);
         setEditDescription(list.description || "");
+        setEditPublic(list.isPublic);
       }
       setEditing(true);
     }
@@ -371,7 +377,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   };
 
   // "Share your list" (CollectionToolbar's accessory) opens ShareOptionsMenu
-  // instead of posting to Medya directly — direct ask: give a Send-to-a-
+  // instead of posting to Media directly — direct ask: give a Send-to-a-
   // Person-or-Community option too, same 2-option popover every other
   // share entry point with a real DM/community picker already uses
   // (ContentDetailScreen's recommend flow, ProfileAnalysisModal).
@@ -382,7 +388,7 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
       const share = await createShare({ type: "list", listId: list._id });
       announceNewShare(share);
       setShareMenuVisible(false);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch {
       showToast(t("Something went wrong. Please try again."));
     } finally {
@@ -399,10 +405,13 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
         listId: list._id,
         name: list.name,
         itemCount: entries.length,
+        // The first three titles that have a poster, for the card's collage.
         previewPosters: entries
-          .slice(0, 3)
           .map((e) => e.posterPath)
-          .filter((p): p is string => !!p),
+          .filter((p): p is string => !!p)
+          .slice(0, 3),
+        description: snippet(list.description),
+        ownerUsername: list.owner.username,
       };
       // allSettled, not all — same reasoning as ContentDetailScreen's own
       // handleSendRecommendation: one recipient shouldn't sink the send to
@@ -486,16 +495,25 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
-          <UserAvatar
-            userId={list.owner._id}
-            username={list.owner.username}
-            profilePicUrl={list.owner.profile_pic_url}
-            size={28}
-            disabled
+        <View style={styles.ownerLine}>
+          <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}`)}>
+            <UserAvatar
+              userId={list.owner._id}
+              username={list.owner.username}
+              profilePicUrl={list.owner.profile_pic_url}
+              size={28}
+              disabled
+            />
+            <Text style={styles.ownerName}>{list.owner.username}</Text>
+          </Pressable>
+          {/* Report the list, or block its owner — which also leaves it. */}
+          <MoreButton
+            entityType="List"
+            entityId={list._id}
+            author={list.owner}
+            onBlocked={() => (router.canGoBack() ? router.back() : router.replace("/profile/lists" as never))}
           />
-          <Text style={styles.ownerName}>{list.owner.username}</Text>
-        </Pressable>
+        </View>
 
         <View style={styles.titleRow}>
           {editing && isOwner ? (
@@ -510,9 +528,12 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
           ) : (
             <Text style={styles.title}>{list.name}</Text>
           )}
-          <View style={[styles.badge, list.isPublic ? styles.badgePublic : styles.badgePrivate]}>
-            <Text style={styles.badgeText}>{list.isPublic ? t("Public") : t("Private")}</Text>
-          </View>
+          {/* While editing, the Public/Private toggle below replaces this badge. */}
+          {editing && isOwner ? null : (
+            <View style={[styles.badge, list.isPublic ? styles.badgePublic : styles.badgePrivate]}>
+              <Text style={styles.badgeText}>{list.isPublic ? t("Public") : t("Private")}</Text>
+            </View>
+          )}
         </View>
 
         {editing && isOwner ? (
@@ -531,6 +552,12 @@ export default function ListDetailScreen({ basePath = "/lists" }: Props) {
               {list.description}
             </Text>
           </Pressable>
+        ) : null}
+
+        {editing && isOwner ? (
+          <View style={{ marginTop: 12 }}>
+            <VisibilityToggle isPublic={editPublic} onChange={setEditPublic} />
+          </View>
         ) : null}
 
         <View style={styles.statsRow}>

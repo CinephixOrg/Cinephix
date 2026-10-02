@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   Animated,
   ActivityIndicator,
   Easing,
@@ -11,6 +10,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this podium's own
 // horizontal paging nests inside Discover's outer horizontal page-switcher
 // (home/index.tsx); it needs gesture-handler's pan resolution to keep
@@ -160,13 +160,13 @@ export default function LeaderboardPodium({ basePath }: Props) {
   // back at page 0 while `page` state itself (driven by onScroll) was never
   // reset, leaving the title (`titles[page]`) and the actually-displayed
   // page out of sync — "kategori ve yüklenen bilgiler karışıyor". Same fix
-  // already applied to Medya's own PeoplePodium.tsx: `refetching` keeps the
+  // already applied to Media's own PeoplePodium.tsx: `refetching` keeps the
   // ScrollView mounted (current page/scroll position stays put) and only
   // overlays a small spinner on top.
   const [refetching, setRefetching] = useState(false);
   const didInitialLoad = useRef(false);
   // Free/Plus/Premium/dev — same 3-way split as everywhere else this tier
-  // is checked (Sync's canUseMatchFilters, Medya's own PeoplePodium), just
+  // is checked (Sync's canUseMatchFilters, Media's own PeoplePodium), just
   // with an explicit "plus" level now instead of a plain locked/unlocked
   // boolean, since Plus and Premium no longer see the same thing here.
   const viewerTier = user?.accountTier ?? "free";

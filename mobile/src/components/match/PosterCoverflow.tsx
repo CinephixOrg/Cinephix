@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Image,
-  Pressable,
   Text,
   View,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+import Pressable from "../common/TapSafePressable";
 // Same fix as PosterRow.tsx: this row nests inside MatchAnalysisPanel's own
 // card-paging ScrollView (same horizontal axis) — a plain RN ScrollView loses
 // the drag gesture to the outer one.

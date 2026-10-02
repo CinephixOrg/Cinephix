@@ -1,11 +1,10 @@
+import "dotenv/config";
 import fetch from "node-fetch";
 import fs from "fs";
 import pLimit from "p-limit";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const API_KEY = process.env.TMDB_API_KEY;
+if (!API_KEY) throw new Error("TMDB_API_KEY eksik: .env dosyanıza ekleyin (.env.example'a bakın).");
 const BASE_URL = "https://api.themoviedb.org/3";
 const limit = pLimit(5);
 

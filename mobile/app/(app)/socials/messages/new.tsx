@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
-import { View, Text, Image, FlatList, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, Image, FlatList, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "../../../../src/components/common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import SearchBar from "../../../../src/components/SearchBar";
 import { searchUsers } from "../../../../src/api/userService";
 import { getOrCreateConversation } from "../../../../src/api/conversationService";
 import { useChat } from "../../../../src/context/ChatContext";
+import { useKeyboardSafeExit } from "../../../../src/hooks/useKeyboardSafeExit";
 import { SkeletonRow } from "../../../../src/components/Skeleton";
 import TierAvatarFrame from "../../../../src/components/TierAvatarFrame";
 import type { UserSearchResult } from "../../../../src/types";
@@ -28,6 +30,7 @@ export default function NewMessageScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { refreshConversations } = useChat();
+  useKeyboardSafeExit();
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);

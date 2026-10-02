@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import ContentRail from "../ContentRail";
 import FavoriteCard from "./FavoriteCard";

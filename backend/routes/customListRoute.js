@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
@@ -331,6 +332,8 @@ router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const list = await CustomList.findById(req.params.id).populate("owner", "username profile_pic_url").lean();
     if (!list) return res.status(404).json({ message: "List not found" });
+    // A list by someone hidden by a block reads as not found, even by link.
+    if (req.hiddenUsers?.has(String(list.owner?._id))) return res.status(404).json({ message: "List not found" });
 
     const isOwner = req.user && list.owner._id.toString() === req.user._id.toString();
     if (!list.isPublic && !isOwner) {
@@ -419,6 +422,10 @@ router.post("/:id/like", authMiddleware, async (req, res) => {
       list.likes.push(userId);
     }
     await list.save();
+    // For the liker's own Activity page — best effort, the like stands either way.
+    await (alreadyLiked ? clearFootprint(userId, "list_liked", list._id) : recordFootprint(userId, "list_liked", list._id)).catch(
+      () => {}
+    );
 
     return res.json({ likeCount: list.likes.length, hasLiked: !alreadyLiked });
   } catch {

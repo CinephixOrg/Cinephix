@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { View, Pressable, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { useLocalSearchParams, useNavigation, useRouter, useFocusEffect } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../context/ChatContext";
@@ -10,7 +11,7 @@ import {
   sendMessageRest,
 } from "../api/conversationService";
 import ChatRoom from "../components/ChatRoom";
-import type { Message, MessagePagination } from "../types";
+import type { Message, MessagePagination, MessageSender } from "../types";
 import { SkeletonChatBubbles } from "../components/Skeleton";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -40,7 +41,7 @@ interface Props {
 // keeps its own back stack — the nested copy returns you to the profile you
 // opened it from, which a single shared route in the Socials tab could not do.
 export default function ConversationScreen({ linkTitleToProfile = true, participantId }: Props) {
-  const { conversationId: conversationIdParam, otherUsername } = useLocalSearchParams<{
+  const { conversationId: conversationIdParam, otherUsername, otherAvatar } = useLocalSearchParams<{
     conversationId?: string;
     otherUsername?: string;
     otherAvatar?: string;
@@ -129,6 +130,17 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
     }, [conversationId])
   );
 
+  // The other person, for chat cards that picture both people. From the
+  // conversation list when it has this chat, otherwise from what the opener
+  // passed in the route.
+  const otherFromList = conversations.find((c) => c._id === conversationId)?.otherUser;
+  const counterpart = useMemo<MessageSender | undefined>(
+    () =>
+      otherFromList ??
+      (otherUsername ? { _id: participantId ?? "", username: otherUsername, profile_pic_url: otherAvatar || undefined } : undefined),
+    [otherFromList, otherUsername, otherAvatar, participantId]
+  );
+
   // Same skeleton ChatRoom shows for its own first load, so resolving the
   // conversation and then loading its messages read as one continuous wait
   // rather than two different ones.
@@ -142,9 +154,11 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
 
   return (
     <ChatRoom
+      key={conversationId}
       roomType="dm"
       roomId={conversationId}
       canChat={true}
+      counterpart={counterpart}
       initialMessages={seeded}
       emptyText={t("No messages yet. Say something!")}
       fetchMessages={(before, limit) => getMessages(conversationId, before, limit)}

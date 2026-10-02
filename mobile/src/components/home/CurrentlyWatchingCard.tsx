@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet, type ViewStyle } from "react-native";
+import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import TierAvatarFrame from "../TierAvatarFrame";
 import type { CurrentlyWatchingFeedItem } from "../../api/feedService";

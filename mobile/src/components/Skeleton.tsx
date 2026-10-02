@@ -18,7 +18,8 @@ function buildStyles(colors: ColorPalette) {
     cell2: { width: "48%", marginBottom: 16 },
     cell3: { width: "33.33%", alignItems: "center", padding: 10 },
     poster: { aspectRatio: 2 / 3 },
-    groupCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 12, padding: 14 },
+    groupCard: { width: "100%", backgroundColor: colors.base200, borderRadius: 20, padding: 16, marginBottom: 12 },
+    groupHead: { flexDirection: "row", alignItems: "center", gap: 12 },
     rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     avatarCell: { alignItems: "center" },
     row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
@@ -113,22 +114,27 @@ export function SkeletonPosterCard() {
   );
 }
 
+// Matches socials/CommunityCard.tsx: icon tile and title, three lines of
+// description, a row of hashtags.
 export function SkeletonGroupCard() {
   const styles = useSkeletonStyles();
   return (
     <View style={styles.groupCard}>
-      <View style={styles.rowBetween}>
-        <SkeletonBox width={60} height={16} borderRadius={10} />
-        <SkeletonBox width={30} height={12} />
+      <View style={styles.groupHead}>
+        <SkeletonBox width={48} height={48} borderRadius={15} />
+        <View style={{ flex: 1, gap: 7 }}>
+          <SkeletonBox width="55%" height={16} />
+          <SkeletonBox width="40%" height={11} />
+        </View>
       </View>
-      <SkeletonBox width="80%" height={15} style={{ marginTop: 10 }} />
-      <SkeletonBox width="100%" height={12} style={{ marginTop: 6 }} />
-      <SkeletonBox width="70%" height={12} style={{ marginTop: 4 }} />
-      <View style={[styles.rowBetween, { marginTop: 8, gap: 6 }]}>
-        <SkeletonBox width={50} height={16} borderRadius={8} />
-        <SkeletonBox width={50} height={16} borderRadius={8} />
+      <SkeletonBox width="100%" height={13} style={{ marginTop: 16 }} />
+      <SkeletonBox width="92%" height={13} style={{ marginTop: 8 }} />
+      <SkeletonBox width="60%" height={13} style={{ marginTop: 8 }} />
+      <View style={[styles.groupHead, { marginTop: 16, gap: 6 }]}>
+        <SkeletonBox width={78} height={22} borderRadius={11} />
+        <SkeletonBox width={64} height={22} borderRadius={11} />
+        <SkeletonBox width={70} height={22} borderRadius={11} />
       </View>
-      <SkeletonBox width="100%" height={30} style={{ marginTop: 10 }} borderRadius={8} />
     </View>
   );
 }

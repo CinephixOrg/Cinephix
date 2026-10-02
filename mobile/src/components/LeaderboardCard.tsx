@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
@@ -57,7 +58,7 @@ interface Props {
   content: { id: string; title: string; poster_path?: string; type: ContentType };
   basePath: "/home" | "/search";
   metric: LeaderboardMetric;
-  // Free-tier viewer gate — same technique as Medya's own PeoplePodiumCard:
+  // Free-tier viewer gate — same technique as Media's own PeoplePodiumCard:
   // a real blur baked into the poster image itself (RN's native `Image`
   // `blurRadius`, not an overlay), plus a small lock badge on top. Title/
   // rank/metric stay fully visible either way — same "still the actual
@@ -119,7 +120,7 @@ export default function LeaderboardCard({ rank, content, basePath, metric, locke
         },
         rankBadgeText: { color: "#3d2b00", fontSize: 11, fontFamily: fonts.bold },
         // Centered on the (blurred) poster, same small circular treatment
-        // as Medya's own PeoplePodiumCard.tsx lockBadge / Sync's
+        // as Media's own PeoplePodiumCard.tsx lockBadge / Sync's
         // MatchCloudBubble.tsx.
         lockBadge: {
           position: "absolute",

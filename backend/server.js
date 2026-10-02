@@ -33,8 +33,11 @@ const app = express();
 app.set('query parser', 'extended');
 app.use(helmet());
 
+// FRONTEND_URL may list several origins, comma-separated. A browser's Origin
+// never has a trailing slash or path, so those are trimmed off — a pasted
+// "https://site.com/" would otherwise match nothing and block every request.
 const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL]
+  ? process.env.FRONTEND_URL.split(",").map((url) => url.trim().replace(/\/+$/, "")).filter(Boolean)
   : ["http://localhost:5173", "http://127.0.0.1:5173"];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
@@ -52,6 +55,8 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/", simpleRateLimiter);
+// Blocked people disappear from every response (middleware/blockFilter.js).
+app.use("/api/", hideBlockedContent);
 
 // Model and Route imports
 import { createMovieModel } from "./models/Movie.js";
@@ -73,6 +78,10 @@ import notificationRoute from "./routes/notificationRoute.js";
 import shareRoute from "./routes/shareRoute.js";
 import badgeRoute from "./routes/badgeRoute.js";
 import waitlistRoute from "./routes/waitlistRoute.js";
+import { hideBlockedContent } from "./middleware/blockFilter.js";
+import reportRoute from "./routes/reportRoute.js";
+import ticketRoute from "./routes/ticketRoute.js";
+import adminRoute from "./routes/adminRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -92,6 +101,9 @@ app.use("/api/notifications", notificationRoute);
 app.use("/api/shares", shareRoute);
 app.use("/api/badges", badgeRoute);
 app.use("/api/waitlist", waitlistRoute);
+app.use("/api/reports", reportRoute);
+app.use("/api/tickets", ticketRoute);
+app.use("/api/admin", adminRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);

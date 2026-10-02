@@ -7,15 +7,18 @@ export async function login(email: string, password: string): Promise<User> {
   return res.data;
 }
 
+/** `acceptedTerms` is required by the API, not just the checkbox on screen. */
 export async function register(
   username: string,
   email: string,
-  password: string
+  password: string,
+  acceptedTerms: boolean
 ): Promise<{ email: string }> {
   const res = await API.post(API_ROUTES.AUTH.REGISTER, {
     username,
     email,
     password,
+    acceptedTerms,
   });
   return res.data;
 }

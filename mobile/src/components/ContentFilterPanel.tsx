@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import type { GenreOption } from "../constants/contentGenreIds";
 import { useTheme } from "../context/ThemeContext";

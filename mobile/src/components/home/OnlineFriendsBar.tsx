@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { getOnlineFriends } from "../../api/userService";
@@ -11,7 +13,7 @@ const AVATAR_SIZE = 46;
 
 // Instagram-stories-bar-style row at the very top of Paylaşımlar — only
 // people you follow who currently have a live socket connection. Polled on
-// mount/focus rather than pushed live (Medya isn't a real-time chat
+// mount/focus rather than pushed live (Media isn't a real-time chat
 // surface), matching this app's largely-REST architecture elsewhere.
 //
 // Wrapped in React.memo — zero props, same reasoning as

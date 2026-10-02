@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
-// A Medya post — always a snapshot of an existing analysis/review/
+// A Media post — always a snapshot of an existing analysis/review/
 // recommendation at the moment it was shared (mirrors Message.analysisData/
 // contentData's existing snapshot convention elsewhere in this codebase),
 // never a live reference. Editing/deleting the underlying analysis or

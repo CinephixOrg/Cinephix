@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Modal, StyleSheet, type LayoutChangeEvent } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { View, Text, StyleSheet, type LayoutChangeEvent } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "./common/GestureModal";
+import Pressable from "./common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -92,7 +94,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
       const share = await createShare({ type: "analysis", analysisData: data });
       announceNewShare(share);
       setOptionsVisible(false);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch {
       showToast(t("Something went wrong. Please try again."));
     } finally {
@@ -173,13 +175,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      {/* RN's Modal renders into its own detached native window, outside the
-          app-root GestureHandlerRootView (app/_layout.tsx) — without a second
-          one here, react-native-gesture-handler recognizes nothing inside,
-          and the deck's horizontal poster rows (which use gesture-handler's
-          ScrollView so they win the pan against the outer card pager) would
-          simply not scroll. */}
-      <GestureHandlerRootView style={styles.overlay}>
+      <View style={styles.overlay}>
         <View style={styles.sheet}>
           <View style={styles.deckWrap} onLayout={handleDeckLayout}>
             {data && deckWidth > 0 ? (
@@ -213,7 +209,7 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
             </Pressable>
           </View>
         </View>
-      </GestureHandlerRootView>
+      </View>
 
       <ShareOptionsMenu
         visible={optionsVisible}

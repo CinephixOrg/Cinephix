@@ -17,7 +17,7 @@ const API = axios.create({ baseURL: API_BASE_URL });
 // NotificationContext's unread-count poll) kept silently retrying and
 // failing every cycle indefinitely — a real reported "infinite loop" of
 // 401s, once whatever session was active stopped being valid.
-let onUnauthorized: (() => void) | null = null;
+let onUnauthorized: ((reason?: string) => void) | null = null;
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler;
 }
@@ -54,7 +54,10 @@ API.interceptors.response.use(
     // — a different meaning entirely, not a session problem), and that
     // request never sets this header in the first place.
     if (error.response?.status === 401 && error.config?.headers?.Authorization) {
-      onUnauthorized?.();
+      // A suspended account is signed out like an expired session, but with
+      // something to show for it (backend/middleware/authMiddleware.js).
+      const suspended = error.response?.data?.code === "account_suspended";
+      onUnauthorized?.(suspended ? error.response?.data?.message : undefined);
     }
     if (!error.response && error.request) {
       // Network-level failure (offline, timeout, unreachable) — no server

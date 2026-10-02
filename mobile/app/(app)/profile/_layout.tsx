@@ -35,6 +35,10 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="settings" options={{ title: t("Settings") }} />
       <Stack.Screen name="activity" options={{ title: t("Activity") }} />
       <Stack.Screen name="activity-log" options={{ title: t("Activity Log") }} />
+      <Stack.Screen name="blocked" options={{ title: t("Blocked accounts") }} />
+      <Stack.Screen name="support/index" options={{ title: t("Help & Feedback") }} />
+      <Stack.Screen name="support/new" options={{ title: t("New ticket") }} />
+      <Stack.Screen name="support/[id]" options={{ title: t("Ticket") }} />
       <Stack.Screen name="import" options={{ title: t("Import") }} />
       <Stack.Screen name="about" options={{ title: t("About") }} />
       <Stack.Screen name="privacy" options={{ title: t("Privacy Policy") }} />

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, ViewStyle } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "./common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import { useFollowState } from "../hooks/useFollowState";
 import type { FollowStatus } from "../types";

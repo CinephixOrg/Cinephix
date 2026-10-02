@@ -4,6 +4,7 @@ import * as authService from "../api/authService";
 import { setUnauthorizedHandler } from "../api/client";
 import { STORAGE_KEYS } from "../constants/apiRoutes";
 import { unregisterForPush } from "../push/registration";
+import { resetSessionCaches } from "../api/sessionReset";
 import type { User } from "../types";
 
 interface AuthContextValue {
@@ -11,7 +12,10 @@ interface AuthContextValue {
   loading: boolean;
   needsProfileSetup: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string, acceptedTerms: boolean) => Promise<void>;
+  /** Set when the session ended because the account was suspended. */
+  signedOutReason: string | null;
+  clearSignedOutReason: () => void;
   verifyEmail: (email: string, code: string) => Promise<void>;
   completeOAuthLogin: (user: User) => Promise<void>;
   updateUser: (fields: Partial<User>) => Promise<void>;
@@ -33,6 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Transient (not persisted) — only ever set true by a fresh verifyEmail,
   // so a plain login or app relaunch never routes through setup-profile.
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
+  // Why the session ended, when it ended for a reason worth showing.
+  const [signedOutReason, setSignedOutReason] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -53,9 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(loggedInUser);
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (username: string, email: string, password: string, acceptedTerms: boolean) => {
     // No token yet — backend requires email verification before login.
-    await authService.register(username, email, password);
+    await authService.register(username, email, password, acceptedTerms);
   };
 
   const verifyEmail = async (email: string, code: string) => {
@@ -89,9 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // logout again through the unauthorized handler below.
   const signingOut = useRef(false);
 
-  const logout = async () => {
+  const logout = async (reason?: string) => {
+    setSignedOutReason(reason ?? null);
     if (signingOut.current) return;
     signingOut.current = true;
+    // Right away, before anything else: nothing cached for this account
+    // may show to whoever signs in next (see api/sessionReset.ts).
+    resetSessionCaches();
     try {
       // First, while the session token can still authorize it: this device
       // stops receiving the account's push notifications. Bounded by a
@@ -100,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await SecureStore.deleteItemAsync(STORAGE_KEYS.TOKEN);
       await SecureStore.deleteItemAsync(STORAGE_KEYS.USER);
       setUser(null);
+      // Again, for anything an in-flight request put back meanwhile.
+      resetSessionCaches();
     } finally {
       signingOut.current = false;
     }
@@ -127,6 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         needsProfileSetup,
         login,
         register,
+        signedOutReason,
+        clearSignedOutReason: () => setSignedOutReason(null),
         verifyEmail,
         completeOAuthLogin,
         updateUser,

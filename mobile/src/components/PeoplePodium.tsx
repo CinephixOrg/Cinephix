@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   Animated,
   ActivityIndicator,
   Easing,
@@ -11,8 +10,10 @@ import {
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from "react-native";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "./common/TapSafePressable";
 // From react-native-gesture-handler, not react-native — this podium's own
-// horizontal paging nests inside Medya's outer horizontal page-switcher
+// horizontal paging nests inside Media's outer horizontal page-switcher
 // (home/index.tsx, via SharesFeedSection's vertical FlatList — orthogonal
 // axis, fine), so it needs gesture-handler's pan resolution the same way
 // LeaderboardPodium.tsx does on the Discover side; a plain RN ScrollView
@@ -107,7 +108,7 @@ const OPEN_KEYS_BY_TIER: Record<"free" | "plus" | "full", CategoryKey[]> = {
 
 type PodiumPage = { type: "real"; key: CategoryKey } | { type: "ad"; lockedKeys: CategoryKey[] };
 
-// Medya/Shares' own podium — person-based signals that belong on the
+// Media/Shares' own podium — person-based signals that belong on the
 // social tab rather than Discover (Discover's own podium,
 // LeaderboardPodium.tsx, is deliberately content-only — ranking people
 // doesn't help anyone find something to watch). Structurally the same

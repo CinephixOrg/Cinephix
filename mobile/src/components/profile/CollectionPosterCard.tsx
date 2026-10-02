@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet, type ViewStyle } from "react-native";
+import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { CollectionItem } from "../../types";

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
@@ -62,7 +63,7 @@ interface Props {
   locked?: boolean;
 }
 
-// Medya/Shares' own podium card — the avatar-based sibling of
+// Media/Shares' own podium card — the avatar-based sibling of
 // LeaderboardCard.tsx. Same rank sizing/medal-gradient-frame/platform-line
 // shape, just a circular avatar frame instead of a rectangular poster
 // frame, and a person to tap through to instead of a piece of content.

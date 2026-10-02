@@ -1,4 +1,5 @@
 // controllers/userController.js
+import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -13,6 +14,7 @@ import Review from "../models/Review.js";
 import { notifyFollow, retractFollow } from "../services/notifications.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
 import Share from "../models/Share.js";
+import { TERMS_VERSION } from "../utils/legal.js";
 import CustomList from "../models/CustomList.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { refreshUserCineGraph } from "../utils/cineGraph.js";
@@ -102,6 +104,13 @@ export const registerUser = asyncHandler(async (req, res) => {
     return sendError(res, 'Password must be at least 6 characters', 400);
   }
 
+  // Apple's guideline on user-generated content expects agreement to the
+  // terms at sign-up, so the API refuses a registration without it rather
+  // than trusting the app's own checkbox.
+  if (req.body.acceptedTerms !== true) {
+    return sendError(res, 'Please accept the Terms of Service and Privacy Policy', 400);
+  }
+
   // Check if user already exists
   const userExists = await User.findOne({ email: normalizedEmail });
   if (userExists) {
@@ -124,6 +133,8 @@ export const registerUser = asyncHandler(async (req, res) => {
       username: normalizedUsername,
       email: normalizedEmail,
       password: hashedPassword,
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
     });
   } catch (err) {
     if (err?.code === 11000) {
@@ -246,6 +257,11 @@ export const followUser = asyncHandler(async (req, res) => {
     return sendError(res, 'User not found', 404);
   }
 
+  // Someone hidden by a block can't be followed (or found).
+  if (req.hiddenUsers?.has(String(userToFollowId))) {
+    return sendError(res, 'User not found', 404);
+  }
+
   if (req.user.following.includes(userToFollowId)) {
     return res.status(200).json({ success: true, data: { type: 'following' } });
   }
@@ -261,6 +277,9 @@ export const followUser = asyncHandler(async (req, res) => {
   );
 
   await notifyFollow({ recipientId: userToFollowId, senderId: loggedInUserId });
+  // For the follower's own Activity page. Best effort: the follow stands
+  // either way.
+  await recordFootprint(loggedInUserId, "followed", userToFollowId).catch(() => {});
 
   return sendSuccess(res, { type: 'following' }, 'User followed successfully', 200);
 });
@@ -288,6 +307,7 @@ export const unfollowUser = asyncHandler(async (req, res) => {
   );
 
   await retractFollow({ recipientId: userToUnfollowId, senderId: loggedInUserId });
+  await clearFootprint(loggedInUserId, "followed", userToUnfollowId).catch(() => {});
 
   sendSuccess(res, null, 'User unfollowed successfully', 200);
 });
@@ -312,6 +332,8 @@ export const removeFollower = asyncHandler(async (req, res) => {
     { _id: followerId },
     { $pull: { following: userId } }
   );
+  // They no longer follow this user, so their Activity shouldn't say they do.
+  await clearFootprint(followerId, "followed", userId).catch(() => {});
 
   return res.status(200).json({ success: true, message: "Follower removed successfully" });
 });
@@ -539,7 +561,11 @@ export const updateFavorites = async (req, res) => {
  */
 export const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password').lean();
+    // Who someone blocked is theirs alone; the admin flag isn't public either.
+    const user = await User.findById(req.params.id).select('-password -blockedUsers -isAdmin').lean();
+    // Nor is their email address: only a moderator reading this through
+    // routes/adminRoute.js (showPrivate) gets it.
+    if (user && !req.showPrivate) delete user.email;
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -683,7 +709,9 @@ export const getUserCollections = asyncHandler(async (req, res) => {
     return sendError(res, 'User not found', 404);
   }
 
-  const isOwner = req.user.id.toString() === String(targetUserId);
+  // routes/adminRoute.js sets showPrivate: a moderator looking into a
+  // report sees this person's lists as they are, private ones included.
+  const isOwner = req.user.id.toString() === String(targetUserId) || req.showPrivate === true;
   // Someone else's lists marked not public stay hidden — isPublic is a
   // per-list setting. Viewing your own profile shows both.
   const listQuery = isOwner ? { owner: targetUserId } : { owner: targetUserId, isPublic: true };
@@ -1476,7 +1504,7 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
   sendSuccess(res, result, 'Suggestions fetched');
 });
 
-// @desc    Which of the people I follow are currently connected (Medya's
+// @desc    Which of the people I follow are currently connected (Media's
 //          online-friends bar) — backed by presenceService's in-memory
 //          socket refcount, not a persisted field.
 // @route   GET /api/users/online

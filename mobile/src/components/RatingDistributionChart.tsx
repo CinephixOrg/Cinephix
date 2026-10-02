@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import type { ColorPalette } from "../theme/palettes";
 import { useTheme } from "../context/ThemeContext";

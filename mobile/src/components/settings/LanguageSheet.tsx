@@ -2,17 +2,17 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
-  Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "../common/GestureModal";
+import Pressable from "../common/TapSafePressable";
 import type { LayoutChangeEvent } from "react-native";
 import {
-  GestureHandlerRootView,
   PanGestureHandler,
   State,
   type PanGestureHandlerGestureEvent,
@@ -251,10 +251,7 @@ function LanguageSheet({ visible, onClose }: Props) {
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      {/* RN's Modal renders into its own detached native root, outside the
-          app-root GestureHandlerRootView (app/_layout.tsx) — without a
-          second one here the pan handler below never receives touches. */}
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+      <View style={StyleSheet.absoluteFill}>
         <View style={styles.backdrop}>
           <Animated.View
             pointerEvents="none"
@@ -306,7 +303,7 @@ function LanguageSheet({ visible, onClose }: Props) {
             </ScrollView>
           </Animated.View>
         </View>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 }

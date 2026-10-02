@@ -3,14 +3,16 @@ import {
   View,
   Text,
   Image,
-  Pressable,
   Animated,
   Easing,
   StyleSheet,
-  Modal,
   ScrollView as RNScrollView,
   useWindowDimensions,
 } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "./common/GestureModal";
+// Gesture handler's inside the Media feed (TapSafeProvider): see common/TapSafePressable.tsx.
+import Pressable from "./common/TapSafePressable";
 
 // From react-native-gesture-handler, not react-native: ShareCard renders
 // inside SharesFeedSection.tsx's vertical FlatList, itself nested inside
@@ -24,11 +26,11 @@ import {
 // this: a *plain* react-native Pressable directly wrapping a
 // gesture-handler ScrollView doesn't participate in gesture-handler's own
 // touch negotiation at all (different systems), so the drag kept getting
-// claimed by the outer Medya pager instead of ever reaching the strip.
+// claimed by the outer Media pager instead of ever reaching the strip.
 // Every Pressable directly ancestor to a gesture-handler scroller needs to
-// itself be gesture-handler's version, not just the scroller — plain
-// react-native's `Pressable` (imported below) is still fine for every
-// *other* Pressable in this file that doesn't wrap a nested scroller.
+// itself be gesture-handler's version, not just the scroller. Every other
+// Pressable in this file is TapSafePressable (imported below), which is
+// gesture handler's too inside the Media feed.
 import { ScrollView, Pressable as GHPressable } from "react-native-gesture-handler";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
 import { useRouter } from "expo-router";
@@ -58,6 +60,7 @@ import { useToast } from "../context/ToastContext";
 import { useWatchlistGraph, isInWatchlistGraph } from "../context/WatchlistGraphContext";
 import type { ColorPalette } from "../theme/palettes";
 import { fonts } from "../theme/typography";
+import MoreButton from "./safety/MoreButton";
 
 // Was w500 (500px wide) — every actual use of this in the file is a small
 // thumbnail (48-64px wide: sharePoster, filmStripPoster, modalPoster), so
@@ -1386,6 +1389,7 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             {typeChipEl}
           </View>
           <FollowButton targetUserId={share.user._id} size="small" />
+          <MoreButton entityType="Share" entityId={share._id} author={share.user} />
         </View>
 
         {/* Recommendation posts are deliberately not a single big tap
@@ -1436,6 +1440,7 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           {typeChipEl}
         </View>
         <FollowButton targetUserId={share.user._id} size="small" />
+          <MoreButton entityType="Share" entityId={share._id} author={share.user} />
       </View>
 
       {share.type === "analysis" && share.analysisData && (

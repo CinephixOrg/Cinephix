@@ -1,11 +1,12 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import type { Share } from "../types";
 
 interface RecentSharesContextValue {
   // Shares announced since the feed last consumed them — a small queue,
   // not a single value, since a viewer could plausibly create two posts
   // (e.g. share a review, then immediately share a recommendation) before
-  // ever revisiting Medya to see either one.
+  // ever revisiting Media to see either one.
   pending: Share[];
   // Called right after any createShare(...) succeeds, from every screen
   // that can create one (ContentDetailScreen, ReviewWriteScreen,
@@ -28,13 +29,19 @@ const RecentSharesContext = createContext<RecentSharesContextValue | undefined>(
 // feed's own blended recency+engagement+network score (getShareFeed,
 // shareController.js) is untouched; this only affects what the CURRENT
 // session shows before the next real fetch (pull-to-refresh, or leaving
-// and returning to Medya) lets that score settle the post into wherever
+// and returning to Media) lets that score settle the post into wherever
 // it actually ranks. A brand-new post with 0 likes/views can easily rank
 // well below older, more-engaged posts on a true refetch — this context
 // exists specifically to paper over that gap for the person who JUST
 // posted, the same way Instagram's own feed does.
 export function RecentSharesProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [pending, setPending] = useState<Share[]>([]);
+
+  // Just-posted items belong to the account that posted them.
+  useEffect(() => {
+    setPending([]);
+  }, [user?._id]);
 
   const announce = useCallback((share: Share) => {
     setPending((prev) => [share, ...prev]);

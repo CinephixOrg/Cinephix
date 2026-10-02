@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Pressable, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { View, Text, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
@@ -16,8 +17,8 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// Same capsule-switcher design/mechanics as Medya's Paylaşımlar/Keşfet
-// control (MedyaTabSwitcher in home/index.tsx) — content-hugging pill,
+// Same capsule-switcher design/mechanics as Media's Paylaşımlar/Keşfet
+// control (MediaTabSwitcher in home/index.tsx) — content-hugging pill,
 // muted-gray translucent background, a real sliding Animated.View window
 // measured off each slot's own onLayout, active slot shows text, inactive
 // shows an icon. Shared by both ProfileCategoryTabs.tsx (own profile, 4

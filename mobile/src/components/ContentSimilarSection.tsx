@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, Image, FlatList, ActivityIndicator, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, Image, FlatList, ActivityIndicator, RefreshControl, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { usePathname, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { getSimilarContent, type SimilarContentItem } from "../api/contentService";

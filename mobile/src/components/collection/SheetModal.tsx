@@ -2,16 +2,16 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import {
   Animated,
   Easing,
-  Modal,
-  Pressable,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
+// Its gesture root comes with it (a Modal is its own native window).
+import Modal from "../common/GestureModal";
+import Pressable from "../common/TapSafePressable";
 import {
-  GestureHandlerRootView,
   PanGestureHandler,
   State,
   type PanGestureHandlerGestureEvent,
@@ -150,7 +150,7 @@ function SheetModal({ visible, onClose, header, children }: Props) {
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+      <View style={StyleSheet.absoluteFill}>
         <View style={styles.backdrop}>
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.dim, { opacity: backdropOpacity }]} />
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={t("Close")} />
@@ -167,7 +167,7 @@ function SheetModal({ visible, onClose, header, children }: Props) {
             {children}
           </Animated.View>
         </View>
-      </GestureHandlerRootView>
+      </View>
     </Modal>
   );
 }

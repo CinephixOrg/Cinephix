@@ -8,6 +8,7 @@ import { fonts } from "../../../src/theme/typography";
 import { useProfile } from "../../../src/context/ProfileContext";
 import SettingsSection from "../../../src/components/settings/SettingsSection";
 import SettingsRow from "../../../src/components/settings/SettingsRow";
+import UnreadDot from "../../../src/components/support/UnreadDot";
 import SettingsNotice from "../../../src/components/settings/SettingsNotice";
 import AccountSection from "../../../src/components/settings/AccountSection";
 import SecuritySection from "../../../src/components/settings/SecuritySection";
@@ -105,6 +106,7 @@ export default function SettingsScreen() {
   const goToPrivacy = useCallback(() => router.push("/profile/privacy"), [router]);
   const goToTerms = useCallback(() => router.push("/profile/terms"), [router]);
   const goToCredits = useCallback(() => router.push("/profile/credits"), [router]);
+  const goToSupport = useCallback(() => router.push("/profile/support"), [router]);
 
   const styles = useMemo(
     () =>
@@ -187,6 +189,12 @@ export default function SettingsScreen() {
             label={t("Activity Log")}
             onPress={goToActivityLog}
             chevron
+          />
+          <SettingsRow
+            icon="ban-outline"
+            label={t("Blocked accounts")}
+            onPress={() => router.push("/profile/blocked" as never)}
+            chevron
             divider={false}
           />
         </SettingsSection>
@@ -198,12 +206,22 @@ export default function SettingsScreen() {
         ) : null}
 
         <SettingsSection title={t("About and support")}>
+          {/* Support first in this section: it's the one row people come
+              looking for, and it's where an answer waits for them. */}
+          <SettingsRow
+            icon="chatbubbles-outline"
+            label={t("Help & Feedback")}
+            description={t("Report a bug, ask for a feature, get help")}
+            onPress={goToSupport}
+            accessory={<UnreadDot />}
+            chevron
+            divider={false}
+          />
           <SettingsRow
             icon="information-circle-outline"
             label={t("About")}
             onPress={goToAbout}
             chevron
-            divider={false}
           />
           <SettingsRow
             icon="shield-outline"

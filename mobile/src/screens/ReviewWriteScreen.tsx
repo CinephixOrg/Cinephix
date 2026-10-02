@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, TextInput, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -91,7 +92,7 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
         try {
           const share = await createShare({ type: "review", reviewId: saved._id });
           announceNewShare(share);
-          showToast(t("Shared to Medya"));
+          showToast(t("Shared to Media"));
         } catch (e: any) {
           // The review itself saved fine — a failed/blocked share (e.g. the
           // backend's own repeat-share cooldown for this title) shouldn't
@@ -231,7 +232,7 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
                   </Pressable>
                   <View style={styles.menuRowDivider} />
                   <Pressable style={styles.menuRow} onPress={() => handleSave(true)}>
-                    <Text style={styles.menuRowText}>{t("Save and Share to Medya")}</Text>
+                    <Text style={styles.menuRowText}>{t("Save and Share to Media")}</Text>
                   </Pressable>
                 </View>
               </>

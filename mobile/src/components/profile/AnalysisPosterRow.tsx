@@ -1,12 +1,13 @@
 import { memo, useEffect, useMemo } from "react";
-import { Animated, Easing, View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { Animated, Easing, View, Text, Image, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 // Plain RN ScrollView loses horizontal pan gestures to the outer card-paging
 // ScrollView this row lives inside (same-axis nested scrolling is a known
 // weak spot for RN's responder system) — gesture-handler's has proper native
 // arbitration. Note this row renders inside a <Modal>, which is its own
-// native window: ProfileAnalysisModal mounts a nested GestureHandlerRootView
-// for exactly this reason, since the app-root one doesn't reach in there.
+// native window — common/GestureModal is what gives it a gesture root, since
+// the app-root one doesn't reach in there.
 import { ScrollView } from "react-native-gesture-handler";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { formatFiveScale } from "../../utils/rating";
@@ -14,8 +15,6 @@ import type { ProfileAnalysisItem } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w200";
 const POSTER_WIDTH = 82;
@@ -71,38 +70,40 @@ function AnalysisPosterRow({ items, gradientId, active, onPressItem, layout = "r
 
   if (items.length === 0) return null;
 
+  // Each poster slides in as it appears. The animation sits on the inner
+  // view, so the tappable wrapper stays a plain Pressable (see
+  // common/TapSafePressable.tsx).
   const posters = items.map((item, i) => (
-    <AnimatedPressable
-      key={item._id}
-      onPress={onPressItem ? () => onPressItem(item) : undefined}
-      disabled={!onPressItem}
-      style={[
-        styles.item,
-        {
-          opacity: anims[i],
-          transform: [{ translateX: anims[i].interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
-        },
-      ]}
-    >
-      <View style={styles.posterWrap}>
-        {item.poster_path ? (
-          <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={styles.poster} />
-        ) : (
-          <View style={[styles.poster, styles.posterEmpty]}>
-            <Ionicons name={item.type === "series" ? "tv-outline" : "film-outline"} size={20} color={colors.placeholder} />
-          </View>
-        )}
-        {typeof item.rating === "number" && (
-          <View style={styles.ratingChip}>
-            <Ionicons name="star" size={9} color={colors.primaryContent} />
-            <Text style={styles.ratingText}>{formatFiveScale(item.rating)}</Text>
-          </View>
-        )}
-      </View>
-      <Text style={styles.title} numberOfLines={2}>
-        {item.title ?? item.name}
-      </Text>
-    </AnimatedPressable>
+    <Pressable key={item._id} onPress={onPressItem ? () => onPressItem(item) : undefined} disabled={!onPressItem}>
+      <Animated.View
+        style={[
+          styles.item,
+          {
+            opacity: anims[i],
+            transform: [{ translateX: anims[i].interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
+          },
+        ]}
+      >
+        <View style={styles.posterWrap}>
+          {item.poster_path ? (
+            <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={styles.poster} />
+          ) : (
+            <View style={[styles.poster, styles.posterEmpty]}>
+              <Ionicons name={item.type === "series" ? "tv-outline" : "film-outline"} size={20} color={colors.placeholder} />
+            </View>
+          )}
+          {typeof item.rating === "number" && (
+            <View style={styles.ratingChip}>
+              <Ionicons name="star" size={9} color={colors.primaryContent} />
+              <Text style={styles.ratingText}>{formatFiveScale(item.rating)}</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.title} numberOfLines={2}>
+          {item.title ?? item.name}
+        </Text>
+      </Animated.View>
+    </Pressable>
   ));
 
   // Wrapped grid: no horizontal scroller, so no edge fade either — there's

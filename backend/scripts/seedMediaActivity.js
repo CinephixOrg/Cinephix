@@ -2,7 +2,7 @@
 // database — NOT for production. Populates realistic-looking activity
 // across existing test accounts (never fabricates new fake user accounts —
 // that's a deliberately different, higher-risk thing this session's own
-// discussion ruled out) so Medya's feed and Discover's podiums/rails don't
+// discussion ruled out) so Media's feed and Discover's podiums/rails don't
 // read as empty while testing. Idempotent-ish: checks for existing
 // ratings/watchlist/favorite entries before adding, so re-running it just
 // tops things up rather than duplicating.

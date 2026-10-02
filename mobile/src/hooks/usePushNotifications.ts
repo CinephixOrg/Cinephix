@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import { getFeed, markRead, refreshFeed } from "../api/notificationFeedStore";
 import { prefetchDestination } from "../api/notificationPrefetch";
-import { destinationFor, hrefFor } from "../utils/notificationFeed";
+import { destinationFor, hrefFor, type NotificationDestination } from "../utils/notificationFeed";
 import { isForActiveChat, isForViewer, parsePushData, toRoutable, type PushData } from "../utils/pushRouting";
 import { getActiveChat } from "../push/activeChat";
 import { getNotifications, registerForPush, setAppBadge, type NotificationsModule } from "../push/registration";
@@ -69,7 +69,14 @@ export function usePushNotifications() {
     pending.current = null;
     if (!isForViewer(data, viewerId)) return;
 
-    const destination = destinationFor(toRoutable(data), viewerId);
+    // A ticket update opens that ticket; everything else has a row in the
+    // notification feed, and opens exactly what the row opens.
+    const destination: NotificationDestination =
+      data.type === "ticket_update"
+        ? data.ticketId
+          ? { kind: "ticket", ticketId: data.ticketId }
+          : { kind: "none" }
+        : destinationFor(toRoutable({ ...data, type: data.type }), viewerId);
     const href = hrefFor(destination);
     if (href) {
       prefetchDestination(destination);

@@ -186,7 +186,7 @@ export type ActivityEvent =
   // No content preview here on purpose — a Share's own real content shape
   // varies too much by `shareType` (recommendation/review carry a poster,
   // list/analysis don't) for a one-line activity row; the actual post is
-  // one tap away in Medya's own feed.
+  // one tap away in Media's own feed.
   | { type: "shared"; actor: FeedUserRef; shareType: "analysis" | "review" | "recommendation" | "list"; createdAt: string }
   // Plus/Premium-viewer-only "so-and-so made the podium" news (server
   // already omits this entirely for a Free viewer, this app never trusts a
@@ -924,6 +924,10 @@ export interface Message {
     username: string;
     profile_pic_url?: string | null;
     accountTier?: AccountTier | null;
+    // Added later, so absent on older shares — the card shows less then.
+    bio?: string | null;
+    followersCount?: number | null;
+    topGenres?: string[];
   };
   // "check out this list" shares — denormalized at send time (see
   // backend/models/Message.js), same reasoning as profileData above: still
@@ -933,6 +937,9 @@ export interface Message {
     name: string;
     itemCount: number;
     previewPosters: string[];
+    // Newer shares only — the card shows less without them.
+    description?: string | null;
+    ownerUsername?: string | null;
   };
   createdAt: string;
   // Local-only fields, never sent by the server.
@@ -1006,6 +1013,8 @@ export interface GroupUpdatedPayload {
   lastMessage: string;
   lastMessageAt: string;
   senderId: string;
+  // Sent by current servers; an older one leaves it out.
+  senderUsername?: string;
 }
 
 export type RoomUpdatedPayload = ConversationUpdatedPayload | GroupUpdatedPayload;
@@ -1021,6 +1030,8 @@ export interface Group {
   tags: string[];
   memberCount: number;
   isMember: boolean;
+  /** How many people you follow are members. Absent from older servers. */
+  friendsJoined?: number;
   isPreset: boolean;
   createdAt: string;
   updatedAt: string;
@@ -1087,7 +1098,7 @@ export interface LeaderboardResult {
   mostReviewed: ReviewedLeaderboardItem[];
 }
 
-// Medya/Shares' own podium — ranks people, not content (GET
+// Media/Shares' own podium — ranks people, not content (GET
 // /feed/people-leaderboard). Only Most Watched has a movie/series
 // dimension; the rest ignore the optional type filter. mostLiked/
 // topRecommenders added later, alongside the content podium's own 2
@@ -1187,22 +1198,40 @@ export type PersonalActivityType =
   | "rated"
   | "reviewed"
   | "review_liked"
+  | "list_liked"
+  | "followed"
   | "watchlist_added"
   | "towatch_added"
+  | "favorited"
   | "list_created"
-  | "group_joined";
+  | "group_joined"
+  | "shared"
+  | "match_analyzed"
+  | "profile_analyzed";
 
+// One entry on your own Activity page (GET /users/me/activity). Which
+// optional fields are set depends on `type`.
 export interface PersonalActivityItem {
+  /** Stable across requests — the list key, and how pages are de-duplicated. */
+  key: string;
   type: PersonalActivityType;
   createdAt: string;
-  content?: PopularThisWeekItem["content"]; // rated/reviewed/review_liked/watchlist_added/towatch_added
-  value?: number; // "rated" only, 1-10
-  excerpt?: string; // "reviewed"/"review_liked" only
-  listId?: string; // "list_created" only
-  listName?: string; // "list_created" only
-  groupSlug?: string; // "group_joined" only
-  groupName?: string; // "group_joined" only
-  groupCoverImage?: string; // "group_joined" only
+  content?: PopularThisWeekItem["content"]; // title-based types
+  value?: number; // "rated": 1-10
+  excerpt?: string; // "reviewed"
+  listId?: string; // "list_created", "list_liked"
+  listName?: string;
+  groupSlug?: string; // "group_joined"
+  groupName?: string;
+  groupCoverImage?: string;
+  // The other person: who you followed, whose review or list you liked, who
+  // you ran a CineMatch with.
+  targetUser?: FeedUserRef;
+  shareId?: string; // "shared"
+  shareType?: ShareType;
+  shareTitle?: string;
+  score?: number; // "match_analyzed": 0-100
+  nickname?: string; // "profile_analyzed"
 }
 
 export interface PersonalActivityResult {
@@ -1211,7 +1240,7 @@ export interface PersonalActivityResult {
   hasMore: boolean;
 }
 
-// Medya (social sharing feed) — a Share is always a snapshot of an
+// Media (social sharing feed) — a Share is always a snapshot of an
 // analysis/review/recommendation at the moment it was posted, never a live
 // reference (mirrors how chat's analysis_share/recommendation messages
 // already snapshot instead of referencing).
@@ -1317,4 +1346,33 @@ export interface DiscoverListItem {
   // Only present on /popular results — the caller's own like state for
   // this list, needed for SearchListCard.tsx's interactive heart.
   hasLiked?: boolean;
+}
+
+// ─── Support tickets ────────────────────────────────────────────────────────
+// Help & Feedback: what someone wrote to support, and how it was answered.
+// The strings are the server's own enums (backend/models/Ticket.js), so they
+// travel unchanged; the app translates them for display.
+
+export type TicketType = "Bug Report" | "Feature Request" | "General Support" | "Other";
+export type TicketStatus = "Open" | "In Progress" | "Resolved" | "Closed";
+
+export interface TicketReply {
+  text: string;
+  createdAt: string;
+}
+
+export interface Ticket {
+  _id: string;
+  type: TicketType;
+  title: string;
+  description: string;
+  status: TicketStatus;
+  /** The latest answer, the one the ticket shows. */
+  adminReply?: string | null;
+  replies: TicketReply[];
+  repliedAt?: string | null;
+  /** An answer arrived that they haven't opened yet. */
+  hasUnreadReply: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

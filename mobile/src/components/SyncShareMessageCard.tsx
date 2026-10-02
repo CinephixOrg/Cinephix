@@ -1,69 +1,99 @@
-import { useMemo } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
+import { memo } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import ChatDeckStack, { DECK_CARD_WIDTH } from "./ChatDeckStack";
-import type { Message, MatchAnalysis } from "../types";
-import { useTheme } from "../context/ThemeContext";
+import PremiumChatCard, { CARD, cardText } from "./chat/PremiumChatCard";
+import CardAvatar from "./chat/CardAvatar";
+import { useAuth } from "../context/AuthContext";
+import { MATCH_TONE_COLOR, matchTone } from "../utils/shareCards";
+import type { MatchAnalysis, Message, MessageSender } from "../types";
 import { fonts } from "../theme/typography";
 import { localeUpper } from "../utils/text";
+
+const AVATAR_SIZE = 54;
+// For an older share without a percentage.
+const NEUTRAL_ACCENT = "#A78BFA";
+
+const styles = StyleSheet.create({
+  hero: { alignItems: "center", paddingBottom: 12 },
+  avatars: { flexDirection: "row", alignItems: "center" },
+  overlap: { marginLeft: -14 },
+  score: { fontFamily: fonts.extrabold, fontSize: 38, lineHeight: 44, marginTop: 6, textShadowRadius: 16 },
+  scoreLabel: { fontFamily: fonts.bold, fontSize: 10.5, letterSpacing: 1.6, color: CARD.text, marginTop: -2 },
+  title: { fontFamily: fonts.bold, fontSize: 14.5, lineHeight: 19.5, color: CARD.white, textAlign: "center" },
+  names: { fontSize: 12, color: CARD.faint, textAlign: "center", marginTop: 2 },
+});
 
 interface Props {
   message: Message;
   isOwn: boolean;
+  onLongPress?: () => void;
   onPress: () => void;
+  /** The other person in this chat — the second face of the pair. */
+  counterpart?: MessageSender;
 }
 
-// The chat-bubble preview for a Sync share (MatchCoverCard.tsx's own Share
-// button, or AnalyzeModal's) — a gradient front card (the Sync tab's own
-// "sparkles" identity + primary/secondary gradient, replacing the original
-// flat-color card, direct ask for something more "cezbedici" than a bare
-// percentage) sits in front of ChatDeckStack's two-layer deck illusion.
-// No avatar on the front card itself — ChatRoom.tsx already renders the
-// sender's own avatar next to the bubble for a received message, so
-// repeating it inside the card here would just be the same face twice.
-export default function SyncShareMessageCard({ message, isOwn, onPress }: Props) {
-  const { colors } = useTheme();
+// A shared Sync (CineMatch): the two people side by side, their match score
+// glowing in its tone — green when high, amber in the middle, warm red when
+// low — and the match's own title. A Sync is always between the two people
+// in the DM it was sent to, so the pair is the sender and whoever else is in
+// this chat.
+function SyncShareMessageCard({ message, isOwn, onPress, counterpart, onLongPress }: Props) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const analysis = message.analysisData as MatchAnalysis | undefined;
-  const pct = analysis?.matchPercentage;
+  const pct = typeof analysis?.matchPercentage === "number" ? Math.round(analysis.matchPercentage) : null;
+  const tone = pct !== null ? MATCH_TONE_COLOR[matchTone(pct)] : NEUTRAL_ACCENT;
 
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        wrap: { width: DECK_CARD_WIDTH },
-        hint: { fontSize: 12.5, color: isOwn ? colors.primaryContent : colors.placeholder, marginBottom: 8 },
-        gradient: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2 },
-        sparkle: { position: "absolute", top: 8, right: 10, opacity: 0.9 },
-        pct: { fontFamily: fonts.bold, fontSize: 32, color: colors.primaryContent },
-        label: {
-          fontFamily: fonts.bold,
-          fontSize: 10.5,
-          color: colors.primaryContent,
-          opacity: 0.9,
-          letterSpacing: 1.4,
-        },
-        cta: { fontFamily: fonts.medium, fontSize: 10, color: colors.primaryContent, opacity: 0.8, marginTop: 4 },
-      }),
-    [colors, isOwn]
-  );
+  const sender = message.sender;
+  const other = isOwn
+    ? counterpart
+    : user
+      ? { _id: user._id, username: user.username, profile_pic_url: user.profile_pic_url }
+      : undefined;
+  const title = analysis?.parsed?.match_title?.trim();
+  const names = other ? `${sender.username} & ${other.username}` : sender.username;
+  const scoreText = pct !== null ? `${pct}%` : t("Sync");
 
   return (
-    <Pressable style={styles.wrap} onPress={onPress}>
-      <Text style={styles.hint} numberOfLines={2}>
-        {isOwn
-          ? t("You shared a Sync. Tap to see details.")
-          : t("{{username}} shared a Sync with you. Tap to see details.", { username: message.sender.username })}
-      </Text>
-      <ChatDeckStack>
-        <LinearGradient colors={[colors.primary, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradient}>
-          <Ionicons name="sparkles" size={16} color={colors.primaryContent} style={styles.sparkle} />
-          {pct != null && <Text style={styles.pct}>{pct}%</Text>}
-          <Text style={styles.label}>{localeUpper(t("Sync"))}</Text>
-          <Text style={styles.cta}>{t("Tap to view")}</Text>
-        </LinearGradient>
-      </ChatDeckStack>
-    </Pressable>
+    <PremiumChatCard
+      isOwn={isOwn}
+      onLongPress={onLongPress}
+      eyebrow={t("CineMatch Sync")}
+      eyebrowIcon="pulse"
+      eyebrowColor={tone}
+      accent={tone}
+      heroHeight={AVATAR_SIZE + 118}
+      hero={
+        <View style={styles.hero}>
+          <View style={styles.avatars}>
+            <CardAvatar uri={sender.profile_pic_url} username={sender.username} size={AVATAR_SIZE} ringColor={tone} />
+            {other ? (
+              <View style={styles.overlap}>
+                <CardAvatar uri={other.profile_pic_url} username={other.username} size={AVATAR_SIZE} ringColor={tone} />
+              </View>
+            ) : null}
+          </View>
+          <Text style={[styles.score, { color: tone, textShadowColor: `${tone}AA` }]}>{scoreText}</Text>
+          {pct !== null ? <Text style={styles.scoreLabel}>{localeUpper(t("Match"))}</Text> : null}
+        </View>
+      }
+      body={
+        <View>
+          {title ? (
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
+          ) : null}
+          <Text style={[styles.names, !title && cardText.body]} numberOfLines={1}>
+            {names}
+          </Text>
+        </View>
+      }
+      ctaLabel={t("See Details")}
+      onPress={onPress}
+      accessibilityLabel={`${t("CineMatch Sync")}: ${names}${pct !== null ? `, ${pct}%` : ""}${title ? `, ${title}` : ""}`}
+    />
   );
 }
+
+export default memo(SyncShareMessageCard);

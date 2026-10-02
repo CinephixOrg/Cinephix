@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "../../../src/components/common/TapSafePressable";
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,11 +23,14 @@ import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeade
 import type { PhotoViewerAction } from "../../../src/components/profile/ProfilePhotoViewerModal";
 import PublicProfileCategoryTabs from "../../../src/components/profile/PublicProfileCategoryTabs";
 import PublicProfileDrawerContent from "../../../src/components/profile/PublicProfileDrawerContent";
+import BlockedProfileState from "../../../src/components/safety/BlockedProfileState";
+import { useBlockedIds } from "../../../src/hooks/useBlocked";
 import UserSharePickerModal from "../../../src/components/UserSharePickerModal";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import type { CineGraphData, Favorites, FollowStatus, PublicProfile } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
+import { snippet, topGenresFrom } from "../../../src/utils/shareCards";
 
 export default function PublicProfileScreen() {
   const { colors } = useTheme();
@@ -65,6 +69,9 @@ export default function PublicProfileScreen() {
   const router = useRouter();
   const { refreshConversations } = useChat();
   const { showToast } = useToast();
+  // Someone you blocked opens as "You blocked this user" with Unblock
+  // (someone who blocked you is simply not found — the server says so).
+  const iBlockedThem = useBlockedIds().has(id ?? "");
   const [sharePickerVisible, setSharePickerVisible] = useState(false);
   const [sharingProfile, setSharingProfile] = useState(false);
 
@@ -132,7 +139,7 @@ export default function PublicProfileScreen() {
 
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
+      headerRight: iBlockedThem ? () => null : () => (
         <Pressable
           onPress={() => setDrawerOpen((prev) => !prev)}
           hitSlop={8}
@@ -144,7 +151,7 @@ export default function PublicProfileScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, colors, t]);
+  }, [navigation, colors, t, iBlockedThem]);
 
   // Opening the drawer warms all three pages behind it, so whichever one is
   // tapped renders its content straight away instead of a placeholder.
@@ -169,7 +176,7 @@ export default function PublicProfileScreen() {
   // other person added since your last visit still shows up.
   useFocusEffect(
     useCallback(() => {
-      if (!id || id === user?._id) return;
+      if (!id || id === user?._id || iBlockedThem) return;
       let cancelled = false;
 
       const apply = (bundle: PublicProfileBundle) => {
@@ -210,11 +217,15 @@ export default function PublicProfileScreen() {
       return () => {
         cancelled = true;
       };
-    }, [id, user?._id])
+    }, [id, user?._id, iBlockedThem])
   );
 
   if (id && id === user?._id) {
     return <Redirect href="/profile" />;
+  }
+
+  if (id && iBlockedThem) {
+    return <BlockedProfileState userId={id} />;
   }
 
   if (loading) {
@@ -327,6 +338,11 @@ export default function PublicProfileScreen() {
               username: profile.username,
               profile_pic_url: profile.profile_pic_url,
               accountTier: profile.accountTier,
+              // A snapshot for the chat card: a line of bio, followers, and
+              // what they watch most (this page's CineGraph, already loaded).
+              bio: snippet(profile.bio),
+              followersCount: profile.followers.length,
+              topGenres: topGenresFrom(cineGraph),
             },
           });
         })
@@ -364,7 +380,9 @@ export default function PublicProfileScreen() {
         open={drawerOpen}
         onOpen={() => setDrawerOpen(true)}
         onClose={() => setDrawerOpen(false)}
-        renderDrawerContent={() => <PublicProfileDrawerContent userId={id} onNavigate={() => setDrawerOpen(false)} />}
+        renderDrawerContent={() => (
+          <PublicProfileDrawerContent userId={id} username={profile?.username} isOfficial={profile?.isOfficial} onNavigate={() => setDrawerOpen(false)} />
+        )}
       >
         <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent} onScroll={handleScroll} scrollEventThrottle={200}>
           <ProfileHeaderInstagram

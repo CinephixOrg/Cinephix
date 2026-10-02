@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import {
   buildPushMessage,
+  buildTicketPushMessage,
   createCooldown,
   isExpoPushToken,
   readReceipts,
@@ -69,6 +70,44 @@ export function pushNotification(notification) {
   inFlight.add(delivery);
 }
 
+/**
+ * Tells someone their support ticket moved on: a moderator answered it, or
+ * changed its status (controllers/ticketController.js). Background, like
+ * every other push — answering a ticket never waits on Expo.
+ */
+export function pushTicketUpdate(ticket, { replied, statusChanged }) {
+  if (!isEnabled() || !ticket || (!replied && !statusChanged)) return;
+  const delivery = deliverTicket(ticket, { replied, statusChanged })
+    .catch((error) => console.error("Ticket push failed:", error?.message || error))
+    .finally(() => inFlight.delete(delivery));
+  inFlight.add(delivery);
+}
+
+async function deliverTicket(ticket, { replied, statusChanged }) {
+  const devices = await devicesOf(ticket.userId);
+  if (devices.length === 0) return;
+  const badge = await Notification.countDocuments({ user: ticket.userId, read: false });
+  const messages = [];
+  const tokens = [];
+  for (const device of devices) {
+    const message = buildTicketPushMessage({ ticket, token: device.token, locale: device.locale, badge, replied, statusChanged });
+    if (!message) return;
+    messages.push(message);
+    tokens.push(device.token);
+  }
+  await send(messages, tokens);
+}
+
+/**
+ * The account's push-capable devices. Tokens are hidden from every Mongoose
+ * query (select: false on the model); this is the one place that reads them,
+ * and only them.
+ */
+async function devicesOf(userId) {
+  const account = await User.collection.findOne({ _id: userId }, { projection: { pushTokens: 1 } });
+  return (account?.pushTokens || []).filter((device) => isExpoPushToken(device.token));
+}
+
 /** Resolves once every push started so far has been handed to Expo. For scripts. */
 export async function flushPushDeliveries() {
   await Promise.allSettled([...inFlight]);
@@ -79,13 +118,10 @@ async function deliver(notification) {
     return;
   }
 
-  const [recipient, sender] = await Promise.all([
-    // Tokens are hidden from every Mongoose query (select: false on the model);
-    // this is the one place that reads them, and only them.
-    User.collection.findOne({ _id: notification.user }, { projection: { pushTokens: 1 } }),
+  const [devices, sender] = await Promise.all([
+    devicesOf(notification.user),
     User.findById(notification.sender).select("username profile_pic_url").lean(),
   ]);
-  const devices = (recipient?.pushTokens || []).filter((device) => isExpoPushToken(device.token));
   if (devices.length === 0 || !sender) return;
 
   const badge = await Notification.countDocuments({ user: notification.user, read: false });
@@ -98,6 +134,11 @@ async function deliver(notification) {
     tokens.push(device.token);
   }
 
+  await send(messages, tokens);
+}
+
+/** Hands a batch to Expo, in its chunks, and retires whatever it rejects. */
+async function send(messages, tokens) {
   let offset = 0;
   for (const chunk of expo.chunkPushNotifications(messages)) {
     const chunkTokens = tokens.slice(offset, offset + chunk.length);

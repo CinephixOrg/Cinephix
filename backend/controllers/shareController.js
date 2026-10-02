@@ -101,7 +101,7 @@ const TOP_VIEWERS_COUNT = 5;
 // after a real concern was raised: nothing stopped someone from editing
 // their review and hitting "Save and Share" over and over, flooding the
 // feed with 5-10 near-duplicate posts about one title in a few minutes.
-// Only gates *sharing* a review to Medya, never plain saving/editing one —
+// Only gates *sharing* a review to Media, never plain saving/editing one —
 // editing your own review privately has no feed-spam angle at all. Editing
 // the text of an *already-shared* review post is explicitly out of scope
 // for this round (a future "edit post" feature, not built yet) — this is
@@ -109,9 +109,9 @@ const TOP_VIEWERS_COUNT = 5;
 const REVIEW_SHARE_COOLDOWN_MS = 60 * 60 * 1000;
 
 // Same reasoning as REVIEW_SHARE_COOLDOWN_MS above, for repeat-recommending
-// the same title to Medya — see the "recommendation" branch of createShare
+// the same title to Media — see the "recommendation" branch of createShare
 // below for the direct ask this exists to satisfy (independent per-target
-// cooldowns: Medya/person/group don't block each other, only the exact
+// cooldowns: Media/person/group don't block each other, only the exact
 // same target does).
 const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
 
@@ -153,7 +153,7 @@ export const createShare = asyncHandler(async (req, res) => {
     // unpopulated `user` rendered as a "?" fallback avatar with no username
     // for the few seconds until the next real feed fetch replaced it.
     await share.populate("user", "username profile_pic_url accountTier isOfficial");
-    return sendSuccess(res, share, "Shared to Medya", 201);
+    return sendSuccess(res, share, "Shared to Media", 201);
   }
 
   if (type === "review") {
@@ -194,7 +194,7 @@ export const createShare = asyncHandler(async (req, res) => {
     });
     // Populated for the reason the FIRST createShare branch above explains.
     await share.populate("user", "username profile_pic_url accountTier isOfficial");
-    return sendSuccess(res, share, "Shared to Medya", 201);
+    return sendSuccess(res, share, "Shared to Media", 201);
   }
 
   if (type === "recommendation") {
@@ -204,13 +204,13 @@ export const createShare = asyncHandler(async (req, res) => {
     }
 
     // Same anti-spam shape as REVIEW_SHARE_COOLDOWN_MS above, applied to
-    // repeat-recommending the SAME title to Medya — direct ask: recommending
-    // to Medya, a person, and a group in the same sitting must all still
+    // repeat-recommending the SAME title to Media — direct ask: recommending
+    // to Media, a person, and a group in the same sitting must all still
     // work (independent targets), only re-recommending the exact same
     // title to the SAME target within the window is blocked. The person/
     // group equivalents of this check live in conversationController.js's/
     // groupController.js's own sendMessage, scoped to their own room
-    // instead of Medya.
+    // instead of Media.
     const recentRecommendationOfSameTitle = await Share.findOne({
       user: userId,
       type: "recommendation",
@@ -223,7 +223,7 @@ export const createShare = asyncHandler(async (req, res) => {
       .lean();
     if (recentRecommendationOfSameTitle) {
       const retryAfterMs = recentRecommendationOfSameTitle.createdAt.getTime() + RECOMMENDATION_COOLDOWN_MS - Date.now();
-      return sendError(res, "You just recommended this to Medya. Try again later.", 429, { retryAfterMs });
+      return sendError(res, "You just recommended this to Media. Try again later.", 429, { retryAfterMs });
     }
 
     const contentData = await hydrateContentData(contentId, contentType);
@@ -239,7 +239,7 @@ export const createShare = asyncHandler(async (req, res) => {
     });
     // Populated for the reason the FIRST createShare branch above explains.
     await share.populate("user", "username profile_pic_url accountTier isOfficial");
-    return sendSuccess(res, share, "Shared to Medya", 201);
+    return sendSuccess(res, share, "Shared to Media", 201);
   }
 
   if (type === "list") {
@@ -265,7 +265,7 @@ export const createShare = asyncHandler(async (req, res) => {
     });
     // Populated for the reason the FIRST createShare branch above explains.
     await share.populate("user", "username profile_pic_url accountTier isOfficial");
-    return sendSuccess(res, share, "Shared to Medya", 201);
+    return sendSuccess(res, share, "Shared to Media", 201);
   }
 
   if (type === "poll") {
@@ -318,7 +318,7 @@ export const createShare = asyncHandler(async (req, res) => {
     const share = await Share.create({ user: userId, type: "poll", pollData: { question: "", options } });
     // Populated for the reason the FIRST createShare branch above explains.
     await share.populate("user", "username profile_pic_url accountTier isOfficial");
-    return sendSuccess(res, share, "Shared to Medya", 201);
+    return sendSuccess(res, share, "Shared to Media", 201);
   }
 
   if (type === "badge") {
@@ -381,7 +381,7 @@ export const createShare = asyncHandler(async (req, res) => {
     });
     // Populated for the reason the FIRST createShare branch above explains.
     await share.populate("user", "username profile_pic_url accountTier isOfficial");
-    return sendSuccess(res, share, "Shared to Medya", 201);
+    return sendSuccess(res, share, "Shared to Media", 201);
   }
 
   return sendError(res, 'type must be "analysis", "review", "recommendation", "list", or "badge"', 400);
@@ -958,6 +958,8 @@ export const getShareById = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, "Share not found", 404);
   const share = await viewerShareQuery(Share.findOne({ _id: req.params.id }));
   if (!share) return sendError(res, "Share not found", 404);
+  // A post by someone hidden by a block reads as not found, even by link.
+  if (req.hiddenUsers?.has(String(share.user?._id ?? share.user))) return sendError(res, "Share not found", 404);
   const [withMeta] = await withViewerMeta([share], req.user.id);
   sendSuccess(res, withMeta, "Share fetched");
 });

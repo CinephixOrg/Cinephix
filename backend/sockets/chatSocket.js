@@ -6,6 +6,7 @@ import Conversation from "../models/Conversation.js";
 import { notifyMessage } from "../services/notifications.js";
 import { setIo } from "../services/socketService.js";
 import { markOnline, markOffline } from "../services/presenceService.js";
+import { hiddenUserIds } from "../services/blockService.js";
 
 /**
  * Generic socket handler for all chat rooms.
@@ -179,6 +180,8 @@ export const setupChat = (io) => {
               lastMessage: text.trim(),
               lastMessageAt: new Date(),
               senderId: senderId,
+              // Lets an open inbox label the preview ("ana: …") without refetching.
+              senderUsername: socket.user.username,
             };
 
             memberIds.forEach((memberId) => {
@@ -210,9 +213,10 @@ async function canAccessRoom(userId, roomType, roomId) {
       .select("participants")
       .lean();
     if (!conversation) return false;
-    return conversation.participants.some(
-      (p) => p.toString() === userId.toString()
-    );
+    if (!conversation.participants.some((p) => p.toString() === userId.toString())) return false;
+    // No live chat between people where either has blocked the other.
+    const hidden = await hiddenUserIds(userId);
+    return !conversation.participants.some((p) => hidden.has(p.toString()));
   }
 
   return false;

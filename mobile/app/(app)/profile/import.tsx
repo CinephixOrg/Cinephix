@@ -3,12 +3,12 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Pressable from "../../../src/components/common/TapSafePressable";
 import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";

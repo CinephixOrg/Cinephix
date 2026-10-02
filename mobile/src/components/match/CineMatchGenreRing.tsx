@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { Animated, Easing, View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import Svg, { Circle, Line } from "react-native-svg";
 import UserAvatar from "../UserAvatar";
 import type { CineGraphStats } from "../../types";

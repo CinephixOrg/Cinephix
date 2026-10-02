@@ -19,7 +19,7 @@ function TabIcon(focusedName: IconName, unfocusedName: IconName) {
 
 export default function AppLayout() {
   const { user } = useAuth();
-  const { totalUnread } = useChat();
+  const { unreadChats } = useChat();
   const { t } = useTranslation();
   const { colors } = useTheme();
 
@@ -54,6 +54,9 @@ export default function AppLayout() {
           headerShown: false,
           tabBarShowLabel: false,
           tabBarStyle: { backgroundColor: colors.base200, borderTopColor: colors.border },
+          // Typing shouldn't push the tab bar up above the keyboard (it sat
+          // between a chat's composer and the keyboard).
+          tabBarHideOnKeyboard: true,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.placeholder,
           tabBarLabelStyle: { fontFamily: fonts.medium },
@@ -61,7 +64,7 @@ export default function AppLayout() {
       >
         <Tabs.Screen
           name="home"
-          options={{ title: t("Medya"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
+          options={{ title: t("Media"), tabBarIcon: TabIcon("newspaper", "newspaper-outline") }}
         />
         <Tabs.Screen
           name="search"
@@ -100,7 +103,7 @@ export default function AppLayout() {
           options={{
             title: t("Socials"),
             tabBarIcon: TabIcon("people", "people-outline"),
-            tabBarBadge: totalUnread > 0 ? totalUnread : undefined,
+            tabBarBadge: unreadChats > 0 ? unreadChats : undefined,
           }}
         />
         <Tabs.Screen

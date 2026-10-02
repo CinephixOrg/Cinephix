@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
+import { Animated, Easing, View, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import MatchAvatarRing from "./MatchAvatarRing";
 import { useTheme } from "../../context/ThemeContext";

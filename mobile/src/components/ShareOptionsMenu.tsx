@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import { View, Text, Pressable, Modal, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "./common/GestureModal";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../context/ThemeContext";
@@ -14,7 +17,7 @@ interface Props {
 }
 
 // Small 2-option popover shared by every "share" entry point that already
-// has a real DM/community picker (Analysis, Recommendation) — "Medya'da
+// has a real DM/community picker (Analysis, Recommendation) — "Media'da
 // Paylaş" is the one genuinely new option, "Kişiye/Topluluğa Gönder" just
 // opens the existing UserSharePickerModal flow unchanged. Reviews don't use
 // this component — they get a simpler Save/Save+Share toggle instead,

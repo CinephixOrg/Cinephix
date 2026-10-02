@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
+import Pressable from "./common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import UserAvatar from "./UserAvatar";
@@ -12,6 +13,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
 import { useTranslation } from "react-i18next";
 import { fonts } from "../theme/typography";
+import MoreButton from "./safety/MoreButton";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w185";
 
@@ -118,6 +120,7 @@ export default function ReviewFeedCard({ review, basePath }: Props) {
                 {hasLiked ? t("Liked") : t("Like?")} {likeCount}
               </Text>
             </Pressable>
+            <MoreButton entityType="Review" entityId={review._id} author={review.user} size={16} />
           </View>
 
           <Pressable style={styles.reviewerRow} onPress={() => router.push(`/user/${review.user._id}`)}>

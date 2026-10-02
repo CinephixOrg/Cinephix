@@ -5,12 +5,13 @@ import {
   Image,
   ScrollView,
   FlatList,
-  Modal,
   TextInput,
   ActivityIndicator,
-  Pressable,
   StyleSheet,
 } from "react-native";
+import Pressable from "../components/common/TapSafePressable";
+// A Modal needs its own gesture root for the app's Pressables to work inside it.
+import Modal from "../components/common/GestureModal";
 import { useFocusEffect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -52,6 +53,8 @@ import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
+import { genreNames } from "../utils/recommend";
+import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../constants/contentGenreIds";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 // Smaller than POSTER_BASE — every "Similar" rail poster is a small
@@ -772,7 +775,7 @@ export default function ContentDetailScreen() {
       const contentData = {
         title,
         posterUrl: posterPath ?? undefined,
-        genres: [] as string[],
+        genres: genreNames(content?.genre_ids, type === "movie" ? MOVIE_GENRE_OPTIONS : SERIES_GENRE_OPTIONS),
         releaseYear: releaseDate ? Number(releaseDate.slice(0, 4)) : undefined,
         overview,
         rating: content?.vote_average,
@@ -820,10 +823,10 @@ export default function ContentDetailScreen() {
       const share = await createShare({ type: "recommendation", contentId: id, contentType: type });
       announceNewShare(share);
       setGiftMenuVisible(false);
-      showToast(t("Shared to Medya"));
+      showToast(t("Shared to Media"));
     } catch (e: any) {
       // Surfaces the backend's own cooldown message ("You just recommended
-      // this to Medya...") when that's the reason, same convention
+      // this to Media...") when that's the reason, same convention
       // ReviewWriteScreen.tsx's own Save-and-Share error handling uses.
       showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
     } finally {

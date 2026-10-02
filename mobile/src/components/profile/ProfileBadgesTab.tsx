@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Image, Pressable, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, Image, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { getAllBadgesForUser } from "../../api/badgeService";
@@ -433,7 +434,7 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
         const share = await createShare({ type: "badge", badgeFamily: target.family as any, badgeKey: target.key, badgeTier: target.tier });
         announceNewShare(share);
         setSharedKeys((prev) => new Set(prev).add(key));
-        showToast(t("Shared to Medya"));
+        showToast(t("Shared to Media"));
       } catch (err: any) {
         // 409 = already shared (e.g. a race with the earn popup) — same
         // end state the user wants, so this still marks it shared.

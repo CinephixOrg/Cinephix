@@ -15,6 +15,9 @@ export type NotificationDestination =
   // it is from the first frame, while the conversation is still loading.
   | { kind: "chat"; userId: string; username?: string; avatar?: string }
   | { kind: "share"; authorId: string; shareId: string }
+  // A support ticket that was answered or moved on — push only; there is no
+  // in-app notification row for it (the ticket itself carries its own dot).
+  | { kind: "ticket"; ticketId: string }
   | { kind: "none" };
 
 type Routable = {
@@ -81,6 +84,8 @@ export function hrefFor(destination: NotificationDestination): NotificationHref 
       };
     case "share":
       return { pathname: "/user/[id]/shares/[shareId]", params: { id: destination.authorId, shareId: destination.shareId } };
+    case "ticket":
+      return { pathname: "/profile/support/[id]", params: { id: destination.ticketId } };
     case "none":
       return null;
   }
