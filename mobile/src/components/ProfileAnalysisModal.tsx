@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, type LayoutChangeEvent } from "react-native";
 // Its gesture root comes with it (a Modal is its own native window).
 import Modal from "./common/GestureModal";
@@ -19,6 +19,9 @@ import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useRecentShares } from "../context/RecentSharesContext";
 import { useToast } from "../context/ToastContext";
+import { useComposeTutorial } from "../context/ComposeTutorialContext";
+import TutorialSpotlight from "./tutorial/TutorialSpotlight";
+import TutorialInfoBox from "./tutorial/TutorialInfoBox";
 import type { ProfileAnalysis, ProfileAnalysisItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import type { ColorPalette } from "../theme/palettes";
@@ -86,6 +89,18 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
   const [sending, setSending] = useState(false);
   const [sharingToMedia, setSharingToMedia] = useState(false);
   const [deckWidth, setDeckWidth] = useState(0);
+
+  // Last step of the "Analyze" compose-tutorial walkthrough (Shares' "+"
+  // menu → Profile's Analyze Profile button → here) — this modal opens from
+  // both a fresh analysis and tapping an existing history card, so it
+  // advances the step itself the moment it actually opens, rather than
+  // relying on whichever path led here to do it.
+  const { tutorial: composeTutorial, setAnalyzeStep, endTutorial: endComposeTutorial } = useComposeTutorial();
+  useEffect(() => {
+    if (visible && composeTutorial?.id === "analyze") setAnalyzeStep("tapShare");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+  const showShareTutorial = composeTutorial?.id === "analyze" && composeTutorial.step === "tapShare";
 
   const handleShareToMedia = async () => {
     if (!data) return;
@@ -194,15 +209,31 @@ export default function ProfileAnalysisModal({ visible, onClose, data, shareable
             )}
           </View>
 
+          {showShareTutorial && (
+            <TutorialInfoBox text={t("Tap the share button to post this to Media.")} onDismiss={endComposeTutorial} />
+          )}
           <View style={styles.buttonRow}>
             {shareable && data && (
-              <Pressable
-                style={[styles.iconButton, styles.shareButton]}
-                onPress={() => setOptionsVisible(true)}
-                accessibilityLabel={t("Share")}
-              >
-                <Ionicons name="share-social-outline" size={22} color={colors.primaryContent} />
-              </Pressable>
+              <TutorialSpotlight active={showShareTutorial} borderRadius={26}>
+                <Pressable
+                  style={[styles.iconButton, styles.shareButton]}
+                  onPress={() => {
+                    // Arrived via the "Analyze" compose-tutorial — using +
+                    // already answered "share to Media," same reasoning as
+                    // every other tutorial's final step, so skip
+                    // ShareOptionsMenu and do it directly.
+                    if (showShareTutorial) {
+                      handleShareToMedia();
+                      endComposeTutorial();
+                      return;
+                    }
+                    setOptionsVisible(true);
+                  }}
+                  accessibilityLabel={t("Share")}
+                >
+                  <Ionicons name="share-social-outline" size={22} color={colors.primaryContent} />
+                </Pressable>
+              </TutorialSpotlight>
             )}
             <Pressable style={[styles.iconButton, styles.closeButton]} onPress={onClose} accessibilityLabel={t("Close")}>
               <Ionicons name="close" size={24} color={colors.baseContent} />

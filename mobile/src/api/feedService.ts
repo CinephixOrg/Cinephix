@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { AccountTier, ContentType, FeedResult, PopularThisWeekItem, LeaderboardResult, PeopleLeaderboardResult, ActivityFeedResult, PodiumPlacement } from "../types";
+import type { AccountTier, ContentType, FeedResult, PopularThisWeekItem, LeaderboardResult, PeopleLeaderboardResult, ActivityFeedResult, PodiumPlacement, GroupAnnouncement } from "../types";
 
 export interface RecommendationItem {
   _id: string;
@@ -29,14 +29,30 @@ export interface NewReleaseItem {
   first_air_date?: string;
 }
 
-export interface CurrentlyWatchingFeedItem {
-  user: { _id: string; username: string; profile_pic_url?: string; accountTier?: AccountTier };
-  contentId: string;
-  contentType: ContentType;
-  title: string;
-  posterUrl?: string | null;
-  startedAt: string;
-}
+// Two kinds of row in the same rail: a person's own personal status, or a
+// community's live watch party (CommunityHubTab.tsx's own live-hero
+// concept, surfaced here too — direct ask, "insanlar görsün ki katılsın").
+export type CurrentlyWatchingFeedItem =
+  | {
+      kind: "user";
+      user: { _id: string; username: string; profile_pic_url?: string; accountTier?: AccountTier };
+      contentId: string;
+      contentType: ContentType;
+      title: string;
+      posterUrl?: string | null;
+      startedAt: string;
+    }
+  | {
+      kind: "watchparty";
+      group: { _id: string; name: string; slug: string; accentColor?: string | null; coverImage?: string };
+      partyId: string;
+      contentId: string;
+      contentType: ContentType;
+      title: string;
+      posterUrl?: string | null;
+      startedAt: string;
+      rsvpCount: number;
+    };
 
 export async function getPopularThisWeek(limit = 20, type?: ContentType): Promise<PopularThisWeekItem[]> {
   const res = await API.get(API_ROUTES.FEED.POPULAR_THIS_WEEK, { params: { limit, type } });
@@ -80,6 +96,13 @@ export async function getCurrentlyWatchingFeed(
 ): Promise<{ items: CurrentlyWatchingFeedItem[] }> {
   const res = await API.get(API_ROUTES.FEED.CURRENTLY_WATCHING, { params: { scope, limit } });
   return res.data;
+}
+
+// Discover's "Community Announcements" rail — member-only, never the
+// Shares/Media feed (feedController.js's getCommunityAnnouncements).
+export async function getCommunityAnnouncements(limit = 20): Promise<GroupAnnouncement[]> {
+  const res = await API.get(API_ROUTES.FEED.COMMUNITY_ANNOUNCEMENTS, { params: { limit } });
+  return res.data.items;
 }
 
 export async function getLeaderboard(type?: ContentType): Promise<LeaderboardResult> {

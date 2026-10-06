@@ -12,6 +12,11 @@ import PageSizeDropdown from "../PageSizeDropdown";
 import type { ProfileAnalysis, ProfileAnalysisHistoryEntry } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
+import { useComposeTutorial } from "../../context/ComposeTutorialContext";
+import TutorialSpotlight from "../tutorial/TutorialSpotlight";
+import TutorialInfoBox from "../tutorial/TutorialInfoBox";
 
 interface Props {
   // Fires both when a fresh analysis just completed and when an existing
@@ -25,6 +30,13 @@ function ProfileAnalysesTab({ onViewAnalysis }: Props) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
+  // "Analyze" compose-tutorial walkthrough (Shares' "+" menu) — the next
+  // step (ProfileAnalysisModal's own Share button, skipping its picker)
+  // advances itself once that modal opens, since `onViewAnalysis` fires
+  // from both a fresh analysis AND tapping an existing history card below —
+  // this tab only needs to highlight its own button.
+  const { tutorial: composeTutorial, endTutorial: endComposeTutorial } = useComposeTutorial();
+  const showAnalyzeTutorial = composeTutorial?.id === "analyze" && composeTutorial.step === "tapAnalyze";
 
   const styles = useMemo(
     () =>
@@ -167,6 +179,11 @@ function ProfileAnalysesTab({ onViewAnalysis }: Props) {
   };
 
   if (!hasAccess) {
+    // The real "bottom of this tab" for a Free-tier viewer — the full
+    // branch below is Plus/Premium/dev-only (hasAccess), the exact
+    // population AdBanner itself always no-ops for, so placing the ad
+    // there instead would never actually show to anyone. This upsell card
+    // is the only state a Free viewer of this tab ever sees.
     return (
       <View style={styles.container}>
         <View style={styles.upsellCard}>
@@ -180,27 +197,31 @@ function ProfileAnalysesTab({ onViewAnalysis }: Props) {
             <Text style={styles.upsellButtonText}>{t("Upgrade Account")}</Text>
           </Pressable>
         </View>
+        <AdBanner unitId={AD_UNIT_IDS.PROFILE_ANALYSES_BANNER} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Pressable
-        style={styles.analyzeButton}
-        onPress={handleAnalyze}
-        disabled={analyzing || Boolean(cooldownUntil)}
-      >
-        {analyzing ? (
-          <ActivityIndicator color={colors.baseContent} />
-        ) : cooldownUntil ? (
-          <Text style={styles.analyzeButtonText}>
-            {t("Available in")} {formatCooldown(cooldownUntil - Date.now())}
-          </Text>
-        ) : (
-          <Text style={styles.analyzeButtonText}>{t("Analyze Profile")}</Text>
-        )}
-      </Pressable>
+      <TutorialSpotlight active={showAnalyzeTutorial}>
+        <Pressable
+          style={styles.analyzeButton}
+          onPress={handleAnalyze}
+          disabled={analyzing || Boolean(cooldownUntil)}
+        >
+          {analyzing ? (
+            <ActivityIndicator color={colors.baseContent} />
+          ) : cooldownUntil ? (
+            <Text style={styles.analyzeButtonText}>
+              {t("Available in")} {formatCooldown(cooldownUntil - Date.now())}
+            </Text>
+          ) : (
+            <Text style={styles.analyzeButtonText}>{t("Analyze Profile")}</Text>
+          )}
+        </Pressable>
+      </TutorialSpotlight>
+      {showAnalyzeTutorial && <TutorialInfoBox text={t("Tap here to analyze your profile.")} onDismiss={endComposeTutorial} />}
       <Text style={styles.hint}>
         {t("Generates a fresh AI breakdown of your taste based on your ratings and watch history.")}
       </Text>

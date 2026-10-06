@@ -21,6 +21,7 @@ import { ChatProvider } from "../src/context/ChatContext";
 import { FollowGraphProvider } from "../src/context/FollowGraphContext";
 import { WatchlistGraphProvider } from "../src/context/WatchlistGraphContext";
 import { RecentSharesProvider } from "../src/context/RecentSharesContext";
+import { ComposeTutorialProvider } from "../src/context/ComposeTutorialContext";
 import { ProfileProvider } from "../src/context/ProfileContext";
 import { NetworkProvider } from "../src/context/NetworkContext";
 import { ToastProvider } from "../src/context/ToastContext";
@@ -29,6 +30,7 @@ import { ThemeProvider, useTheme, resolveInitialTheme } from "../src/context/The
 import type { ThemeName } from "../src/theme/palettes";
 import { PALETTES, DEFAULT_THEME } from "../src/theme/palettes";
 import { initI18n } from "../src/i18n";
+import { AdsConsentProvider } from "../src/context/AdsConsentContext";
 import { fonts } from "../src/theme/typography";
 import OfflineBanner from "../src/components/OfflineBanner";
 import Toast from "../src/components/Toast";
@@ -136,6 +138,56 @@ function RootNavigator() {
             headerTintColor: colors.baseContent,
           }}
         />
+        {/* These four admin-creation screens had no entry here at all, so
+            they rendered with no header, no back button, and no
+            safe-area-aware top inset — only ever closable via their own
+            save-success flow's router.back(). Same title-less header as
+            list-editor's own, which gives both a native back arrow and a
+            top inset for free. */}
+        <Stack.Screen
+          name="create-poll"
+          options={{
+            headerShown: true,
+            title: "",
+            headerStyle: { backgroundColor: colors.base100 },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        <Stack.Screen
+          name="group-content-picker"
+          options={{
+            headerShown: true,
+            title: "",
+            headerStyle: { backgroundColor: colors.base100 },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        <Stack.Screen
+          name="schedule-watch-party"
+          options={{
+            headerShown: true,
+            title: "",
+            headerStyle: { backgroundColor: colors.base100 },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        <Stack.Screen
+          name="group-list-editor"
+          options={{
+            headerShown: true,
+            title: "",
+            headerStyle: { backgroundColor: colors.base100 },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
         <Stack.Screen
           name="network"
           options={{
@@ -186,6 +238,12 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        {/* Outermost and independent of auth/theme — consent needs to start
+            resolving as early in boot as possible, not gated behind a
+            signed-in user, since the Mobile Ads SDK itself must not
+            initialize before it does (see AdsConsentContext's own
+            comment). */}
+        <AdsConsentProvider>
         <ThemeProvider initialTheme={initialTheme}>
           <ToastProvider>
             <BadgeEarnedProvider>
@@ -194,15 +252,17 @@ export default function RootLayout() {
                   <FollowGraphProvider>
                     <WatchlistGraphProvider>
                       <RecentSharesProvider>
-                        <ProfileProvider>
-                          <NotificationProvider>
-                            <ChatProvider>
-                              <SafetyProvider>
-                                <RootNavigator />
-                              </SafetyProvider>
-                            </ChatProvider>
-                          </NotificationProvider>
-                        </ProfileProvider>
+                        <ComposeTutorialProvider>
+                          <ProfileProvider>
+                            <NotificationProvider>
+                              <ChatProvider>
+                                <SafetyProvider>
+                                  <RootNavigator />
+                                </SafetyProvider>
+                              </ChatProvider>
+                            </NotificationProvider>
+                          </ProfileProvider>
+                        </ComposeTutorialProvider>
                       </RecentSharesProvider>
                     </WatchlistGraphProvider>
                   </FollowGraphProvider>
@@ -211,6 +271,7 @@ export default function RootLayout() {
             </BadgeEarnedProvider>
           </ToastProvider>
         </ThemeProvider>
+        </AdsConsentProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

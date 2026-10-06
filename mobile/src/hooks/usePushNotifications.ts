@@ -69,12 +69,17 @@ export function usePushNotifications() {
     pending.current = null;
     if (!isForViewer(data, viewerId)) return;
 
-    // A ticket update opens that ticket; everything else has a row in the
-    // notification feed, and opens exactly what the row opens.
+    // A ticket update opens that ticket, a watch-party reminder opens that
+    // room directly; everything else has a row in the notification feed,
+    // and opens exactly what the row opens.
     const destination: NotificationDestination =
       data.type === "ticket_update"
         ? data.ticketId
           ? { kind: "ticket", ticketId: data.ticketId }
+          : { kind: "none" }
+        : data.type === "watchparty_reminder"
+        ? data.groupSlug && data.partyId
+          ? { kind: "watchparty", groupSlug: data.groupSlug, partyId: data.partyId }
           : { kind: "none" }
         : destinationFor(toRoutable({ ...data, type: data.type }), viewerId);
     const href = hrefFor(destination);

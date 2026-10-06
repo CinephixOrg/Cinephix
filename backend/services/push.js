@@ -71,6 +71,40 @@ export function pushNotification(notification) {
 }
 
 /**
+ * A push with no Notification document behind it at all — for an event
+ * with no "sender" to speak of (a scheduled system reminder, not
+ * something a specific person did), which the Notification model's own
+ * required `sender` field can't represent. `data` rides along as the
+ * push's payload (mobile's pushRouting.ts reads it on tap); same
+ * "background, never blocks the caller" shape as every other send here.
+ * Used by services/watchPartyReminders.js.
+ */
+export function sendRawPush(userId, buildMessage) {
+  if (!isEnabled()) return;
+  const delivery = deliverRaw(userId, buildMessage)
+    .catch((error) => console.error("Raw push failed:", error?.message || error))
+    .finally(() => inFlight.delete(delivery));
+  inFlight.add(delivery);
+}
+
+// `buildMessage(locale)` runs once per device — same per-device loop as
+// deliver() above — so each one gets its own language, not a single
+// flat string for every device on the account.
+async function deliverRaw(userId, buildMessage) {
+  const devices = await devicesOf(userId);
+  if (devices.length === 0) return;
+  const messages = [];
+  const tokens = [];
+  for (const device of devices) {
+    const built = buildMessage(device.locale);
+    if (!built) continue;
+    messages.push({ to: device.token, sound: "default", ...built });
+    tokens.push(device.token);
+  }
+  if (messages.length > 0) await send(messages, tokens);
+}
+
+/**
  * Tells someone their support ticket moved on: a moderator answered it, or
  * changed its status (controllers/ticketController.js). Background, like
  * every other push — answering a ticket never waits on Expo.

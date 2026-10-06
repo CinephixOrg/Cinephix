@@ -4,7 +4,6 @@ import { View, Text, FlatList, ActivityIndicator, StyleSheet, RefreshControl } f
 import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "expo-router";
 import { getShareFeed, toggleShareLike } from "../../api/shareService";
 import { getSuggestions } from "../../api/userService";
 import ShareCard from "../ShareCard";
@@ -12,14 +11,16 @@ import OnlineFriendsBar from "./OnlineFriendsBar";
 import PeoplePodium from "../PeoplePodium";
 import CurrentlyWatchingSection from "./CurrentlyWatchingSection";
 import SuggestedUsersBox from "../SuggestedUsersBox";
-import PostComposeMenu, { type ComposeCategory } from "./PostComposeMenu";
+import PostComposeMenu from "./PostComposeMenu";
 import { SkeletonShareCard } from "../Skeleton";
 import type { Share, SuggestedUser } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useRecentShares } from "../../context/RecentSharesContext";
-import { useToast } from "../../context/ToastContext";
 import { fonts } from "../../theme/typography";
 import { useWithoutBlocked } from "../../hooks/useBlocked";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
+import { useComposeCategories } from "../../hooks/useComposeCategories";
 
 const shareAuthor = (share: Share) => share.user?._id;
 
@@ -33,8 +34,13 @@ const shareAuthor = (share: Share) => share.user?._id;
 // computed here and passed down as an already-sliced array, which meant a
 // fresh array reference on every render and no way for that box to ever be
 // memoized — see that component's own doc comment).
-type FeedRow = { kind: "share"; share: Share } | { kind: "suggested"; occurrence: number };
+type FeedRow = { kind: "share"; share: Share } | { kind: "suggested"; occurrence: number } | { kind: "ad"; occurrence: number };
 const SUGGESTED_INTERVAL = 5;
+// "Optimum sayıda" direct ask — same every-6th-post cadence as every other
+// inline card-feed placement in this app. Independent of SUGGESTED_INTERVAL
+// (its own counter/occurrence) — the two can land on the same post and
+// simply stack as two rows after it, which is fine.
+const AD_INTERVAL = 6;
 
 const PAGE_LIMIT = 20;
 
@@ -195,83 +201,12 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   const cycleScope = () => setScope((prev) => (prev === "all" ? "following" : "all"));
 
   // "+" compose-hub menu — a pure navigate+toast dispatcher per direct spec,
-  // never a real composer (see PostComposeMenu.tsx's own doc comment). Each
-  // category just lands the user on an existing screen with a one-line
-  // hint; what happens after that is entirely on the user.
-  const router = useRouter();
-  const { showToast } = useToast();
+  // never a real composer (see PostComposeMenu.tsx's own doc comment). The
+  // category list itself (and its ComposeTutorialContext wiring) now lives
+  // in useComposeCategories — Profile's own "+" button opens this identical
+  // menu too, direct ask, so it's no longer specific to this section.
   const [composeMenuVisible, setComposeMenuVisible] = useState(false);
-  const composeCategories: ComposeCategory[] = useMemo(
-    () => [
-      {
-        key: "recommendation",
-        icon: "gift-outline",
-        label: t("Recommendation"),
-        onPress: () => {
-          setComposeMenuVisible(false);
-          router.navigate("/search" as any);
-          showToast(t("Choose a movie or series to recommend"));
-        },
-      },
-      {
-        key: "review",
-        icon: "star-outline",
-        label: t("Review"),
-        onPress: () => {
-          setComposeMenuVisible(false);
-          router.navigate("/search" as any);
-          showToast(t("Choose a movie or series to review"));
-        },
-      },
-      {
-        key: "analyze",
-        icon: "document-text-outline",
-        label: t("Analyze"),
-        onPress: () => {
-          setComposeMenuVisible(false);
-          router.navigate("/profile?tab=analyses" as any);
-          showToast(t("Share one of your analyses"));
-        },
-      },
-      {
-        key: "poll",
-        icon: "stats-chart-outline",
-        label: t("Poll"),
-        onPress: () => {
-          setComposeMenuVisible(false);
-          router.navigate("/to-watch" as any);
-          showToast(t("Tap the poll button to create your post"));
-        },
-      },
-      {
-        key: "badge",
-        icon: "ribbon-outline",
-        label: t("Badge"),
-        onPress: () => {
-          setComposeMenuVisible(false);
-          router.navigate("/profile?tab=badges" as any);
-          showToast(t("See the badges you've earned"));
-        },
-      },
-      // 6th category, added after the fact — the one real gap the
-      // original 5 missed (Lists have their own separate "Share your
-      // list" action on ListDetailScreen.tsx's own CollectionToolbar, with
-      // no browse-then-pick landing page of its own until this pointed at
-      // one). Same "navigate + one-line hint, nothing else" rule as every
-      // other category here.
-      {
-        key: "list",
-        icon: "albums-outline",
-        label: t("List"),
-        onPress: () => {
-          setComposeMenuVisible(false);
-          router.navigate("/lists" as any);
-          showToast(t("Go to the list you want to share"));
-        },
-      },
-    ],
-    [t, router, showToast]
-  );
+  const composeCategories = useComposeCategories(() => setComposeMenuVisible(false));
 
   // Used to only ever fetch once per mount — since this section stays
   // mounted for the whole session (React.memo'd, never remounts on tab
@@ -301,11 +236,16 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
   const feedRows: FeedRow[] = useMemo(() => {
     const rows: FeedRow[] = [];
     let occurrence = 0;
+    let adOccurrence = 0;
     visibleItems.forEach((share, i) => {
       rows.push({ kind: "share", share });
       if (suggestions.length > 0 && (i + 1) % SUGGESTED_INTERVAL === 0) {
         rows.push({ kind: "suggested", occurrence });
         occurrence++;
+      }
+      if ((i + 1) % AD_INTERVAL === 0) {
+        rows.push({ kind: "ad", occurrence: adOccurrence });
+        adOccurrence++;
       }
     });
     return rows;
@@ -421,6 +361,19 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
         <FlatList
           ref={flatListRef}
           style={styles.container}
+          // Explicitly on (not just relying on Android's own default) —
+          // real perf optimization, direct ask: deep scrolls down this feed
+          // were getting janky, liking a post lagged. This was briefly set
+          // to `false` chasing a reported heart-burst clipping bug that
+          // looked like it might be this optimization clipping an
+          // absolutely-positioned overlay to a short row's measured bounds
+          // — turned out NOT to be the cause at all (see ShareCard.tsx's
+          // own heartShadow comment for the real one, an Android text-glyph
+          // clipping quirk unrelated to this prop entirely), so there's no
+          // real reason left to pay the performance cost of leaving this
+          // off on a feed that's exactly the kind of long, heavy, many-
+          // native-view scroll it exists for.
+          removeClippedSubviews
           data={feedRows}
           // Suffixed with `index` (not just `share._id`) for share rows —
           // the official Cinephix account's own posts are deliberately
@@ -436,7 +389,9 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
           // `loadMore`'s append or gets wholesale-replaced by `load`/
           // `onRefresh` — existing rows never reorder or get spliced out in
           // place, so a row's own index is as stable as its `_id` here.
-          keyExtractor={(row, index) => (row.kind === "share" ? `${row.share._id}-${index}` : `suggested-${row.occurrence}`)}
+          keyExtractor={(row, index) =>
+            row.kind === "share" ? `${row.share._id}-${index}` : row.kind === "suggested" ? `suggested-${row.occurrence}` : `ad-${row.occurrence}`
+          }
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -487,12 +442,30 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
           renderItem={({ item: row }) =>
             row.kind === "suggested" ? (
               <SuggestedUsersBox pool={suggestions} occurrence={row.occurrence} />
+            ) : row.kind === "ad" ? (
+              <AdBanner unitId={AD_UNIT_IDS.SHARES_FEED_BANNER} />
             ) : (
               <ShareCard share={row.share} basePath="/home" onToggleLike={handleToggleLike} />
             )
           }
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
+          // Real perf optimization, direct ask (deep-scroll jank + slow like
+          // response): RN's own defaults here (windowSize:21 — up to ~10
+          // screens rendered above/below the viewport, maxToRenderPerBatch:10)
+          // are tuned for plain/light rows, not this feed's own mix of
+          // image posters, gradient SVG covers (analysis/badge/official
+          // boxes), and poll bars — each mounted row here does real work.
+          // Narrower window + smaller render batches means less concurrent
+          // native-view/compositing load at any given scroll depth, and
+          // crucially caps how much stays mounted even with
+          // removeClippedSubviews recycling the rest — the actual thing
+          // that was making both scrolling AND a like's own tap-response
+          // get slower the further down this feed someone scrolled.
+          windowSize={7}
+          maxToRenderPerBatch={6}
+          updateCellsBatchingPeriod={50}
+          initialNumToRender={6}
           ListEmptyComponent={!loading ? <Text style={styles.empty}>{t("No shares yet.")}</Text> : null}
           ListFooterComponent={loadingMore ? <ActivityIndicator style={{ margin: 16 }} color={colors.primary} /> : null}
         />

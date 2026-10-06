@@ -17,9 +17,14 @@ interface Props {
   scrollX: Animated.Value;
 }
 
-const BADGE_WIDTH = 200;
-const LINE_HEIGHT = 26;
-const FONT_SIZE = 19;
+// Exported for MatchCoverCard.tsx's own static (non-animated) rendering of
+// the same LLM match_title, direct ask: identical gradient-text design and
+// line-wrapping, minus this component's stamp entrance — rather than
+// duplicating the wrapping heuristic or the gradient/SvgText setup a
+// second time, it reuses this module's own constants and wrapMatchTitle.
+export const BADGE_WIDTH = 200;
+export const LINE_HEIGHT = 26;
+export const FONT_SIZE = 19;
 const MAX_LINES = 3;
 // How far below the card's top edge the badge's own center sits — direct
 // feedback that dead-center-on-the-edge read as a touch too high.
@@ -75,7 +80,7 @@ function conceptualWordCount(tokens: string[]): number {
 // long or comma-heavy title) gets folded into the last line rather than
 // dropped — content is never truncated, just less evenly distributed in
 // that edge case.
-function wrapMatchTitle(title: string): string[] {
+export function wrapMatchTitle(title: string): string[] {
   const words = title.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
 

@@ -6,6 +6,8 @@ import CineGraphDonut from "../CineGraphDonut";
 import type { CineGraphData } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
 type SubTab = "movie" | "series";
 
@@ -60,6 +62,9 @@ function ProfileCinegraphsTab({ cineGraph, subTab, basePath = "/profile" }: Prop
           onDetailPress={(genre) => router.push(`${basePath}/genre/series/${encodeURIComponent(genre)}` as any)}
         />
       )}
+
+      {/* Direct ask: at the bottom of this tab. */}
+      <AdBanner unitId={AD_UNIT_IDS.PROFILE_CINEGRAPH_BANNER} />
     </>
   );
 }

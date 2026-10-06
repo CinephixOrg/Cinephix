@@ -1,7 +1,10 @@
 import { useMemo } from "react";
 import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
 import Pressable from "../common/TapSafePressable";
+import LiveBadge from "../common/LiveBadge";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import TierAvatarFrame from "../TierAvatarFrame";
 import type { CurrentlyWatchingFeedItem } from "../../api/feedService";
 import { timeAgo } from "../../utils/timeAgo";
@@ -20,21 +23,18 @@ interface Props {
   style?: ViewStyle;
 }
 
-// One card in Discover's "Currently Watching" rail — the WATCHER, not the
-// poster, is the dominant visual now (the avatar is the biggest element,
-// front and center), direct correction after the first version read as a
-// near-duplicate of Trending's own poster-forward cards and didn't stand
-// out as a different kind of section. The poster shrinks to a small,
-// tilted accent riding UNDER the avatar's bottom-right corner instead —
-// same tilted-sticker technique ShareCard.tsx's own like/watchlist
-// stickers use (a bare `rotate` transform, no extra library), just
-// applied to the poster here rather than to a heart/plus glyph. A plain
-// colors.base100 ring behind the avatar is what actually separates it
-// visually from the poster underneath (without it the two art pieces
-// would visually merge at the overlap edge).
+// One card in Shares' "Currently Watching" rail — either a person's own
+// status, or a community's live watch party (direct ask to integrate
+// rather than build a second rail). Both share the same silhouette (a
+// tilted poster riding under a bigger "who" element, name, then a status
+// line) so the watch-party card reads as a member of the same family, not
+// a bolted-on different thing — only the "who" (avatar vs. community
+// identity) and the status line (time-ago vs. "LIVE") actually differ.
 export default function CurrentlyWatchingCard({ item, basePath, style }: Props) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
+  const accent = item.kind === "watchparty" ? item.group.accentColor || colors.primary : colors.primary;
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -62,41 +62,63 @@ export default function CurrentlyWatchingCard({ item, basePath, style }: Props) 
         },
         avatarFallback: { backgroundColor: colors.base300, alignItems: "center", justifyContent: "center" },
         avatarFallbackText: { fontFamily: fonts.bold, fontSize: 15, color: colors.primary },
+        communityTile: { backgroundColor: `${accent}22`, alignItems: "center", justifyContent: "center" },
         username: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.baseContent, textAlign: "center", marginTop: 4 },
         timeAgo: { fontSize: 10, color: colors.placeholder, textAlign: "center", marginTop: 1 },
+        liveRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 1 },
+        liveDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: accent },
+        liveText: { fontSize: 9.5, fontFamily: fonts.bold, color: accent, letterSpacing: 0.3 },
       }),
-    [colors]
+    [colors, accent]
   );
 
+  const onPress =
+    item.kind === "watchparty"
+      // Nested under Home's own stack (home/watch-party/[id].tsx), not
+      // the community-nested route — real bug, reported live:
+      // `withAnchor` only guarantees *some* back target exists (whatever
+      // the destination tab's own root happens to be — Messages, here),
+      // not that it's actually this feed. This stays in the same stack,
+      // so Back genuinely returns here.
+      ? () => router.push(`/home/watch-party/${item.partyId}?slug=${item.group.slug}` as never)
+      : () => router.push(`${basePath}/content/${item.contentType}/${item.contentId}` as any);
+
   return (
-    <Pressable
-      style={[styles.card, style]}
-      onPress={() => router.push(`${basePath}/content/${item.contentType}/${item.contentId}` as any)}
-    >
+    <Pressable style={[styles.card, style]} onPress={onPress}>
       <View style={styles.stack}>
-        {item.posterUrl ? (
-          <Image source={{ uri: `${POSTER_BASE}${item.posterUrl}` }} style={styles.poster} />
-        ) : (
-          <View style={styles.poster} />
-        )}
+        {item.posterUrl ? <Image source={{ uri: `${POSTER_BASE}${item.posterUrl}` }} style={styles.poster} /> : <View style={styles.poster} />}
         <View style={styles.avatarRing}>
-          <TierAvatarFrame tier={item.user.accountTier} size={AVATAR_SIZE}>
-            {(innerSize) =>
-              item.user.profile_pic_url ? (
-                <Image source={{ uri: item.user.profile_pic_url }} style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }} />
-              ) : (
-                <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                  <Text style={styles.avatarFallbackText}>{item.user.username.slice(0, 2).toUpperCase()}</Text>
-                </View>
-              )
-            }
-          </TierAvatarFrame>
+          {item.kind === "watchparty" ? (
+            item.group.coverImage ? (
+              <Image source={{ uri: item.group.coverImage }} style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2 }} />
+            ) : (
+              <View style={[styles.communityTile, { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2 }]}>
+                <Ionicons name="people" size={20} color={accent} />
+              </View>
+            )
+          ) : (
+            <TierAvatarFrame tier={item.user.accountTier} size={AVATAR_SIZE}>
+              {(innerSize) =>
+                item.user.profile_pic_url ? (
+                  <Image source={{ uri: item.user.profile_pic_url }} style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }} />
+                ) : (
+                  <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
+                    <Text style={styles.avatarFallbackText}>{item.user.username.slice(0, 2).toUpperCase()}</Text>
+                  </View>
+                )
+              }
+            </TierAvatarFrame>
+          )}
         </View>
       </View>
       <Text style={styles.username} numberOfLines={1}>
-        {item.user.username}
+        {item.kind === "watchparty" ? item.group.name : item.user.username}
       </Text>
-      <Text style={styles.timeAgo}>{timeAgo(item.startedAt)}</Text>
+      {item.kind === "watchparty" ? (
+        <LiveBadge label={t("LIVE")} dotStyle={styles.liveDot} textStyle={styles.liveText} containerStyle={styles.liveRow} />
+      ) : (
+        <Text style={styles.timeAgo}>{timeAgo(item.startedAt)}</Text>
+      )}
     </Pressable>
   );
 }

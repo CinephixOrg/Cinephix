@@ -18,6 +18,8 @@ import { updateFavorites } from "../../api/favoriteService";
 import type { CineGraphData, ContentType, Favorites, ProfileAnalysis } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
 export type Category = "sharings" | "favorites" | "cinegraph" | "analyses" | "badges";
 
@@ -483,6 +485,9 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
                 />
               );
             })()}
+
+            {/* Direct ask: at the bottom of this tab. */}
+            <AdBanner unitId={AD_UNIT_IDS.PROFILE_FAVORITES_BANNER} />
           </View>
         )}
 

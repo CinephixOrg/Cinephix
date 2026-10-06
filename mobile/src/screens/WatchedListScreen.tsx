@@ -1,5 +1,6 @@
 import { watchedCache } from "../api/collectionCache";
 import { WATCHED_SORT_GROUPS } from "../components/collection/filterLabels";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
 import CollectionScreen, { type CollectionConfig } from "./CollectionScreen";
 
 const WATCHED_LIST: CollectionConfig = {
@@ -7,6 +8,7 @@ const WATCHED_LIST: CollectionConfig = {
   basePath: "/watchlist",
   sortGroups: WATCHED_SORT_GROUPS,
   showRatedFilter: true,
+  adUnitId: AD_UNIT_IDS.WATCHED_LIST_BANNER,
   strings: {
     searchPlaceholder: "Search your watched list",
     removed: "Removed from your watched list",

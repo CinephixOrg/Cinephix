@@ -471,8 +471,14 @@ export interface CustomList {
 // GET /lists/:id (unlike /me, POST /, PATCH /:id) populates owner —
 // modeled as its own type rather than widening CustomList.owner for
 // every other call site, where it's genuinely just a plain id string.
-export interface CustomListDetail extends Omit<CustomList, "owner"> {
+export interface CustomListDetail extends Omit<CustomList, "owner" | "groupId"> {
   owner: { _id: string; username: string; profile_pic_url?: string };
+  groupId?: { _id: string; name: string; slug: string; coverImage?: string; accentColor?: string | null } | null;
+  // Only meaningful alongside groupId — whether this community's members
+  // can add titles here. See CustomList.allowMemberAdd's own backend
+  // comment; the flat CustomList type doesn't carry this (/lists/me never
+  // returns a community list at all).
+  allowMemberAdd?: boolean;
 }
 
 // Lightweight, bulk-hydrated {title, poster_path} — either the first 5
@@ -887,9 +893,9 @@ export interface ImportFailure {
 
 export type ImportResult = ImportSummary | ImportFailure;
 
-export type RoomType = "dm" | "group";
+export type RoomType = "dm" | "group" | "watchparty";
 
-export type MessageType = "text" | "recommendation" | "analysis_share" | "profile_share" | "list_share";
+export type MessageType = "text" | "recommendation" | "analysis_share" | "profile_share" | "list_share" | "community_announcement";
 
 export interface MessageSender {
   _id: string;
@@ -940,6 +946,20 @@ export interface Message {
     // Newer shares only — the card shows less without them.
     description?: string | null;
     ownerUsername?: string | null;
+  };
+  // A community's own admin-creation announcement (groupController.js's
+  // postGroupAnnouncement) — present only when type === "community_announcement".
+  communityAnnouncementData?: {
+    kind: "poll" | "challenge" | "watchparty";
+    groupSlug: string;
+    groupName: string;
+    question?: string;
+    optionTexts?: string[];
+    title?: string;
+    itemCount?: number;
+    posterUrl?: string | null;
+    partyId?: string;
+    scheduledAt?: string;
   };
   createdAt: string;
   // Local-only fields, never sent by the server.
@@ -1021,6 +1041,57 @@ export type RoomUpdatedPayload = ConversationUpdatedPayload | GroupUpdatedPayloa
 
 export type GroupCategory = "director" | "genre" | "era" | "style";
 
+// Set only on a partner community (the Instagram/TikTok accounts Cinephix
+// has its own agreement with) — absent/null on every one of the app's own
+// seeded preset topic rooms. Mobile gates every admin control (identity
+// edit, pinning a list/poll, creating a challenge) on `owner?._id ===
+// currentUser._id`, same check the backend itself makes.
+export interface GroupOwner {
+  _id: string;
+  username: string;
+  profile_pic_url?: string;
+  accountTier?: AccountTier;
+}
+
+export interface GroupPinnedList {
+  _id: string;
+  name: string;
+  description: string;
+  itemCount: number;
+  // Full array (not just the preview slice) — present so this shape is
+  // ListRailCard-compatible (its own itemCount math reads items.length,
+  // not a separate count field); never indexed into, only its length is
+  // ever read for a community list.
+  items: CustomListItem[];
+  previewItems: ShareListPreviewItem[];
+  likeCount: number;
+  views: number;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Whether this community's members (not just its admin) can add titles
+  // to this list — see CustomList.allowMemberAdd's own comment.
+  allowMemberAdd: boolean;
+}
+
+// Same shape voteOnPoll's own response already uses (PollOption[] +
+// userVoteIndex) — a community poll reuses that exact Share/poll
+// infrastructure server-side, so the mobile poll-voting UI built against
+// that shape works here unmodified.
+export interface GroupPinnedPoll {
+  _id: string;
+  createdAt: string;
+  // The admin's own free-text question — "" when they left it blank.
+  question: string;
+  // The admin's own chosen lifespan (createGroupPoll's durationDays) —
+  // null means no end date. isExpired is computed server-side so the
+  // client never has to compare clocks itself.
+  expiresAt: string | null;
+  isExpired: boolean;
+  options: PollOption[];
+  userVoteIndex: number | null;
+}
+
 export interface Group {
   _id: string;
   slug: string;
@@ -1035,11 +1106,157 @@ export interface Group {
   isPreset: boolean;
   createdAt: string;
   updatedAt: string;
+  coverImage?: string;
+  owner?: GroupOwner | null;
+  accentColor?: string | null;
+  socialLinks?: { instagram?: string | null; tiktok?: string | null; youtube?: string | null } | null;
+  // Up to 3, in the admin's own chosen order — see Group.pinnedListIds's
+  // own backend comment. A community can have more lists than this; the
+  // rest are reachable only from "See all" (listGroupLists).
+  pinnedLists?: GroupPinnedList[];
+  pinnedPoll?: GroupPinnedPoll | null;
+  // Opt-in to Discover's "Community Announcements" rail — absent/undefined
+  // reads the same as {enabled:false, categories:[]} (older servers).
+  feedAnnouncements?: { enabled: boolean; categories: GroupAnnouncementCategory[] };
+  // Up to 10 of this community's own members (most recently joined last)
+  // — getAllGroups's own batch avatar lookup. Used by the "popular
+  // community" rail card's fading member-avatar carousel; absent on
+  // older servers or when this group has no members loaded.
+  previewMembers?: { _id: string; username: string; profilePicUrl?: string }[];
 }
+
+export type GroupAnnouncementCategory = "challenge" | "watchparty" | "list" | "leaderboard";
+
+// One row of Discover's "Community Announcements" rail
+// (GET /feed/community-announcements) — a snapshot of a community event,
+// never the Shares/Media feed. See backend/models/GroupAnnouncement.js's
+// own comment for why this isn't a Share.
+export interface GroupAnnouncement {
+  _id: string;
+  category: GroupAnnouncementCategory;
+  createdAt: string;
+  group: { _id: string; slug: string; name: string; coverImage?: string; accentColor?: string | null };
+  // challenge / watchparty / list
+  title?: string;
+  // watchparty only
+  posterUrl?: string | null;
+  // challenge only — up to 6 posters, same grid Overview's own challenge
+  // card shows.
+  posterUrls?: string[];
+  itemCount?: number;
+  // watchparty only
+  partyId?: string;
+  scheduledAt?: string;
+  // list only — a snapshot at creation time, same "never a live reference"
+  // convention Share.listData already uses.
+  listId?: string;
+  listData?: { name: string; description: string; itemCount: number; previewItems: ListPreviewItem[] };
+  // leaderboard only
+  leaderboardTop?: { user: string; username: string; profilePicUrl?: string | null; score: number }[];
+}
+
+// One card in Discover's "Community Announcements" rail — a mix of actual
+// community events (member-only) and "popular community" discovery cards
+// (shown to everyone, so communities stay discoverable without leaking
+// their internal event stream to non-members). Built client-side
+// (KesfetSection.tsx) by interleaving the two separately-fetched lists,
+// not a single backend response.
+export type CommunityRailItem = { kind: "announcement"; key: string; data: GroupAnnouncement } | { kind: "popular"; key: string; data: Group };
 
 export interface GroupMember {
   user: MessageSender;
   joinedAt: string;
+  // Community-scoped only (see Group.owner's own comment) — never shown on
+  // the app-wide profile Badges tab, which already has its own unrelated
+  // "Founding Cinephile" badge.
+  isFoundingMember?: boolean;
+}
+
+export interface GroupChallengeItem {
+  itemId: string;
+  itemType: ContentType;
+  title: string;
+  posterUrl?: string | null;
+}
+
+export interface GroupChallenge {
+  _id: string;
+  title: string;
+  items: GroupChallengeItem[];
+  deadline: string;
+  createdAt: string;
+  // Present only on GET (getGroupChallenge) — computed on read, never
+  // stored. myProgress is 0 for a signed-out request.
+  myProgress: number;
+  total: number;
+  completedCount: number;
+  isExpired: boolean;
+}
+
+export interface GroupChallengeMemberProgress {
+  user: { _id: string; username: string; profile_pic_url?: string };
+  completedCount: number;
+  // "<itemType>:<itemId>" keys — GroupChallengeItem's own itemType/itemId,
+  // joined the same way the server builds and matches them.
+  completedItemKeys: string[];
+}
+
+// GET /groups/:slug/challenge/detail — getGroupChallenge's own shape plus
+// a per-member breakdown (not just a count), for the Challenge detail
+// screen (direct ask: the Overview card alone "hiç bilgi sunmuyor"). No
+// myProgress/myRatings fields — completedItemKeys already tells the
+// viewer their own progress via their own row in `members`.
+export interface GroupChallengeDetail extends Omit<GroupChallenge, "myProgress" | "completedCount"> {
+  completedCount: number;
+  members: GroupChallengeMemberProgress[];
+}
+
+// GET /groups/:slug/lists — one row per community list (every CustomList
+// with that groupId), for the "See all" page under Featured Lists.
+export interface GroupListSummary extends GroupPinnedList {
+  isFeatured: boolean;
+}
+
+// A community's own scheduled companion chat — never a synced player, see
+// backend GroupWatchParty.js's own comment. attendeeCount is present only
+// on the single-item fetch (getWatchParty), and only once scheduledAt has
+// passed (null before then — see that endpoint's own reasoning).
+export interface GroupWatchParty {
+  _id: string;
+  contentId: string;
+  contentType: ContentType;
+  contentTitle: string;
+  contentPosterUrl?: string | null;
+  scheduledAt: string;
+  // How long after scheduledAt this still reads as "live" — the admin's
+  // own choice at scheduling time (ScheduleWatchPartyScreen's own
+  // DURATION_OPTIONS), defaulting to 240 (4h, same as the personal
+  // "currently watching" window) when they don't pick one. Absent (not
+  // just unset) on any party created before this field existed — treat
+  // as 240 wherever it's missing, same fallback the backend itself uses.
+  durationMinutes?: number;
+  rsvpCount: number;
+  isRsvped: boolean;
+  attendeeCount?: number | null;
+  // Up to 8, for the live card's own "who's in it" avatar stack —
+  // StackedAvatars' own max:5 display, plus a little room.
+  rsvpUsers?: FeedUserRef[];
+}
+
+// A composite weekly score — watch-party attendance + contributing titles
+// to this community's own lists + rating titles this community has
+// actually curated (its active challenge, or any of its own lists) —
+// never just "rated anything app-wide," direct ask after the old plain
+// ratingCount metric read as no different from the main Shares podium.
+// See groupController.js's own getGroupLeaderboard comment for the point
+// weights.
+export interface GroupLeaderboardEntry {
+  rank: number;
+  user: GroupOwner | null;
+  score: number;
+  partiesAttended: number;
+  itemsAdded: number;
+  ratingsGiven: number;
 }
 
 export interface PopularThisWeekItem {
@@ -1329,8 +1546,10 @@ export interface ShareFeedResult {
 export interface DiscoverListItem {
   _id: string;
   // accountTier drives SearchListCard.tsx's own Premium gold-frame
-  // treatment (both /discover and /popular now project it).
-  owner: { _id: string; username: string; profile_pic_url?: string; accountTier?: AccountTier };
+  // treatment (both /discover and /popular now project it). Nullable: a
+  // populate() against a deleted owner account resolves to null — real bug,
+  // see DiscoverListCard.tsx's own guard for this exact case.
+  owner: { _id: string; username: string; profile_pic_url?: string; accountTier?: AccountTier } | null;
   name: string;
   description: string;
   isPublic: boolean;

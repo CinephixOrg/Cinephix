@@ -49,6 +49,12 @@ export default function HomeStackLayout() {
       <Stack.Screen name="reviews" options={{ title: t("Reviews") }} />
       <Stack.Screen name="lists-discover" options={{ title: t("Lists") }} />
       <Stack.Screen name="activity" options={{ title: t("Friends' Activity") }} />
+      {/* No static title — WatchPartyRoomScreen sets its own dynamically. */}
+      <Stack.Screen name="watch-party/[id]" options={{ title: "" }} />
+      {/* Community Announcements rail destinations, nested here for the
+          same back-button reason as watch-party/[id] above. */}
+      <Stack.Screen name="community-challenge/[slug]" options={{ title: "" }} />
+      <Stack.Screen name="community-leaderboard/[slug]" options={{ title: "" }} />
     </Stack>
   );
 }

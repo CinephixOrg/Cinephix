@@ -23,10 +23,14 @@ import {
 import { SEASONAL_BADGE_DEFINITIONS } from "../../data/seasonalBadgeDefinitions";
 import { SPECIAL_BADGE_DEFINITIONS } from "../../data/specialBadgeDefinitions";
 import BadgeDetailModal, { badgeShareTargetKey, type BadgeDetailData, type BadgeShareTarget, type BadgeTierOption } from "./BadgeDetailModal";
+import { useComposeTutorial } from "../../context/ComposeTutorialContext";
+import TutorialInfoBox from "../tutorial/TutorialInfoBox";
 import type { ActivityBadgeResponse, AllBadgesResponse, GenreBadge, VolumeBadge, VolumeTier } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
 // A locked tile's own image is a real flat silhouette of the SAME artwork
 // (RN's built-in `tintColor`, which recolors every non-transparent pixel to
@@ -330,6 +334,12 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
   const { user } = useAuth();
   const { showToast } = useToast();
   const { announce: announceNewShare } = useRecentShares();
+  // "Badge" compose-tutorial walkthrough (Shares' "+" menu) — info-only
+  // here (no single correct tile to point at, since which badges are
+  // earned varies per viewer); the real highlight is BadgeDetailModal's own
+  // Share button once any badge is opened.
+  const { tutorial: composeTutorial, endTutorial: endComposeTutorial } = useComposeTutorial();
+  const showPickBadgeTutorial = composeTutorial?.id === "badge" && composeTutorial.step === "pickBadge";
   const targetUserId = userId ?? user?._id;
   // Sharing a badge always shares the CALLER's own — only meaningful when
   // this tab is actually showing the signed-in user's own profile, not
@@ -821,6 +831,9 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
   // needed.
   return (
     <View style={styles.container}>
+      {showPickBadgeTutorial && (
+        <TutorialInfoBox text={t("Tap any badge you've earned to share it.")} onDismiss={endComposeTutorial} />
+      )}
       <View style={styles.grid}>
         {volumeTiles.map((tile) => (
           <LadderTile
@@ -924,6 +937,9 @@ function ProfileBadgesTab({ active = true, screenFocused = true, userId }: Props
           />
         ))}
       </View>
+
+      {/* Direct ask: at the bottom of this tab. */}
+      <AdBanner unitId={AD_UNIT_IDS.PROFILE_BADGES_BANNER} />
 
       <BadgeDetailModal
         visible={!!selectedTile}

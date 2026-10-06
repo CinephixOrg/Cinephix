@@ -13,11 +13,14 @@ import MatchFilterStrip from "../../../src/components/match/MatchFilterStrip";
 import { MATCH_GENRE_KEYS } from "../../../src/components/match/CineMatchGenreRing";
 import MatchResultsCloud from "../../../src/components/match/MatchResultsCloud";
 import SyncIntroCard from "../../../src/components/match/SyncIntroCard";
+import SyncIntroStory from "../../../src/components/match/SyncIntroStory";
 import UpgradeRibbon from "../../../src/components/UpgradeRibbon";
 import type { CineGraphData, SyncCandidate } from "../../../src/types";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { fonts } from "../../../src/theme/typography";
 import { STORAGE_KEYS } from "../../../src/constants/apiRoutes";
+import AdBanner from "../../../src/components/ads/AdBanner";
+import { AD_UNIT_IDS } from "../../../src/constants/adUnitIds";
 
 
 // Nothing selected by default — the previous round's live-apply/auto-
@@ -290,42 +293,47 @@ export default function MatchScreen() {
       <View style={styles.pagesClip}>
         <Animated.View style={[styles.pagesRow, { transform: [{ translateX: pageTranslateX }] }]}>
           <View style={styles.page} pointerEvents={pageIndex === 0 ? "auto" : "none"}>
-            <ScrollView
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-            >
-              {showIntro ? (
-                <SyncIntroCard onStart={dismissIntro} />
-              ) : (
-                <>
-                  {user && (
-                    <MatchFilterStrip
-                      filters={filters}
-                      onChange={setFilters}
-                      onSubmit={handleMatchSubmit}
-                      loading={matchAnimating}
-                      onSpinComplete={handleSpinComplete}
-                      cineGraph={cineGraph}
-                      locked={!canUseMatchFilters}
-                      advancedLocked={!canUseAdvancedMatchFilters}
-                      viewer={user}
-                      upgradeButton={upgradeButtonEl}
-                    />
-                  )}
+            {showIntro ? (
+              // A full-screen story takeover now, not a card inside the
+              // normal scroll flow — direct ask, redesigned a second time
+              // ("kart tasarımından çıkartılıp tüm sayfaya yayılabilir").
+              // AdBanner lives inside SyncIntroStory itself now, under its
+              // own final slide's CTA, not as a separate sibling here.
+              <SyncIntroStory onFinish={dismissIntro} />
+            ) : (
+              <ScrollView
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+              >
+                {user && (
+                  <MatchFilterStrip
+                    filters={filters}
+                    onChange={setFilters}
+                    onSubmit={handleMatchSubmit}
+                    loading={matchAnimating}
+                    onSpinComplete={handleSpinComplete}
+                    cineGraph={cineGraph}
+                    locked={!canUseMatchFilters}
+                    advancedLocked={!canUseAdvancedMatchFilters}
+                    viewer={user}
+                    upgradeButton={upgradeButtonEl}
+                  />
+                )}
 
-                  {/* Return visits (showIntro already false, since the
-                      one-time card above was already dismissed): the same
-                      Sync pitch card that a first-time visitor sees blocking
-                      the whole page instead lives here, in the space below
-                      the filters/Sync button — permanently, direct ask
-                      ("hep orda durmalı"). Previously gated on
-                      `!hasSearched`, which is real per-session state (never
-                      resets while this screen stays mounted), so running one
-                      sync and paging back from the results made this vanish
-                      for the rest of the session instead of staying put. */}
-                  <SyncIntroCard onStart={() => {}} showButton={false} />
-                </>
-              )}
-            </ScrollView>
+                {/* Return visits (showIntro already false, since the
+                    one-time story above was already dismissed): the same
+                    Sync pitch card that a first-time visitor sees blocking
+                    the whole page instead lives here, in the space below
+                    the filters/Sync button — permanently, direct ask
+                    ("hep orda durmalı"). Previously gated on
+                    `!hasSearched`, which is real per-session state (never
+                    resets while this screen stays mounted), so running one
+                    sync and paging back from the results made this vanish
+                    for the rest of the session instead of staying put. */}
+                <SyncIntroCard onStart={() => {}} showButton={false} />
+                {/* Direct ask: at the very bottom of this filters page. */}
+                <AdBanner unitId={AD_UNIT_IDS.SYNC_FILTERS_BANNER} />
+              </ScrollView>
+            )}
           </View>
 
           <View style={styles.page} pointerEvents={pageIndex === 1 ? "auto" : "none"}>
@@ -357,6 +365,8 @@ export default function MatchScreen() {
               ) : (
                 <View style={styles.cloudWrap}>
                   <MatchResultsCloud candidates={candidates.slice(0, 5)} filters={filters} />
+                  {/* Direct ask: under the analysis cards deck. */}
+                  <AdBanner unitId={AD_UNIT_IDS.SYNC_RESULTS_BANNER} />
                 </View>
               )}
             </ScrollView>

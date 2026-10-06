@@ -28,8 +28,21 @@ import CollectionUndoBar from "../components/collection/CollectionUndoBar";
 import { CollectionStateView } from "../components/collection/CollectionStates";
 import ListCardSkeleton from "../components/lists/ListCardSkeleton";
 import { buildNamedIndex, searchNamed } from "../utils/collectionQuery";
+import { useComposeTutorial } from "../context/ComposeTutorialContext";
+import TutorialInfoBox from "../components/tutorial/TutorialInfoBox";
 import { fonts } from "../theme/typography";
 import type { CustomList, DiscoverListItem } from "../types";
+import AdBanner from "../components/ads/AdBanner";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
+
+// Every 6th card, not every card — "optimum sıklıkta" direct ask, same
+// interval used for every other inline card-feed placement in this app
+// (Shares feed, Watched List/Watchlist, Content Detail's Lists/Reviews
+// sub-pages) so one banner-frequency convention reads consistently
+// everywhere rather than a different cadence per screen. Hidden entirely
+// in edit mode — an ad interleaved between rows the user is actively
+// deleting/reordering would be visual noise, not a real placement.
+const AD_INTERVAL = 6;
 
 const PADDING_X = 16;
 const LIST_PADDING_BOTTOM = 110;
@@ -141,6 +154,12 @@ function MyListsScreen() {
   const { refresh: refreshProfile } = useProfile();
   const { showToast } = useToast();
   const router = useRouter();
+  // "List" compose-tutorial walkthrough (Shares' "+" menu) — info-only here
+  // (no single correct list to point at); the real highlight is
+  // ListDetailScreen.tsx's own "Share your list" button, once a public
+  // list is opened.
+  const { tutorial: composeTutorial, endTutorial: endComposeTutorial } = useComposeTutorial();
+  const showPickListTutorial = composeTutorial?.id === "list" && composeTutorial.step === "pickList";
 
   const userId = user?._id ?? "";
   const [lists, setLists] = useState<CustomList[]>(() => (userId ? myListsCache.getCached(userId) : null) ?? []);
@@ -371,15 +390,18 @@ function MyListsScreen() {
 
   const deleteLabel = t("Delete");
   const renderItem: ListRenderItem<DiscoverListItem> = useCallback(
-    ({ item }) => (
-      <MyListRow
-        card={item}
-        editing={editing}
-        editProgress={editProgress}
-        onOpen={openList}
-        onRemove={handleRemove}
-        deleteLabel={deleteLabel}
-      />
+    ({ item, index }) => (
+      <>
+        <MyListRow
+          card={item}
+          editing={editing}
+          editProgress={editProgress}
+          onOpen={openList}
+          onRemove={handleRemove}
+          deleteLabel={deleteLabel}
+        />
+        {!editing && (index + 1) % AD_INTERVAL === 0 && <AdBanner unitId={AD_UNIT_IDS.LISTS_TAB_BANNER} />}
+      </>
     ),
     [editing, editProgress, openList, handleRemove, deleteLabel]
   );
@@ -430,6 +452,9 @@ function MyListsScreen() {
 
   return (
     <View style={styles.screen}>
+      {showPickListTutorial && (
+        <TutorialInfoBox text={t("Tap one of your public lists to share it.")} onDismiss={endComposeTutorial} />
+      )}
       <View style={styles.top}>
         <CollectionSearchBar placeholder={t("Search your lists")} onChangeQuery={setQuery} />
         {status === "ready" && lists.length > 0 ? (

@@ -9,11 +9,19 @@ import { useCommunities } from "../../hooks/useCommunities";
 import { roomKey, roomPrefetch } from "../../api/chatCache";
 import { activeCommunityFilterCount, queryCommunities, type CommunityAction, type CommunityFilters } from "../../utils/communities";
 import CommunityCard, { createCommunityCardStyles } from "./CommunityCard";
+import YourCommunityCard, { createYourCommunityCardStyles } from "./YourCommunityCard";
 import { isDarkTheme } from "./communityCategory";
 import { SkeletonGroupCard } from "../Skeleton";
 import type { Group } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
+
+// "Her kutucukta bir çıkmasın yoksa çok reklama boğulur" — same every-6th
+// cadence as every other inline card-feed placement in this app.
+const AD_INTERVAL = 6;
 
 interface Props {
   filters: CommunityFilters;
@@ -31,9 +39,11 @@ export default function CommunitiesSection({ filters, dispatch }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
+  const { user } = useAuth();
   const { groups, failed, refreshing, refresh } = useCommunities();
   const dark = isDarkTheme(colors);
   const cardStyles = useMemo(() => createCommunityCardStyles(colors), [colors]);
+  const yourCardStyles = useMemo(() => createYourCommunityCardStyles(colors), [colors]);
 
   const styles = useMemo(
     () =>
@@ -68,6 +78,12 @@ export default function CommunitiesSection({ filters, dispatch }: Props) {
   const shown = useMemo(() => (groups ? queryCommunities(groups, filters) : []), [groups, filters]);
   const narrowed = activeCommunityFilterCount(filters) > 0;
 
+  // Pinned above the browsable list regardless of filter/sort, so the
+  // admin never has to search for their own community — derived for free
+  // from the list `getAllGroups` already fetches (owner is populated
+  // server-side), no extra request.
+  const myCommunity = useMemo(() => groups?.find((g) => g.owner?._id === user?._id) ?? null, [groups, user?._id]);
+
   const open = useCallback((group: Group) => router.push(`/socials/communities/${group.slug}`), [router]);
 
   // A community opens on its chat, so a member's touch starts loading it.
@@ -76,8 +92,11 @@ export default function CommunitiesSection({ filters, dispatch }: Props) {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: Group }) => (
-      <CommunityCard group={item} dark={dark} styles={cardStyles} onPress={open} onPressIn={warm} />
+    ({ item, index }: { item: Group; index: number }) => (
+      <>
+        <CommunityCard group={item} dark={dark} styles={cardStyles} onPress={open} onPressIn={warm} />
+        {(index + 1) % AD_INTERVAL === 0 && <AdBanner unitId={AD_UNIT_IDS.SOCIALS_BANNER} />}
+      </>
     ),
     [dark, cardStyles, open, warm]
   );
@@ -116,10 +135,15 @@ export default function CommunitiesSection({ filters, dispatch }: Props) {
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
       ListHeaderComponent={
-        narrowed && shown.length > 0 ? (
-          <Text style={styles.summary}>
-            {t("{{shown}} of {{total}} communities", { shown: shown.length, total: groups.length })}
-          </Text>
+        myCommunity || (narrowed && shown.length > 0) ? (
+          <>
+            {myCommunity ? <YourCommunityCard group={myCommunity} styles={yourCardStyles} onPress={open} /> : null}
+            {narrowed && shown.length > 0 ? (
+              <Text style={styles.summary}>
+                {t("{{shown}} of {{total}} communities", { shown: shown.length, total: groups.length })}
+              </Text>
+            ) : null}
+          </>
         ) : null
       }
       ListEmptyComponent={

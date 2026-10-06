@@ -12,6 +12,9 @@ import { createShare } from "../api/shareService";
 import { useToast } from "../context/ToastContext";
 import { useBadgeEarned } from "../context/BadgeEarnedContext";
 import { useRecentShares } from "../context/RecentSharesContext";
+import { useComposeTutorial } from "../context/ComposeTutorialContext";
+import TutorialSpotlight from "../components/tutorial/TutorialSpotlight";
+import TutorialInfoBox from "../components/tutorial/TutorialInfoBox";
 import type { ContentType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -63,6 +66,17 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+
+  // Final step of the "Review" compose-tutorial walkthrough (Shares' "+"
+  // menu → Search → Content Detail's Add/Edit Review button → here) — see
+  // ComposeTutorialContext's own doc comment. Arriving here while it's
+  // active unambiguously means "now show the Save step."
+  const { tutorial: composeTutorial, setReviewStep, endTutorial: endComposeTutorial } = useComposeTutorial();
+  useEffect(() => {
+    if (composeTutorial?.id === "review") setReviewStep("tapSave");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const showSaveTutorial = composeTutorial?.id === "review" && composeTutorial.step === "tapSave";
 
   useEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -208,10 +222,22 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
               )}
             </Pressable>
           )}
-          <View style={styles.saveWrap}>
+          <TutorialSpotlight active={showSaveTutorial} style={styles.saveWrap}>
             <Pressable
               style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
-              onPress={() => setMenuVisible((v) => !v)}
+              onPress={() => {
+                // Arrived here via the "Review" compose-tutorial (+ button
+                // → Search → Add Review → here) — same reasoning as Content
+                // Detail's own gift button: using + already answered "share
+                // to Media," so skip the Save Only/Save and Share menu and
+                // do that directly.
+                if (showSaveTutorial) {
+                  handleSave(true);
+                  endComposeTutorial();
+                  return;
+                }
+                setMenuVisible((v) => !v);
+              }}
               disabled={!canSave}
             >
               {saving ? (
@@ -237,9 +263,12 @@ export default function ReviewWriteScreen({ contentType, contentId }: Props) {
                 </View>
               </>
             )}
-          </View>
+          </TutorialSpotlight>
         </View>
       </View>
+      {showSaveTutorial && (
+        <TutorialInfoBox text={t("Tap Save to share your review.")} onDismiss={endComposeTutorial} />
+      )}
 
       {error && <Text style={styles.error}>{error}</Text>}
       <TextInput

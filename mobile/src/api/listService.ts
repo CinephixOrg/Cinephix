@@ -12,6 +12,7 @@ export async function getMyLists(): Promise<CustomList[]> {
   return res.data.lists;
 }
 
+
 // Every call here creates a genuinely new list (no upsert on this
 // endpoint), so `newlyEarnedBadges` (the listCount activity badge) never
 // needs an "was this an edit" guard the way rating/review counts do.
@@ -33,15 +34,15 @@ export async function createList(fields: {
 
 export async function getListById(
   id: string
-): Promise<{ list: CustomListDetail; isOwner: boolean; hasLiked: boolean }> {
+): Promise<{ list: CustomListDetail; isOwner: boolean; hasLiked: boolean; canAddItems: boolean }> {
   const res = await API.get(API_ROUTES.LISTS.GET_BY_ID(id));
-  return { list: res.data.list, isOwner: res.data.isOwner, hasLiked: res.data.hasLiked };
+  return { list: res.data.list, isOwner: res.data.isOwner, hasLiked: res.data.hasLiked, canAddItems: !!res.data.canAddItems };
 }
 
 export async function updateList(
   id: string,
-  /** `items` replaces every title on the list, in order. */
-  fields: { name?: string; description?: string; isPublic?: boolean; items?: ListItemRef[] }
+  /** `items` replaces every title on the list, in order. `allowMemberAdd` is a no-op unless this is a community list. */
+  fields: { name?: string; description?: string; isPublic?: boolean; items?: ListItemRef[]; allowMemberAdd?: boolean }
 ): Promise<CustomList> {
   const res = await API.patch(API_ROUTES.LISTS.UPDATE(id), fields);
   return res.data.list;

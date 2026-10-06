@@ -326,6 +326,80 @@ export const VisibilityToggle = memo(function VisibilityToggle({
   );
 });
 
+// Community list creation only (GroupListEditorScreen) — whether this
+// community's members, not just its admin, can add titles here. Removing
+// one, and every other edit, always stays admin-only regardless of this.
+export const MemberAddToggle = memo(function MemberAddToggle({
+  allowMemberAdd,
+  onChange,
+}: {
+  allowMemberAdd: boolean;
+  onChange: (allowMemberAdd: boolean) => void;
+}) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  const options = [
+    { value: false, icon: "lock-closed" as const, label: t("Admin only") },
+    { value: true, icon: "people" as const, label: t("Members can add") },
+  ];
+  return (
+    <View style={[styles.segment, { backgroundColor: colors.base200, borderColor: colors.border }]}>
+      {options.map((option) => {
+        const active = option.value === allowMemberAdd;
+        return (
+          <Pressable
+            key={option.label}
+            onPress={() => onChange(option.value)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: active }}
+            style={[styles.segmentOption, active && { backgroundColor: colors.primary }]}
+          >
+            <Ionicons name={option.icon} size={14} color={active ? colors.primaryContent : colors.placeholder} />
+            <Text style={[styles.segmentText, { color: active ? colors.primaryContent : colors.baseContent }]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+});
+
+// Community Settings' own "Feed Announcements" on/off switch
+// (EditFeedAnnouncementsModal, CommunityAdminModals.tsx) — same segmented
+// shape as MemberAddToggle/VisibilityToggle above.
+export const FeedAnnouncementsToggle = memo(function FeedAnnouncementsToggle({
+  enabled,
+  onChange,
+}: {
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+}) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  const options = [
+    { value: false, icon: "notifications-off-outline" as const, label: t("Off") },
+    { value: true, icon: "megaphone" as const, label: t("On") },
+  ];
+  return (
+    <View style={[styles.segment, { backgroundColor: colors.base200, borderColor: colors.border }]}>
+      {options.map((option) => {
+        const active = option.value === enabled;
+        return (
+          <Pressable
+            key={option.label}
+            onPress={() => onChange(option.value)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: active }}
+            style={[styles.segmentOption, active && { backgroundColor: colors.primary }]}
+          >
+            <Ionicons name={option.icon} size={14} color={active ? colors.primaryContent : colors.placeholder} />
+            <Text style={[styles.segmentText, { color: active ? colors.primaryContent : colors.baseContent }]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+});
+
 const styles = StyleSheet.create({
   posterFallback: { alignItems: "center", justifyContent: "center" },
 

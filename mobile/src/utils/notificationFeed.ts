@@ -18,6 +18,9 @@ export type NotificationDestination =
   // A support ticket that was answered or moved on — push only; there is no
   // in-app notification row for it (the ticket itself carries its own dot).
   | { kind: "ticket"; ticketId: string }
+  // A watch party's own 30min/10min/started reminder — push only, same
+  // reasoning as "ticket" (see pushRouting.ts's own PushType comment).
+  | { kind: "watchparty"; groupSlug: string; partyId: string }
   | { kind: "none" };
 
 type Routable = {
@@ -86,6 +89,8 @@ export function hrefFor(destination: NotificationDestination): NotificationHref 
       return { pathname: "/user/[id]/shares/[shareId]", params: { id: destination.authorId, shareId: destination.shareId } };
     case "ticket":
       return { pathname: "/profile/support/[id]", params: { id: destination.ticketId } };
+    case "watchparty":
+      return { pathname: "/socials/communities/[slug]/watch-party/[id]", params: { slug: destination.groupSlug, id: destination.partyId } };
     case "none":
       return null;
   }

@@ -72,7 +72,7 @@ export default function CurrentlyWatchingSection({ basePath }: { basePath: "/hom
     <ContentRail
       title={t("Currently Watching")}
       data={items}
-      keyExtractor={(item) => `${item.user._id}-${item.contentId}`}
+      keyExtractor={(item) => (item.kind === "watchparty" ? `wp-${item.partyId}` : `${item.user._id}-${item.contentId}`)}
       emptyText={scope === "friends" ? t("None of your friends are watching anything right now.") : t("Nobody is watching anything right now.")}
       headerRight={
         <View style={styles.toggle}>

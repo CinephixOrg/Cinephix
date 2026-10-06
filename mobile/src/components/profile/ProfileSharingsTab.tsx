@@ -11,6 +11,8 @@ import ShareGridTile from "./ShareGridTile";
 import type { Share, ShareType } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
 // Every real, user-creatable share type — same list shareController.js's
 // own FILTERABLE_SHARE_TYPES enforces server-side ("official" excluded,
@@ -430,6 +432,9 @@ function ProfileSharingsTab({ userId = "me", basePath = "/profile", active = tru
           )}
         </View>
       )}
+
+      {/* Direct ask: at the bottom of this tab. */}
+      {shares.length > 0 && <AdBanner unitId={AD_UNIT_IDS.PROFILE_POSTS_BANNER} />}
 
       <Modal visible={!!selectedShare} transparent animationType="fade" onRequestClose={() => setSelectedShareId(null)}>
         <View style={styles.modalOverlay}>

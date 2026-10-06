@@ -11,7 +11,8 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import Pressable from "../../../../src/components/common/TapSafePressable";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../src/context/AuthContext";
@@ -19,21 +20,28 @@ import { useChat } from "../../../../src/context/ChatContext";
 import { useToast } from "../../../../src/context/ToastContext";
 import { useCommunity } from "../../../../src/hooks/useCommunities";
 import { cachedMembers, refreshMembers, setMembership } from "../../../../src/api/communitiesStore";
-import { getGroupMessages, markGroupRead, sendGroupMessageRest } from "../../../../src/api/groupService";
+import { getGroupChallenge, getGroupMessages, listWatchParties, markGroupRead, sendGroupMessageRest } from "../../../../src/api/groupService";
 import ChatRoom from "../../../../src/components/ChatRoom";
 import ConfirmDialog from "../../../../src/components/settings/ConfirmDialog";
 import CommunityTags from "../../../../src/components/socials/CommunityTags";
+import CommunityHubTab from "../../../../src/components/socials/CommunityHubTab";
+import { AdminPanelModal, EditCommunityIdentityModal, EditFeedAnnouncementsModal } from "../../../../src/components/socials/CommunityAdminModals";
 import { categoryTone, isDarkTheme, type CategoryTone } from "../../../../src/components/socials/communityCategory";
 import { SkeletonGrid, SkeletonAvatarCell, SkeletonGroupDetailHeader } from "../../../../src/components/Skeleton";
 import TierAvatarFrame from "../../../../src/components/TierAvatarFrame";
 import { localeUpper } from "../../../../src/utils/text";
-import type { Group, GroupMember } from "../../../../src/types";
+import type { Group, GroupChallenge, GroupMember, GroupWatchParty } from "../../../../src/types";
 import { useTheme } from "../../../../src/context/ThemeContext";
 import { fonts } from "../../../../src/theme/typography";
+import { isWatchPartyLive } from "../../../../src/utils/watchParty";
 
 const MEMBER_AVATAR_SIZE = 56;
-const TABS = ["Chat", "Members", "About"] as const;
-type Tab = (typeof TABS)[number];
+// "About" is only ever reachable for a preset (owner-less) community — a
+// partner community's own description/tags move into Overview instead
+// (GroupDetailScreen's own `tabs` useMemo below), so showing both would be
+// the exact duplication this redesign was asked to remove.
+const BASE_TABS = ["Chat", "Members", "About"] as const;
+type Tab = (typeof BASE_TABS)[number] | "Overview";
 
 type Colors = ReturnType<typeof useTheme>["colors"];
 
@@ -41,9 +49,21 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.base100 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24, backgroundColor: colors.base100 },
-    hero: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, gap: 12 },
-    heroRow: { flexDirection: "row", alignItems: "center", gap: 13 },
-    tile: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+    // paddingTop is overridden inline with the device's own safe-area
+    // inset — there's no native header anymore to reserve that space.
+    hero: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
+    heroRow: { flexDirection: "row", alignItems: "center", gap: 11 },
+    backButton: { width: 30, height: 30, alignItems: "center", justifyContent: "center", marginLeft: -6 },
+    tile: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    manageButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.base200,
+      marginRight: 2,
+    },
     heroText: { flex: 1, minWidth: 0 },
     name: { fontFamily: fonts.extrabold, fontSize: 20, lineHeight: 25, color: colors.baseContent, letterSpacing: -0.3 },
     meta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
@@ -90,12 +110,56 @@ function createStyles(colors: Colors) {
     tabText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.placeholder },
     tabTextActive: { fontFamily: fonts.bold, color: colors.baseContent },
     divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+    chatWrap: { flex: 1 },
+    liveBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginHorizontal: 16,
+      marginTop: 10,
+      marginBottom: 2,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.primary,
+      backgroundColor: colors.base200,
+    },
+    liveBannerIcon: { color: colors.primary },
+    liveBannerText: { flex: 1, fontFamily: fonts.bold, fontSize: 12.5, color: colors.baseContent },
     membersList: { padding: 12 },
     memberCell: { width: "33.33%", alignItems: "center", paddingVertical: 12, paddingHorizontal: 6 },
     memberCellSelf: { opacity: 0.75 },
     memberAvatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
     memberAvatarFallbackText: { fontFamily: fonts.bold, fontSize: 16, color: colors.primary },
     memberUsername: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.baseContent, marginTop: 7, maxWidth: 96 },
+    // Community-scoped only (see GroupMember.isFoundingMember's own
+    // comment) — never the app-wide profile Badges tab.
+    foundingBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      marginTop: 3,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      backgroundColor: `${colors.warning}1f`,
+    },
+    foundingBadgeText: { fontFamily: fonts.bold, fontSize: 9, color: colors.warning },
+    // Shown instead of the Founding Member badge for this community's own
+    // owner — direct ask, after nothing distinguished the admin from any
+    // other member here ("admin ile diğerlerini ayıran bir şey yok").
+    adminBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      marginTop: 3,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 8,
+      backgroundColor: `${colors.primary}1f`,
+    },
+    adminBadgeText: { fontFamily: fonts.bold, fontSize: 9, color: colors.primary },
     memberJoined: { fontSize: 10.5, color: colors.placeholder, marginTop: 2 },
     empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
     about: { padding: 16, gap: 18 },
@@ -124,16 +188,16 @@ function createStyles(colors: Colors) {
 
 type Styles = ReturnType<typeof createStyles>;
 
-/** Chat / Members / About, with a pill that slides between them on the native driver. */
-const Tabs = memo(function Tabs({ tab, onChange, styles }: { tab: Tab; onChange: (tab: Tab) => void; styles: Styles }) {
+/** Chat / Members / About (+ Community, for a partner community), with a pill that slides between them on the native driver. */
+const Tabs = memo(function Tabs({ tab, tabs, onChange, styles }: { tab: Tab; tabs: readonly Tab[]; onChange: (tab: Tab) => void; styles: Styles }) {
   const { t } = useTranslation();
   const [width, setWidth] = useState(0);
-  const position = useRef(new Animated.Value(TABS.indexOf(tab))).current;
-  const slot = width > 0 ? (width - 6) / TABS.length : 0;
+  const position = useRef(new Animated.Value(tabs.indexOf(tab))).current;
+  const slot = width > 0 ? (width - 6) / tabs.length : 0;
 
   useEffect(() => {
-    Animated.spring(position, { toValue: TABS.indexOf(tab), speed: 20, bounciness: 4, useNativeDriver: true }).start();
-  }, [tab, position]);
+    Animated.spring(position, { toValue: tabs.indexOf(tab), speed: 20, bounciness: 4, useNativeDriver: true }).start();
+  }, [tab, tabs, position]);
 
   return (
     <View style={styles.tabs} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)} accessibilityRole="tablist">
@@ -145,7 +209,7 @@ const Tabs = memo(function Tabs({ tab, onChange, styles }: { tab: Tab; onChange:
           ]}
         />
       ) : null}
-      {TABS.map((name) => (
+      {tabs.map((name) => (
         <Pressable
           key={name}
           style={styles.tab}
@@ -157,6 +221,64 @@ const Tabs = memo(function Tabs({ tab, onChange, styles }: { tab: Tab; onChange:
         </Pressable>
       ))}
     </View>
+  );
+});
+
+// A single compact, colored-border strip above Chat, surfacing whatever
+// is most "live" right now — direct ask, with an explicit "don't flood it
+// with notices" constraint, so this only ever shows ONE thing, picked by
+// priority: a watch party actually happening right now > an active
+// (non-expired) poll > an active (non-expired) challenge. Does its own
+// small fetch for watch parties/challenge rather than sharing
+// CommunityHubTab's internal state (group.pinnedPoll is already on the
+// `group` prop this screen already has) — keeps the two components
+// decoupled for a purely decorative summary, at the cost of one extra
+// lightweight GET pair when Chat is open.
+const LiveBanner = memo(function LiveBanner({ group, styles, onOpenOverview }: { group: Group; styles: Styles; onOpenOverview: () => void }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const [watchParties, setWatchParties] = useState<{ upcoming: GroupWatchParty[]; past: GroupWatchParty[] } | undefined>(undefined);
+  const [challenge, setChallenge] = useState<GroupChallenge | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    listWatchParties(group.slug)
+      .then((r) => {
+        if (!cancelled) setWatchParties(r);
+      })
+      .catch(() => {});
+    getGroupChallenge(group.slug)
+      .then((c) => {
+        if (!cancelled) setChallenge(c);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [group.slug]);
+
+  const liveParty = watchParties?.past.find(isWatchPartyLive);
+  const activePoll = group.pinnedPoll && !group.pinnedPoll.isExpired ? group.pinnedPoll : null;
+  const activeChallenge = challenge && !challenge.isExpired ? challenge : null;
+
+  const item = liveParty
+    ? { icon: "radio" as const, label: t("Live now: {{title}}", { title: liveParty.contentTitle }), onPress: () => router.push(`/socials/communities/${group.slug}/watch-party/${liveParty._id}` as never) }
+    : activePoll
+    ? { icon: "bar-chart" as const, label: activePoll.question || t("Community Poll"), onPress: onOpenOverview }
+    : activeChallenge
+    ? { icon: "trophy" as const, label: activeChallenge.title, onPress: onOpenOverview }
+    : null;
+
+  if (!item) return null;
+
+  return (
+    <Pressable style={styles.liveBanner} onPress={item.onPress}>
+      <Ionicons name={item.icon} size={15} color={styles.liveBannerIcon.color} />
+      <Text style={styles.liveBannerText} numberOfLines={1}>
+        {item.label}
+      </Text>
+      <Ionicons name="chevron-forward" size={15} color={styles.liveBannerIcon.color} />
+    </Pressable>
   );
 });
 
@@ -197,7 +319,7 @@ function MembershipButton({
   );
 }
 
-function MembersTab({ slug, styles }: { slug: string; styles: Styles }) {
+function MembersTab({ slug, ownerId, styles }: { slug: string; ownerId?: string; styles: Styles }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
@@ -265,6 +387,17 @@ function MembersTab({ slug, styles }: { slug: string; styles: Styles }) {
               {item.user.username}
               {isMe ? ` ${t("(you)")}` : ""}
             </Text>
+            {item.user._id === ownerId ? (
+              <View style={styles.adminBadge}>
+                <Ionicons name="shield-checkmark" size={9} color={styles.adminBadgeText.color} />
+                <Text style={styles.adminBadgeText}>{t("Admin")}</Text>
+              </View>
+            ) : item.isFoundingMember ? (
+              <View style={styles.foundingBadge}>
+                <Ionicons name="star" size={9} color={styles.foundingBadgeText.color} />
+                <Text style={styles.foundingBadgeText}>{t("Founding Member")}</Text>
+              </View>
+            ) : null}
             <Text style={styles.memberJoined}>
               {t("Joined")} {new Date(item.joinedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
             </Text>
@@ -310,6 +443,8 @@ export default function GroupDetailScreen() {
   const { t } = useTranslation();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const navigation = useNavigation();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { joinRoom, leaveRoom, markGroupReadLocally, refreshConversations } = useChat();
   const { group, failed, reload } = useCommunity(slug);
@@ -317,10 +452,55 @@ export default function GroupDetailScreen() {
   const [busy, setBusy] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const dark = isDarkTheme(colors);
+  const { user } = useAuth();
+  const isOwner = !!user && group?.owner?._id === user._id;
+
+  // Every admin-only action in one place (the gear icon next to the
+  // compact header below), rather than scattered across Overview's own
+  // content — direct ask. Lifted up here (not owned by CommunityHubTab)
+  // since the gear icon itself lives in this screen's persistent header,
+  // reachable from any tab.
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
+  const [editingIdentity, setEditingIdentity] = useState(false);
+  const [editingFeedAnnouncements, setEditingFeedAnnouncements] = useState(false);
+
+  // A partner community (group.owner set) opens on Overview, not Chat —
+  // poll/challenge/watch-party/leaderboard are what makes it feel "alive,"
+  // the content people actually come back to check, so it gets first
+  // billing instead of being the 4th tab a viewer has to go find. Applied
+  // once, the first moment `group` loads (not on every refetch), so it
+  // never fights a viewer who's since switched tabs themselves.
+  const appliedInitialTabRef = useRef(false);
+  useEffect(() => {
+    if (appliedInitialTabRef.current || !group) return;
+    appliedInitialTabRef.current = true;
+    if (group.owner) setTab("Overview");
+  }, [group]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: group?.name ?? "" });
+    // No native header at all — direct report: the native title bar
+    // showing the community's name sat directly above this screen's own
+    // compact header (which repeats the name), reading as the same thing
+    // twice. The back button moves into that compact header instead (see
+    // the `hero` row below).
+    navigation.setOptions({ headerShown: false });
   }, [navigation, group?.name]);
+
+  // Refreshes on every return to this screen (not just on mount) — an
+  // owner coming back from pinning a list, creating a poll/challenge, or
+  // editing identity (all on separate screens/modals) needs this screen's
+  // own cached copy to pick up what just changed.
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
+
+  // "Overview" leads for a partner community, replacing "About" entirely
+  // (its content — description, tags, created date — moves into Overview's
+  // own scroll instead) rather than sitting alongside it as a 4th,
+  // redundant destination.
+  const tabs = useMemo<readonly Tab[]>(() => (group?.owner ? ["Overview", "Chat", "Members"] : BASE_TABS), [group?.owner]);
 
   useEffect(() => {
     if (tab !== "Chat" || !group?.isMember) return;
@@ -399,10 +579,24 @@ export default function GroupDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.hero}>
+      {/* Compact on purpose — no description text here anymore (direct
+          report: seeing the full bio under every single tab, Chat
+          included, read as pointless repetition). The full
+          description/tags/created-date now live in exactly one place:
+          Overview's own scroll for a partner community, the About tab for
+          a preset one (About no longer exists for a partner community at
+          all — see the `tabs` useMemo above). */}
+      <View style={[styles.hero, { paddingTop: insets.top + 10 }]}>
         <View style={styles.heroRow}>
+          <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={8}>
+            <Ionicons name="chevron-back" size={22} color={colors.baseContent} />
+          </Pressable>
           <View style={[styles.tile, { backgroundColor: tone.tint }]}>
-            <Ionicons name={tone.icon} size={27} color={tone.color} />
+            {group.coverImage ? (
+              <Image source={{ uri: group.coverImage }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : (
+              <Ionicons name={tone.icon} size={20} color={tone.color} />
+            )}
           </View>
           <View style={styles.heroText}>
             <Text style={styles.name} numberOfLines={1}>
@@ -414,6 +608,11 @@ export default function GroupDetailScreen() {
               <Text style={styles.count}>{members}</Text>
             </View>
           </View>
+          {isOwner ? (
+            <Pressable style={styles.manageButton} onPress={() => setAdminPanelOpen(true)} hitSlop={8}>
+              <Ionicons name="settings-outline" size={19} color={colors.baseContent} />
+            </Pressable>
+          ) : null}
           <MembershipButton
             group={group}
             busy={busy}
@@ -423,30 +622,30 @@ export default function GroupDetailScreen() {
             colors={colors}
           />
         </View>
-        {group.description ? (
-          <Text style={styles.description} numberOfLines={2}>
-            {group.description}
-          </Text>
-        ) : null}
       </View>
 
-      <Tabs tab={tab} onChange={setTab} styles={styles} />
+      <Tabs tab={tab} tabs={tabs} onChange={setTab} styles={styles} />
       <View style={styles.divider} />
 
       {tab === "Chat" ? (
-        <ChatRoom
-          key={group._id}
-          roomType="group"
-          roomId={group._id}
-          canChat={group.isMember}
-          lockedContent={locked}
-          emptyText={t("No messages yet. Start the conversation!")}
-          fetchMessages={(before, limit) => getGroupMessages(group._id, before, limit)}
-          markRead={() => markGroupRead(group._id)}
-          sendRest={(text) => sendGroupMessageRest(group._id, text)}
-        />
+        <View style={styles.chatWrap}>
+          {group.owner ? <LiveBanner group={group} styles={styles} onOpenOverview={() => setTab("Overview")} /> : null}
+          <ChatRoom
+            key={group._id}
+            roomType="group"
+            roomId={group._id}
+            canChat={group.isMember}
+            lockedContent={locked}
+            emptyText={t("No messages yet. Start the conversation!")}
+            fetchMessages={(before, limit) => getGroupMessages(group._id, before, limit)}
+            markRead={() => markGroupRead(group._id)}
+            sendRest={(text) => sendGroupMessageRest(group._id, text)}
+          />
+        </View>
       ) : tab === "Members" ? (
-        <MembersTab slug={group.slug} styles={styles} />
+        <MembersTab slug={group.slug} ownerId={group.owner?._id} styles={styles} />
+      ) : tab === "Overview" ? (
+        <CommunityHubTab group={group} />
       ) : (
         <AboutTab group={group} tone={tone} styles={styles} />
       )}
@@ -464,6 +663,41 @@ export default function GroupDetailScreen() {
         onConfirm={leave}
         onCancel={() => setConfirmingLeave(false)}
       />
+
+      {isOwner ? (
+        <>
+          <AdminPanelModal
+            visible={adminPanelOpen}
+            onClose={() => setAdminPanelOpen(false)}
+            onEditIdentity={() => {
+              setAdminPanelOpen(false);
+              setEditingIdentity(true);
+            }}
+            onPinList={() => {
+              setAdminPanelOpen(false);
+              router.push(`/group-list-editor?slug=${group.slug}` as never);
+            }}
+            onNewPoll={() => {
+              setAdminPanelOpen(false);
+              router.push(`/create-poll?slug=${group.slug}` as never);
+            }}
+            onNewChallenge={() => {
+              setAdminPanelOpen(false);
+              router.push(`/group-content-picker?slug=${group.slug}` as never);
+            }}
+            onNewWatchParty={() => {
+              setAdminPanelOpen(false);
+              router.push(`/schedule-watch-party?slug=${group.slug}` as never);
+            }}
+            onFeedAnnouncements={() => {
+              setAdminPanelOpen(false);
+              setEditingFeedAnnouncements(true);
+            }}
+          />
+          <EditCommunityIdentityModal visible={editingIdentity} group={group} onClose={() => setEditingIdentity(false)} onSaved={reload} />
+          <EditFeedAnnouncementsModal visible={editingFeedAnnouncements} group={group} onClose={() => setEditingFeedAnnouncements(false)} onSaved={reload} />
+        </>
+      ) : null}
     </View>
   );
 }

@@ -5,6 +5,9 @@ import Pressable from "../common/TapSafePressable";
 import Modal from "../common/GestureModal";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
+import { useComposeTutorial } from "../../context/ComposeTutorialContext";
+import TutorialSpotlight from "../tutorial/TutorialSpotlight";
+import TutorialInfoBox from "../tutorial/TutorialInfoBox";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
 
@@ -114,6 +117,14 @@ export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, 
   const scale = useRef(new Animated.Value(0.4)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // "Badge" compose-tutorial walkthrough (Shares' "+" menu) — unlike
+  // Recommend/Review/Analyze, sharing a badge has no Media-vs-someone
+  // picker to skip (badges only ever post to Media), so this step just
+  // highlights the Share button and ends the tutorial the moment it's
+  // tapped, no behavior override needed. There's no single correct TILE to
+  // point at on the Badges tab before this opens (which badges are even
+  // earned varies per viewer), so that earlier step is info-only.
+  const { tutorial: composeTutorial, setBadgeStep, endTutorial: endComposeTutorial } = useComposeTutorial();
 
   // Resets which tier is selected every time a NEW badge popup opens
   // (a different tile tapped, or a fresh "you earned a badge!" moment) —
@@ -140,6 +151,12 @@ export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, selectedIndex]);
 
+  useEffect(() => {
+    if (visible && badge && composeTutorial?.id === "badge") setBadgeStep("tapShare");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, badge]);
+  const showBadgeShareTutorial = composeTutorial?.id === "badge" && composeTutorial.step === "tapShare";
+
   if (!badge) return null;
 
   const activeTier = badge.tiers?.[selectedIndex];
@@ -157,19 +174,24 @@ export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, 
   // no share support at all just don't get a button, no disabled ghost).
   const shareButton =
     displayEarned && displayShareTarget && onShare ? (
-      <Pressable
-        style={[styles.shareButton, isShared && styles.shareButtonDone]}
-        onPress={() => onShare(displayShareTarget)}
-        disabled={isSharing || isShared}
-      >
-        {isSharing ? (
-          <ActivityIndicator color={colors.primaryContent} size="small" />
-        ) : (
-          <Text style={[styles.shareButtonText, isShared && styles.shareButtonTextDone]}>
-            {isShared ? t("Shared") : t("Share to Media")}
-          </Text>
-        )}
-      </Pressable>
+      <TutorialSpotlight active={showBadgeShareTutorial} borderRadius={10}>
+        <Pressable
+          style={[styles.shareButton, isShared && styles.shareButtonDone]}
+          onPress={() => {
+            onShare(displayShareTarget);
+            if (showBadgeShareTutorial) endComposeTutorial();
+          }}
+          disabled={isSharing || isShared}
+        >
+          {isSharing ? (
+            <ActivityIndicator color={colors.primaryContent} size="small" />
+          ) : (
+            <Text style={[styles.shareButtonText, isShared && styles.shareButtonTextDone]}>
+              {isShared ? t("Shared") : t("Share to Media")}
+            </Text>
+          )}
+        </Pressable>
+      </TutorialSpotlight>
     ) : null;
 
   return (
@@ -195,6 +217,9 @@ export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, 
             <Text style={[styles.title, styles.centeredText]}>{displayTitle}</Text>
             <Text style={[styles.description, styles.centeredText]}>{displayDescription}</Text>
             {shareButton}
+            {showBadgeShareTutorial && (
+              <TutorialInfoBox text={t("Tap here to share this badge.")} onDismiss={endComposeTutorial} />
+            )}
           </View>
         ) : (
           <View style={styles.cardOuter} pointerEvents="box-none">
@@ -212,6 +237,9 @@ export default function BadgeDetailModal({ visible, onClose, badge, sharedKeys, 
               </View>
             </View>
             {shareButton}
+            {showBadgeShareTutorial && (
+              <TutorialInfoBox text={t("Tap here to share this badge.")} onDismiss={endComposeTutorial} />
+            )}
           </View>
         )}
       </View>

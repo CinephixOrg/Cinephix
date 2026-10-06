@@ -4,6 +4,7 @@ import Review from "../models/Review.js";
 import Rating from "../models/Rating.js";
 import User from "../models/User.js";
 import CustomList from "../models/CustomList.js";
+import Group from "../models/Group.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { removeShareNotifications, syncShareLikeNotification } from "../services/notifications.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
@@ -115,7 +116,10 @@ const REVIEW_SHARE_COOLDOWN_MS = 60 * 60 * 1000;
 // same target does).
 const RECOMMENDATION_COOLDOWN_MS = 60 * 60 * 1000;
 
-async function hydrateContentData(contentId, contentType) {
+// Exported for groupController.js's own community poll/challenge creation
+// (admin picks titles straight from the catalog, same snapshot shape) —
+// single source of truth rather than a second copy of this lookup.
+export async function hydrateContentData(contentId, contentType) {
   const model = contentType === "movie" ? getMovie() : getSeries();
   const doc = await model.findById(contentId).select("title name poster_path release_date first_air_date").lean();
   if (!doc) return null;
@@ -658,8 +662,17 @@ export const getShareFeed = asyncHandler(async (req, res) => {
 
   // The organic, score-ranked query always excludes official posts — they
   // get fixed guaranteed positions instead of competing on engagement (see
-  // officialSlotPositions above).
-  const organicMatch = { isOfficialPost: { $ne: true }, ...(scope === "following" ? { user: { $in: followingIds } } : {}) };
+  // officialSlotPositions above). Also excludes anything pinned to a
+  // community (groupId set) — a Group's own poll (groupController.js)
+  // reuses this exact Share/poll shape, but it's only ever meant to be
+  // read from that Group's own page, never mixed into the public Media
+  // feed. `groupId: null` matches both an explicit null and a missing
+  // field, so every pre-existing Share (no groupId at all) is unaffected.
+  const organicMatch = {
+    isOfficialPost: { $ne: true },
+    groupId: null,
+    ...(scope === "following" ? { user: { $in: followingIds } } : {}),
+  };
 
   // Which absolute feed positions in this page's own [pageStart, pageEnd)
   // window are official slots, and how many came before this page (needed
@@ -894,6 +907,16 @@ export const voteOnPoll = asyncHandler(async (req, res) => {
   if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= share.pollData.options.length) {
     return sendError(res, "Invalid optionIndex", 400);
   }
+  // A community's own poll (share.groupId set) is only votable by that
+  // community's members — unlike a personal Watchlist poll, which anyone
+  // who can see it in Media may vote on.
+  if (share.groupId) {
+    const isMember = await Group.exists({ _id: share.groupId, "members.user": userId });
+    if (!isMember) return sendError(res, "Not a member of this group", 403);
+    if (share.pollData.expiresAt && share.pollData.expiresAt < new Date()) {
+      return sendError(res, "This poll has ended", 400);
+    }
+  }
 
   for (const option of share.pollData.options) {
     option.votes.pull(userId);
@@ -929,7 +952,13 @@ export const getUserShares = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
 
-  const query = { user: targetUserId };
+  // groupId: null — same exclusion getShareFeed's own organicMatch applies:
+  // a community poll is authored with `user` set to whichever admin created
+  // it (createGroupPoll), but it's that community's own activity, never a
+  // personal post of theirs. Direct ask, reported live: an admin's own
+  // profile was showing every poll they'd ever created for their
+  // communities, "as if they'd posted it themselves."
+  const query = { user: targetUserId, groupId: null };
   // Profile's own Sharings tab category filter (multi-select) — direct ask.
   // Omitted (or every valid type present) means unfiltered, same as before
   // this existed; an invalid type in the list is silently dropped rather

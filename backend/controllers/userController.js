@@ -1324,10 +1324,21 @@ export const deleteAccount = asyncHandler(async (req, res) => {
   
   // 1. Verdiği oyları sil
   await Rating.deleteMany({ user: user._id });
-  
+
   // 2. Bildirimlerini sil
   await Notification.deleteMany({ user: user._id });
-  await Notification.deleteMany({ sender: user._id }); 
+  await Notification.deleteMany({ sender: user._id });
+
+  // 2b. Sahip olduğu listeler/yorumlar/paylaşımlar — bunlar silinmezse
+  // owner/user referansı sahipsiz (dangling) kalır; DiscoverListCard.tsx gibi
+  // owner alanını doğrudan okuyan ekranlar (list.owner.username) bu durumda
+  // çöküyordu (gerçek, canlı rapor edilen hata: bir filmin detay sayfasındaki
+  // "Lists" kutusundan silinmiş bir hesabın public listesine girilince
+  // kırmızı hata). Hesap silinirken bu içerikler de silinmeli ki böyle bir
+  // sahipsiz referans hiç oluşmasın.
+  await CustomList.deleteMany({ owner: user._id });
+  await Review.deleteMany({ user: user._id });
+  await Share.deleteMany({ user: user._id });
 
   // 3. Kullanıcıyı takipçi listelerinden temizle
   await User.updateMany(
@@ -1751,7 +1762,10 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
           .lean()
       : [],
     Review.countDocuments({ user: userId }),
-    Share.countDocuments({ user: userId })
+    // groupId: null — a community poll they created as that community's
+    // admin isn't a personal post of theirs, same exclusion shareController.js
+    // applies everywhere else a user's own Shares are counted/listed.
+    Share.countDocuments({ user: userId, groupId: null })
   ]);
 
   const moviesAvgRating = averageRating(movieRatings);
@@ -2000,8 +2014,9 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
   ] = await Promise.all([
     Review.countDocuments({ user: userId, createdAt: { $gte: monthStart, $lt: monthEnd } }),
     Review.countDocuments({ user: userId, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
-    Share.countDocuments({ user: userId, createdAt: { $gte: monthStart, $lt: monthEnd } }),
-    Share.countDocuments({ user: userId, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
+    // groupId: null — see shareController.js's getUserShares comment.
+    Share.countDocuments({ user: userId, groupId: null, createdAt: { $gte: monthStart, $lt: monthEnd } }),
+    Share.countDocuments({ user: userId, groupId: null, createdAt: { $gte: prevMonthStart, $lt: monthStart } }),
     // Someone followed you.
     Notification.countDocuments({ user: userId, type: "follow", createdAt: { $gte: monthStart, $lt: monthEnd } }),
     Notification.countDocuments({ user: userId, type: "follow", createdAt: { $gte: prevMonthStart, $lt: monthStart } }),

@@ -140,7 +140,10 @@ export const getMyActivity = asyncHandler(async (req, res) => {
             .slice(0, cap)
         ),
     wants("shared") &&
-      Share.find({ user: userId, isOfficialPost: { $ne: true }, ...since("createdAt") })
+      // groupId: null — see shareController.js's getUserShares comment: a
+      // community poll a member/admin created for their community is that
+      // community's own activity, not a personal "I shared this" event.
+      Share.find({ user: userId, isOfficialPost: { $ne: true }, groupId: null, ...since("createdAt") })
         .sort({ createdAt: -1, _id: -1 })
         .limit(cap)
         .select("type contentData.title listData.name createdAt")

@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Message from "../models/Message.js";
 import Group from "../models/Group.js";
+import GroupWatchParty from "../models/GroupWatchParty.js";
 import Conversation from "../models/Conversation.js";
 import { notifyMessage } from "../services/notifications.js";
 import { setIo } from "../services/socketService.js";
@@ -90,6 +91,19 @@ export const setupChat = (io) => {
         if (!authorized) {
           socket.emit("error", { message: "Not a member of this room" });
           return;
+        }
+
+        // Direct report: a watch party's own chat could be posted in
+        // before scheduledAt arrived — this socket path is the one
+        // ChatRoom.tsx actually uses while connected (groupController.js's
+        // own sendWatchPartyMessage only ever runs as the disconnected
+        // fallback), so the same guard has to live here too, not just there.
+        if (roomType === "watchparty") {
+          const party = await GroupWatchParty.findById(roomId).select("scheduledAt").lean();
+          if (!party || party.scheduledAt > new Date()) {
+            socket.emit("error", { message: "This watch party hasn't started yet" });
+            return;
+          }
         }
 
         const message = await Message.create({
@@ -217,6 +231,18 @@ async function canAccessRoom(userId, roomType, roomId) {
     // No live chat between people where either has blocked the other.
     const hidden = await hiddenUserIds(userId);
     return !conversation.participants.some((p) => hidden.has(p.toString()));
+  }
+
+  // Same bar as that watch party's own community's main chat — any member,
+  // not just whoever RSVP'd (someone curious should still be able to read
+  // along/chime in, same as dropping into a group chat they haven't been
+  // especially active in).
+  if (roomType === "watchparty") {
+    const party = await GroupWatchParty.findById(roomId).select("group").lean();
+    if (!party) return false;
+    const group = await Group.findById(party.group).select("members").lean();
+    if (!group) return false;
+    return group.members.some((m) => m.user.toString() === userId.toString());
   }
 
   return false;

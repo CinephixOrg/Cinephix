@@ -49,7 +49,6 @@ export default function SearchListCard({ list, onPress, basePath }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const isPremium = list.owner.accountTier === "premium";
   const [hasLiked, setHasLiked] = useState(!!list.hasLiked);
   const [likeCount, setLikeCount] = useState(list.likeCount);
   const [liking, setLiking] = useState(false);
@@ -106,6 +105,14 @@ export default function SearchListCard({ list, onPress, basePath }: Props) {
     [colors]
   );
 
+  // Same dangling-owner case DiscoverListCard.tsx guards against — a public
+  // list whose owner account was deleted populates to null. After every
+  // hook above, not before — must never change hook call order.
+  if (!list.owner) return null;
+  const owner = list.owner;
+
+  const isPremium = owner.accountTier === "premium";
+
   // Hollow rounded-rect stroke overlaid on the card, last in paint order —
   // same technique (and gold pair) as ShareCard.tsx's own premiumBorder.
   const premiumBorder = isPremium ? (
@@ -122,9 +129,9 @@ export default function SearchListCard({ list, onPress, basePath }: Props) {
 
   return (
     <Pressable style={[styles.card, !isPremium && styles.cardFrame]} onPress={onPress}>
-      <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${list.owner._id}` as any)} hitSlop={4}>
-        <UserAvatar userId={list.owner._id} username={list.owner.username} profilePicUrl={list.owner.profile_pic_url} size={28} disabled />
-        <Text style={styles.ownerName}>{list.owner.username}</Text>
+      <Pressable style={styles.ownerRow} onPress={() => router.push(`/user/${owner._id}` as any)} hitSlop={4}>
+        <UserAvatar userId={owner._id} username={owner.username} profilePicUrl={owner.profile_pic_url} size={28} disabled />
+        <Text style={styles.ownerName}>{owner.username}</Text>
       </Pressable>
 
       <Text style={styles.name} numberOfLines={1}>

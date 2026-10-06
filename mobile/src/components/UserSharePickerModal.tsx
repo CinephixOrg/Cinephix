@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { View, Text, TextInput, FlatList, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, TextInput, FlatList, ActivityIndicator, Image, StyleSheet } from "react-native";
 import Pressable from "./common/TapSafePressable";
 // A Modal needs its own gesture root for the app's Pressables to work inside it.
 import Modal from "./common/GestureModal";
@@ -182,6 +182,13 @@ export default function UserSharePickerModal({ visible, title, onClose, sending,
         avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.base300 },
         avatarFallback: { alignItems: "center", justifyContent: "center" },
         avatarFallbackText: { fontFamily: fonts.bold, fontSize: 13, color: colors.primary },
+        // Rounded-square, not a circle — same shape a community's own
+        // avatar always takes elsewhere (MessagesSection's own group tile),
+        // never the round one a person's avatar uses. Direct ask, reported
+        // live: this tab's rows were showing neither the community's real
+        // cover image nor that shape, just plain circular initials.
+        groupAvatar: { width: 40, height: 40, borderRadius: 13, backgroundColor: colors.base300 },
+        groupAvatarFallback: { width: 40, height: 40, borderRadius: 13, backgroundColor: `${colors.primary}1F`, alignItems: "center", justifyContent: "center" },
         empty: { textAlign: "center", color: colors.placeholder, padding: 24 },
         footer: { padding: 16, borderTopWidth: 1, borderTopColor: colors.border },
         shareButton: {
@@ -290,9 +297,13 @@ export default function UserSharePickerModal({ visible, title, onClose, sending,
                 const isSelected = selectedGroups.has(item._id);
                 return (
                   <Pressable style={styles.row} onPress={() => toggleGroup(item._id)}>
-                    <View style={[styles.avatar, styles.avatarFallback]}>
-                      <Text style={styles.avatarFallbackText}>{item.name.slice(0, 2).toUpperCase()}</Text>
-                    </View>
+                    {item.coverImage ? (
+                      <Image source={{ uri: item.coverImage }} style={styles.groupAvatar} />
+                    ) : (
+                      <View style={styles.groupAvatarFallback}>
+                        <Ionicons name="people" size={18} color={colors.primary} />
+                      </View>
+                    )}
                     <Text style={styles.username}>{item.name}</Text>
                     <Ionicons
                       name={isSelected ? "checkbox" : "square-outline"}

@@ -105,6 +105,11 @@ export default function ListRailCard({ list, onPress }: Props) {
     [colors]
   );
 
+  // Same dangling-owner case DiscoverListCard.tsx guards against — a public
+  // list whose owner account was deleted populates to null. After every
+  // hook above, not before — must never change hook call order.
+  if (!list.owner) return null;
+
   return (
     <View style={styles.card}>
       <View style={styles.fan}>

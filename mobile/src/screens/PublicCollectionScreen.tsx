@@ -19,6 +19,16 @@ import {
 } from "../api/publicCollectionCache";
 import type { CollectionEntry } from "../utils/collectionQuery";
 import { useOwnerTitle } from "../hooks/useOwnerTitle";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
+
+// Same two placements as the viewer's own Watched List/Watchlist
+// (CollectionGrid's adUnitId) — this is about the VIEWER's own tier, not
+// whose collection they're looking at, same reasoning Profile's tabs
+// already apply when viewing someone else's profile.
+const AD_UNIT_ID_BY_KIND: Record<PublicCollectionKind, string> = {
+  watched: AD_UNIT_IDS.WATCHED_LIST_BANNER,
+  watchlist: AD_UNIT_IDS.WATCHLIST_BANNER,
+};
 
 const NO_ENTRIES: CollectionEntry[] = [];
 
@@ -162,6 +172,7 @@ function PublicCollectionScreen({ kind }: { kind: PublicCollectionKind }) {
         paddingBottom={GRID_PADDING_BOTTOM}
         onOpen={openTitle}
         refreshControl={refreshControl}
+        adUnitId={AD_UNIT_ID_BY_KIND[kind]}
       />
     );
   }
