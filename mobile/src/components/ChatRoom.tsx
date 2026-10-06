@@ -28,6 +28,7 @@ import RecommendationMessageCard from "./RecommendationMessageCard";
 import SyncShareMessageCard from "./SyncShareMessageCard";
 import ProfileShareMessageCard from "./ProfileShareMessageCard";
 import ListShareMessageCard from "./ListShareMessageCard";
+import CommunityAnnouncementMessageCard from "./CommunityAnnouncementMessageCard";
 import ProfileAnalysisShareMessageCard from "./ProfileAnalysisShareMessageCard";
 import AnalyzeModal from "./AnalyzeModal";
 import ProfileAnalysisModal from "./ProfileAnalysisModal";
@@ -169,6 +170,8 @@ const MessageRow = memo(function MessageRow({
     body = <ProfileShareMessageCard message={message} isOwn={isOwn} onLongPress={longPress} />;
   } else if (message.type === "list_share") {
     body = <ListShareMessageCard message={message} isOwn={isOwn} onLongPress={longPress} />;
+  } else if (message.type === "community_announcement") {
+    body = <CommunityAnnouncementMessageCard message={message} isOwn={isOwn} onLongPress={longPress} />;
   } else if (message.type === "analysis_share" && (message.analysisData as { type?: string } | undefined)?.type === "profile") {
     body = (
       <ProfileAnalysisShareMessageCard
@@ -440,7 +443,7 @@ export default function ChatRoom({
   );
 
   const userId = user?._id;
-  const showNames = roomType === "group";
+  const showNames = roomType === "group" || roomType === "watchparty";
   const renderItem = useCallback(
     ({ item }: { item: ChatRow }) => {
       if (item.kind === "day") return <DaySeparator iso={item.iso} styles={styles} />;

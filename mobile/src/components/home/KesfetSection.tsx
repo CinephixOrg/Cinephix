@@ -8,21 +8,25 @@ import { View, RefreshControl, StyleSheet } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { getPopularThisWeek, getPopularWithFriends } from "../../api/feedService";
+import { getPopularThisWeek, getPopularWithFriends, getCommunityAnnouncements } from "../../api/feedService";
 import { getReviewsFeed } from "../../api/reviewService";
 import { getPopularLists } from "../../api/listService";
+import { loadCommunities } from "../../api/communitiesStore";
 import ContentRail from "../ContentRail";
 import AddedByCard from "../AddedByCard";
 import ReviewsSwiper from "../ReviewsSwiper";
 import ListsSwiper from "../ListsSwiper";
+import CommunityAnnouncementsSwiper from "../CommunityAnnouncementsSwiper";
 import LeaderboardPodium from "../LeaderboardPodium";
 import ActivitySection from "./ActivitySection";
 import WhatToWatchRail from "./WhatToWatchRail";
 import NewReleasesRail from "./NewReleasesRail";
 import { SkeletonRail } from "../Skeleton";
 import { PosterRevealProvider } from "../../context/PosterRevealContext";
-import type { PopularThisWeekItem, PopularReview, DiscoverListItem } from "../../types";
+import type { PopularThisWeekItem, PopularReview, DiscoverListItem, GroupAnnouncement, Group, CommunityRailItem } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
 // "See all" was removed from both rails, then reinstated a round later —
 // both routes (home/reviews.tsx, home/lists-discover.tsx) kept working the
@@ -85,6 +89,34 @@ const LISTS_PREVIEW_COUNT = 10;
 // (favoriteMovies/favoriteSeries aren't per-item timestamped the way
 // watchlist already is, and giving them one touches match-making/
 // leaderboard code elsewhere — a separate task, not bundled into this).
+// Builds one interleaved list for the "Community Announcements" rail out
+// of two separately-fetched sources — a member's own community events and
+// the "popular community" discovery cards shown to everyone. Direct ask,
+// after an earlier version rendered these as two separate rails/headings:
+// lead with a couple of popular cards, then the member announcements
+// (their own rough order — most recent first, already how the backend
+// returns them), with a popular card dropped back in every few
+// announcements so a long run of internal news doesn't crowd discovery
+// out entirely; any popular cards left over land at the end.
+const POPULAR_CARDS_LEADING = 2;
+const ANNOUNCEMENTS_PER_POPULAR_BREAK = 3;
+function buildCommunityRailItems(announcements: GroupAnnouncement[], popularCommunities: Group[]): CommunityRailItem[] {
+  const items: CommunityRailItem[] = [];
+  let p = 0;
+  const takePopular = (n: number) => {
+    for (let i = 0; i < n && p < popularCommunities.length; i++, p++) {
+      items.push({ kind: "popular", key: `popular-${popularCommunities[p]._id}`, data: popularCommunities[p] });
+    }
+  };
+  takePopular(POPULAR_CARDS_LEADING);
+  announcements.forEach((a, i) => {
+    items.push({ kind: "announcement", key: a._id, data: a });
+    if ((i + 1) % ANNOUNCEMENTS_PER_POPULAR_BREAK === 0) takePopular(1);
+  });
+  takePopular(popularCommunities.length - p);
+  return items;
+}
+
 interface Props {
   // True while Discover is the currently-visible page of home/index.tsx's
   // pager. KesfetSection only ever mounts once and then stays alive
@@ -119,23 +151,38 @@ export default function KesfetSection({ isActive }: Props) {
   const [friendsChoice, setFriendsChoice] = useState<PopularThisWeekItem[]>([]);
   const [reviewsPreview, setReviewsPreview] = useState<PopularReview[]>([]);
   const [listsPreview, setListsPreview] = useState<DiscoverListItem[]>([]);
+  const [communityAnnouncements, setCommunityAnnouncements] = useState<GroupAnnouncement[]>([]);
+  const [popularCommunities, setPopularCommunities] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const [moviesRes, seriesRes, friendsRes, reviewsRes, listsRes] = await Promise.all([
+    const [moviesRes, seriesRes, friendsRes, reviewsRes, listsRes, announcementsRes, communitiesRes] = await Promise.all([
       getPopularThisWeek(20, "movie"),
       getPopularThisWeek(20, "series"),
       getPopularWithFriends(20), // no type — movies and series mixed in one rail
       getReviewsFeed(1, REVIEWS_PREVIEW_COUNT),
       getPopularLists(LISTS_PREVIEW_COUNT),
+      getCommunityAnnouncements(10),
+      loadCommunities(),
     ]);
     setTrendingMovies(moviesRes);
     setTrendingSeries(seriesRes);
     setFriendsChoice(friendsRes);
     setReviewsPreview(reviewsRes.items);
     setListsPreview(listsRes);
+    setCommunityAnnouncements(announcementsRes);
+    // Discovery only — communities already joined have nothing to "discover"
+    // here, their activity already surfaces via the rail above instead.
+    setPopularCommunities(
+      communitiesRes
+        .filter((g) => !g.isMember)
+        .sort((a, b) => b.memberCount - a.memberCount)
+        .slice(0, 8)
+    );
   }, []);
+
+  const communityRailItems = useMemo(() => buildCommunityRailItems(communityAnnouncements, popularCommunities), [communityAnnouncements, popularCommunities]);
 
   useEffect(() => {
     setLoading(true);
@@ -226,6 +273,19 @@ export default function KesfetSection({ isActive }: Props) {
       </PosterRevealProvider>
       <View style={styles.sectionDivider} />
 
+      {/* One rail, one heading — mixes member-only community events
+          (never the Shares/Media feed, see GroupAnnouncement.js's own
+          comment) with "popular community" discovery cards for everyone
+          else (buildCommunityRailItems above). Renders nothing at all (no
+          title, no divider) when both sources are empty, same as every
+          other empty rail on this page. */}
+      {communityRailItems.length > 0 ? (
+        <>
+          <CommunityAnnouncementsSwiper items={communityRailItems} />
+          <View style={styles.sectionDivider} />
+        </>
+      ) : null}
+
       <ContentRail
         title={t("Friends' Choice")}
         data={friendsChoice}
@@ -239,6 +299,11 @@ export default function KesfetSection({ isActive }: Props) {
       <View style={styles.sectionDivider} />
 
       <WhatToWatchRail basePath="/home" />
+
+      {/* One banner at the very end of the page, not between every section
+          — direct ask ("her başlık arası da olmasın hatta direkt en sona
+          eklenebilir userı rahatsız etmemesi için"). */}
+      <AdBanner unitId={AD_UNIT_IDS.DISCOVER_BANNER} />
     </ScrollView>
   );
 }

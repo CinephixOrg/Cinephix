@@ -1,5 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { Animated, Easing, StyleSheet, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Pressable from "../common/TapSafePressable";
 import { Ionicons } from "@expo/vector-icons";
 import type { CollectionEntry } from "../../utils/collectionQuery";
@@ -20,7 +20,7 @@ const shownPosters = new Set<string>();
 /** glide: animate to a new position. snap: jump there. */
 export type TileMotion = "glide" | "snap";
 
-export function createTileStyles(colors: { base300: string }) {
+export function createTileStyles(colors: { base300: string; base100: string; primary: string; primaryContent: string }) {
   return StyleSheet.create({
     cell: { position: "absolute", left: 0, top: 0 },
     fill: { flex: 1 },
@@ -46,6 +46,37 @@ export function createTileStyles(colors: { base300: string }) {
       alignItems: "center",
       justifyContent: "center",
     },
+    // Poll-selection mode (Watchlist's own "what should I watch next?" poll
+    // — direct ask, replacing a separate modal with its own duplicate grid:
+    // "var olan watchlist kart dizliminden seçilsin... bir moda girmek gibi
+    // düşün"). Same numbered-badge language CreatePollModal.tsx's own
+    // checkBadge used, so this reads as the same feature even though it no
+    // longer lives in a separate screen.
+    selectedOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderRadius: 8,
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+    selectedBadge: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderWidth: 2,
+      borderColor: colors.base100,
+    },
+    selectedBadgeText: { fontSize: 11, fontWeight: "700", color: colors.primaryContent },
+    dimmed: { opacity: 0.4 },
   });
 }
 
@@ -77,6 +108,17 @@ interface Props {
   styles: TileStyles;
   placeholderColor: string;
   removeLabel: string;
+  /** Poll-selection mode (Watchlist only) — mutually exclusive with `editing`
+   * in practice (CollectionScreen never shows both entry points at once). A
+   * tap toggles selection instead of opening/removing; `selectionIndex`
+   * (1-based) is shown in a numbered badge once picked, and a tile neither
+   * selected nor pickable once the 3-item cap is hit dims out, same
+   * behavior CreatePollModal.tsx's own grid used before this replaced it. */
+  selectionMode?: boolean;
+  selected?: boolean;
+  selectionIndex?: number | null;
+  selectionAtCap?: boolean;
+  onToggleSelect?: (entry: CollectionEntry) => void;
 }
 
 // One poster in a collection grid.
@@ -107,6 +149,11 @@ function CollectionPosterTile({
   styles,
   placeholderColor,
   removeLabel,
+  selectionMode = false,
+  selected = false,
+  selectionIndex = null,
+  selectionAtCap = false,
+  onToggleSelect,
 }: Props) {
   const translateX = useRef(new Animated.Value(x)).current;
   const translateY = useRef(new Animated.Value(y)).current;
@@ -161,6 +208,11 @@ function CollectionPosterTile({
 
   const onPress = () => {
     if (leaving) return;
+    if (selectionMode) {
+      if (selectionAtCap && !selected) return;
+      onToggleSelect?.(entry);
+      return;
+    }
     if (editing && editable) onRemove(entry);
     else onOpen(entry);
   };
@@ -179,7 +231,7 @@ function CollectionPosterTile({
         accessibilityLabel={editing && editable ? `${removeLabel}, ${entry.title}` : entry.title}
         style={({ pressed }) => [styles.fill, pressed && styles.pressed]}
       >
-        <View style={styles.poster}>
+        <View style={[styles.poster, selectionMode && selectionAtCap && !selected && styles.dimmed]}>
           {uri ? (
             <Animated.Image source={{ uri }} style={[styles.fill, { opacity: imageOpacity }]} onLoad={onImageLoad} />
           ) : (
@@ -189,7 +241,7 @@ function CollectionPosterTile({
           )}
         </View>
 
-        {editable ? (
+        {editable && !selectionMode ? (
           <Animated.View
             pointerEvents="none"
             style={[styles.overlay, { opacity: editProgress, transform: [{ scale: overlayScale }] }]}
@@ -198,6 +250,15 @@ function CollectionPosterTile({
               <Ionicons name="close" size={20} color="#fff" />
             </View>
           </Animated.View>
+        ) : null}
+
+        {selectionMode && selected ? (
+          <>
+            <View pointerEvents="none" style={styles.selectedOverlay} />
+            <View style={styles.selectedBadge}>
+              <Text style={styles.selectedBadgeText}>{selectionIndex != null ? selectionIndex + 1 : ""}</Text>
+            </View>
+          </>
         ) : null}
       </Pressable>
     </Animated.View>

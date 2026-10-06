@@ -7,8 +7,13 @@ import DiscoverListCard from "./DiscoverListCard";
 import { SkeletonListRow } from "./Skeleton";
 import type { ContentType, DiscoverListItem } from "../types";
 import { useTheme } from "../context/ThemeContext";
+import AdBanner from "./ads/AdBanner";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
 
 const PAGE_LIMIT = 20;
+// Same "every 6th card" cadence as every other inline card-feed placement
+// in this app — "optimum sıklıkta" direct ask for this exact sub-page.
+const AD_INTERVAL = 6;
 
 interface Props {
   contentType: ContentType;
@@ -103,13 +108,16 @@ export default function ContentListsSection({ contentType, contentId, basePath }
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={error ? <Text style={styles.error}>{error}</Text> : null}
-      renderItem={({ item }) => (
-        // A specific list's own detail page (lists/[id].tsx) isn't
-        // duplicated to every tab the way content/[type]/[id].tsx is
-        // (only home/search/profile/lists have it) — always opening
-        // Home's copy here is a deliberate, small compromise rather than
-        // a broken push from the tabs that don't have their own copy.
-        <DiscoverListCard list={item} basePath={basePath} onPress={() => router.push(`/home/lists/${item._id}` as any)} />
+      renderItem={({ item, index }) => (
+        <>
+          {/* A specific list's own detail page (lists/[id].tsx) isn't
+              duplicated to every tab the way content/[type]/[id].tsx is
+              (only home/search/profile/lists have it) — always opening
+              Home's copy here is a deliberate, small compromise rather than
+              a broken push from the tabs that don't have their own copy. */}
+          <DiscoverListCard list={item} basePath={basePath} onPress={() => router.push(`/home/lists/${item._id}` as any)} />
+          {(index + 1) % AD_INTERVAL === 0 && <AdBanner unitId={AD_UNIT_IDS.CONTENT_LISTS_BANNER} />}
+        </>
       )}
       onEndReached={loadMore}
       onEndReachedThreshold={0.5}

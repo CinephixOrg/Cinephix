@@ -22,8 +22,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MatchRadarChart from "./MatchRadarChart";
 import MatchSharedFavorites from "./MatchSharedFavorites";
-import PosterCoverflow from "./PosterCoverflow";
-import PosterRow from "./PosterRow";
+import PosterCoverflow, { type PosterCoverflowHandle } from "./PosterCoverflow";
 import MutualConnectionsGrid, { SOCIAL_LOCKED_VISIBLE_COUNT } from "./MutualConnectionsGrid";
 import LockedUnlockNote from "./LockedUnlockNote";
 import MatchVarietyRings from "./MatchVarietyRings";
@@ -86,8 +85,20 @@ const ANALYZING_SPINNER_DELAY_MS = 150;
 // grid link next to the coverflow instead of relying on one-at-a-time
 // swiping alone.
 const SEE_ALL_POSTER_THRESHOLD = 20;
-const SEE_ALL_COLUMNS = 3;
+const SEE_ALL_COLUMNS = 4;
+// Matches seeAllGrid's own paddingHorizontal below — each tile's width used
+// to be computed as a plain screenWidth/SEE_ALL_COLUMNS, ignoring this grid
+// padding entirely, so the columns' total width ran past the grid's actual
+// available width and the whole thing rendered visibly shifted. Direct
+// report: "açılan ekran biraz kaymış."
+const SEE_ALL_GRID_PADDING = 12;
 const SEE_ALL_POSTER_BASE = "https://image.tmdb.org/t/p/w185";
+// "Watch Together" — a plain wrapping poster grid (no per-poster title, no
+// horizontal scroll), 3 posters per row. Direct ask: this card previously
+// reused PosterRow's own horizontal-scroll-with-title layout; the request
+// was specifically for a flat, title-less grid instead.
+const WATCH_TOGETHER_COLUMNS = 3;
+const WATCH_TOGETHER_GAP = 10;
 
 interface CardDef {
   key: string;
@@ -190,6 +201,10 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
   // of unconditionally on every single selection.
   const shouldLoadExtras = activeIndex >= 1;
   const scrollRef = useRef<ScrollView>(null);
+  // The Shared Genres coverflow's own imperative handle — lets the "See
+  // all" grid below snap the rail to whichever poster was tapped there,
+  // instead of only updating the detail panel underneath it.
+  const coverflowRef = useRef<PosterCoverflowHandle>(null);
   // Drives MatchTitleBadge's own fade-out live, not through activeIndex —
   // that only updates once a swipe fully settles (onMomentumScrollEnd), so
   // gating the badge on it alone meant it stayed fully visible for the
@@ -528,6 +543,14 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
   // rather than a list.
   const { opacity: summaryOpacity, translateY: summaryTranslateY } = useRevealAnimation(parsed ? "shown" : null);
   const cardWidth = containerWidth - HORIZONTAL_PADDING * 2;
+  // Watch Together's grid tiles, sized off the card's own actual content
+  // width (cardWidth minus the `card` style's own 16-per-side padding) so
+  // exactly WATCH_TOGETHER_COLUMNS posters fit per row regardless of device
+  // width, same "derive from the real container" approach as every other
+  // dynamically-sized element in this panel (PosterCoverflow's own pitch,
+  // the See All grid's tile width).
+  const watchTogetherTileWidth =
+    (cardWidth - 16 * 2 - WATCH_TOGETHER_GAP * (WATCH_TOGETHER_COLUMNS - 1)) / WATCH_TOGETHER_COLUMNS;
 
   const styles = useMemo(
     () =>
@@ -560,6 +583,8 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
         genreEmptyText: { fontSize: 12.5, color: colors.placeholder, lineHeight: 18 },
         seeAllPostersLink: { alignSelf: "center", marginTop: 8 },
         watchTogetherHint: { fontSize: 12.5, color: colors.placeholder, lineHeight: 18, marginBottom: 12 },
+        watchTogetherGrid: { flexDirection: "row", flexWrap: "wrap", gap: WATCH_TOGETHER_GAP },
+        watchTogetherPoster: { borderRadius: 10, backgroundColor: colors.base300 },
         seeAllPostersText: { fontSize: 12, fontFamily: fonts.bold, textDecorationLine: "underline" },
         // The See All modal itself — a plain grid, not trying to match the
         // coverflow's own visual language, since this is purely a fast-scan
@@ -577,7 +602,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
         },
         seeAllTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
         seeAllClose: { padding: 6 },
-        seeAllGrid: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 24 },
+        seeAllGrid: { paddingHorizontal: SEE_ALL_GRID_PADDING, paddingTop: 12, paddingBottom: 24 },
         seeAllTile: { padding: 4 },
         seeAllPoster: { width: "100%", aspectRatio: 2 / 3, borderRadius: 8, backgroundColor: colors.base200 },
         seeAllRatingBadge: {
@@ -838,6 +863,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
                     // otherwise has no way to know the underlying items
                     // changed out from under it.
                     key={currentGenre}
+                    ref={coverflowRef}
                     items={genreItems}
                     onFocusChange={(id) => {
                       setShowAllGenres(false);
@@ -950,11 +976,16 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
                   contentContainerStyle={styles.seeAllGrid}
                   renderItem={({ item }) => (
                     <Pressable
-                      style={[styles.seeAllTile, { width: screenWidth / SEE_ALL_COLUMNS }]}
+                      style={[styles.seeAllTile, { width: (screenWidth - SEE_ALL_GRID_PADDING * 2) / SEE_ALL_COLUMNS }]}
                       onPress={() => {
                         setSelectedPosterId(item._id);
                         setShowAllGenres(false);
                         setSeeAllPostersVisible(false);
+                        // Direct ask: picking a poster here should also
+                        // snap the coverflow rail to it, not just update
+                        // the detail panel below — previously the rail
+                        // stayed wherever it was left.
+                        coverflowRef.current?.scrollToId(item._id);
                       }}
                     >
                       <View>
@@ -975,25 +1006,6 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
                 />
               </View>
             </Modal>
-          </View>
-        ),
-      });
-    }
-
-    // "Watch Together" — genuinely sitting on BOTH sides' own to-watch
-    // queue right now (getMutualToWatch), not a recommendation guess.
-    // Omitted entirely when there's no real overlap, same rule every other
-    // card here follows — no "nothing in common yet" empty state to build.
-    if (!mutualToWatchLoading && mutualToWatch.length > 0) {
-      list.push({
-        key: "watch-together",
-        title: t("Watch Together"),
-        render: () => (
-          <View>
-            <Text style={styles.watchTogetherHint}>
-              {t("Already on both your watchlists — you could sync up and watch these together.")}
-            </Text>
-            <PosterRow items={mutualToWatch} />
           </View>
         ),
       });
@@ -1024,6 +1036,54 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
       render: () => (
         <MatchVarietyRings candidate={candidate} activeGenres={filters.genres} shouldLoad={shouldLoadExtras} locked={isPlusPartialLock} />
       ),
+    });
+
+    // "Watch Together" — genuinely sitting on BOTH sides' own to-watch
+    // queue right now (getMutualToWatch), not a recommendation guess.
+    // Moved to right after Variety, direct ask. Always shown now too,
+    // separate direct report: a candidate with zero overlap used to show no
+    // "Watch Together" card at all, which read as the category being
+    // missing/broken rather than genuinely empty. Every other card in this
+    // deck is either always-pushed or gated on content that's known
+    // synchronously (matchInsights, already on `candidate`) — this was the
+    // only one silently dropping itself after an async fetch resolved to
+    // nothing, so it gets its own loading/empty/populated split instead.
+    list.push({
+      key: "watch-together",
+      title: t("Watch Together"),
+      render: () =>
+        mutualToWatchLoading ? (
+          <View style={styles.genreDetailLoading}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.narrativeLoadingText}>{t("Loading")}</Text>
+          </View>
+        ) : mutualToWatch.length > 0 ? (
+          <View>
+            <Text style={styles.watchTogetherHint}>
+              {t("Already on both your watchlists — you could sync up and watch these together.")}
+            </Text>
+            <View style={styles.watchTogetherGrid}>
+              {mutualToWatch.map((item) =>
+                item.poster_path ? (
+                  <Image
+                    key={item._id}
+                    source={{ uri: `${SEE_ALL_POSTER_BASE}${item.poster_path}` }}
+                    style={[styles.watchTogetherPoster, { width: watchTogetherTileWidth, height: watchTogetherTileWidth * 1.5 }]}
+                  />
+                ) : (
+                  <View
+                    key={item._id}
+                    style={[styles.watchTogetherPoster, { width: watchTogetherTileWidth, height: watchTogetherTileWidth * 1.5 }]}
+                  />
+                )
+              )}
+            </View>
+          </View>
+        ) : (
+          <Text style={styles.genreEmptyText}>
+            {t("Nothing on both your watchlists yet — add something you'd both want to watch.")}
+          </Text>
+        ),
     });
 
     list.push({
@@ -1094,6 +1154,7 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
     insetsTop,
     mutualToWatch,
     mutualToWatchLoading,
+    watchTogetherTileWidth,
     mutualConnections,
     mutualLoadingMore,
     mutualInitialLoading,
@@ -1190,16 +1251,15 @@ export default function MatchAnalysisPanel({ candidate, filters, containerWidth,
           {cards.map((card) => (
             <View key={card.key} style={[styles.card, { width: cardWidth, height: cardHeight }]}>
               {/* "cover" excluded too, alongside "ai-summary" — MatchCoverCard
-                  already renders its own title (MatchGradientTitle, "Ready to
-                  share your Sync?") as the first line of its own centered
-                  content. This external "SHARE" heading was redundant with
-                  that AND, worse, ate real height from the top of the box
-                  before cardScrollCentered's own centering ever runs — so
-                  the actually-centered content below it landed visibly lower
-                  than the card's true middle, direct report even after
-                  "cover" was added to cardScrollCentered. Removing it lets
-                  MatchCoverCard's whole content (title included) center as
-                  one group in the full card height. */}
+                  starts directly with its own overlapping-avatars header (no
+                  separate headline above it anymore), so this external
+                  "SHARE" heading would be redundant AND, worse, eat real
+                  height from the top of the box before cardScrollCentered's
+                  own centering ever runs — so the actually-centered content
+                  below it landed visibly lower than the card's true middle,
+                  direct report even after "cover" was added to
+                  cardScrollCentered. Removing it lets MatchCoverCard's whole
+                  content center as one group in the full card height. */}
               {card.key !== "ai-summary" && card.key !== "cover" && <Text style={styles.sectionTitle}>{localeUpper(card.title)}</Text>}
               {/* cardScrollCentered (flexGrow:1 + justifyContent:"center")
                   vertically centers a card whose own content is naturally

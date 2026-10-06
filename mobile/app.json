@@ -54,7 +54,15 @@
         }
       ],
       "expo-localization",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-8572881441508627~3302669302",
+          "iosAppId": "ca-app-pub-8572881441508627~1538909921",
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        }
+      ]
     ],
     "scheme": "cinephix",
     "extra": {

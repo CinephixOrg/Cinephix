@@ -31,7 +31,7 @@ import Pressable from "./common/TapSafePressable";
 // itself be gesture-handler's version, not just the scroller. Every other
 // Pressable in this file is TapSafePressable (imported below), which is
 // gesture handler's too inside the Media feed.
-import { ScrollView, Pressable as GHPressable } from "react-native-gesture-handler";
+import { ScrollView, Pressable as GHPressable, Gesture, GestureDetector } from "react-native-gesture-handler";
 import Svg, { Defs, LinearGradient, Stop, Rect, Path } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -446,7 +446,15 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           overflow: "hidden",
           padding: 16,
         },
-        analysisCoverWatermark: { position: "absolute", right: -10, bottom: -12, opacity: 0.07 },
+        // Direct report: the deliberate past-the-edge bleed (right/bottom
+        // negative) was showing past the box's own ROUNDED corner — a
+        // square icon glyph's own bounding-box corner pokes past an arc
+        // inscribed in that same box no matter how precisely overflow:
+        // hidden clips it, once it's positioned IN the corner like this.
+        // Pulled fully inside the box instead (positive inset, comfortably
+        // past where the rounded corner's own curve starts) — trades the
+        // bleed effect for guaranteed containment.
+        analysisCoverWatermark: { position: "absolute", right: 6, bottom: 6, opacity: 0.07 },
         // Just vertical spacing around AnalysisCoverIconRail — the rail's
         // own width/centering is fixed (RAIL_WIDTH, alignSelf:"center"),
         // defined once at that component rather than duplicated here.
@@ -471,7 +479,8 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         // Same low-opacity decorative-icon technique as analysisCover's own
         // watermark (ShareCard's analysis cover), top-right here instead of
         // bottom-right — direct ask to bring the same touch to this box.
-        badgeBoxWatermark: { position: "absolute", right: -10, top: -12, opacity: 0.07 },
+        // Same fix, same reasoning as analysisCoverWatermark's own comment.
+        badgeBoxWatermark: { position: "absolute", right: 6, top: 6, opacity: 0.07 },
         badgeBoxImage: { width: 72, height: 72, marginBottom: 10 },
         badgeBoxTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
         badgeBoxCaption: { fontSize: 12, color: colors.placeholder, marginTop: 4, textAlign: "center" },
@@ -558,7 +567,14 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         // detected via the first option's own contentId. A row of 2-3
         // poster cards instead of pollOptionsCol's stacked text rows,
         // direct ask ("posterlerle oluşturmayı düşündüm").
-        pollPosterRow: { flexDirection: "row", gap: 8 },
+        // justifyContent:"center" — real bug, reported live: a 2-option poll's
+        // tiles (flex:1, each capped at maxWidth:"32%" below) only fill
+        // ~64%+gap of the row's width, and with the default flex-start this
+        // left all the unused space stranded on the right instead of
+        // centering the two tiles. A 3-option row already fills close to
+        // 100% of the width on its own, so centering it has no visible
+        // effect there — this only actually moves anything for fewer than 3.
+        pollPosterRow: { flexDirection: "row", gap: 8, justifyContent: "center" },
         // maxWidth caps a 2-option poll's own flex:1 growth at roughly what
         // a 3-option row's own tiles naturally land on — real bug, reported
         // live: a 2-option poll's posters stretched to fill the row (~50%
@@ -651,7 +667,16 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         // `transform` here — the rotate combines with the tap-bounce scale
         // inline, since RN style arrays replace `transform` wholesale
         // rather than merging it.
-        likeSticker: { position: "absolute", bottom: 18, right: -4, alignItems: "center" },
+        // zIndex: real bug, reported live — tapping this sticker right where
+        // it rides up over the content box's own bottom-right corner
+        // (deliberate overlap, see the comment above) sometimes registered
+        // late/took a second tap. It's a sibling of that box, not a child of
+        // it, positioned absolutely over the same screen region — without an
+        // explicit zIndex, two independent gesture-handler Pressables
+        // overlapping like this aren't guaranteed to resolve touch priority
+        // by JSX order alone the way plain paint order would suggest. This
+        // forces the sticker to always win a tap in the overlap, regardless.
+        likeSticker: { position: "absolute", bottom: 18, right: -4, alignItems: "center", zIndex: 5 },
         likeStickerHeartWrap: { width: 36, height: 36 },
         // Glow only applies once actually liked — an unliked gray heart
         // shouldn't glow.
@@ -708,24 +733,48 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           bottom: 0,
           alignItems: "center",
           justifyContent: "center",
-          // Real bug, reported live: on some of Cinephix's own short posts
-          // (a text-only officialBox with no poster, short enough that its
-          // own height is under the heart's fixed 90px size), the bottom of
-          // the heart was getting cut off right at the box's own edge
+          // Real bug, reported live — twice: on some of Cinephix's own short
+          // posts (a text-only officialBox with no poster, short enough that
+          // its own height is under the heart's fixed 90px size), the bottom
+          // of the heart was getting cut off right at the box's own edge
           // instead of overflowing visibly on top of whatever's below it.
-          // zIndex (both platforms) + elevation (Android's own separate
-          // mechanism for paint-order/compositing) forces this onto its own
-          // top layer regardless of sibling paint order or an ancestor's
-          // rounded-corner clipping, rather than trusting plain JSX order.
+          // First fix (removeClippedSubviews on the feed's own FlatList)
+          // didn't resolve it — the actual culprit was `elevation` right
+          // here: Android promotes an elevated view onto its own hardware
+          // layer for the shadow/outline effect, and that layer's drawing
+          // gets bounded to the view's own rect — which is exactly this
+          // (short) box's size, clipping the heart centered inside it at
+          // precisely the edge it was reported cut off at. zIndex alone
+          // (both platforms, no such side effect, and RN's Fabric renderer
+          // already honors it without needing elevation too) is enough for
+          // paint order — burstOverlayEl is JSX-last in every box anyway.
           zIndex: 10,
-          elevation: 10,
         },
         // Shared dark drop-shadow for legibility over any background —
         // used by the burst heart.
+        //
+        // Real third cause, found after removeClippedSubviews and elevation
+        // both turned out not to be it: this icon is a glyph inside a Text
+        // node (how every vector-icon library renders), and at size:90 —
+        // much larger than this app's usual 16-32px icon sizes — Android's
+        // own text layout clips a custom icon font's glyph to its computed
+        // line box whenever that box is tighter than the glyph's actual
+        // visual bounds (a known Android-specific text-rendering quirk,
+        // basically invisible at normal icon sizes since the clipping
+        // margin is proportionally tiny there, but very visible on a glyph
+        // this big — a real slice missing off the heart, not the soft "cut
+        // off at a straight box edge" either overflow or elevation clipping
+        // would produce). lineHeight wider than the glyph's own size gives
+        // Android's text layout a large enough box to stop clipping it;
+        // includeFontPadding:false (Android-only, no-op on iOS) removes
+        // the platform's own extra vertical font padding that was pushing
+        // the glyph toward one edge of that box instead of centering it.
         heartShadow: {
           textShadowColor: "rgba(0,0,0,0.35)",
           textShadowOffset: { width: 0, height: 2 },
           textShadowRadius: 6,
+          lineHeight: 110,
+          includeFontPadding: false,
         },
         // Shared by Recommendation AND Review: header row is the same
         // avatar+username+badge+FollowButton shape as Analysis, followed by
@@ -750,6 +799,13 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           borderRadius: INNER_BOX_RADIUS,
         },
         sharePoster: { width: 64, height: 96, borderRadius: 6, backgroundColor: colors.base300, overflow: "hidden" },
+        // Same radius again, directly on the absolutely-positioned Image
+        // itself — reported live as "the poster corners went square."
+        // sharePoster's own overflow:hidden should clip it, but Android
+        // doesn't reliably clip an absolutely-positioned Image to an
+        // ancestor's rounded corners; giving the image its own matching
+        // radius makes the rounding hold regardless.
+        sharePosterImage: { ...StyleSheet.absoluteFill, borderRadius: 6 },
         shareTextCol: { flex: 1, gap: 4, paddingTop: 2 },
         shareTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.baseContent },
         shareMessage: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.placeholder, lineHeight: 17 },
@@ -865,24 +921,6 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
     addRecommendedToWatchlist();
   };
 
-  // Instagram-style double-tap-to-like on the post's own content box.
-  // Manual double-tap detection (no gesture library elsewhere in this
-  // app to reach for) rather than firing the box's normal single-tap
-  // action immediately: a genuine double-tap needs a brief window to
-  // detect the second tap, so the single-tap action (navigate to content,
-  // open the list, ...) is deliberately delayed by that same window and
-  // cancelled if a second tap arrives in time — the standard trade-off
-  // for this gesture, not a bug. Double-tap always *adds* a like, never
-  // removes one (matches Instagram's own behavior), but still plays the
-  // burst animation even if already liked — it's feedback for the tap,
-  // not just the state change.
-  // 250ms was reported live as too tight — a real, if slightly unhurried,
-  // double-tap often lands its second tap just past that window, which
-  // read as "my double-tap sometimes just navigates away instead." Widened
-  // to 350ms, closer to how these gestures actually land in practice.
-  const DOUBLE_TAP_WINDOW_MS = 350;
-  const lastTapAtRef = useRef(0);
-  const pendingTapRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showBurst, setShowBurst] = useState(false);
   const burstScale = useRef(new Animated.Value(0)).current;
   const burstOpacity = useRef(new Animated.Value(0)).current;
@@ -924,7 +962,6 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
   useEffect(() => {
     return () => {
-      if (pendingTapRef.current) clearTimeout(pendingTapRef.current);
       if (watchlistDismissTimeoutRef.current) clearTimeout(watchlistDismissTimeoutRef.current);
     };
   }, []);
@@ -940,34 +977,87 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
     ]).start(() => setShowBurst(false));
   };
 
-  const handleContentPress = (originalOnPress?: () => void) => () => {
-    const now = Date.now();
-    if (now - lastTapAtRef.current < DOUBLE_TAP_WINDOW_MS) {
-      if (pendingTapRef.current) {
-        clearTimeout(pendingTapRef.current);
-        pendingTapRef.current = null;
-      }
-      lastTapAtRef.current = 0;
-      if (!share.liked) handleLikePress();
-      playBurst();
-    } else {
-      // A stale timer from an earlier isolated tap (one that never got a
-      // follow-up within its own window) could otherwise still be sitting
-      // here — clearing it first means at most one pending navigation is
-      // ever in flight, not two firing back to back.
-      if (pendingTapRef.current) {
-        clearTimeout(pendingTapRef.current);
-        pendingTapRef.current = null;
-      }
-      lastTapAtRef.current = now;
-      if (originalOnPress) {
-        pendingTapRef.current = setTimeout(() => {
-          pendingTapRef.current = null;
-          originalOnPress();
-        }, DOUBLE_TAP_WINDOW_MS);
-      }
-    }
+  // Instagram-style double-tap-to-like on the post's own content box — a
+  // real gesture-handler native double-tap recognizer now, not hand-rolled
+  // JS timestamp bookkeeping on two separate Pressable.onPress calls.
+  // That approach was reported live, TWICE, as still unreliable even
+  // widened from 250ms to 350ms to 450ms — comparing Date.now() across two
+  // independent onPress callbacks can't tell "two fast taps" apart from
+  // gesture-handler's own touch recognition quietly delaying/dropping one
+  // of them, especially under any JS-thread load (exactly what this same
+  // feed's scroll-jank fix, same day, was also fighting). A native
+  // multi-tap recognizer watches the raw touch stream directly and doesn't
+  // have that blind spot — the actual fix this needed, not another number.
+  //
+  // Gesture.Exclusive(doubleTap, Gesture.Native()) is gesture-handler's own
+  // documented pattern for adding a gesture on top of an existing
+  // Pressable without replacing it: Gesture.Native() stands in for
+  // "whatever's nested inside" (each box's own Pressable, its own
+  // onPress/hitSlop/press-visual-feedback, completely unchanged — see
+  // contentGesture's call sites below, each just a <GestureDetector>
+  // wrapped around the existing Pressable with the SAME onPress it always
+  // had). Exclusive lets the double-tap recognizer go first; only once it
+  // fails to see a second tap within maxDuration does the wrapped
+  // Pressable's own tap fire normally — same inherent trade-off as before
+  // (a single tap is still briefly held to see if it becomes a double-tap,
+  // true of every tap/double-tap app, Instagram included), just resolved
+  // by gesture-handler's own native timer instead of a JS setTimeout.
+  // Double-tap always *adds* a like, never removes one (matches
+  // Instagram's own behavior), but still plays the burst animation even if
+  // already liked — it's feedback for the tap, not just the state change.
+  // Real crash, reported live right after this shipped: double-tapping
+  // closed Expo Go entirely (a native crash, not a JS red-box — this file's
+  // own gesture objects were being rebuilt on every render, since neither
+  // was wrapped in useMemo. Gesture-handler's own docs call this out
+  // directly ("Consider wrapping your gesture configurations with useMemo,
+  // as it will reduce the amount of work Gesture Handler has to do under
+  // the hood when updating gestures") — and the WORST possible moment for
+  // that rebuild to happen is exactly what a double-tap triggers: its own
+  // `onEnd` calls `handleLikePress`/`playBurst`, both of which set state,
+  // which re-renders this component WHILE the native gesture recognizer is
+  // still in the middle of finishing that same recognition — tearing down
+  // and reconfiguring the native handler at that exact moment is what
+  // crashed the whole app, not just this screen.
+  //
+  // Fixed by building the gesture object exactly ONCE per card instance
+  // (useMemo with an empty dep array — this specific Tap recognizer's own
+  // config, numberOfTaps/maxDuration, never changes) and reading the
+  // CURRENT like/burst behavior through a ref instead of closing over
+  // `share`/`handleLikePress` directly — the gesture itself stays stable
+  // across every re-render this card ever has, but still always calls
+  // today's actual like/burst logic when it fires.
+  //
+  // That useMemo fix alone still crashed, a SECOND time — the real, actual
+  // cause, finally confirmed from the dev server's own logs (not a guess):
+  // "[Worklets] Tried to modify key `current` of an object which has been
+  // already passed to a worklet." By default a Gesture's `.onEnd()`
+  // callback runs as a Reanimated WORKLET on the UI thread, not as a plain
+  // JS function — once it captured `handleDoubleTapRef`, Reanimated's
+  // worklet runtime serializes/freezes that reference for UI-thread use,
+  // and the plain `handleDoubleTapRef.current = ...` reassignment in this
+  // component's own render body (JS thread) is exactly the kind of
+  // after-the-fact mutation of an object already handed to a worklet that
+  // Reanimated's own runtime rejects — a warning in dev, a hard native
+  // crash in the exact release-build-adjacent conditions Expo Go runs
+  // under, matching "closes Expo Go entirely, not just a red-box."
+  // `.runOnJS(true)` makes this gesture's callback a plain JS-thread
+  // function instead of a worklet — no Reanimated involvement at all for
+  // this gesture, so mutating the ref normally is the completely ordinary,
+  // safe React pattern it would be anywhere else.
+  const handleDoubleTapRef = useRef<() => void>(() => {});
+  handleDoubleTapRef.current = () => {
+    if (!share.liked) handleLikePress();
+    playBurst();
   };
+  const contentGesture = useMemo(() => {
+    const doubleTapGesture = Gesture.Tap()
+      .numberOfTaps(2)
+      .maxDuration(450)
+      .runOnJS(true)
+      .onEnd(() => handleDoubleTapRef.current());
+    return Gesture.Exclusive(doubleTapGesture, Gesture.Native());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const burstOverlayEl = showBurst && (
     <View style={styles.burstOverlay} pointerEvents="none">
@@ -1397,29 +1487,32 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             "Watchlist" word inside the message (navigates to the Watchlist
             tab) actually do anything; everywhere else in the box (title,
             the rest of the message, empty padding) is inert on a single
-            tap, per direct ask. `handleContentPress()` called with no
-            `originalOnPress` (same as the analysis box below) means a
-            single tap here is a no-op, while double-tap-to-like still
-            works across the whole box — that gesture wasn't asked to
+            tap, per direct ask. No onPress on this outer Pressable (same as
+            the analysis box below) means a single tap here is a no-op,
+            while double-tap-to-like (contentGesture, wrapping this box)
+            still works across the whole box — that gesture wasn't asked to
             change. The poster is its own nested Pressable so its tap
-            resolves before it ever reaches this box's own handler (same
+            resolves before it ever reaches this box's own gesture (same
             "inner tap wins" pattern as the review box's excerpt Pressable
-            below). */}
-        <Pressable style={styles.shareBox} onPress={handleContentPress()}>
-          <Pressable style={styles.sharePoster} onPress={goToContent}>
-            {posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}
+            below) — Gesture.Native() inside contentGesture defers to
+            whatever's nested exactly the same way a plain onPress did. */}
+        <GestureDetector gesture={contentGesture}>
+          <Pressable style={styles.shareBox}>
+            <Pressable style={styles.sharePoster} onPress={goToContent}>
+              {posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}
+            </Pressable>
+            <View style={styles.shareTextCol}>
+              <Text style={styles.shareTitle} numberOfLines={2}>
+                {share.contentData.title}
+              </Text>
+              <Text style={styles.shareMessage}>
+                {renderRecommendMessage(recommendMessage(), t("Watchlist"), styles.captionLink, goToWatchlist)}
+              </Text>
+            </View>
+            {premiumBorder}
+            {burstOverlayEl}
           </Pressable>
-          <View style={styles.shareTextCol}>
-            <Text style={styles.shareTitle} numberOfLines={2}>
-              {share.contentData.title}
-            </Text>
-            <Text style={styles.shareMessage}>
-              {renderRecommendMessage(recommendMessage(), t("Watchlist"), styles.captionLink, goToWatchlist)}
-            </Text>
-          </View>
-          {premiumBorder}
-          {burstOverlayEl}
-        </Pressable>
+        </GestureDetector>
 
         <View style={styles.footer}>{viewRow}</View>
         {watchlistStickerEl}
@@ -1488,103 +1581,106 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
       )}
 
       {share.type === "list" && share.listData && (
-        <GHPressable style={styles.listBox} onPress={handleContentPress(goToList)}>
-          {/* The "shared a list" info line moved one step further out — no
-              longer even inside this box, now shared with review's own
-              equal line just above the header/box boundary (see there for
-              why). Just the title leads here now, description (if any)
-              still follows as its own separate line, same as before. */}
-          <Text style={styles.shareTitle} numberOfLines={1}>
-            {share.listData.name}
-          </Text>
-          {share.listData.description ? (
-            <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={1}>
-              {share.listData.description}
+        <GestureDetector gesture={contentGesture}>
+          <GHPressable style={styles.listBox}>
+            {/* The "shared a list" info line moved one step further out — no
+                longer even inside this box, now shared with review's own
+                equal line just above the header/box boundary (see there for
+                why). Just the title leads here now, description (if any)
+                still follows as its own separate line, same as before. */}
+            <Text style={styles.shareTitle} numberOfLines={1}>
+              {share.listData.name}
             </Text>
-          ) : null}
-          {share.listData.previewItems.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filmStripContainer}>
-              {share.listData.previewItems.map((item) => (
-                <View key={`${item.itemType}-${item.itemId}`} style={styles.filmStripPoster}>
-                  {item.poster_path ? (
-                    <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                  ) : (
-                    <View style={[StyleSheet.absoluteFill, styles.filmStripFallback]}>
-                      <Text style={styles.filmStripFallbackText} numberOfLines={3}>
-                        {item.title}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              ))}
-            </ScrollView>
-          )}
-          <Text style={styles.listCount}>{t("item_count", { count: share.listData.itemCount })}</Text>
-          {premiumBorder}
-          {burstOverlayEl}
-        </GHPressable>
+            {share.listData.description ? (
+              <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={1}>
+                {share.listData.description}
+              </Text>
+            ) : null}
+            {share.listData.previewItems.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filmStripContainer}>
+                {share.listData.previewItems.map((item) => (
+                  <View key={`${item.itemType}-${item.itemId}`} style={styles.filmStripPoster}>
+                    {item.poster_path ? (
+                      <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                    ) : (
+                      <View style={[StyleSheet.absoluteFill, styles.filmStripFallback]}>
+                        <Text style={styles.filmStripFallbackText} numberOfLines={3}>
+                          {item.title}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <Text style={styles.listCount}>{t("item_count", { count: share.listData.itemCount })}</Text>
+            {premiumBorder}
+            {burstOverlayEl}
+          </GHPressable>
+        </GestureDetector>
       )}
 
       {share.type === "review" && share.contentData && (
-        <Pressable style={styles.shareBox} onPress={handleContentPress(goToContent)}>
-          <View style={styles.sharePoster}>{posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}</View>
-          <View style={styles.shareTextCol}>
-            <Text style={styles.shareTitle} numberOfLines={2}>
-              {share.contentData.title}
-            </Text>
-            {share.reviewRating != null && (
-              <View style={styles.shareRatingRow}>
-                <StarRatingDisplay value={share.reviewRating} size={13} />
-              </View>
-            )}
-            {/* The "shared a review" fallback that used to live here moved
-                out to the shared info line above the box (see there) — this
-                box's own text slot is now purely the review excerpt itself,
-                or nothing at all when there isn't one (matching list's own
-                "no description = no extra line" behavior). Capped at
-                REVIEW_COLLAPSED_LINES so the post's own height stays fixed
-                regardless of review length; a nested Pressable (proven
-                pattern for "inner tap wins" over an ancestor Pressable,
-                same as ListRailCard/ReviewSwipeCard's own details button)
-                opens the full text in a Modal instead of triggering the
-                outer box's own navigate-to-content tap. */}
-            {share.reviewText ? (
-              <Pressable onPress={() => setFullReviewVisible(true)}>
-                <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={REVIEW_COLLAPSED_LINES}>{`"${share.reviewText}"`}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-          {premiumBorder}
-          {burstOverlayEl}
-        </Pressable>
+        <GestureDetector gesture={contentGesture}>
+          <Pressable style={styles.shareBox} onPress={goToContent}>
+            <View style={styles.sharePoster}>{posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}</View>
+            <View style={styles.shareTextCol}>
+              <Text style={styles.shareTitle} numberOfLines={2}>
+                {share.contentData.title}
+              </Text>
+              {share.reviewRating != null && (
+                <View style={styles.shareRatingRow}>
+                  <StarRatingDisplay value={share.reviewRating} size={13} />
+                </View>
+              )}
+              {/* The "shared a review" fallback that used to live here moved
+                  out to the shared info line above the box (see there) — this
+                  box's own text slot is now purely the review excerpt itself,
+                  or nothing at all when there isn't one (matching list's own
+                  "no description = no extra line" behavior). Capped at
+                  REVIEW_COLLAPSED_LINES so the post's own height stays fixed
+                  regardless of review length; a nested Pressable (proven
+                  pattern for "inner tap wins" over an ancestor Pressable,
+                  same as ListRailCard/ReviewSwipeCard's own details button)
+                  opens the full text in a Modal instead of triggering the
+                  outer box's own navigate-to-content tap. */}
+              {share.reviewText ? (
+                <Pressable onPress={() => setFullReviewVisible(true)}>
+                  <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={REVIEW_COLLAPSED_LINES}>{`"${share.reviewText}"`}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            {premiumBorder}
+            {burstOverlayEl}
+          </Pressable>
+        </GestureDetector>
       )}
 
       {share.type === "official" && share.officialText && (
-        <Pressable
-          style={styles.officialBox}
-          onPress={handleContentPress(share.contentId && share.contentType ? goToContent : undefined)}
-        >
-          {share.contentData ? (
-            // No separate title heading here (there used to be one) — every
-            // official post that reaches this branch already names the
-            // title inside its own sentence (e.g. "...right now:
-            // Oppenheimer!"), so a bold "Oppenheimer" heading right above
-            // that same sentence just repeated it. Poster + sentence only.
-            <View style={styles.officialContentRow}>
-              <Pressable style={styles.sharePoster} onPress={goToContent}>
-                {posterUri && <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />}
-              </Pressable>
-              <View style={styles.shareTextCol}>
-                <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+        <GestureDetector gesture={contentGesture}>
+          <Pressable style={styles.officialBox} onPress={share.contentId && share.contentType ? goToContent : undefined}>
+            {share.contentData ? (
+              // No separate title heading here (there used to be one) — every
+              // official post that reaches this branch already names the
+              // title inside its own sentence (e.g. "...right now:
+              // Oppenheimer!"), so a bold "Oppenheimer" heading right above
+              // that same sentence just repeated it. Poster + sentence only.
+              <View style={styles.officialContentRow}>
+                <Pressable style={styles.sharePoster} onPress={goToContent}>
+                  {posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}
+                </Pressable>
+                <View style={styles.shareTextCol}>
+                  <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+                </View>
               </View>
-            </View>
-          ) : (
-            <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
-          )}
-          {premiumBorder}
-          {officialBorder}
-          {burstOverlayEl}
-        </Pressable>
+            ) : (
+              <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+            )}
+            {premiumBorder}
+            {officialBorder}
+            {burstOverlayEl}
+          </Pressable>
+        </GestureDetector>
       )}
 
       {share.type === "poll" && share.pollData && (
@@ -1712,28 +1808,53 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
                 caption = t("You watched something right as the New Year arrived!");
             }
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={def.image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>{title}</Text>
-                <Text style={styles.badgeBoxCaption}>{caption}</Text>
-                {premiumBorder}
+              // The REAL cause of the heart-burst clip, found after three
+              // wrong guesses (FlatList removeClippedSubviews, Android
+              // elevation, a font-glyph theory): badgeBox is the one box
+              // style that actually sets overflow:"hidden" (needed to clip
+              // badgeBoxWatermark's own decorative icon, which deliberately
+              // bleeds past the box's edge, at the box's rounded corner —
+              // removing that overflow outright would let the watermark's
+              // corners float outside the box's rounded shape). Since badge
+              // posts are genuinely short/compact, the heart (fixed 90px)
+              // needed to overflow this box's real bounds and got clipped
+              // by that overflow every time. Fix: burstOverlayEl moved
+              // OUTSIDE the clipped Pressable entirely, as a sibling inside
+              // this plain (non-clipping) wrapper View instead — badgeBox
+              // keeps clipping its own watermark exactly as before, the
+              // heart is no longer inside anything that clips it. Applied
+              // to every badge family branch below, same reasoning each
+              // time.
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={def.image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>{title}</Text>
+                    <Text style={styles.badgeBoxCaption}>{caption}</Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           if (data.family === "founding") {
             const title = t(FOUNDING_CINEPHILE_DEFINITION.titleKey);
             const caption = t("You're one of Cinephix's first {{count}} members!", { count: data.threshold });
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={FOUNDING_CINEPHILE_DEFINITION.image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>{title}</Text>
-                <Text style={styles.badgeBoxCaption}>{caption}</Text>
-                {premiumBorder}
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={FOUNDING_CINEPHILE_DEFINITION.image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>{title}</Text>
+                    <Text style={styles.badgeBoxCaption}>{caption}</Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           if (data.family === "membership") {
@@ -1743,18 +1864,22 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             const label = t(MEMBERSHIP_BADGE_DEFINITION.label);
             const tierWord = t(MEMBERSHIP_BADGE_DEFINITION.tierLabelKeys[tier]);
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>
-                  {tierWord} {label}
-                </Text>
-                <Text style={styles.badgeBoxCaption}>
-                  {t("I earned a new badge with {{count}} {{label}}!", { count: data.count, label })}
-                </Text>
-                {premiumBorder}
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>
+                      {tierWord} {label}
+                    </Text>
+                    <Text style={styles.badgeBoxCaption}>
+                      {t("I earned a new badge with {{count}} {{label}}!", { count: data.count, label })}
+                    </Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           if (data.family === "streak") {
@@ -1763,14 +1888,18 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             if (!image) return null;
             const title = t("{{days}}-Day Streak", { days: data.threshold });
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>{title}</Text>
-                <Text style={styles.badgeBoxCaption}>{t("You've earned the {{tier}} badge!", { tier: title })}</Text>
-                {premiumBorder}
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>{title}</Text>
+                    <Text style={styles.badgeBoxCaption}>{t("You've earned the {{tier}} badge!", { tier: title })}</Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           if (data.family === "firstSync" || data.family === "highMatch" || data.family === "syncExplorer") {
@@ -1784,14 +1913,18 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
                   ? t("You reached a {{count}}% match with someone — an incredible connection!", { count: data.count })
                   : t("You've run Sync analyses with {{count}} different people!", { count: data.count });
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={def.image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>{title}</Text>
-                <Text style={styles.badgeBoxCaption}>{caption}</Text>
-                {premiumBorder}
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={def.image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>{title}</Text>
+                    <Text style={styles.badgeBoxCaption}>{caption}</Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           if (
@@ -1812,18 +1945,22 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             const label = t(def.label);
             const tierWord = t(def.tierLabelKeys[tier]!);
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>
-                  {tierWord} {label}
-                </Text>
-                <Text style={styles.badgeBoxCaption}>
-                  {t("I earned a new badge with {{count}} {{label}}!", { count: data.count, label })}
-                </Text>
-                {premiumBorder}
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>
+                      {tierWord} {label}
+                    </Text>
+                    <Text style={styles.badgeBoxCaption}>
+                      {t("I earned a new badge with {{count}} {{label}}!", { count: data.count, label })}
+                    </Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           if (data.family === "volume") {
@@ -1834,18 +1971,22 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
             const label = t(def.label);
             const tierWord = t(VOLUME_TIER_LABEL_KEY[tier]);
             return (
-              <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-                <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-                <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
-                <Text style={styles.badgeBoxTitle}>
-                  {tierWord} {label}
-                </Text>
-                <Text style={styles.badgeBoxCaption}>
-                  {t("I earned a new badge by watching {{count}} {{label}}!", { count: data.count, label })}
-                </Text>
-                {premiumBorder}
+              <View>
+                <GestureDetector gesture={contentGesture}>
+                  <Pressable style={styles.badgeBox}>
+                    <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                    <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                    <Text style={styles.badgeBoxTitle}>
+                      {tierWord} {label}
+                    </Text>
+                    <Text style={styles.badgeBoxCaption}>
+                      {t("I earned a new badge by watching {{count}} {{label}}!", { count: data.count, label })}
+                    </Text>
+                    {premiumBorder}
+                  </Pressable>
+                </GestureDetector>
                 {burstOverlayEl}
-              </Pressable>
+              </View>
             );
           }
           const def = GENRE_BADGE_DEFINITIONS.find((d) => d.key === data.key);
@@ -1853,18 +1994,22 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           const image = data.tier === "master" ? def.master : def.devotee;
           const tierWord = data.tier === "master" ? t("Master") : t("Devotee");
           return (
-            <Pressable style={styles.badgeBox} onPress={handleContentPress()}>
-              <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
-              <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
-              <Text style={styles.badgeBoxTitle}>
-                {def.label} {tierWord}
-              </Text>
-              <Text style={styles.badgeBoxCaption}>
-                {t("I earned a new badge by watching {{count}} {{genre}} titles!", { count: data.count, genre: def.label })}
-              </Text>
-              {premiumBorder}
+            <View>
+              <GestureDetector gesture={contentGesture}>
+                <Pressable style={styles.badgeBox}>
+                  <Ionicons name="ribbon-outline" size={76} color={colors.baseContent} style={styles.badgeBoxWatermark} />
+                  <Image source={image} style={styles.badgeBoxImage} resizeMode="contain" />
+                  <Text style={styles.badgeBoxTitle}>
+                    {def.label} {tierWord}
+                  </Text>
+                  <Text style={styles.badgeBoxCaption}>
+                    {t("I earned a new badge by watching {{count}} {{genre}} titles!", { count: data.count, genre: def.label })}
+                  </Text>
+                  {premiumBorder}
+                </Pressable>
+              </GestureDetector>
               {burstOverlayEl}
-            </Pressable>
+            </View>
           );
         })()}
 

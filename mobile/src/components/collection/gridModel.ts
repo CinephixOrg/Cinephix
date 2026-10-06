@@ -36,6 +36,46 @@ export function contentHeight(count: number, m: GridMetrics, paddingBottom: numb
 }
 
 // ---------------------------------------------------------------------------
+// Ad banners between tile rows (Watched List / Watchlist — "kart satırları
+// arasında, optimum sıklıkta" direct ask)
+// ---------------------------------------------------------------------------
+//
+// Purely additive on top of the plain geometry above: tilePosition/
+// contentHeight/nextBand/rowHeightOf are all untouched (so gridModel.test.mts
+// stays exactly as valid as before this), and these new functions layer an
+// extra, fixed-height "ad row" into the y-axis every AD_ROW_INTERVAL tile
+// rows. nextBand's own virtualization band is deliberately left reading the
+// PLAIN (ad-unaware) row height — overscanRows there is already a full
+// screen's worth of extra rows mounted on each side of the viewport, which
+// comfortably absorbs the small cumulative drift a handful of ad-row
+// insertions introduces; recomputing nextBand's own scroll math to be
+// perfectly ad-aware would need inverting a piecewise row height, real
+// complexity for a drift this safely small.
+export const AD_ROW_INTERVAL = 3;
+
+/** How many ad-banner rows sit above a given tile row. */
+export const adRowsBefore = (row: number) => Math.floor(row / AD_ROW_INTERVAL);
+
+export function tilePositionWithAds(index: number, m: GridMetrics, adRowHeight: number): { x: number; y: number } {
+  const { x, y } = tilePosition(index, m);
+  const row = Math.floor(index / m.columns);
+  return { x, y: y + adRowsBefore(row) * (adRowHeight + m.gap) };
+}
+
+/** y of the ad-banner row sitting right after tile row `groupIndex * AD_ROW_INTERVAL - 1`. */
+export function adRowY(groupIndex: number, m: GridMetrics, adRowHeight: number): number {
+  const firstRowAfter = (groupIndex + 1) * AD_ROW_INTERVAL;
+  const { y } = tilePosition(firstRowAfter * m.columns, m);
+  return y + groupIndex * (adRowHeight + m.gap);
+}
+
+export function contentHeightWithAds(count: number, m: GridMetrics, paddingBottom: number, adRowHeight: number): number {
+  const rows = Math.ceil(count / m.columns);
+  const adRows = Math.floor(rows / AD_ROW_INTERVAL);
+  return contentHeight(count, m, paddingBottom) + adRows * (adRowHeight + m.gap);
+}
+
+// ---------------------------------------------------------------------------
 // What kind of change turned one list into the next
 // ---------------------------------------------------------------------------
 

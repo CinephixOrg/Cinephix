@@ -189,7 +189,21 @@ export function sameCommunities(a: readonly Group[], b: readonly Group[]): boole
       x.name === y.name &&
       x.description === y.description &&
       x.category === y.category &&
-      x.tags.join("\n") === y.tags.join("\n")
+      x.tags.join("\n") === y.tags.join("\n") &&
+      // A partner community's own admin-managed fields — without these,
+      // refreshGroup's "nothing changed, keep the old object" shortcut
+      // (communitiesStore.ts) kept an OLDER cached copy even after a
+      // genuinely fresh fetch populated owner correctly, a real bug: the
+      // list's own copy of a brand-new community never had owner
+      // populated at all (fixed server-side too), so every admin control
+      // gated on `group.owner?._id` silently never showed.
+      (x.owner?._id ?? null) === (y.owner?._id ?? null) &&
+      (x.accentColor ?? null) === (y.accentColor ?? null) &&
+      (x.socialLinks?.instagram ?? null) === (y.socialLinks?.instagram ?? null) &&
+      (x.socialLinks?.tiktok ?? null) === (y.socialLinks?.tiktok ?? null) &&
+      (x.socialLinks?.youtube ?? null) === (y.socialLinks?.youtube ?? null) &&
+      (x.pinnedLists ?? []).map((l) => l._id).join(",") === (y.pinnedLists ?? []).map((l) => l._id).join(",") &&
+      (x.pinnedPoll?._id ?? null) === (y.pinnedPoll?._id ?? null)
     );
   });
 }

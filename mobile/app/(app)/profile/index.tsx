@@ -9,8 +9,10 @@ import { useProfile } from "../../../src/context/ProfileContext";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
 import ProfileCategoryTabs, { type Category } from "../../../src/components/profile/ProfileCategoryTabs";
 import ProfileDrawerContent from "../../../src/components/profile/ProfileDrawerContent";
+import PostComposeMenu from "../../../src/components/home/PostComposeMenu";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import { useTheme } from "../../../src/context/ThemeContext";
+import { useComposeCategories } from "../../../src/hooks/useComposeCategories";
 
 // The outer Profile/WatchedList/Lists/Watchlist tab bar and the category
 // row's old Activity icon are both gone — this is a single screen now.
@@ -36,6 +38,10 @@ export default function ProfileScreen() {
   const navigation = useNavigation();
   const { profile, cineGraph, favorites, shareCount, loaded, error, ensureLoaded, refresh } = useProfile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Same "+" compose-hub menu the Shares feed's own header carries — direct
+  // ask, Profile should offer that same entry point too, not just Home.
+  const [composeMenuVisible, setComposeMenuVisible] = useState(false);
+  const composeCategories = useComposeCategories(() => setComposeMenuVisible(false));
   // Deep-link support (e.g. official-account tip posts linking a word
   // straight to "your favorites"/"your CineGraph"/"your analysis") — same
   // `tab` param name and validation shape as app/user/[id]/index.tsx's own
@@ -118,9 +124,14 @@ export default function ProfileScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable onPress={() => setDrawerOpen((prev) => !prev)} hitSlop={8} style={{ marginRight: 12, padding: 4 }}>
-          <Ionicons name="menu" size={24} color={colors.baseContent} />
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Pressable onPress={() => setComposeMenuVisible(true)} hitSlop={8} style={{ padding: 4 }}>
+            <Ionicons name="add" size={24} color={colors.baseContent} />
+          </Pressable>
+          <Pressable onPress={() => setDrawerOpen((prev) => !prev)} hitSlop={8} style={{ marginRight: 12, padding: 4 }}>
+            <Ionicons name="menu" size={24} color={colors.baseContent} />
+          </Pressable>
+        </View>
       ),
     });
   }, [navigation, colors]);
@@ -191,6 +202,7 @@ export default function ProfileScreen() {
           />
         </View>
       </ScrollView>
+      <PostComposeMenu visible={composeMenuVisible} onClose={() => setComposeMenuVisible(false)} categories={composeCategories} />
     </ProfileDrawer>
   );
 }

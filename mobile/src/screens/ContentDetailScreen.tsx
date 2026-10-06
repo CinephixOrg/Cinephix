@@ -55,6 +55,11 @@ import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
 import { genreNames } from "../utils/recommend";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../constants/contentGenreIds";
+import AdBanner from "../components/ads/AdBanner";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
+import TutorialSpotlight from "../components/tutorial/TutorialSpotlight";
+import TutorialInfoBox from "../components/tutorial/TutorialInfoBox";
+import { useComposeTutorial } from "../context/ComposeTutorialContext";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 // Smaller than POSTER_BASE — every "Similar" rail poster is a small
@@ -226,6 +231,11 @@ export default function ContentDetailScreen() {
     backgroundColor: colors.base300,
     overflow: "hidden",
   },
+  // Same radius again, directly on the absolutely-positioned poster Image —
+  // Android doesn't reliably clip one of those to an ancestor's rounded
+  // overflow, which is what was making these corners read as square
+  // against Discover's own posters ("kenarı köşeli olmuş").
+  similarPosterImage: { ...StyleSheet.absoluteFill, borderRadius: 8 },
   similarPosterFallback: { alignItems: "center", justifyContent: "center", padding: 6 },
   similarPosterFallbackText: { fontSize: 11, color: colors.placeholder, textAlign: "center" },
   // Reviews' inline section header — title + "See all" leading to the
@@ -340,6 +350,23 @@ export default function ContentDetailScreen() {
   const [recommendPickerVisible, setRecommendPickerVisible] = useState(false);
   const [sendingRecommendation, setSendingRecommendation] = useState(false);
   const [sharingRecommendation, setSharingRecommendation] = useState(false);
+
+  // Last Content-Detail step of the "Recommend"/"Review" compose-tutorial
+  // walkthroughs (started from Shares' "+" menu, see
+  // ComposeTutorialContext's own doc comment for the full flow) — arriving
+  // here while either is active unambiguously means "now show the matching
+  // button" (gift for Recommend, Add/Edit Review for Review), regardless of
+  // which Search-screen step it left off on, so this just sets it
+  // unconditionally on mount rather than needing the Search screen to
+  // explicitly hand off a step number across the navigation.
+  const { tutorial: composeTutorial, setRecommendStep, setReviewStep, endTutorial: endComposeTutorial } = useComposeTutorial();
+  useEffect(() => {
+    if (composeTutorial?.id === "recommend") setRecommendStep("tapGift");
+    else if (composeTutorial?.id === "review") setReviewStep("tapWrite");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const showGiftTutorial = composeTutorial?.id === "recommend" && composeTutorial.step === "tapGift";
+  const showWriteReviewTutorial = composeTutorial?.id === "review" && composeTutorial.step === "tapWrite";
 
   const [currentlyWatchingBusy, setCurrentlyWatchingBusy] = useState(false);
   const [currentlyWatchingTutorialVisible, setCurrentlyWatchingTutorialVisible] = useState(false);
@@ -904,14 +931,31 @@ export default function ContentDetailScreen() {
             <View style={styles.posterSmall} onLayout={(e) => setPosterHeight(e.nativeEvent.layout.height)} />
           )}
           <View style={styles.posterActionRow}>
-            <Pressable
-              style={styles.giftButton}
-              onPress={() => setGiftMenuVisible(true)}
-              accessibilityLabel={t("Recommend")}
-              hitSlop={6}
-            >
-              <Ionicons name="gift-outline" size={18} color={colors.primaryContent} />
-            </Pressable>
+            <TutorialSpotlight active={showGiftTutorial} borderRadius={22}>
+              <Pressable
+                style={styles.giftButton}
+                onPress={() => {
+                  // Arrived here via the "Recommend" compose-tutorial
+                  // (Shares' "+" menu → Search → this exact button) — the
+                  // whole point of that flow was already "share this to
+                  // Media," so the normal Share-to-Media-vs-Share-with-
+                  // someone picker (ShareOptionsMenu below) would just be
+                  // re-asking something the user already answered by using
+                  // the + button in the first place. Direct ask: skip it
+                  // entirely and post straight to Media.
+                  if (showGiftTutorial) {
+                    handleShareRecommendationToMedia();
+                    endComposeTutorial();
+                    return;
+                  }
+                  setGiftMenuVisible(true);
+                }}
+                accessibilityLabel={t("Recommend")}
+                hitSlop={6}
+              >
+                <Ionicons name="gift-outline" size={18} color={colors.primaryContent} />
+              </Pressable>
+            </TutorialSpotlight>
             <Pressable
               style={[styles.watchingButton, isWatchingThis && styles.watchingButtonActive]}
               onPress={handlePressCurrentlyWatching}
@@ -945,6 +989,13 @@ export default function ContentDetailScreen() {
           ) : null}
         </View>
       </View>
+
+      {showGiftTutorial && (
+        <TutorialInfoBox
+          text={t("Tap the gift button to share this recommendation.")}
+          onDismiss={endComposeTutorial}
+        />
+      )}
 
       <View style={styles.dividerStrong} />
       <RatingDistributionChart ratings={ratings} />
@@ -1028,20 +1079,30 @@ export default function ContentDetailScreen() {
             {inToWatchList ? t("In Watchlist") : t("Watchlist")}
           </Text>
         </Pressable>
-        <Pressable
-          style={[styles.listButton, myReview != null && styles.toggleButtonActive]}
-          onPress={() => router.push(`${basePath}/content/${type}/${id}/write-review` as any)}
-        >
-          <Ionicons
-            name="create-outline"
-            size={18}
-            color={myReview != null ? colors.primaryContent : colors.baseContent}
-          />
-          <Text style={[styles.listButtonText, myReview != null && styles.toggleButtonTextActive]}>
-            {myReview ? t("Edit Review") : t("Add Review")}
-          </Text>
-        </Pressable>
+        {/* TutorialSpotlight's wrapper takes the row's own 48% width instead
+            of the Pressable itself (width:"100%" of that wrapper) — this
+            button sits in a 2-per-row flex-wrap layout, and the Pressable's
+            own 48% would otherwise compute against the wrapper instead of
+            the row once nested inside it. */}
+        <TutorialSpotlight active={showWriteReviewTutorial} style={{ width: "48%" }}>
+          <Pressable
+            style={[styles.listButton, { width: "100%" }, myReview != null && styles.toggleButtonActive]}
+            onPress={() => router.push(`${basePath}/content/${type}/${id}/write-review` as any)}
+          >
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color={myReview != null ? colors.primaryContent : colors.baseContent}
+            />
+            <Text style={[styles.listButtonText, myReview != null && styles.toggleButtonTextActive]}>
+              {myReview ? t("Edit Review") : t("Add Review")}
+            </Text>
+          </Pressable>
+        </TutorialSpotlight>
       </View>
+      {showWriteReviewTutorial && (
+        <TutorialInfoBox text={t("Tap here to write your review.")} onDismiss={endComposeTutorial} />
+      )}
 
       <View style={styles.divider} />
 
@@ -1129,7 +1190,7 @@ export default function ContentDetailScreen() {
                 onPress={() => router.push(`${basePath}/content/${item.type}/${item.id}` as any)}
               >
                 {item.poster_path ? (
-                  <Image source={{ uri: `${SIMILAR_POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  <Image source={{ uri: `${SIMILAR_POSTER_BASE}${item.poster_path}` }} style={styles.similarPosterImage} resizeMode="cover" />
                 ) : (
                   <View style={[StyleSheet.absoluteFill, styles.similarPosterFallback]}>
                     <Text style={styles.similarPosterFallbackText} numberOfLines={3}>
@@ -1142,6 +1203,14 @@ export default function ContentDetailScreen() {
           </ScrollView>
         </>
       )}
+
+      {/* One banner per page view, at the very end of the content rather than
+          between sections — a direct ask left this to our own judgment
+          ("en alt kısma ya da herhangi başlıklar arasına, optimum hangisi ise
+          onu yap"). The top of this page is where the user's actual intent
+          (title, rating, overview) lives; breaking that up felt intrusive,
+          so this sits after everything else instead. */}
+      <AdBanner unitId={AD_UNIT_IDS.CONTENT_DETAIL_BANNER} />
 
       <Modal visible={listModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>

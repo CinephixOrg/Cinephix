@@ -3,6 +3,7 @@ import { toWatchCache } from "../api/collectionCache";
 import { WATCHLIST_SORT_GROUPS } from "../components/collection/filterLabels";
 import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import type { CollectionEntry } from "../utils/collectionQuery";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
 import CollectionScreen, { type CollectionConfig } from "./CollectionScreen";
 
 const WATCHLIST: CollectionConfig = {
@@ -15,6 +16,7 @@ const WATCHLIST: CollectionConfig = {
   // viewer has actually queued — the Watched List's own config leaves this
   // unset.
   allowPoll: true,
+  adUnitId: AD_UNIT_IDS.WATCHLIST_BANNER,
   strings: {
     searchPlaceholder: "Search your watchlist",
     removed: "Removed from your watchlist",

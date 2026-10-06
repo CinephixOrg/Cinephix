@@ -16,6 +16,8 @@ import { seedGroups } from "./scripts/seedGroups.js";
 import cron from "node-cron";
 import { syncTMDBTrending } from "./services/tmdbSyncService.js";
 import { postOfficialContent } from "./services/officialContentService.js";
+import { checkWatchPartyReminders } from "./services/watchPartyReminders.js";
+import { postWeeklyLeaderboardAnnouncements } from "./services/weeklyLeaderboardAnnouncer.js";
 
 dotenv.config();
 const app = express();
@@ -173,6 +175,24 @@ async function start() {
       const category = OFFICIAL_SLOT_B_CYCLE[new Date().getDay() % OFFICIAL_SLOT_B_CYCLE.length];
       logger.info(`Posting official Cinephix content: ${category}`);
       postOfficialContent(category).catch(err => logger.error(`Official content (${category}) error: ${err.message}`));
+    });
+
+    // Watch party reminders (30min/10min/started) — every minute, not
+    // daily like the jobs above: a scheduled start time needs minute-level
+    // precision, and this process may restart between any two ticks, so a
+    // one-off per-party timer wouldn't survive that the way a periodic
+    // check (idempotent via GroupWatchParty.remindersSent) does.
+    cron.schedule("* * * * *", () => {
+      checkWatchPartyReminders().catch(err => logger.error(`Watch party reminders error: ${err.message}`));
+    });
+
+    // Weekly leaderboard result announcements — fires just after each
+    // community's own weekly reset boundary (Monday 00:00 UTC,
+    // startOfCurrentWeekUTC), so "last week" is already fully closed by
+    // the time this runs.
+    cron.schedule("0 9 * * 1", () => {
+      logger.info("Posting weekly leaderboard announcements...");
+      postWeeklyLeaderboardAnnouncements().catch(err => logger.error(`Weekly leaderboard announcement error: ${err.message}`));
     });
 
     // Attach Socket.io chat handler

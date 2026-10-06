@@ -1,5 +1,5 @@
 import { getMessages } from "./conversationService";
-import { getGroupMessages } from "./groupService";
+import { getGroupMessages, getWatchPartyMessagesById } from "./groupService";
 import { createLruCache } from "../utils/cache";
 import { confirmedOnly } from "../utils/chatMessages";
 import { createPrefetcher } from "../utils/prefetch";
@@ -39,7 +39,14 @@ function fetchFirstPage(key: string): Promise<RoomPage> {
   const split = key.indexOf(":");
   const roomType = key.slice(0, split) as RoomType;
   const roomId = key.slice(split + 1);
-  return roomType === "group" ? getGroupMessages(roomId) : getMessages(roomId);
+  // Was missing a "watchparty" case entirely — fell through to the DM
+  // fetch below with a watch party's own id, which that endpoint neither
+  // recognizes nor returns a conversation for (the room's real bug behind
+  // "Couldn't load messages.": every watch party's first open hit this,
+  // not just an occasional flaky one).
+  if (roomType === "group") return getGroupMessages(roomId);
+  if (roomType === "watchparty") return getWatchPartyMessagesById(roomId);
+  return getMessages(roomId);
 }
 
 /**

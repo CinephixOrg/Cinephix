@@ -30,6 +30,10 @@ const POSTER_BASE = "https://image.tmdb.org/t/p/w154";
 // list cards should look like that exact strip.
 const FILM_STRIP_POSTER_WIDTH = 56;
 const FILM_STRIP_POSTER_HEIGHT = FILM_STRIP_POSTER_WIDTH * 1.5;
+// compact mode (Overview's Featured Lists rail) — a visibly thinner strip
+// to go with the card's own smaller footprint (no description/footer row).
+const FILM_STRIP_POSTER_WIDTH_COMPACT = 40;
+const FILM_STRIP_POSTER_HEIGHT_COMPACT = FILM_STRIP_POSTER_WIDTH_COMPACT * 1.5;
 const CARD_RADIUS = 12;
 
 interface Props {
@@ -40,6 +44,19 @@ interface Props {
   // of the 8 tabs Content Detail is duplicated into — same broader set
   // ContentCard.tsx already uses for the same reason.
   basePath: "/home" | "/search" | "/socials" | "/watchlist" | "/to-watch" | "/lists" | "/profile" | `/user/${string}`;
+  // Overrides the top-right identity row to a community instead of
+  // list.owner — Overview's own Featured Lists rail (CommunityHubTab.tsx)
+  // reuses this exact card, but a community list belongs to the
+  // community, not personally to whichever admin created it (see
+  // CustomList.groupId's own comment). list.owner is never read when
+  // this is set, so callers passing a community list may leave it null.
+  communityIdentity?: { name: string; coverImage?: string | null };
+  // Thinner variant — no description, no footer row (item count + like/
+  // view) — Overview's own Featured Lists rail (CommunityHubTab.tsx)
+  // stacks up to 3 of these vertically and wanted them visibly slimmer
+  // than this card's normal full detail; the "See all" page right behind
+  // it (CommunityListsScreen.tsx) uses the regular, full version.
+  compact?: boolean;
 }
 
 // Vertical list-preview card, backing both "Lists from Friends" and
@@ -71,7 +88,7 @@ interface Props {
 // SVG treatment ShareCard.tsx's posts use. That box-border stays a post-
 // only signal by direct ask ("sadece postta geçerli olsun") — an earlier
 // round had copied it here too, since undone.
-export default function DiscoverListCard({ list, onPress }: Props) {
+export default function DiscoverListCard({ list, onPress, communityIdentity, compact }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -108,8 +125,8 @@ export default function DiscoverListCard({ list, onPress }: Props) {
     card: {
       backgroundColor: colors.base200,
       borderRadius: CARD_RADIUS,
-      padding: 12,
-      marginBottom: 12,
+      padding: compact ? 10 : 12,
+      marginBottom: compact ? 6 : 12,
     },
     topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
     name: { flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.baseContent },
@@ -130,7 +147,25 @@ export default function DiscoverListCard({ list, onPress }: Props) {
     engagementUnit: { flexDirection: "row", alignItems: "center", gap: 4 },
     engagementText: { fontFamily: fonts.medium, fontSize: 11, color: colors.placeholder },
     engagementTextActive: { color: colors.primary },
-  }), [colors]);
+    // Rounded SQUARE, not a circle — direct ask: this is the one visual
+    // cue that distinguishes a community's own identity from a personal
+    // profile picture (always circular, everywhere else in this app),
+    // so a community list never reads as "owned by a person" at a glance.
+    communityTile: { width: 22, height: 22, borderRadius: 6, backgroundColor: colors.base300, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    communityName: { fontFamily: fonts.bold, fontSize: 12, color: colors.placeholder },
+  }), [colors, compact]);
+
+  // Real bug, reported live: a public list whose owner account had since
+  // been deleted (deleteAccount wasn't cascading to CustomList, now fixed
+  // backend-side in userController.js) left `owner` null after the
+  // backend's own `.populate()` — reading `.username` off that crashed this
+  // whole screen the moment such a list rendered (Content Detail's "Lists"
+  // info box, in the wild). Skipping the card here is defense-in-depth for
+  // any future dangling reference, not a replacement for that backend fix.
+  // Not a concern in communityIdentity mode, where list.owner is never
+  // read at all. After every hook above, not before — this must never
+  // change the hook call order between renders.
+  if (!communityIdentity && !list.owner) return null;
 
   return (
     <GHPressable style={styles.card} onPress={onPress}>
@@ -139,26 +174,43 @@ export default function DiscoverListCard({ list, onPress }: Props) {
           {list.name}
         </Text>
         <View style={styles.ownerRow}>
-          <TierGradientText
-            text={list.owner.username}
-            tier={list.owner.accountTier}
-            fontSize={12}
-            color={colors.placeholder}
-            gradientId={`discoverListOwnerGradient-${list._id}`}
-          />
-          <UserAvatar
-            userId={list.owner._id}
-            username={list.owner.username}
-            profilePicUrl={list.owner.profile_pic_url}
-            size={22}
-            tier={list.owner.accountTier}
-            frameBackgroundColor={colors.base200}
-            disabled
-          />
+          {communityIdentity ? (
+            <>
+              <Text style={styles.communityName} numberOfLines={1}>
+                {communityIdentity.name}
+              </Text>
+              <View style={styles.communityTile}>
+                {communityIdentity.coverImage ? (
+                  <Image source={{ uri: communityIdentity.coverImage }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                ) : (
+                  <Ionicons name="people" size={12} color={colors.placeholder} />
+                )}
+              </View>
+            </>
+          ) : (
+            <>
+              <TierGradientText
+                text={list.owner!.username}
+                tier={list.owner!.accountTier}
+                fontSize={12}
+                color={colors.placeholder}
+                gradientId={`discoverListOwnerGradient-${list._id}`}
+              />
+              <UserAvatar
+                userId={list.owner!._id}
+                username={list.owner!.username}
+                profilePicUrl={list.owner!.profile_pic_url}
+                size={22}
+                tier={list.owner!.accountTier}
+                frameBackgroundColor={colors.base200}
+                disabled
+              />
+            </>
+          )}
         </View>
       </View>
 
-      {list.description ? (
+      {!compact && list.description ? (
         <Text style={styles.description} numberOfLines={1}>
           {list.description}
         </Text>
@@ -177,7 +229,10 @@ export default function DiscoverListCard({ list, onPress }: Props) {
               same tap. Direct ask either way: wherever on this card someone
               taps, it should always open the list itself. */}
           {list.previewItems.map((item) => (
-            <View key={`${item.itemType}-${item.itemId}`} style={styles.filmStripPoster}>
+            <View
+              key={`${item.itemType}-${item.itemId}`}
+              style={[styles.filmStripPoster, compact && { width: FILM_STRIP_POSTER_WIDTH_COMPACT, height: FILM_STRIP_POSTER_HEIGHT_COMPACT }]}
+            >
               {item.poster_path ? (
                 <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />
               ) : (
@@ -192,6 +247,7 @@ export default function DiscoverListCard({ list, onPress }: Props) {
         </ScrollView>
       )}
 
+      {!compact ? (
       <View style={styles.footerRow}>
         <Text style={styles.count}>{t("item_count", { count: list.items.length })}</Text>
         <View style={styles.engagementRow}>
@@ -220,6 +276,7 @@ export default function DiscoverListCard({ list, onPress }: Props) {
           </View>
         </View>
       </View>
+      ) : null}
     </GHPressable>
   );
 }

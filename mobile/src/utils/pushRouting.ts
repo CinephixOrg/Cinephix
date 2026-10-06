@@ -10,11 +10,14 @@
 import type { NotificationType } from "../types";
 
 /**
- * A push's own type. Every in-app notification type, plus "ticket_update",
- * which is pushed without a feed row behind it (backend
- * utils/pushMessages.js buildTicketPushMessage).
+ * A push's own type. Every in-app notification type, plus "ticket_update"
+ * and "watchparty_reminder", both pushed without a feed row behind them
+ * (backend utils/pushMessages.js buildTicketPushMessage; backend
+ * services/watchPartyReminders.js for the latter — a scheduled system
+ * event, not something a specific person did, so it never fit the
+ * Notification model's own sender-did-X-to-you shape).
  */
-export type PushType = NotificationType | "ticket_update";
+export type PushType = NotificationType | "ticket_update" | "watchparty_reminder";
 
 export interface PushData {
   type: PushType;
@@ -28,10 +31,24 @@ export interface PushData {
   shareId?: string;
   /** type "ticket_update": the ticket to open. */
   ticketId?: string;
+  /** type "watchparty_reminder": which community and which party. */
+  groupSlug?: string;
+  partyId?: string;
 }
 
-const TYPES: ReadonlySet<string> = new Set<PushType>(["follow", "message", "share_like", "ticket_update"]);
-const FIELDS = ["notificationId", "recipientId", "senderId", "senderUsername", "senderAvatar", "conversationId", "shareId", "ticketId"] as const;
+const TYPES: ReadonlySet<string> = new Set<PushType>(["follow", "message", "share_like", "ticket_update", "watchparty_reminder"]);
+const FIELDS = [
+  "notificationId",
+  "recipientId",
+  "senderId",
+  "senderUsername",
+  "senderAvatar",
+  "conversationId",
+  "shareId",
+  "ticketId",
+  "groupSlug",
+  "partyId",
+] as const;
 
 /**
  * A push's data as ours, or null for anything else (another sender, a local

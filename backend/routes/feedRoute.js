@@ -6,6 +6,7 @@ import {
   getRecommendations,
   getNewReleases,
   getCurrentlyWatchingFeed,
+  getCommunityAnnouncements,
   getPopularThisWeek,
   getPopularWithFriends,
   getLeaderboard,
@@ -22,6 +23,7 @@ router.get("/top-picks", authMiddleware, getTopPicks);
 router.get("/recommendations", authMiddleware, getRecommendations);
 router.get("/new-releases", authMiddleware, getNewReleases);
 router.get("/currently-watching", authMiddleware, getCurrentlyWatchingFeed);
+router.get("/community-announcements", authMiddleware, getCommunityAnnouncements);
 router.get("/popular-this-week", authMiddleware, getPopularThisWeek);
 router.get("/popular-with-friends", authMiddleware, getPopularWithFriends);
 router.get("/leaderboard", authMiddleware, getLeaderboard);

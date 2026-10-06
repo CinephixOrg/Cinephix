@@ -1,5 +1,5 @@
 import { memo, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, StyleSheet, Text, View } from "react-native";
 // Gesture handler's Pressable: see MessagesSection.tsx for why.
 import { Pressable } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +23,7 @@ export function createCommunityCardStyles(colors: Colors) {
       borderColor: colors.border,
     },
     head: { flexDirection: "row", alignItems: "center", gap: 12 },
-    tile: { width: 48, height: 48, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+    tile: { width: 48, height: 48, borderRadius: 15, alignItems: "center", justifyContent: "center", overflow: "hidden" },
     titleCol: { flex: 1, minWidth: 0 },
     name: { fontFamily: fonts.extrabold, fontSize: 17, lineHeight: 22, color: colors.baseContent, letterSpacing: -0.2 },
     meta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
@@ -94,7 +94,11 @@ function CommunityCard({ group, dark, styles, onPress, onPressIn }: Props) {
       >
         <View style={styles.head}>
           <View style={[styles.tile, { backgroundColor: tone.tint }]}>
-            <Ionicons name={tone.icon} size={23} color={tone.color} />
+            {group.coverImage ? (
+              <Image source={{ uri: group.coverImage }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : (
+              <Ionicons name={tone.icon} size={23} color={tone.color} />
+            )}
           </View>
           <View style={styles.titleCol}>
             <Text style={styles.name} numberOfLines={1}>

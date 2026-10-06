@@ -3,6 +3,7 @@ import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
+import Group from "../models/Group.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { LIST_COUNT_TIERS, crossedActivityTier, bumpStreak } from "../controllers/badgeController.js";
 import { normalizeListItems } from "../utils/listItems.js";
@@ -215,9 +216,12 @@ async function backfillOrder(lists) {
 }
 
 // ── GET /api/lists/me ── my lists
+// groupId: null excludes a community list created via "Pin a List"
+// (groupController.js's createGroupList) — that list is the community's,
+// not this admin's personal one, even though they're the one who made it.
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    let lists = await CustomList.find({ owner: req.user._id }).sort({ order: -1, createdAt: -1 }).lean();
+    let lists = await CustomList.find({ owner: req.user._id, groupId: null }).sort({ order: -1, createdAt: -1 }).lean();
     lists = await backfillOrder(lists);
     // 20 preview posters, like /popular and /discover: the My Lists page shows
     // the same card, whose film strip swipes through them.
@@ -284,7 +288,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     let listItems = [];
     if (items !== undefined) {
-      const normalized = normalizeListItems(items);
+      const normalized = normalizeListItems(items, [], new Date(), req.user._id);
       if (normalized.error) return res.status(400).json({ message: normalized.error });
       listItems = normalized.items;
     }
@@ -330,13 +334,24 @@ router.post("/", authMiddleware, async (req, res) => {
 // ── GET /api/lists/:id ── view a list (public or owned)
 router.get("/:id", optionalAuth, async (req, res) => {
   try {
-    const list = await CustomList.findById(req.params.id).populate("owner", "username profile_pic_url").lean();
+    const list = await CustomList.findById(req.params.id)
+      .populate("owner", "username profile_pic_url")
+      .populate("groupId", "name slug coverImage accentColor")
+      .lean();
     if (!list) return res.status(404).json({ message: "List not found" });
     // A list by someone hidden by a block reads as not found, even by link.
     if (req.hiddenUsers?.has(String(list.owner?._id))) return res.status(404).json({ message: "List not found" });
 
     const isOwner = req.user && list.owner._id.toString() === req.user._id.toString();
-    if (!list.isPublic && !isOwner) {
+    // A community list's own members can always see it — same as any
+    // member already seeing it pinned on the community page itself — even
+    // if the admin left it marked private (private there only means "not
+    // in /discover," never "hidden from the community it belongs to").
+    const isGroupMember =
+      req.user && list.groupId
+        ? await Group.exists({ _id: list.groupId._id ?? list.groupId, "members.user": req.user._id }).then(Boolean)
+        : false;
+    if (!list.isPublic && !isOwner && !isGroupMember) {
       return res.status(403).json({ message: "This list is private" });
     }
 
@@ -348,6 +363,11 @@ router.get("/:id", optionalAuth, async (req, res) => {
 
     const likes = list.likes || [];
     const hasLiked = req.user ? likes.some((id) => id.toString() === req.user._id.toString()) : false;
+    // Who's allowed to add titles here (never remove — that stays
+    // owner-only everywhere, see DELETE /:id/items below): the admin
+    // always, or any member of the list's own community when they've
+    // turned allowMemberAdd on.
+    const canAddItems = isOwner || (!!list.groupId && !!list.allowMemberAdd && isGroupMember);
 
     // Hydrate every item's title/poster server-side in one aggregation
     // (hydratePreviewItems, shared with /discover etc. above — just given a
@@ -358,7 +378,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
     // meant 30 extra round trips just to get posters on screen.
     const [hydratedList] = list.items.length > 0 ? await hydratePreviewItems([list], list.items.length) : [{ ...list, previewItems: [] }];
 
-    return res.json({ list: { ...hydratedList, likeCount: likes.length }, isOwner: !!isOwner, hasLiked });
+    return res.json({ list: { ...hydratedList, likeCount: likes.length }, isOwner: !!isOwner, hasLiked, canAddItems });
   } catch {
     return res.status(500).json({ message: "Server error" });
   }
@@ -374,16 +394,21 @@ router.patch("/:id", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const { name, description, isPublic, items } = req.body;
+    const { name, description, isPublic, items, allowMemberAdd } = req.body;
     if (name !== undefined && !String(name).trim()) return res.status(400).json({ message: "Name is required" });
     if (items !== undefined) {
-      const normalized = normalizeListItems(items, list.items);
+      const normalized = normalizeListItems(items, list.items, new Date(), req.user._id);
       if (normalized.error) return res.status(400).json({ message: normalized.error });
       list.items = normalized.items;
     }
     if (name !== undefined) list.name = name.trim();
     if (description !== undefined) list.description = description.trim();
     if (isPublic !== undefined) list.isPublic = !!isPublic;
+    // Only meaningful on a community list (groupId set) — harmless no-op
+    // otherwise, same as every other field here already tolerates being
+    // sent even when unchanged. Lets the admin revisit a choice that used
+    // to be creation-only (GroupListEditorScreen), direct ask.
+    if (allowMemberAdd !== undefined && list.groupId) list.allowMemberAdd = !!allowMemberAdd;
 
     await list.save();
     return res.json({ list });
@@ -438,7 +463,14 @@ router.post("/:id/items", authMiddleware, async (req, res) => {
   try {
     const list = await CustomList.findById(req.params.id);
     if (!list) return res.status(404).json({ message: "List not found" });
-    if (list.owner.toString() !== req.user._id.toString()) {
+    const isOwner = list.owner.toString() === req.user._id.toString();
+    // A community list's own members get the same "add" right the admin
+    // has — opt-in per list (allowMemberAdd) and add-only, never a path to
+    // remove or edit anything else about it.
+    const canAdd =
+      isOwner ||
+      (!!list.groupId && list.allowMemberAdd && (await Group.exists({ _id: list.groupId, "members.user": req.user._id })));
+    if (!canAdd) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -450,7 +482,7 @@ router.post("/:id/items", authMiddleware, async (req, res) => {
     );
     if (exists) return res.status(409).json({ message: "Already in list" });
 
-    list.items.push({ itemId, itemType });
+    list.items.push({ itemId, itemType, addedBy: req.user._id });
     await list.save();
     return res.status(201).json({ list });
   } catch {

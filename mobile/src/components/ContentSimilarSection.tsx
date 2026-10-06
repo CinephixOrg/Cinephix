@@ -50,6 +50,11 @@ export default function ContentSimilarSection({ contentType, contentId }: Props)
         list: { padding: 16, gap: GRID_GAP },
         row: { gap: GRID_GAP },
         poster: { width: posterWidth, height: posterHeight, borderRadius: 8, backgroundColor: colors.base300, overflow: "hidden" },
+        // Same radius again, directly on the absolutely-positioned poster
+        // Image — Android doesn't reliably clip one of those to an
+        // ancestor's rounded overflow, which is what was making these
+        // corners read as square against Discover's own posters.
+        posterImage: { ...StyleSheet.absoluteFill, borderRadius: 8 },
         empty: { color: colors.placeholder, fontSize: 13, textAlign: "center", marginTop: 24 },
         skeletonWrap: { padding: 16, flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP },
         skeleton: { width: posterWidth, height: posterHeight, borderRadius: 8, backgroundColor: colors.base300 },
@@ -119,7 +124,7 @@ export default function ContentSimilarSection({ contentType, contentId }: Props)
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       renderItem={({ item }) => (
         <Pressable style={styles.poster} onPress={() => router.push(`${basePath}/content/${item.type}/${item.id}` as any)}>
-          {item.poster_path && <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={StyleSheet.absoluteFill} resizeMode="cover" />}
+          {item.poster_path && <Image source={{ uri: `${POSTER_BASE}${item.poster_path}` }} style={styles.posterImage} resizeMode="cover" />}
         </Pressable>
       )}
       onEndReached={loadMore}

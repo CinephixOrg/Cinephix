@@ -5,6 +5,9 @@ import Rating from "../models/Rating.js";
 import Review from "../models/Review.js";
 import Share from "../models/Share.js";
 import Notification from "../models/Notification.js";
+import Group from "../models/Group.js";
+import GroupWatchParty from "../models/GroupWatchParty.js";
+import GroupAnnouncement from "../models/GroupAnnouncement.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
@@ -1067,33 +1070,52 @@ export const getCurrentlyWatchingFeed = asyncHandler(async (req, res) => {
     userFilter._id = { $in: viewer.following || [] };
   }
 
-  const watchers = await User.find(userFilter)
-    .select("username profile_pic_url accountTier currentlyWatching")
-    .sort({ "currentlyWatching.startedAt": -1 })
-    .limit(limit)
-    .lean();
-
-  if (watchers.length === 0) return sendSuccess(res, { items: [] }, "Currently watching fetched", 200);
+  // Live watch parties — "all" scope only (a community event isn't a
+  // follow-graph relationship, so it doesn't have a "friends" reading;
+  // the personal half of this feed keeps behaving exactly as it always
+  // did there, via `since` above). A watch party's own live window isn't
+  // a shared constant anymore — the admin picks it per party, up to 12h
+  // (groupController.js's WATCH_PARTY_DURATION_OPTIONS) — so the query
+  // below widens to that max first, then each party's own
+  // durationMinutes decides whether it's actually still live.
+  const MAX_WATCH_PARTY_DURATION_MS = 12 * 60 * 60 * 1000;
+  const now = new Date();
+  const [watchers, candidateParties] = await Promise.all([
+    User.find(userFilter).select("username profile_pic_url accountTier currentlyWatching").sort({ "currentlyWatching.startedAt": -1 }).limit(limit).lean(),
+    scope === "all"
+      ? GroupWatchParty.find({ scheduledAt: { $gte: new Date(now.getTime() - MAX_WATCH_PARTY_DURATION_MS), $lte: now } })
+          .select("group contentId contentType contentTitle contentPosterUrl scheduledAt durationMinutes rsvps")
+          .sort({ scheduledAt: -1 })
+          .lean()
+      : Promise.resolve([]),
+  ]);
+  const liveParties = candidateParties
+    .filter((p) => now.getTime() - p.scheduledAt.getTime() < (p.durationMinutes ?? 240) * 60 * 1000)
+    .slice(0, limit);
 
   const movieIds = watchers.filter((u) => u.currentlyWatching.itemType === "movie").map((u) => u.currentlyWatching.itemId);
   const seriesIds = watchers.filter((u) => u.currentlyWatching.itemType === "series").map((u) => u.currentlyWatching.itemId);
+  liveParties.forEach((p) => (p.contentType === "movie" ? movieIds.push(p.contentId) : seriesIds.push(p.contentId)));
 
-  const [movies, series] = await Promise.all([
+  const [movies, series, groups] = await Promise.all([
     movieIds.length > 0 ? getMovie().find({ _id: { $in: movieIds } }).select("_id title poster_path").lean() : [],
     seriesIds.length > 0 ? getSeries().find({ _id: { $in: seriesIds } }).select("_id name poster_path").lean() : [],
+    liveParties.length > 0 ? Group.find({ _id: { $in: liveParties.map((p) => p.group) } }).select("name slug accentColor coverImage").lean() : [],
   ]);
   const movieById = new Map(movies.map((m) => [m._id.toString(), m]));
   const seriesById = new Map(series.map((s) => [s._id.toString(), s]));
+  const groupById = new Map(groups.map((g) => [g._id.toString(), g]));
 
   // A referenced title can be missing (deleted from the catalog since) —
   // dropped rather than shown with a blank poster, same "skip, don't
   // half-render" convention hydrateContentData's own callers already use.
-  const items = watchers
+  const userItems = watchers
     .map((u) => {
       const cw = u.currentlyWatching;
       const content = cw.itemType === "movie" ? movieById.get(cw.itemId.toString()) : seriesById.get(cw.itemId.toString());
       if (!content) return null;
       return {
+        kind: "user",
         user: { _id: u._id, username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
         contentId: cw.itemId,
         contentType: cw.itemType,
@@ -1104,5 +1126,78 @@ export const getCurrentlyWatchingFeed = asyncHandler(async (req, res) => {
     })
     .filter(Boolean);
 
+  const watchPartyItems = liveParties
+    .map((p) => {
+      const group = groupById.get(p.group.toString());
+      if (!group) return null;
+      return {
+        kind: "watchparty",
+        group: { _id: group._id, name: group.name, slug: group.slug, accentColor: group.accentColor, coverImage: group.coverImage },
+        partyId: p._id,
+        contentId: p.contentId,
+        contentType: p.contentType,
+        title: p.contentTitle,
+        posterUrl: p.contentPosterUrl,
+        startedAt: p.scheduledAt,
+        rsvpCount: p.rsvps.length,
+      };
+    })
+    .filter(Boolean);
+
+  // Watch parties lead — a live community event is the most time-
+  // sensitive thing in this rail, direct ask to surface it prominently.
+  const items = [...watchPartyItems, ...userItems].slice(0, limit);
+
   sendSuccess(res, { items }, "Currently watching fetched", 200);
+});
+
+// A flat recency sort can clump several same-category or same-community
+// announcements back to back (e.g. three communities all scheduling watch
+// parties the same evening) — reads badly in a one-card-at-a-time rail.
+// Buckets by category, then round-robins across buckets (one per pass),
+// preferring not to repeat the immediately-previous card's own community
+// when the current bucket has an alternative. Plain in-memory pass — the
+// candidate set this runs over is always small (see MAX_LIMIT cap below).
+function interleaveAnnouncements(rows) {
+  const buckets = new Map();
+  for (const row of rows) {
+    if (!buckets.has(row.category)) buckets.set(row.category, []);
+    buckets.get(row.category).push(row);
+  }
+  const queues = [...buckets.values()];
+  const result = [];
+  let lastGroupId = null;
+  while (queues.some((q) => q.length > 0)) {
+    for (const queue of queues) {
+      if (queue.length === 0) continue;
+      let idx = queue.findIndex((r) => r.group._id.toString() !== lastGroupId);
+      if (idx === -1) idx = 0;
+      const [picked] = queue.splice(idx, 1);
+      result.push(picked);
+      lastGroupId = picked.group._id.toString();
+    }
+  }
+  return result;
+}
+
+// GET /api/feed/community-announcements — Discover's "Community
+// Announcements" rail (GroupAnnouncement.js's own comment has the full
+// feature picture). Member-only: only announcements from communities the
+// viewer has actually joined, same membership lookup getAllGroups already
+// uses for its own "isMember" flag.
+export const getCommunityAnnouncements = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, MAX_LIMIT);
+
+  const memberGroups = await Group.find({ "members.user": req.user.id }).select("_id").lean();
+  const memberGroupIds = memberGroups.map((g) => g._id);
+  if (memberGroupIds.length === 0) return sendSuccess(res, { items: [] }, "Community announcements fetched");
+
+  const rows = await GroupAnnouncement.find({ group: { $in: memberGroupIds } })
+    .sort({ createdAt: -1 })
+    .limit(limit * 3)
+    .populate("group", "slug name coverImage accentColor")
+    .lean();
+
+  const items = interleaveAnnouncements(rows).slice(0, limit);
+  sendSuccess(res, { items }, "Community announcements fetched");
 });

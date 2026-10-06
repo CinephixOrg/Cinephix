@@ -22,6 +22,8 @@ import type { Conversation, GroupConversationRow } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 import { useBlockedIds } from "../../hooks/useBlocked";
+import AdBanner from "../ads/AdBanner";
+import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
 const AVATAR_SIZE = 52;
 
@@ -279,6 +281,10 @@ export default function MessagesSection() {
       // would otherwise turn every tap into.
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={pullToRefresh} tintColor={colors.primary} />}
+      // Direct ask: at the very bottom of the conversation list. Only when
+      // there are rows — ListEmptyComponent's own CTA below covers the
+      // no-conversations case, which shouldn't carry an ad.
+      ListFooterComponent={rows.length > 0 ? <AdBanner unitId={AD_UNIT_IDS.DM_BANNER} /> : null}
       ListEmptyComponent={
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>

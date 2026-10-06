@@ -8,6 +8,9 @@ import SearchReviewsSection from "../../../src/components/search/SearchReviewsSe
 import SearchListsSection from "../../../src/components/search/SearchListsSection";
 import SearchUsersSection from "../../../src/components/search/SearchUsersSection";
 import SlidingUnderlineTabs from "../../../src/components/SlidingUnderlineTabs";
+import TutorialSpotlight from "../../../src/components/tutorial/TutorialSpotlight";
+import TutorialInfoBox from "../../../src/components/tutorial/TutorialInfoBox";
+import { useComposeTutorial } from "../../../src/context/ComposeTutorialContext";
 import { useTheme } from "../../../src/context/ThemeContext";
 
 type MainTab = "films" | "series" | "reviews" | "lists" | "users";
@@ -48,6 +51,19 @@ export default function SearchScreen() {
     [colors, insets.top]
   );
 
+  const { tutorial, setRecommendStep, setReviewStep, endTutorial } = useComposeTutorial();
+  // "films" is already the default tab below — tapping it again while it's
+  // already active is a no-op for switchTab (early-returns), so the
+  // tutorial step has to advance from this screen's own onChange wrapper,
+  // not from inside switchTab, or re-confirming the already-selected
+  // Movies tab would never register as "picked a category." Recommend and
+  // Review share this exact same pair of Search-screen steps — only the
+  // info text (and which screen takes over after) differs between them.
+  const isRecommendTutorial = tutorial?.id === "recommend";
+  const isReviewTutorial = tutorial?.id === "review";
+  const showPickCategoryTutorial = (isRecommendTutorial || isReviewTutorial) && tutorial!.step === "pickCategory";
+  const showSearchTutorial = (isRecommendTutorial || isReviewTutorial) && tutorial!.step === "search";
+
   const [query, setQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [mainTab, setMainTab] = useState<MainTab>("films");
@@ -67,23 +83,51 @@ export default function SearchScreen() {
     setHasActiveFilter(false);
   };
 
+  const handleTabChange = (key: string) => {
+    if (showPickCategoryTutorial && (key === "films" || key === "series")) {
+      if (isRecommendTutorial) setRecommendStep("search");
+      else if (isReviewTutorial) setReviewStep("search");
+    }
+    switchTab(key as MainTab);
+  };
+
   const filterableTab = mainTab === "films" || mainTab === "series" || mainTab === "lists" || mainTab === "reviews";
 
   return (
     <View style={styles.container}>
-      <SearchBar
-        key={mainTab}
-        placeholder={t("Search")}
-        onChangeQuery={setQuery}
-        onFilterPress={filterableTab ? () => setShowFilters(true) : undefined}
-        filterActive={hasActiveFilter}
-      />
+      {/* SearchBar sets its own marginHorizontal/marginVertical — this
+          wrapper adds none of its own, so it sizes to exactly that margin
+          box and the highlight border traces the real search box (plus its
+          normal breathing room), not a second, separately-spaced region. */}
+      <TutorialSpotlight active={showSearchTutorial}>
+        <SearchBar
+          key={mainTab}
+          placeholder={t("Search")}
+          onChangeQuery={setQuery}
+          onFilterPress={filterableTab ? () => setShowFilters(true) : undefined}
+          filterActive={hasActiveFilter}
+        />
+      </TutorialSpotlight>
+      {showSearchTutorial && (
+        <TutorialInfoBox
+          text={
+            isRecommendTutorial
+              ? t("Now search for the movie or series you want to recommend.")
+              : t("Now search for the movie or series you want to review.")
+          }
+          onDismiss={endTutorial}
+        />
+      )}
 
       <SlidingUnderlineTabs
         tabs={TABS.map((tab) => ({ key: tab.key, label: tab.label(t) }))}
         activeKey={mainTab}
-        onChange={(key) => switchTab(key as MainTab)}
+        onChange={handleTabChange}
+        highlightKeys={showPickCategoryTutorial ? ["films", "series"] : undefined}
       />
+      {showPickCategoryTutorial && (
+        <TutorialInfoBox text={t("Select Movies or Series to continue.")} onDismiss={endTutorial} />
+      )}
 
       <View style={{ flex: 1 }}>
         {mainTab === "films" && (

@@ -11,6 +11,13 @@ const shareSchema = new Schema(
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: { type: String, enum: ["analysis", "review", "recommendation", "list", "official", "poll", "badge"], required: true },
 
+    // Set only on a community's own pinned poll (groupController.js's
+    // createGroupPoll) — reuses this exact "poll" shape/voteOnPoll
+    // endpoint rather than a second model, but a group poll is only ever
+    // read from that Group's own page, never the public Media feed
+    // (getShareFeed's organicMatch excludes any Share with this set).
+    groupId: { type: Schema.Types.ObjectId, ref: "Group", default: null },
+
     // Denormalized at creation time by officialContentService (the poster
     // is known to be official right when the doc is created) so getShareFeed
     // can boost these in its score $addFields without an extra $lookup.
@@ -84,6 +91,12 @@ const shareSchema = new Schema(
     // text-only polls (officialContentService.js).
     pollData: {
       question: String,
+      // Community polls only (createGroupPoll) — the admin's own chosen
+      // lifespan, null for "no end date." A personal Watchlist poll and
+      // the official account's own polls never set this, so they stay
+      // permanently "active" exactly as before. See
+      // groupController.js/getGroupBySlug's own isExpired computation.
+      expiresAt: Date,
       options: [
         {
           text: String,

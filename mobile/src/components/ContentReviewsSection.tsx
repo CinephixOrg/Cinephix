@@ -12,10 +12,15 @@ import type { Review } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 import { useWithoutBlocked } from "../hooks/useBlocked";
+import AdBanner from "./ads/AdBanner";
+import { AD_UNIT_IDS } from "../constants/adUnitIds";
 
 const reviewAuthor = (review: Review) => review.user?._id;
 
 const PAGE_LIMIT = 20;
+// Same "every 6th card" cadence as every other inline card-feed placement
+// in this app — "optimum sıklıkta" direct ask for this exact sub-page.
+const AD_INTERVAL = 6;
 export type ReviewMode = "popular" | "friends" | "you" | "liked";
 
 interface Props {
@@ -181,7 +186,12 @@ export default function ContentReviewsSection({ contentId, initialMode, scrollTo
         contentContainerStyle={styles.list}
         data={activeReviews}
         keyExtractor={(r) => r._id}
-        renderItem={({ item }) => <ReviewCard review={item} />}
+        renderItem={({ item, index }) => (
+          <>
+            <ReviewCard review={item} />
+            {(index + 1) % AD_INTERVAL === 0 && <AdBanner unitId={AD_UNIT_IDS.CONTENT_REVIEWS_BANNER} />}
+          </>
+        )}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         onScrollToIndexFailed={(info) => {
           // FlatList without getItemLayout (review card heights vary) can

@@ -95,6 +95,15 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
     }
   };
 
+  // TierGradientText's Premium/Plus path renders at the name's own full
+  // intrinsic width (needed to size its gradient SVG exactly), not
+  // whatever this row's flexShrink leaves it — so a long name could run
+  // into the like/report group instead of truncating. Cut it short with
+  // an ellipsis here instead, same "uygun yerde ... ile bitir" ask as
+  // everywhere else in the app a name might collide with its neighbor.
+  const USERNAME_MAX = 16;
+  const truncatedUsername = review.user.username.length > USERNAME_MAX ? `${review.user.username.slice(0, USERNAME_MAX - 1)}…` : review.user.username;
+
   const goToContent = () => router.push(`${basePath}/content/${review.content.type}/${review.content.id}` as any);
   const openFullText = () => {
     reveal();
@@ -142,10 +151,15 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
         detailsButton: { backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12 },
         detailsButtonText: { color: colors.primaryContent, fontFamily: fonts.bold, fontSize: 11 },
         textCol: { flex: 1 },
-        headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 },
-        // flexShrink so a long username truncates via TierGradientText's
-        // own layout instead of pushing likeRow off the card's right edge.
-        headerIdentity: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+        // Was justifyContent:"space-between" across all three children
+        // directly — with a short username that spread the leftover space
+        // evenly between every pair, so the like count and the report "..."
+        // drifted apart from each other too, not just from the identity.
+        // Now identity alone takes the stretch (flex:1) and the like+report
+        // pair stays a fixed, glued-together trailing group.
+        headerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+        headerIdentity: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1, minWidth: 0 },
+        headerTrailing: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 0 },
         likeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
         likeRowText: { fontSize: 11, color: colors.placeholder },
         likeRowTextActive: { color: colors.primary, fontFamily: fonts.medium },
@@ -195,7 +209,7 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
               disabled
             />
             <TierGradientText
-              text={review.user.username}
+              text={truncatedUsername}
               tier={review.user.accountTier}
               fontSize={13}
               bold
@@ -203,21 +217,26 @@ export default function ReviewSwipeCard({ review, basePath }: Props) {
               gradientId={`reviewSwipeUsernameGradient-${review._id}`}
             />
           </Pressable>
-          {/* Moved here from the poster overlay, direct ask — top-right,
-              aligned with this card's own topmost text-column row, same
-              slot ReviewFeedCard.tsx's "See all" page uses (its own title
-              row, the direct equivalent of this row since this card's
-              title lives on the poster instead). Its own nested Pressable,
-              "inner tap wins" over nothing here (headerRow itself is no
-              longer a Pressable), same Like?/Liked wording everywhere else
-              in this app. */}
-          <Pressable style={styles.likeRow} onPress={handleToggleLike} disabled={liking} hitSlop={8}>
-            <Ionicons name={hasLiked ? "heart" : "heart-outline"} size={13} color={hasLiked ? colors.primary : colors.placeholder} />
-            <Text style={[styles.likeRowText, hasLiked && styles.likeRowTextActive]}>
-              {hasLiked ? t("Liked") : t("Like?")} {likeCount}
-            </Text>
-          </Pressable>
-          <MoreButton entityType="Review" entityId={review._id} author={review.user} size={15} />
+          {/* Glued together as one fixed-width trailing group — direct ask:
+              these two drifted apart whenever the username was short,
+              because the row used to space all three children evenly. */}
+          <View style={styles.headerTrailing}>
+            {/* Moved here from the poster overlay, direct ask — top-right,
+                aligned with this card's own topmost text-column row, same
+                slot ReviewFeedCard.tsx's "See all" page uses (its own title
+                row, the direct equivalent of this row since this card's
+                title lives on the poster instead). Its own nested Pressable,
+                "inner tap wins" over nothing here (headerRow itself is no
+                longer a Pressable), same Like?/Liked wording everywhere else
+                in this app. */}
+            <Pressable style={styles.likeRow} onPress={handleToggleLike} disabled={liking} hitSlop={8}>
+              <Ionicons name={hasLiked ? "heart" : "heart-outline"} size={13} color={hasLiked ? colors.primary : colors.placeholder} />
+              <Text style={[styles.likeRowText, hasLiked && styles.likeRowTextActive]}>
+                {hasLiked ? t("Liked") : t("Like?")} {likeCount}
+              </Text>
+            </Pressable>
+            <MoreButton entityType="Review" entityId={review._id} author={review.user} size={15} />
+          </View>
         </View>
         {review.rating != null && (
           <Pressable style={styles.rating} onPress={close}>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Image,
@@ -63,6 +63,14 @@ interface Props {
   leadingEmptySlot?: boolean;
 }
 
+// Exposed so a caller outside this row (MatchAnalysisPanel's own "See all"
+// grid) can snap the coverflow to a specific item after the grid closes —
+// direct ask: picking a poster in that grid used to only set the detail
+// panel below, leaving the rail itself sitting wherever it was left.
+export interface PosterCoverflowHandle {
+  scrollToId: (id: string) => void;
+}
+
 // Center-focused "coverflow" carousel: the centered poster renders larger,
 // each neighbor only half-visible at the row's edges and smaller — sizing is
 // measured off the row's own available width (not hardcoded), so
@@ -71,7 +79,10 @@ interface Props {
 // each edge. Scaling is transform-only (no layout width/height animated),
 // driven by the scroll position continuously, so the next poster visibly
 // grows as it approaches center rather than snapping to size only on settle.
-export default function PosterCoverflow({ items, badgeFor, onFocusChange, leadingEmptySlot = false }: Props) {
+const PosterCoverflow = forwardRef<PosterCoverflowHandle, Props>(function PosterCoverflow(
+  { items, badgeFor, onFocusChange, leadingEmptySlot = false },
+  ref
+) {
   const { colors } = useTheme();
   const [viewportWidth, setViewportWidth] = useState(0);
   // Mirrors focusedIndexRef, but as real state — only used to paint the
@@ -110,6 +121,18 @@ export default function PosterCoverflow({ items, badgeFor, onFocusChange, leadin
   const goToIndex = (i: number) => {
     scrollRef.current?.scrollTo({ x: (i + slotOffset) * pitch, animated: true });
   };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToId: (id: string) => {
+        const idx = items.findIndex((it) => it._id === id);
+        if (idx !== -1) goToIndex(idx);
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, pitch, slotOffset]
+  );
 
   // Committing focus (React state, plus the onFocusChange call that drives
   // the parent's detail panel) on every intermediate scroll frame — the
@@ -231,4 +254,6 @@ export default function PosterCoverflow({ items, badgeFor, onFocusChange, leadin
       )}
     </View>
   );
-}
+});
+
+export default PosterCoverflow;

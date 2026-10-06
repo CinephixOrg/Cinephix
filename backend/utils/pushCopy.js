@@ -8,6 +8,9 @@
 
 export const PUSH_PHRASES = {
   en: {
+    "Starts in 30 minutes": "Starts in 30 minutes",
+    "Starts in 10 minutes": "Starts in 10 minutes",
+    "Starting now": "Starting now",
     "started following you": "started following you",
     "sent you a message": "sent you a message",
     "sent you a recommendation": "sent you a recommendation",
@@ -24,6 +27,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "Support replied to your ticket",
   },
   tr: {
+    "Starts in 30 minutes": "30 dakika içinde başlıyor",
+    "Starts in 10 minutes": "10 dakika içinde başlıyor",
+    "Starting now": "Şimdi başlıyor",
     "started following you": "sizi takip etmeye başladı",
     "sent you a message": "size mesaj gönderdi",
     "sent you a recommendation": "sana bir öneri gönderdi",
@@ -40,6 +46,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "Destek ekibi talebini yanıtladı",
   },
   ru: {
+    "Starts in 30 minutes": "Начинается через 30 минут",
+    "Starts in 10 minutes": "Начинается через 10 минут",
+    "Starting now": "Начинается сейчас",
     "started following you": "начал(а) подписываться на вас",
     "sent you a message": "отправил(а) вам сообщение",
     "sent you a recommendation": "отправил(а) вам рекомендацию",
@@ -56,6 +65,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "Поддержка ответила на ваше обращение",
   },
   ja: {
+    "Starts in 30 minutes": "30分後に始まります",
+    "Starts in 10 minutes": "10分後に始まります",
+    "Starting now": "今すぐ開始",
     "started following you": "があなたをフォローし始めました",
     "sent you a message": "があなたにメッセージを送りました",
     "sent you a recommendation": "さんからおすすめが届きました",
@@ -72,6 +84,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "サポートがチケットに返信しました",
   },
   zh: {
+    "Starts in 30 minutes": "30分钟后开始",
+    "Starts in 10 minutes": "10分钟后开始",
+    "Starting now": "现在开始",
     "started following you": "开始关注你",
     "sent you a message": "给你发了一条消息",
     "sent you a recommendation": "给你发送了一条推荐",
@@ -88,6 +103,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "支持团队回复了你的工单",
   },
   fr: {
+    "Starts in 30 minutes": "Commence dans 30 minutes",
+    "Starts in 10 minutes": "Commence dans 10 minutes",
+    "Starting now": "Commence maintenant",
     "started following you": "a commencé à vous suivre",
     "sent you a message": "vous a envoyé un message",
     "sent you a recommendation": "vous a envoyé une recommandation",
@@ -104,6 +122,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "L'assistance a répondu à votre ticket",
   },
   ko: {
+    "Starts in 30 minutes": "30분 후에 시작합니다",
+    "Starts in 10 minutes": "10분 후에 시작합니다",
+    "Starting now": "지금 시작합니다",
     "started following you": "님이 팔로우하기 시작했습니다",
     "sent you a message": "님이 메시지를 보냈습니다",
     "sent you a recommendation": "님이 추천을 보냈습니다",
@@ -120,6 +141,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "지원팀이 문의에 답변했습니다",
   },
   ar: {
+    "Starts in 30 minutes": "يبدأ بعد 30 دقيقة",
+    "Starts in 10 minutes": "يبدأ بعد 10 دقائق",
+    "Starting now": "يبدأ الآن",
     "started following you": "بدأ بمتابعتك",
     "sent you a message": "أرسل لك رسالة",
     "sent you a recommendation": "أرسل إليك توصية",
@@ -136,6 +160,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "رد فريق الدعم على تذكرتك",
   },
   it: {
+    "Starts in 30 minutes": "Inizia in 30 minuti",
+    "Starts in 10 minutes": "Inizia in 10 minuti",
+    "Starting now": "Inizia ora",
     "started following you": "ha iniziato a seguirti",
     "sent you a message": "ti ha inviato un messaggio",
     "sent you a recommendation": "ti ha inviato un consiglio",
@@ -152,6 +179,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "L'assistenza ha risposto al tuo ticket",
   },
   es: {
+    "Starts in 30 minutes": "Empieza en 30 minutos",
+    "Starts in 10 minutes": "Empieza en 10 minutos",
+    "Starting now": "Empieza ahora",
     "started following you": "comenzó a seguirte",
     "sent you a message": "te envió un mensaje",
     "sent you a recommendation": "te envió una recomendación",
@@ -168,6 +198,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "Soporte respondió a tu ticket",
   },
   de: {
+    "Starts in 30 minutes": "Beginnt in 30 Minuten",
+    "Starts in 10 minutes": "Beginnt in 10 Minuten",
+    "Starting now": "Beginnt jetzt",
     "started following you": "folgt dir jetzt",
     "sent you a message": "hat dir eine Nachricht gesendet",
     "sent you a recommendation": "hat dir eine Empfehlung geschickt",
@@ -184,6 +217,9 @@ export const PUSH_PHRASES = {
     "Support replied to your ticket": "Der Support hat auf dein Ticket geantwortet",
   },
   pt: {
+    "Starts in 30 minutes": "Começa em 30 minutos",
+    "Starts in 10 minutes": "Começa em 10 minutos",
+    "Starting now": "Começa agora",
     "started following you": "começou a seguir você",
     "sent you a message": "enviou uma mensagem para você",
     "sent you a recommendation": "enviou uma recomendação para você",

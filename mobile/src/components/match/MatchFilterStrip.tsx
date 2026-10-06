@@ -316,7 +316,16 @@ export default function MatchFilterStrip({
               <Stop offset="1" stopColor={colors.secondary} />
             </LinearGradient>
           </Defs>
-          <Rect width={MATCH_BUTTON_WIDTH} height={MATCH_BUTTON_HEIGHT} fill="url(#matchButtonGradient)" />
+          {/* rx baked directly into the fill shape, not left to the outer
+              Pressable's own overflow:"hidden" clipping alone — real bug,
+              reported live: the pill shape stopped clipping correctly
+              (square corners showing through), same class of issue this
+              session already root-caused once for ShareCard's heart burst
+              (Android can fail to honor overflow:"hidden" clipping on an
+              elevated/composited view). Drawing the rounded rect directly
+              makes the shape correct regardless of whether the outer
+              clip actually applies. */}
+          <Rect width={MATCH_BUTTON_WIDTH} height={MATCH_BUTTON_HEIGHT} rx={MATCH_BUTTON_HEIGHT / 2} fill="url(#matchButtonGradient)" />
         </Svg>
         <View style={styles.matchButton}>
           <Text style={styles.matchButtonText}>{t("Sync")}</Text>

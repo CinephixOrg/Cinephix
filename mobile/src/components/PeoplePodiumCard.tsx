@@ -47,7 +47,11 @@ type PeopleMetric =
   | { kind: "reviewed"; count: number }
   | { kind: "liked"; count: number }
   | { kind: "recommended"; count: number }
-  | { kind: "badges"; count: number };
+  | { kind: "badges"; count: number }
+  // A community's own weekly leaderboard score (CommunityRailCard.tsx's
+  // leaderboard-category announcement card) — not a follow-graph/activity
+  // count like the others, so its own icon/wording.
+  | { kind: "score"; count: number };
 
 interface Props {
   rank: 1 | 2 | 3;
@@ -223,6 +227,12 @@ export default function PeoplePodiumCard({ rank, user, metric, locked }: Props) 
       {metric.kind === "badges" && (
         <View style={styles.metricRow}>
           <Ionicons name="ribbon" size={12} color={colors.warning} />
+          <Text style={styles.metricText}>{metric.count}</Text>
+        </View>
+      )}
+      {metric.kind === "score" && (
+        <View style={styles.metricRow}>
+          <Ionicons name="flash" size={12} color={colors.warning} />
           <Text style={styles.metricText}>{metric.count}</Text>
         </View>
       )}
