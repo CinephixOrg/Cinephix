@@ -6,7 +6,7 @@ import * as WebBrowser from "expo-web-browser";
 // they point at the public website rather than the in-app pages (which live
 // behind the app's own authenticated stack). EXPO_PUBLIC_WEB_URL overrides
 // the host for a staging site.
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://cinephix-frontend-k4ry.onrender.com";
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "https://cinephix-frontend.onrender.com";
 
 export const LEGAL_URLS = {
   terms: `${WEB_URL}/terms`,

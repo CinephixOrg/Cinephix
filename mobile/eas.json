@@ -17,15 +17,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://cinephix-backend-2aa6.onrender.com/api",
-        "EXPO_PUBLIC_SOCKET_URL": "https://cinephix-backend-2aa6.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://cinephix-backend.onrender.com/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://cinephix-backend.onrender.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://cinephix-backend-2aa6.onrender.com/api",
-        "EXPO_PUBLIC_SOCKET_URL": "https://cinephix-backend-2aa6.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://cinephix-backend.onrender.com/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://cinephix-backend.onrender.com"
       }
     }
   },
