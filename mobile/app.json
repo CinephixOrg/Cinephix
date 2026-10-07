@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cinephix",
     "slug": "mobile",
-    "version": "0.9.0-alpha.1",
+    "version": "0.9.0-alpha.2",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -21,9 +21,8 @@
       "package": "com.cinephix.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#171212",
+        "backgroundColor": "#1eb854",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
@@ -47,7 +46,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#171212",
-          "image": "./assets/icon.png",
+          "image": "./assets/splash-icon.png",
           "imageWidth": 160
         }
       ],

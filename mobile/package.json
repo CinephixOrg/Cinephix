@@ -52,7 +52,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "node --test \"src/**/*.test.mts\"",
-    "notification-icon": "node scripts/generate-notification-icon.mjs --mode light"
+    "notification-icon": "node scripts/generate-notification-icon.mjs --mode light",
+    "app-icons": "node scripts/generate-app-icons.mjs"
   },
   "private": true
 }
