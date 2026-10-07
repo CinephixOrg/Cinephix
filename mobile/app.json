@@ -79,5 +79,9 @@
       }
     },
     "owner": "cinephix_admin"
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-8572881441508627~3302669302",
+    "ios_app_id": "ca-app-pub-8572881441508627~1538909921"
   }
 }
