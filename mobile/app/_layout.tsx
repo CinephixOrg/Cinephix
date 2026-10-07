@@ -37,6 +37,7 @@ import Toast from "../src/components/Toast";
 import { PushNotificationsBridge } from "../src/hooks/usePushNotifications";
 import { SafetyProvider } from "../src/context/SafetyContext";
 import AppErrorBoundary from "../src/components/common/AppErrorBoundary";
+import { initCrashReporting, reportRenderError } from "../src/monitoring/crashReporting";
 
 // react-native-draggable-flatlist@4.0.3 (Favorites' own drag-to-reorder,
 // ProfileCategoryTabs.tsx) calls RN's own InteractionManager internally —
@@ -46,6 +47,10 @@ import AppErrorBoundary from "../src/components/common/AppErrorBoundary";
 // just wants it eventually replaced) — silenced here rather than left
 // firing on every drag.
 LogBox.ignoreLogs(["InteractionManager has been deprecated"]);
+
+// As early as possible, so errors during boot are reported too. Does nothing
+// without EXPO_PUBLIC_SENTRY_DSN.
+initCrashReporting();
 
 // Nothing is switchable yet at this point (fonts/i18n/theme aren't resolved),
 // so the pre-boot loading screen always renders in the default palette —
@@ -241,7 +246,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         {/* Catches any render error below, providers included, instead of
             letting it close the app. */}
-        <AppErrorBoundary>
+        <AppErrorBoundary onError={reportRenderError}>
         {/* Outermost and independent of auth/theme — consent needs to start
             resolving as early in boot as possible, not gated behind a
             signed-in user, since the Mobile Ads SDK itself must not
