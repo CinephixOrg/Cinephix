@@ -21,7 +21,7 @@ const DEFAULT_OPENROUTER_MODEL = process.env.OPENROUTER_DEFAULT_MODEL || "qwen-7
 // this writing, while gemini-1.5-flash (used elsewhere for Profile
 // Analysis) is an even older generation. The alias tracks whatever Google
 // currently serves as its free-tier flash model instead of going stale.
-const DEFAULT_GEMINI_MODEL = process.env.GEMINI_DEFAULT_MODEL || "gemini-flash-latest";
+export const DEFAULT_GEMINI_MODEL = process.env.GEMINI_DEFAULT_MODEL || "gemini-flash-latest";
 const CACHE_TTL_MS = 60 * 1000; // 60s
 const RATE_LIMIT_PER_MIN = parseInt(process.env.LLM_RATE_LIMIT_PER_MIN || "60", 10);
 // None of the three provider calls below had any timeout at all — a hung
