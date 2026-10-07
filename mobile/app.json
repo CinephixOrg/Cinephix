@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Cinephix",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "0.9.0-alpha.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
