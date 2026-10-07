@@ -20,6 +20,7 @@ import { hydratePreviewItems } from "../utils/listPreview.js";
 import { refreshUserCineGraph } from "../utils/cineGraph.js";
 import { buildCollectionEntries } from "../utils/publicCollection.js";
 import { PUBLIC_ACCESS, PUBLIC_PROFILE } from "../utils/publicProfile.js";
+import { isAllowedMobileRedirect } from "../utils/oauthRedirect.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -1668,13 +1669,19 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
   }));
 
   if (req.query.state) {
+    let decoded = null;
     try {
-      const decoded = JSON.parse(Buffer.from(req.query.state, 'base64url').toString('utf8'));
-      if (decoded?.mobile && decoded.redirectUri) {
-        return res.redirect(`${decoded.redirectUri}?data=${userData}`);
-      }
+      decoded = JSON.parse(Buffer.from(req.query.state, 'base64url').toString('utf8'));
     } catch (e) {
       // Not a mobile state payload (or malformed) — fall through to the web redirect.
+    }
+    if (decoded?.mobile) {
+      // `state` comes back from the browser and can be forged: never send the
+      // token anywhere but the app itself (see utils/oauthRedirect.js).
+      if (!isAllowedMobileRedirect(decoded.redirectUri)) {
+        return sendError(res, 'Invalid redirectUri', 400);
+      }
+      return res.redirect(`${decoded.redirectUri}?data=${userData}`);
     }
   }
 
