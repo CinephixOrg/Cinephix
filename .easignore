@@ -9,6 +9,15 @@
 # uploaded, because app.json's android.googleServicesFile needs it for the
 # Android build and FCM. It stays gitignored and is never committed.
 
+# --- Not part of the mobile build ----------------------------------------
+# Data tools, old copies and reports: nothing the app or its npm workspaces
+# (frontend, backend, mobile, packages/*) needs. Keeps the archive small.
+cinephixUploader/
+backend2/
+backup/
+dataset_functions/
+Master Reports/
+
 # --- Secrets (root .gitignore) ---------------------------------------------
 .env
 .env.*
