@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import Pressable from "../common/TapSafePressable";
 import { BannerAd, BannerAdSize, adsAvailable } from "../../utils/adsModule";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
