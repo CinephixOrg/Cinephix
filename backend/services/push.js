@@ -125,11 +125,11 @@ async function deliverTicket(ticket, { replied, statusChanged }) {
   const tokens = [];
   for (const device of devices) {
     const message = buildTicketPushMessage({ ticket, token: device.token, locale: device.locale, badge, replied, statusChanged });
-    if (!message) return;
+    if (!message) continue;
     messages.push(message);
     tokens.push(device.token);
   }
-  await send(messages, tokens);
+  if (messages.length > 0) await send(messages, tokens);
 }
 
 /**
@@ -163,12 +163,12 @@ async function deliver(notification) {
   const tokens = [];
   for (const device of devices) {
     const message = buildPushMessage({ notification, sender, token: device.token, locale: device.locale, badge });
-    if (!message) return;
+    if (!message) continue;
     messages.push(message);
     tokens.push(device.token);
   }
 
-  await send(messages, tokens);
+  if (messages.length > 0) await send(messages, tokens);
 }
 
 /** Hands a batch to Expo, in its chunks, and retires whatever it rejects. */

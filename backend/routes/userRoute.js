@@ -57,6 +57,7 @@ import cloudinary from "../config/cloudinaryConfig.js";
 import User from "../models/User.js";
 import { blockedProfileStub, notHiddenUser } from "../middleware/blockFilter.js";
 import { block, listBlocked, officialAccounts, unblock } from "../controllers/moderationController.js";
+import { isAllowedMobileRedirect } from "../utils/oauthRedirect.js";
 
 const router = express.Router();
 const upload = multer({
@@ -120,21 +121,28 @@ router.post("/reset-password", authRateLimiter, resetPassword);
 // device's own `localhost:5000` forwards to this machine — letting mobile
 // reuse the exact same already-registered `localhost:5000` callback as web,
 // with zero Google Console changes and zero risk to the web flow.
+//
+// The callback appends the user's JWT to redirectUri, so it is only accepted
+// when it points back into the app (utils/oauthRedirect.js): cinephix://,
+// plus exp:// outside production. Anything else is a 400 here, and the
+// callback checks again, since `state` can be forged.
 function encodeMobileState(redirectUri) {
   return Buffer.from(JSON.stringify({ mobile: true, redirectUri })).toString("base64url");
 }
 
 const googleAuthMiddleware = process.env.GOOGLE_CLIENT_ID
-  ? (req, res, next) =>
-      passport.authenticate("google", {
+  ? (req, res, next) => {
+      const mobile = req.query.platform === "mobile";
+      if (mobile && !isAllowedMobileRedirect(req.query.redirectUri)) {
+        return res.status(400).json({ success: false, message: "Invalid redirectUri" });
+      }
+      return passport.authenticate("google", {
         scope: ["profile", "email"],
         session: false,
         prompt: "select_account",
-        state:
-          req.query.platform === "mobile" && req.query.redirectUri
-            ? encodeMobileState(req.query.redirectUri)
-            : undefined,
-      })(req, res, next)
+        state: mobile ? encodeMobileState(req.query.redirectUri) : undefined,
+      })(req, res, next);
+    }
   : (req, res) => res.status(503).json({ success: false, message: "Google OAuth not configured" });
 
 const googleCallbackMiddleware = process.env.GOOGLE_CLIENT_ID

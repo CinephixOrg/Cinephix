@@ -1,8 +1,14 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Cinephix",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "0.9.0-alpha.1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e03bb237-6490-436a-882a-59f0dc7722e5"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -62,7 +68,8 @@
           "iosAppId": "ca-app-pub-8572881441508627~1538909921",
           "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
         }
-      ]
+      ],
+      "@sentry/react-native/expo"
     ],
     "scheme": "cinephix",
     "extra": {

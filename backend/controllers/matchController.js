@@ -1541,6 +1541,13 @@ export const analyzeMatchWithUser = asyncHandler(async (req, res) => {
     llmResp = await callLLM(sanitized, { provider: 'mock', promptTemplate, language });
     provider = 'mock';
   }
+  if (provider === 'mock' && explicitProvider !== 'mock') {
+    console.warn(
+      providerCandidates.length === 1
+        ? 'Analyze: no LLM provider configured (set GEMINI_API_KEY) - serving MOCK analysis.'
+        : 'Analyze: every configured LLM provider failed - serving MOCK analysis.'
+    );
+  }
 
   const parsedCandidate = llmResp.parsed
     || extractJsonFromLLMText(llmResp.text)

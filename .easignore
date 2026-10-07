@@ -1,0 +1,65 @@
+# What EAS Build uploads.
+#
+# EAS reads this file only at the git root (not mobile/), and while it exists
+# every .gitignore is skipped, so it repeats all of their rules. It also
+# uploads the working tree, untracked files included: anything secret must
+# be listed here.
+#
+# The one difference from .gitignore: mobile/google-services.json IS
+# uploaded, because app.json's android.googleServicesFile needs it for the
+# Android build and FCM. It stays gitignored and is never committed.
+
+# --- Secrets (root .gitignore) ---------------------------------------------
+.env
+.env.*
+!.env.example
+**/*firebase-adminsdk*.json
+GoogleService-Info.plist
+
+# --- Generated / local (root .gitignore) -----------------------------------
+node_modules/
+.expo/
+*.log
+.venv/
+dist/
+build/
+mobile/.dev-logs/
+backend/backups/
+HANDOFF.md
+.claude/settings.local.json
+
+# --- mobile/.gitignore -----------------------------------------------------
+mobile/web-build/
+mobile/expo-env.d.ts
+mobile/.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+mobile/.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+*.tsbuildinfo
+mobile/ios/
+mobile/android/
+
+# --- frontend/.gitignore (and its copy under backup/) ----------------------
+logs
+pnpm-debug.log*
+lerna-debug.log*
+dist-ssr
+*.local
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+frontend/.vscode/*
+!frontend/.vscode/extensions.json
+backup/frontend/cinephix/.vscode/*
