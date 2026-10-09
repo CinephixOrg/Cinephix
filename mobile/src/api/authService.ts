@@ -7,6 +7,15 @@ export async function login(email: string, password: string): Promise<User> {
   return res.data;
 }
 
+/**
+ * The signed-in account as the server has it now (no token: that stays the
+ * one from sign-in). AuthContext merges it into the stored user.
+ */
+export async function getMyAccount(): Promise<Omit<User, "token">> {
+  const res = await API.get(API_ROUTES.USERS.ME);
+  return res.data;
+}
+
 /** `acceptedTerms` is required by the API, not just the checkbox on screen. */
 export async function register(
   username: string,

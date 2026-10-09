@@ -22,6 +22,7 @@ import { buildCollectionEntries } from "../utils/publicCollection.js";
 import { PUBLIC_ACCESS, PUBLIC_PROFILE } from "../utils/publicProfile.js";
 import { isAllowedMobileRedirect } from "../utils/oauthRedirect.js";
 import { DEFAULT_GEMINI_MODEL } from "../services/llmAdapter.js";
+import { expireTierGrantIfDue } from "../services/tierGrants.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
 
@@ -196,6 +197,10 @@ export const loginUser = asyncHandler(async (req, res) => {
   if (user.isEmailVerified === false) {
     return sendError(res, 'EMAIL_NOT_VERIFIED', 403);
   }
+
+  // An admin-granted tier that has run out ends before accountTier goes
+  // into the response (the app keeps that copy until it next refreshes).
+  await expireTierGrantIfDue(user);
 
   // Generate token
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -1655,6 +1660,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
 // @desc    Google OAuth callback - generate JWT and redirect to frontend
 export const googleAuthCallback = asyncHandler(async (req, res) => {
   const user = req.user;
+  await expireTierGrantIfDue(user);
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
   const userData = encodeURIComponent(JSON.stringify({

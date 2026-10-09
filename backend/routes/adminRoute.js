@@ -20,6 +20,15 @@ import {
   getUserRatings,
 } from "../controllers/userController.js";
 import { getUserShares } from "../controllers/shareController.js";
+import { recentSignupStats, recentSignups, revealUserEmail } from "../controllers/recentSignupsController.js";
+import {
+  extendTierGrant,
+  grantTier,
+  listActiveGrants,
+  listGrantLog,
+  revokeTierGrant,
+  searchGrantUsers,
+} from "../controllers/tierGrantController.js";
 
 // The moderation API behind the admin dashboard. Every route: signed in, and an admin.
 const router = express.Router();
@@ -33,12 +42,28 @@ router.patch("/reports/:id", decideReport);
 router.get("/tickets", listTickets);
 router.get("/tickets/stats", ticketStats);
 router.patch("/tickets/:id", updateTicket);
+// Recent signups. Registered before /users/:id, which would otherwise take
+// "recent" for a user id.
+router.get("/users/recent", recentSignups);
+router.get("/users/recent/stats", recentSignupStats);
+router.get("/users/:id/email", revealUserEmail);
+
 router.get("/users/:id", adminUserSummary);
 
 // Taking content down, and suspending an account. Both are permanent enough
 // that the dashboard asks twice before calling them.
 router.delete("/content/:type/:id", deleteContent);
 router.patch("/users/:id/suspension", setSuspension);
+
+// Time-limited Plus/Premium (the dashboard's "Premium grants" tab): finding
+// people, granting, extending and revoking, the running grants, and the
+// audit log of every change.
+router.get("/tier-grants", listActiveGrants);
+router.get("/tier-grants/users", searchGrantUsers);
+router.get("/tier-grants/log", listGrantLog);
+router.post("/users/:id/tier-grant", grantTier);
+router.patch("/users/:id/tier-grant", extendTierGrant);
+router.delete("/users/:id/tier-grant", revokeTierGrant);
 
 // The same endpoints the mobile public profile is built from, read here as
 // a moderator: requireAdmin has already turned the block filter off, so a

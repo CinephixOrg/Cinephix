@@ -2,6 +2,9 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { blockSets } from "../services/blockService.js";
 import { suspensionActive } from "../utils/moderationActions.js";
+import { grantExpired } from "../utils/tierGrants.js";
+import { expireTierGrantIfDue } from "../services/tierGrants.js";
+import { touchLastActive } from "../services/lastActive.js";
 
 // Every authenticated request looks its caller up here, and the mobile app
 // routinely fires a burst of ~5-9 independent requests the instant a tab
@@ -112,6 +115,14 @@ export default async function authMiddleware(req, res, next) {
       user.suspendedUntil = undefined;
     }
 
+    // An admin-granted Plus/Premium that has run out ends here too, on the
+    // first request after it does: accountTier is back to what it was before
+    // the grant for this request and every reader after it.
+    if (grantExpired(user)) await expireTierGrantIfDue(user);
+
+    // "Last active", for the admin dashboard: throttled, and not awaited.
+    touchLastActive(user);
+
     // Attach user to request
     req.user = user;
     req.hiddenUsers = blocks.hidden;
@@ -134,6 +145,8 @@ export const optionalAuth = async (req, res, next) => {
       if (decoded?.id) {
         const [user, blocks] = await Promise.all([findUserById(decoded.id), blockSets(decoded.id)]);
         if (user && !user.isSuspended) {
+          if (grantExpired(user)) await expireTierGrantIfDue(user);
+          touchLastActive(user);
           req.user = user;
           req.hiddenUsers = blocks.hidden;
           req.blockedByMe = blocks.blockedByMe;

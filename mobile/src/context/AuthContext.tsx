@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import * as authService from "../api/authService";
 import { setUnauthorizedHandler } from "../api/client";
@@ -24,6 +25,15 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+// The fields re-read from the server by refreshAccount below. accountTier is
+// the one that matters: it decides ads and Premium features, and an admin
+// can grant or end a tier at any time. The others can change from another
+// device.
+const REFRESHED_FIELDS = ["accountTier", "username", "profile_pic_url"] as const;
+
+// At most this often when the app keeps coming back to the foreground.
+const REFRESH_MIN_INTERVAL_MS = 60 * 1000;
 
 async function persistUser(user: User) {
   const { token, ...rest } = user;
@@ -89,6 +99,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await persistUser(next);
     setUser(next);
   };
+
+  // The stored user is a copy from sign-in, so a tier granted or ended
+  // since (an admin's time-limited Premium, say) would otherwise only show
+  // after signing in again. It's re-read from /users/me when the app starts
+  // with someone signed in and whenever it comes back to the foreground.
+  // Offline or failing, the stored copy simply stays.
+  const userRef = useRef(user);
+  userRef.current = user;
+  const lastRefresh = useRef(0);
+
+  const refreshAccount = async () => {
+    const current = userRef.current;
+    if (!current || Date.now() - lastRefresh.current < REFRESH_MIN_INTERVAL_MS) return;
+    lastRefresh.current = Date.now();
+    try {
+      const fresh = await authService.getMyAccount();
+      const latest = userRef.current;
+      // Signed out or switched account meanwhile.
+      if (!latest || String(fresh?._id) !== String(latest._id)) return;
+      const changes: Partial<User> = {};
+      for (const field of REFRESHED_FIELDS) {
+        if (fresh[field] !== undefined && fresh[field] !== latest[field]) Object.assign(changes, { [field]: fresh[field] });
+      }
+      if (Object.keys(changes).length === 0) return;
+      const next = { ...latest, ...changes };
+      await persistUser(next);
+      setUser(next);
+    } catch {
+      // Keep the stored copy; the next start or foreground tries again.
+    }
+  };
+
+  const signedInId = user?._id ?? null;
+  useEffect(() => {
+    if (!signedInId) return;
+    lastRefresh.current = 0;
+    refreshAccount();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshAccount();
+    });
+    return () => subscription.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedInId]);
 
   // Set while signing out. Removing the push token is itself an
   // authenticated request, and when the session has expired its 401 calls

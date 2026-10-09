@@ -18,6 +18,7 @@ import { syncTMDBTrending } from "./services/tmdbSyncService.js";
 import { postOfficialContent } from "./services/officialContentService.js";
 import { checkWatchPartyReminders } from "./services/watchPartyReminders.js";
 import { postWeeklyLeaderboardAnnouncements } from "./services/weeklyLeaderboardAnnouncer.js";
+import { expireDueTierGrants } from "./services/tierGrants.js";
 
 dotenv.config();
 const app = express();
@@ -193,6 +194,15 @@ async function start() {
     cron.schedule("0 9 * * 1", () => {
       logger.info("Posting weekly leaderboard announcements...");
       postWeeklyLeaderboardAnnouncements().catch(err => logger.error(`Weekly leaderboard announcement error: ${err.message}`));
+    });
+
+    // Admin-granted Plus/Premium that has run out — hourly. A grant also
+    // ends on its holder's next request (authMiddleware); this catches the
+    // people who don't open the app, so they stop looking Premium to others.
+    cron.schedule("17 * * * *", () => {
+      expireDueTierGrants()
+        .then((ended) => ended > 0 && logger.info(`Ended ${ended} expired tier grant(s)`))
+        .catch(err => logger.error(`Tier grant expiry error: ${err.message}`));
     });
 
     // Attach Socket.io chat handler
