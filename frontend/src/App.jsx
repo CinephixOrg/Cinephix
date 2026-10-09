@@ -34,6 +34,7 @@ export default function App() {
           <Route path="/admin/users/:id" element={<AdminPage view="user" />} />
           <Route path="/admin/tickets" element={<AdminPage view="tickets" />} />
           <Route path="/admin/grants" element={<AdminPage view="grants" />} />
+          <Route path="/admin/signups" element={<AdminPage view="signups" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 

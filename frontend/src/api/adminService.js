@@ -166,3 +166,32 @@ export async function revokeTierGrant(userId) {
   const res = await API.delete(`/admin/users/${userId}/tier-grant`);
   return res.data;
 }
+
+// ─── Recent signups ─────────────────────────────────────────────────────────
+// backend controllers/recentSignupsController.js. Emails come masked; one is
+// revealed on purpose with revealUserEmail. `tz` is the browser's offset, so
+// "today" and the daily counts follow the admin's own calendar day.
+
+const tzOffset = () => new Date().getTimezoneOffset();
+
+/** { items, since, pagination }. days 1 = today. */
+export async function getRecentSignups({ days = 30, method, verified, q, page = 1, limit = 25 } = {}) {
+  const params = { days, page, limit, tz: tzOffset() };
+  if (method) params.method = method;
+  if (verified) params.verified = "true";
+  if (q) params.q = q;
+  const res = await API.get("/admin/users/recent", { params });
+  return res.data;
+}
+
+/** { today, last7, last30, daily: [{ date, count }] × 30 } */
+export async function getRecentSignupStats() {
+  const res = await API.get("/admin/users/recent/stats", { params: { tz: tzOffset() } });
+  return res.data;
+}
+
+/** One person's full email address. */
+export async function revealUserEmail(userId) {
+  const res = await API.get(`/admin/users/${userId}/email`);
+  return res.data.email;
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FiClock, FiGift, FiRefreshCw, FiSearch, FiXCircle } from "react-icons/fi";
 import { extendTierGrant, getActiveGrants, getGrantLog, grantTier, revokeTierGrant, searchGrantUsers } from "../../api/adminService.js";
@@ -139,8 +140,11 @@ export default function TierGrants({ me, onSignOut }) {
 }
 
 function UserSearch({ onChanged }) {
-  const [query, setQuery] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  // ?q=<username> (Recent signups' "Grant premium") arrives already searched.
+  const [params] = useSearchParams();
+  const initial = (params.get("q") ?? "").trim().slice(0, 50);
+  const [query, setQuery] = useState(initial);
+  const [submitted, setSubmitted] = useState(initial);
   const [page, setPage] = useState(1);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);

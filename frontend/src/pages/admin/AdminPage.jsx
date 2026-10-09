@@ -7,6 +7,7 @@ import ReportQueue, { SignOutButton } from "./ReportQueue.jsx";
 import AdminUserPage from "./AdminUserPage.jsx";
 import TicketQueue from "./TicketQueue.jsx";
 import TierGrants from "./TierGrants.jsx";
+import RecentSignups from "./RecentSignups.jsx";
 
 // /admin — the moderation dashboard. Internal, English only.
 //
@@ -17,7 +18,7 @@ import TierGrants from "./TierGrants.jsx";
 //
 // The views behind the same check: the reports queue, the support ticket
 // queue (/admin/tickets), time-limited Plus/Premium grants (/admin/grants),
-// and one person's record (/admin/users/:id), which opens in its own tab
+// recent signups (/admin/signups), and one person's record (/admin/users/:id), which opens in its own tab
 // from a report card or a ticket.
 export default function AdminPage({ view = "queue" }) {
   const { user, logout } = useContext(AuthContext);
@@ -56,6 +57,8 @@ export default function AdminPage({ view = "queue" }) {
           <TicketQueue me={state.me} onSignOut={logout} />
         ) : view === "grants" ? (
           <TierGrants me={state.me} onSignOut={logout} />
+        ) : view === "signups" ? (
+          <RecentSignups me={state.me} onSignOut={logout} />
         ) : (
           <ReportQueue me={state.me} onSignOut={logout} />
         )
