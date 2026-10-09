@@ -124,3 +124,45 @@ export async function setSuspension(userId, suspended, reason, durationHours = n
   const res = await API.patch(`/admin/users/${userId}/suspension`, { suspended, reason, durationHours });
   return res.data;
 }
+
+// ─── Premium grants ─────────────────────────────────────────────────────────
+// Plus/Premium for a limited time (backend controllers/tierGrantController.js).
+// A row is { _id, username, profile_pic_url, accountTier, grant | null }.
+
+/** Usernames containing `q`: { items, pagination }. */
+export async function searchGrantUsers(q, page = 1, limit = 10) {
+  const res = await API.get("/admin/tier-grants/users", { params: { q, page, limit } });
+  return res.data;
+}
+
+/** Grants still running, soonest to end first: { items, pagination }. */
+export async function getActiveGrants(page = 1, limit = 50) {
+  const res = await API.get("/admin/tier-grants", { params: { page, limit } });
+  return res.data;
+}
+
+/** The audit trail, newest first, optionally for one person: { items, pagination }. */
+export async function getGrantLog({ userId, page = 1, limit = 20 } = {}) {
+  const params = { page, limit };
+  if (userId) params.userId = userId;
+  const res = await API.get("/admin/tier-grants/log", { params });
+  return res.data;
+}
+
+/** { tier: "plus" | "premium", days | expiresAt, note? } → the updated row. */
+export async function grantTier(userId, body) {
+  const res = await API.post(`/admin/users/${userId}/tier-grant`, body);
+  return res.data;
+}
+
+/** { days | expiresAt, note? }; days are added to the current end. → the updated row. */
+export async function extendTierGrant(userId, body) {
+  const res = await API.patch(`/admin/users/${userId}/tier-grant`, body);
+  return res.data;
+}
+
+/** Ends the grant now; the account goes back to its tier from before. → the updated row. */
+export async function revokeTierGrant(userId) {
+  const res = await API.delete(`/admin/users/${userId}/tier-grant`);
+  return res.data;
+}

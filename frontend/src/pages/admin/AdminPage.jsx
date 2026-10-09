@@ -6,6 +6,7 @@ import { getMe } from "../../api/adminService.js";
 import ReportQueue, { SignOutButton } from "./ReportQueue.jsx";
 import AdminUserPage from "./AdminUserPage.jsx";
 import TicketQueue from "./TicketQueue.jsx";
+import TierGrants from "./TierGrants.jsx";
 
 // /admin — the moderation dashboard. Internal, English only.
 //
@@ -15,8 +16,9 @@ import TicketQueue from "./TicketQueue.jsx";
 // granted from the server only: `node backend/scripts/setAdmin.js <user> on`.
 //
 // The views behind the same check: the reports queue, the support ticket
-// queue (/admin/tickets), and one person's record (/admin/users/:id), which
-// opens in its own tab from a report card or a ticket.
+// queue (/admin/tickets), time-limited Plus/Premium grants (/admin/grants),
+// and one person's record (/admin/users/:id), which opens in its own tab
+// from a report card or a ticket.
 export default function AdminPage({ view = "queue" }) {
   const { user, logout } = useContext(AuthContext);
   const [state, setState] = useState({ status: "checking", me: null });
@@ -52,6 +54,8 @@ export default function AdminPage({ view = "queue" }) {
           <AdminUserPage me={state.me} onSignOut={logout} />
         ) : view === "tickets" ? (
           <TicketQueue me={state.me} onSignOut={logout} />
+        ) : view === "grants" ? (
+          <TierGrants me={state.me} onSignOut={logout} />
         ) : (
           <ReportQueue me={state.me} onSignOut={logout} />
         )

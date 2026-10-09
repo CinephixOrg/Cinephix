@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { FiFlag, FiLifeBuoy, FiShield } from "react-icons/fi";
+import { FiFlag, FiGift, FiLifeBuoy, FiShield } from "react-icons/fi";
 import { SignOutButton } from "./ReportQueue.jsx";
 
 const SECTIONS = [
   { to: "/admin", label: "Reports", icon: FiFlag },
   { to: "/admin/tickets", label: "Support tickets", icon: FiLifeBuoy },
+  { to: "/admin/grants", label: "Premium grants", icon: FiGift },
 ];
 
 // The dashboard's own header: which queue you're in, and who you are.
