@@ -48,6 +48,7 @@ export const API_ROUTES = {
       `/users/me/to-watch/${itemId}?itemType=${itemType}`,
   },
   USERS: {
+    ME: "/users/me",
     GET_PROFILE: (id: string) => `/users/profile/${id}`,
     GET_PROFILE_ANALYSIS: "/users/profile-analysis",
     GET_PROFILE_ANALYSIS_HISTORY: "/users/profile-analysis/history",
