@@ -101,6 +101,24 @@ const userSchema = new Schema({
   suspendedAt: { type: Date },
   suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
   suspensionReason: { type: String, trim: true, maxlength: 500 },
+  // Plus/Premium granted by an admin until expiresAt (utils/tierGrants.js).
+  // accountTier holds the granted tier while it lasts, so every reader of
+  // accountTier sees it unchanged; previousTier is what comes back when the
+  // grant ends (authMiddleware on the next request, or the hourly cleanup).
+  tierGrant: {
+    type: new Schema(
+      {
+        tier: { type: String, enum: ["plus", "premium"], required: true },
+        expiresAt: { type: Date, required: true },
+        grantedBy: { type: Schema.Types.ObjectId, ref: "User" },
+        grantedAt: { type: Date },
+        note: { type: String, trim: true, maxlength: 500 },
+        previousTier: { type: String, enum: ["free", "plus", "premium", "dev"], default: "free" },
+      },
+      { _id: false }
+    ),
+    default: undefined,
+  },
   // When this account accepted the Terms of Service and Privacy Policy, and
   // which version — recorded at registration, which the API requires.
   termsAcceptedAt: { type: Date },
@@ -213,6 +231,8 @@ userSchema.index({ _id: 1, watchlist: 1 });
 // Finding a device's token on whichever account holds it: moving it to a new
 // account on sign-in, and retiring it when Expo reports the app gone.
 userSchema.index({ "pushTokens.token": 1 }, { sparse: true });
+// The hourly sweep for ended grants, and the admin list of active ones.
+userSchema.index({ "tierGrant.expiresAt": 1 }, { sparse: true });
 
 const User = mongoose.model('User', userSchema);
 
