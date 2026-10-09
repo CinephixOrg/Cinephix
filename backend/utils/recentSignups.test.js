@@ -87,6 +87,7 @@ test("toSignupRow: allowlisted fields only, email masked, nothing secret", () =>
     watchlistCount: 12,
     pushTokenCount: 1,
     lastAppOpenAt: new Date("2026-10-08T21:30:00Z"),
+    lastActiveAt: new Date("2026-10-08T22:10:00Z"),
   };
   const row = toSignupRow(doc, { ratings: 7, communities: 2, online: true, now: NOW });
   assert.deepEqual(Object.keys(row).sort(), [
@@ -102,6 +103,7 @@ test("toSignupRow: allowlisted fields only, email masked, nothing secret", () =>
   assert.equal(row.googleLinked, true);
   assert.deepEqual(row.activity, {
     onlineNow: true,
+    lastActiveAt: new Date("2026-10-08T22:10:00Z"),
     lastAppOpenAt: new Date("2026-10-08T21:30:00Z"),
     lastStreakDate: null,
     ratings: 7,

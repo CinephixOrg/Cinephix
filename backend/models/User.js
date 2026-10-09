@@ -101,6 +101,10 @@ const userSchema = new Schema({
   suspendedAt: { type: Date },
   suspendedBy: { type: Schema.Types.ObjectId, ref: "User" },
   suspensionReason: { type: String, trim: true, maxlength: 500 },
+  // When they last used the app (any authenticated request), recorded at
+  // most every few minutes (services/lastActive.js). Absent until their first
+  // request after this was added.
+  lastActiveAt: { type: Date },
   // Plus/Premium granted by an admin until expiresAt (utils/tierGrants.js).
   // accountTier holds the granted tier while it lasts, so every reader of
   // accountTier sees it unchanged; previousTier is what comes back when the

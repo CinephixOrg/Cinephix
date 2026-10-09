@@ -10,8 +10,10 @@ import AdminNav from "./AdminNav.jsx";
 // the app: rated something, followed someone, joined a community, allowed
 // notifications. Emails are masked unless revealed one at a time.
 //
-// "Last active" is the latest app start that registered for push (the
-// server keeps no last-login time), or "online now" from the live socket.
+// "Last active" is "online now" from the live socket, else the server's
+// lastActiveAt (any signed-in request, recorded every few minutes), else —
+// for people not seen since that started — their last app start that
+// registered for notifications.
 
 const RANGES = [
   { days: 1, label: "Today" },
@@ -311,10 +313,14 @@ function SignupRow({ row }) {
     <span className="inline-flex items-center gap-1.5 text-emerald-300">
       <span className="h-2 w-2 rounded-full bg-emerald-400" /> Online now
     </span>
+  ) : a.lastActiveAt ? (
+    <span title={`Last request ${exact(a.lastActiveAt)}`}>{timeAgo(a.lastActiveAt)}</span>
   ) : a.lastAppOpenAt ? (
-    <span title={`App opened ${exact(a.lastAppOpenAt)}`}>{timeAgo(a.lastAppOpenAt)}</span>
+    <span className="text-zinc-400" title={`Not seen since activity tracking started; app last opened ${exact(a.lastAppOpenAt)}`}>
+      {timeAgo(a.lastAppOpenAt)}*
+    </span>
   ) : (
-    <span className="text-zinc-600" title="Hasn't opened the app with notifications set up">—</span>
+    <span className="text-zinc-600" title="Not seen since activity tracking started">—</span>
   );
 
   return (

@@ -27,6 +27,7 @@ const original = {
   find: User.find,
   aggregate: User.aggregate,
   countDocuments: User.countDocuments,
+  updateOne: User.updateOne,
   ratingAggregate: Rating.aggregate,
   groupAggregate: Group.aggregate,
 };
@@ -38,6 +39,7 @@ const chain = (value) => {
 before(() => {
   User.findById = (id) => chain(users.get(String(id)) ?? null);
   User.find = () => chain([]); // blockSets: nobody blocked
+  User.updateOne = async () => ({ modifiedCount: 1 }); // lastActiveAt
   User.aggregate = async (pipeline) => {
     pipelines.push(pipeline);
     if (pipeline.some((stage) => stage.$facet)) {
@@ -56,7 +58,7 @@ before(() => {
 });
 
 after(() => {
-  Object.assign(User, { findById: original.findById, find: original.find, aggregate: original.aggregate, countDocuments: original.countDocuments });
+  Object.assign(User, { findById: original.findById, find: original.find, aggregate: original.aggregate, countDocuments: original.countDocuments, updateOne: original.updateOne });
   Rating.aggregate = original.ratingAggregate;
   Group.aggregate = original.groupAggregate;
 });
@@ -95,6 +97,7 @@ const projected = (i) => ({
   watchlistCount: 0,
   pushTokenCount: 1,
   lastAppOpenAt: new Date(),
+  lastActiveAt: new Date(Date.now() - 600_000),
 });
 
 let server;

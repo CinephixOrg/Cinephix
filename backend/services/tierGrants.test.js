@@ -50,6 +50,8 @@ before(() => {
   };
   User.findOne = ({ email }) => chain([...users.values()].find((u) => u.email === email) ?? null);
   User.updateOne = async (filter, update) => {
+    // "Last active" writes (services/lastActive.js) aren't tier changes.
+    if (Object.keys(update.$set ?? {}).join() === "lastActiveAt") return { modifiedCount: 1 };
     updates.push([filter, update]);
     const user = users.get(String(filter._id));
     const matches = user && (!filter["tierGrant.expiresAt"] || user.tierGrant?.expiresAt === filter["tierGrant.expiresAt"]);
