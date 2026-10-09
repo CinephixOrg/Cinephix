@@ -231,6 +231,8 @@ userSchema.index({ _id: 1, watchlist: 1 });
 // Finding a device's token on whichever account holds it: moving it to a new
 // account on sign-in, and retiring it when Expo reports the app gone.
 userSchema.index({ "pushTokens.token": 1 }, { sparse: true });
+// The admin dashboard's recent signups, newest first.
+userSchema.index({ createdAt: -1 });
 // The hourly sweep for ended grants, and the admin list of active ones.
 userSchema.index({ "tierGrant.expiresAt": 1 }, { sparse: true });
 

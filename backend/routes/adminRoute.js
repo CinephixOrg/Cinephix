@@ -20,6 +20,7 @@ import {
   getUserRatings,
 } from "../controllers/userController.js";
 import { getUserShares } from "../controllers/shareController.js";
+import { recentSignupStats, recentSignups, revealUserEmail } from "../controllers/recentSignupsController.js";
 import {
   extendTierGrant,
   grantTier,
@@ -41,6 +42,12 @@ router.patch("/reports/:id", decideReport);
 router.get("/tickets", listTickets);
 router.get("/tickets/stats", ticketStats);
 router.patch("/tickets/:id", updateTicket);
+// Recent signups. Registered before /users/:id, which would otherwise take
+// "recent" for a user id.
+router.get("/users/recent", recentSignups);
+router.get("/users/recent/stats", recentSignupStats);
+router.get("/users/:id/email", revealUserEmail);
+
 router.get("/users/:id", adminUserSummary);
 
 // Taking content down, and suspending an account. Both are permanent enough
