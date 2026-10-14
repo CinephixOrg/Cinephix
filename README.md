@@ -113,5 +113,3 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 Furkan Gökgöz - [LinkedIn](https://www.linkedin.com/in/furkan-g%C3%B6kg%C3%B6z-027479336/)
 
 Nursena Doksanbir - [LinkedIn](https://www.linkedin.com/in/nursena-doksanbir)
-
-Project Link: [https://github.com/furkantr18/Cinephix](https://github.com/furkantr18/Cinephix)
