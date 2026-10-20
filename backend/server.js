@@ -43,7 +43,8 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((url) => url.trim().replace(/\/+$/, "")).filter(Boolean)
   : ["http://localhost:5173", "http://127.0.0.1:5173"];
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+// Content-Disposition is exposed so the dashboard can read an export's file name.
+app.use(cors({ origin: allowedOrigins, credentials: true, exposedHeaders: ["Content-Disposition"] }));
 app.use(express.json());
 app.use(requestLogger);
 configurePassport();

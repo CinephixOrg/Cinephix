@@ -10,7 +10,7 @@ import {
   reportStats,
   setSuspension,
 } from "../controllers/moderationController.js";
-import { listTickets, ticketStats, updateTicket } from "../controllers/ticketController.js";
+import { exportTickets, listTickets, ticketStats, updateTicket } from "../controllers/ticketController.js";
 import {
   getUserCineGraph,
   getUserCollectionEntries,
@@ -41,6 +41,8 @@ router.patch("/reports/:id", decideReport);
 // Support tickets: the queue, and answering one.
 router.get("/tickets", listTickets);
 router.get("/tickets/stats", ticketStats);
+// Downloads: CSV, or a ZIP of CSV + JSON + Markdown (ticketController.js).
+router.get("/tickets/export", exportTickets);
 router.patch("/tickets/:id", updateTicket);
 // Recent signups. Registered before /users/:id, which would otherwise take
 // "recent" for a user id.
