@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { FiRefreshCw } from "react-icons/fi";
-import { getTicketStats, getTickets } from "../../api/adminService.js";
+import { FiDownload, FiRefreshCw } from "react-icons/fi";
+import toast from "react-hot-toast";
+import { exportTickets, getTicketStats, getTickets } from "../../api/adminService.js";
 import AdminNav from "./AdminNav.jsx";
 import TicketDetail from "./TicketDetail.jsx";
 import TicketRow from "./TicketRow.jsx";
@@ -64,9 +65,12 @@ export default function TicketQueue({ me, onSignOut }) {
         me={me}
         onSignOut={onSignOut}
         right={
-          <button onClick={() => { load(); loadStats(); }} className="btn btn-sm btn-ghost" aria-label="Refresh" title="Refresh">
-            <FiRefreshCw className={loading ? "animate-spin" : ""} />
-          </button>
+          <>
+            <ExportMenu status={status} type={type} />
+            <button onClick={() => { load(); loadStats(); }} className="btn btn-sm btn-ghost" aria-label="Refresh" title="Refresh">
+              <FiRefreshCw className={loading ? "animate-spin" : ""} />
+            </button>
+          </>
         }
       />
 
@@ -141,6 +145,57 @@ export default function TicketQueue({ me, onSignOut }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Downloading tickets to read or analyse elsewhere: the ones the filters
+// above show (every page of them), or every ticket there is. CSV for a
+// spreadsheet; ZIP adds tickets.json and tickets.md alongside it.
+function ExportMenu({ status, type }) {
+  const [busy, setBusy] = useState(false);
+  const filtered = Boolean(status || type);
+  const filterLabel = [status || "All statuses", type || "All types"].join(" · ");
+
+  const run = async (format, filters) => {
+    document.activeElement?.blur(); // closes the dropdown
+    setBusy(true);
+    try {
+      const filename = await exportTickets(format, filters);
+      toast.success(`Downloaded ${filename}`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Couldn't export tickets");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="dropdown dropdown-end">
+      <button tabIndex={0} className="btn btn-sm btn-ghost gap-1.5" disabled={busy} aria-label="Export tickets" title="Export tickets">
+        {busy ? <span className="loading loading-spinner loading-xs" /> : <FiDownload />}
+        <span className="hidden sm:inline">Export</span>
+      </button>
+      <ul tabIndex={0} className="dropdown-content menu z-20 mt-2 w-64 rounded-xl border border-zinc-800 bg-zinc-900 p-2 text-zinc-200 shadow-xl">
+        {filtered && (
+          <>
+            <li className="menu-title text-xs text-zinc-500">These filters · {filterLabel}</li>
+            <li>
+              <button onClick={() => run("csv", { status, type })}>Export CSV</button>
+            </li>
+            <li>
+              <button onClick={() => run("zip", { status, type })}>Export ZIP (CSV + JSON + Markdown)</button>
+            </li>
+          </>
+        )}
+        <li className="menu-title text-xs text-zinc-500">All tickets</li>
+        <li>
+          <button onClick={() => run("csv")}>Export all as CSV</button>
+        </li>
+        <li>
+          <button onClick={() => run("zip")}>Export all as ZIP</button>
+        </li>
+      </ul>
     </div>
   );
 }
