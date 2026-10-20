@@ -1,9 +1,29 @@
+import { once } from "node:events";
+import AdmZip from "adm-zip";
 import mongoose from "mongoose";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendError, sendSuccess } from "../utils/response.js";
 import Ticket, { TICKET_STATUSES, TICKET_TYPES } from "../models/Ticket.js";
 import { pushTicketUpdate } from "../services/push.js";
-import { TICKETS_PER_DAY, hasUnreadReply, parseTicketInput, parseTicketQuery, parseTicketUpdate } from "../utils/ticketRules.js";
+import {
+  TICKETS_PER_DAY,
+  hasUnreadReply,
+  parseTicketExportQuery,
+  parseTicketInput,
+  parseTicketQuery,
+  parseTicketUpdate,
+} from "../utils/ticketRules.js";
+import {
+  CSV_BOM,
+  EXPORT_USER_FIELDS,
+  csvHeader,
+  csvRow,
+  exportFilename,
+  ticketRecord,
+  ticketsCsv,
+  ticketsJson,
+  ticketsMarkdown,
+} from "../utils/ticketExport.js";
 
 // Support tickets: written from the app's Help & Feedback screen, answered
 // from the web dashboard's Support Tickets queue.
@@ -145,4 +165,59 @@ export const updateTicket = asyncHandler(async (req, res) => {
     .populate("replies.adminId", "username")
     .lean();
   sendSuccess(res, populated, "Ticket updated");
+});
+
+// GET /api/admin/tickets/export?format=csv|zip&status=&type=&userId=&from=&to=&tz=
+//
+// Every ticket matching the queue's filters (or every ticket, with none), as
+// a download. CSV streams straight from the database cursor. ZIP holds
+// tickets.csv, tickets.json and tickets.md and is built in memory: tickets
+// are text only, a few KB each.
+export const exportTickets = asyncHandler(async (req, res) => {
+  const { value, error } = parseTicketExportQuery(req.query);
+  if (error) return sendError(res, error, 400);
+  const { filter, applied, format, tzOffset } = value;
+
+  const now = new Date();
+  const query = () =>
+    Ticket.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("userId", EXPORT_USER_FIELDS)
+      .populate("replies.adminId", "username")
+      .lean();
+  const download = (contentType) => {
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${exportFilename(format, now, tzOffset)}"`);
+    res.setHeader("Cache-Control", "no-store");
+  };
+
+  if (format === "zip") {
+    const records = (await query()).map(ticketRecord);
+    const meta = { exportedAt: now, filters: applied };
+    const zip = new AdmZip();
+    zip.addFile("tickets.csv", Buffer.from(ticketsCsv(records), "utf8"));
+    zip.addFile("tickets.json", Buffer.from(ticketsJson(records, meta), "utf8"));
+    zip.addFile("tickets.md", Buffer.from(ticketsMarkdown(records, meta), "utf8"));
+    download("application/zip");
+    return res.send(zip.toBuffer());
+  }
+
+  // CSV, a row at a time. Once the first byte is out the error handler can't
+  // answer with JSON any more, so a failure part-way cuts the download off
+  // instead — the browser then reports it as failed rather than saving half.
+  const cursor = query().cursor();
+  download("text/csv; charset=utf-8");
+  try {
+    res.write(CSV_BOM + csvHeader());
+    for await (const ticket of cursor) {
+      if (res.destroyed) break;
+      if (!res.write(csvRow(ticketRecord(ticket)))) await once(res, "drain");
+    }
+    res.end();
+  } catch (err) {
+    console.error("Ticket export failed:", err);
+    res.destroy(err);
+  } finally {
+    await cursor.close().catch(() => {});
+  }
 });

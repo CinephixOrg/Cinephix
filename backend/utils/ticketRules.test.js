@@ -1,7 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
-import { MAX_DESCRIPTION, MAX_TITLE, hasUnreadReply, parseTicketInput, parseTicketQuery, parseTicketUpdate } from "./ticketRules.js";
+import {
+  MAX_DESCRIPTION,
+  MAX_TITLE,
+  hasUnreadReply,
+  parseTicketExportQuery,
+  parseTicketInput,
+  parseTicketQuery,
+  parseTicketUpdate,
+} from "./ticketRules.js";
 
 const id = new mongoose.Types.ObjectId().toString();
 const valid = { type: "Bug Report", title: "  Feed won't scroll  ", description: "It freezes after I open a chat." };
@@ -39,6 +47,34 @@ test("the admin queue filters safely and pages within bounds", () => {
   assert.equal(q.page, 2);
   assert.equal(q.limit, 100);
   assert.deepEqual(parseTicketQuery({ status: { $ne: "Closed" }, type: "Nope", userId: { $gt: "" } }).filter, {}, "no operator injection");
+});
+
+test("an export with no filters is every ticket, as CSV", () => {
+  assert.deepEqual(parseTicketExportQuery({}).value, { filter: {}, applied: {}, format: "csv", tzOffset: 0 });
+  assert.equal(parseTicketExportQuery({ format: "zip" }).value.format, "zip");
+  assert.ok(parseTicketExportQuery({ format: "xlsx" }).error);
+});
+
+test("an export keeps the queue's filters, without paging, and no operator injection", () => {
+  const { value } = parseTicketExportQuery({ status: "Open", type: "Bug Report", userId: id, page: "3", limit: "5" });
+  assert.deepEqual(value.filter, { status: "Open", type: "Bug Report", userId: new mongoose.Types.ObjectId(id) });
+  assert.deepEqual(value.applied, { status: "Open", type: "Bug Report", userId: id });
+  assert.deepEqual(parseTicketExportQuery({ status: { $ne: "x" } }).value.filter, {});
+});
+
+test("an export's date range: whole days in the admin's timezone, or exact instants", () => {
+  // Istanbul (UTC+3): 1 Oct starts 30 Sep 21:00 UTC; "to 2 Oct" runs to the end of 2 Oct.
+  const days = parseTicketExportQuery({ from: "2026-10-01", to: "2026-10-02", tz: "-180" }).value;
+  assert.deepEqual(days.filter.createdAt, { $gte: new Date("2026-09-30T21:00:00Z"), $lt: new Date("2026-10-02T21:00:00Z") });
+  assert.deepEqual(days.applied, { from: "2026-10-01", to: "2026-10-02" });
+
+  const exact = parseTicketExportQuery({ from: "2026-10-01T08:00:00Z", to: "2026-10-01T09:00:00Z" }).value;
+  assert.deepEqual(exact.filter.createdAt, { $gte: new Date("2026-10-01T08:00:00Z"), $lte: new Date("2026-10-01T09:00:00Z") });
+
+  assert.ok(parseTicketExportQuery({ from: "2026-10-01", to: "2026-10-01" }).value, "one whole day");
+  assert.ok(parseTicketExportQuery({ from: "yesterday" }).error);
+  assert.ok(parseTicketExportQuery({ from: "2026-10-05", to: "2026-10-01" }).error);
+  assert.equal(parseTicketExportQuery({ tz: "99999" }).value.tzOffset, 0, "an impossible offset is ignored");
 });
 
 test("an update needs a known status, a reply, or both", () => {
