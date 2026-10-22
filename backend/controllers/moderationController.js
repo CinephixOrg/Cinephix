@@ -11,6 +11,7 @@ import Conversation from "../models/Conversation.js";
 import Group from "../models/Group.js";
 import FootprintEvent from "../models/FootprintEvent.js";
 import { blockUser, unblockUser } from "../services/blockService.js";
+import { usernameSearch } from "../utils/tierGrants.js";
 import { removeShareNotifications } from "../services/notifications.js";
 import { invalidateUserCache } from "../middleware/authMiddleware.js";
 import { ENTITY_TYPE_OF, parseDeleteTarget, parseSuspension, resolutionNote, suspendedUntil, suspensionRefusal } from "../utils/moderationActions.js";
@@ -218,6 +219,16 @@ export const reportStats = asyncHandler(async (req, res) => {
     if (_id.status === "pending") pendingByType[_id.entityType] = count;
   }
   sendSuccess(res, { byStatus, pendingByType }, "Report stats fetched");
+});
+
+// GET /api/admin/users/search?q= — people by username (partial, any case),
+// for picking someone in a dashboard form. Only who they are: id, username,
+// tier — nothing else about the account.
+export const adminSearchUsers = asyncHandler(async (req, res) => {
+  const username = usernameSearch(req.query.q);
+  if (!username) return sendError(res, "Type part of a username", 400);
+  const items = await User.find({ username }).select("_id username accountTier").sort({ username: 1 }).limit(10).lean();
+  sendSuccess(res, { items }, "Users found");
 });
 
 // GET /api/admin/users/:id — who someone is, for a moderator looking into a

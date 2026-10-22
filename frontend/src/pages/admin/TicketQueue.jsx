@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { FiDownload, FiRefreshCw } from "react-icons/fi";
+import { FiDownload, FiPlus, FiRefreshCw } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { exportTickets, getTicketStats, getTickets } from "../../api/adminService.js";
 import AdminNav from "./AdminNav.jsx";
+import NewTicketForm from "./NewTicketForm.jsx";
 import TicketDetail from "./TicketDetail.jsx";
 import TicketRow from "./TicketRow.jsx";
 import { TICKET_STATUSES, TICKET_TYPES } from "./ticketMeta.js";
@@ -21,6 +22,7 @@ export default function TicketQueue({ me, onSignOut }) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [adding, setAdding] = useState(false);
 
   const loadStats = useCallback(() => {
     getTicketStats()
@@ -56,6 +58,14 @@ export default function TicketQueue({ me, onSignOut }) {
     loadStats();
   };
 
+  // A ticket added by hand: open it, if the filters show it.
+  const onCreated = (ticket) => {
+    setAdding(false);
+    setSelectedId(ticket._id);
+    load();
+    loadStats();
+  };
+
   const selected = data?.items.find((ticket) => ticket._id === selectedId) ?? null;
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
@@ -66,6 +76,10 @@ export default function TicketQueue({ me, onSignOut }) {
         onSignOut={onSignOut}
         right={
           <>
+            <button onClick={() => setAdding(true)} className="btn btn-sm btn-ghost gap-1.5" aria-label="New ticket" title="New ticket">
+              <FiPlus />
+              <span className="hidden sm:inline">New ticket</span>
+            </button>
             <ExportMenu status={status} type={type} />
             <button onClick={() => { load(); loadStats(); }} className="btn btn-sm btn-ghost" aria-label="Refresh" title="Refresh">
               <FiRefreshCw className={loading ? "animate-spin" : ""} />
@@ -73,6 +87,8 @@ export default function TicketQueue({ me, onSignOut }) {
           </>
         }
       />
+
+      <NewTicketForm open={adding} onClose={() => setAdding(false)} onCreated={onCreated} />
 
       {/* Counts per status — also the status tabs. */}
       <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">

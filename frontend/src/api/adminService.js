@@ -99,6 +99,22 @@ export async function getTicketStats() {
 }
 
 /**
+ * Adds a ticket by hand: { type, title, description, status?, reporterId?,
+ * source? }. It stays internal — never in the reporter's app, never pushed.
+ * Returns the saved ticket, shaped like the queue's.
+ */
+export async function createTicket(body) {
+  const res = await API.post("/admin/tickets", body);
+  return res.data;
+}
+
+/** Up to 10 people whose username contains `q`: [{ _id, username, accountTier }]. */
+export async function searchUsers(q) {
+  const res = await API.get("/admin/users/search", { params: { q } });
+  return res.data.items;
+}
+
+/**
  * Downloads every ticket matching the filters — all of them with none — as
  * "csv", or "zip" (tickets.csv + tickets.json + tickets.md). Fetched as a
  * blob rather than linked to, since the admin token travels in a header.

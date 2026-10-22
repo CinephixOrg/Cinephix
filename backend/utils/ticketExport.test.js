@@ -128,3 +128,44 @@ test("the file name is in the admin's own time", () => {
   assert.equal(exportFilename("csv", now, -180), "tickets-export-2026-10-20-2039.csv");
   assert.equal(exportFilename("csv", new Date("2026-10-20T22:05:00Z"), -180), "tickets-export-2026-10-21-0105.csv");
 });
+
+test("a manual ticket exports like any other, marked manual, with who added it and where it came from", () => {
+  const manualTicket = {
+    ...ticket,
+    _id: new mongoose.Types.ObjectId(),
+    title: "Arkadaş önerisi: liste sıralaması",
+    description: "Çğıöşü, \"alıntı\"\nikinci satır",
+    userId: null,
+    adminReply: undefined,
+    replies: [],
+    manual: true,
+    createdByAdmin: { _id: adminId, username: "mod" },
+    source: "Friend feedback, via WhatsApp",
+  };
+  const records = [ticketRecord(ticket), ticketRecord(manualTicket)];
+  assert.equal(records[0].manual, false);
+  assert.equal(records[0].createdByAdmin, null);
+  assert.deepEqual(
+    [records[1].manual, records[1].createdByAdmin, records[1].source, records[1].user.id],
+    [true, "mod", "Friend feedback, via WhatsApp", null]
+  );
+
+  const rows = parseCsv(ticketsCsv(records).slice(1));
+  assert.equal(rows.length, 3);
+  const at = (row, name) => rows[row][CSV_COLUMNS.findIndex(([column]) => column === name)];
+  assert.deepEqual([at(1, "manual"), at(1, "createdByAdmin"), at(1, "source")], ["false", "", ""]);
+  assert.deepEqual([at(2, "manual"), at(2, "createdByAdmin"), at(2, "source")], ["true", "mod", "Friend feedback, via WhatsApp"]);
+  assert.equal(at(2, "title"), manualTicket.title);
+  assert.equal(at(2, "description"), manualTicket.description);
+  assert.equal(at(2, "username"), "");
+
+  const json = JSON.parse(ticketsJson(records, meta));
+  assert.equal(json.tickets[1].manual, true);
+  assert.equal(json.tickets[1].description, manualTicket.description);
+
+  const md = ticketsMarkdown(records, meta);
+  assert.ok(md.includes("- **User:** (none)"));
+  assert.ok(md.includes("- **Added manually by:** @mod"));
+  assert.ok(md.includes("- **Source:** Friend feedback, via WhatsApp"));
+  assert.ok(md.includes("> Çğıöşü"));
+});
