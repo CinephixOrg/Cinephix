@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { format, formatDistanceToNow } from "date-fns";
-import { FiExternalLink, FiSend } from "react-icons/fi";
+import { FiCopy, FiExternalLink, FiSend } from "react-icons/fi";
 import { updateTicket } from "../../api/adminService.js";
 import { STATUS_STYLE, TICKET_STATUSES, TYPE_STYLE } from "./ticketMeta.js";
 
@@ -9,7 +9,8 @@ const ago = (date) => (date ? formatDistanceToNow(new Date(date), { addSuffix: t
 
 // The ticket being answered: what they wrote, who they are, every reply so
 // far, and the panel that answers it. Saving sends the person a push
-// notification, so the panel says so rather than letting it surprise anyone.
+// notification, so the panel says so rather than letting it surprise anyone —
+// except on a manual ticket, which is internal: nothing reaches the reporter.
 export default function TicketDetail({ ticket, onUpdated }) {
   const [status, setStatus] = useState(ticket.status);
   const [reply, setReply] = useState("");
@@ -18,6 +19,12 @@ export default function TicketDetail({ ticket, onUpdated }) {
   const user = ticket.userId;
   const statusChanged = status !== ticket.status;
   const canSave = statusChanged || reply.trim().length > 0;
+
+  const copyId = () =>
+    navigator.clipboard
+      .writeText(user._id)
+      .then(() => toast.success("User id copied"))
+      .catch(() => toast.error("Couldn't copy"));
 
   const save = async () => {
     if (!canSave || busy) return;
@@ -71,11 +78,25 @@ export default function TicketDetail({ ticket, onUpdated }) {
               @{user.username} <FiExternalLink className="h-3 w-3" />
             </a>
           ) : (
-            <span className="text-zinc-500">Deleted account</span>
+            <span className="text-zinc-500">{ticket.manual ? "No reporter" : "Deleted account"}</span>
           )}
-          <div className="text-xs capitalize text-zinc-500">{user?.accountTier ?? "free"}</div>
+          {user && (
+            <div className="flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
+              <span className="capitalize">{user.accountTier ?? "free"}</span>
+              <button onClick={copyId} className="inline-flex items-center gap-1 font-mono hover:text-zinc-300" title="Copy user id">
+                {user._id} <FiCopy className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {ticket.manual && (
+        <p className="mt-2 text-xs text-zinc-500">
+          Added manually{ticket.createdByAdmin?.username ? ` by @${ticket.createdByAdmin.username}` : ""}
+          {ticket.source ? ` · ${ticket.source}` : ""}
+        </p>
+      )}
 
       <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-200">{ticket.description}</p>
 
@@ -120,7 +141,9 @@ export default function TicketDetail({ ticket, onUpdated }) {
           onChange={(e) => setReply(e.target.value)}
           maxLength={4000}
           rows={4}
-          placeholder="Write back to them — this appears in their Help & Feedback screen."
+          placeholder={
+            ticket.manual ? "Add a note — internal, the reporter doesn't see it." : "Write back to them — this appears in their Help & Feedback screen."
+          }
           className="textarea textarea-bordered mt-3 w-full bg-zinc-900 text-sm"
         />
 
@@ -133,7 +156,9 @@ export default function TicketDetail({ ticket, onUpdated }) {
             {busy ? <span className="loading loading-spinner loading-xs" /> : <FiSend />}
             {reply.trim() ? "Send reply" : "Save status"}
           </button>
-          <p className="text-xs text-zinc-500">They get a push notification about this.</p>
+          <p className="text-xs text-zinc-500">
+            {ticket.manual ? "Manual ticket: no one is notified." : "They get a push notification about this."}
+          </p>
         </div>
       </div>
     </article>

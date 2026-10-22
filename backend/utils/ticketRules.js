@@ -25,6 +25,99 @@ export function parseTicketInput(body = {}) {
   return { value: { type: body.type, title, description } };
 }
 
+// ─── What the app sees ───────────────────────────────────────────────────────
+
+/**
+ * Every app-facing ticket query: one person's tickets, never a manual one.
+ * `$ne: true` rather than `false`, since tickets from before manual ones
+ * existed have no `manual` field at all.
+ */
+export const appTicketFilter = (userId, extra = {}) => ({ ...extra, userId, manual: { $ne: true } });
+
+/** The tickets that count against someone's TICKETS_PER_DAY: their own, in the last day. */
+export const dailyLimitFilter = (userId, now = new Date()) =>
+  appTicketFilter(userId, { createdAt: { $gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) } });
+
+/**
+ * A ticket as the app reads it — no reporter, no moderators, nothing about
+ * how it was filed — plus its unread flag.
+ */
+export function forUser(ticket) {
+  return {
+    _id: ticket._id,
+    type: ticket.type,
+    title: ticket.title,
+    description: ticket.description,
+    status: ticket.status,
+    adminReply: ticket.adminReply,
+    replies: (ticket.replies ?? []).map((reply) => ({ text: reply.text, createdAt: reply.createdAt })),
+    repliedAt: ticket.repliedAt,
+    hasUnreadReply: hasUnreadReply(ticket),
+    createdAt: ticket.createdAt,
+    updatedAt: ticket.updatedAt,
+  };
+}
+
+/** Whether a moderator's change is pushed to the reporter: only for their own ticket, never a manual one. */
+export const shouldPushTicketUpdate = (ticket) => Boolean(ticket && !ticket.manual && ticket.userId);
+
+// ─── Tickets a moderator adds by hand ────────────────────────────────────────
+
+/** A manual ticket is a bug or an idea that came in some other way. */
+export const MANUAL_TICKET_TYPES = ["Bug Report", "Feature Request"];
+export const MAX_SOURCE = 200;
+
+/**
+ * The dashboard's "New ticket" form: { type, title, description, status?,
+ * reporterId?, source? }. Over-long text is refused rather than cut — the
+ * form limits it already, so anything longer didn't come from the form.
+ * Returns { value } or { error } — never throws.
+ */
+export function parseAdminTicketInput(body = {}) {
+  body ??= {};
+  if (!MANUAL_TICKET_TYPES.includes(body.type)) return { error: "Type must be Bug Report or Feature Request" };
+
+  const fields = [
+    ["title", "Title", MAX_TITLE, true],
+    ["description", "Description", MAX_DESCRIPTION, true],
+    ["source", "Source", MAX_SOURCE, false],
+  ];
+  const value = { type: body.type };
+  for (const [key, label, max, required] of fields) {
+    if (body[key] !== undefined && body[key] !== null && typeof body[key] !== "string") return { error: `${label} must be text` };
+    const trimmed = (body[key] ?? "").trim();
+    if (required && !trimmed) return { error: `${label} is required` };
+    if (trimmed.length > max) return { error: `${label} can be at most ${max} characters` };
+    if (trimmed) value[key] = trimmed;
+  }
+
+  const status = body.status ?? "Open";
+  if (!TICKET_STATUSES.includes(status)) return { error: "Unknown status" };
+  value.status = status;
+
+  if (body.reporterId !== undefined && body.reporterId !== null && body.reporterId !== "") {
+    if (typeof body.reporterId !== "string" || !mongoose.isValidObjectId(body.reporterId)) return { error: "Unknown reporter" };
+    value.reporterId = body.reporterId;
+  }
+  return { value };
+}
+
+/** The document a manual ticket is saved as: the same schema, marked manual, with who added it. */
+export function manualTicketDoc(value, adminId, now = new Date()) {
+  const doc = {
+    type: value.type,
+    title: value.title,
+    description: value.description,
+    status: value.status,
+    manual: true,
+    createdByAdmin: adminId,
+  };
+  if (value.reporterId) doc.userId = new mongoose.Types.ObjectId(value.reporterId);
+  if (value.source) doc.source = value.source;
+  if (value.status !== "Open") doc.statusChangedAt = now;
+  return doc;
+}
+
 /** The admin queue's filters: ?status=&type=&userId=&page=&limit=. "all" drops a filter. */
 export function parseTicketQuery(query = {}) {
   const filter = {};

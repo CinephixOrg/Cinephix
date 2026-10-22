@@ -45,6 +45,10 @@ export function ticketRecord(ticket) {
     // Older tickets have an adminReply but no replies list.
     latestReply: ticket.adminReply ?? replies.at(-1)?.text ?? null,
     replies,
+    // Added by a moderator rather than written in the app (models/Ticket.js).
+    manual: Boolean(ticket.manual),
+    createdByAdmin: ticket.manual ? (ticket.createdByAdmin?.username ?? null) : null,
+    source: ticket.source ?? null,
     attachments: [],
   };
 }
@@ -67,6 +71,9 @@ export const CSV_COLUMNS = [
   ["repliedAt", (t) => t.repliedAt],
   ["replyCount", (t) => t.replies.length],
   ["latestReply", (t) => t.latestReply],
+  ["manual", (t) => t.manual],
+  ["createdByAdmin", (t) => t.createdByAdmin],
+  ["source", (t) => t.source],
   ["attachments", (t) => t.attachments.join("; ")],
 ];
 
@@ -132,11 +139,15 @@ export function ticketsMarkdown(records, { exportedAt, filters }) {
       "",
       `- **Status:** ${t.status}`,
       `- **Type:** ${t.type}`,
-      `- **User:** ${t.user.username ? `@${t.user.username}` : "(deleted account)"}${t.user.accountTier ? ` · ${t.user.accountTier}` : ""}`,
+      `- **User:** ${t.user.username ? `@${t.user.username}` : t.manual && !t.user.id ? "(none)" : "(deleted account)"}${t.user.accountTier ? ` · ${t.user.accountTier}` : ""}`,
       `- **Created:** ${t.createdAt}`,
       `- **Updated:** ${t.updatedAt}`,
     ];
     if (t.statusChangedAt) lines.push(`- **Status changed:** ${t.statusChangedAt}`);
+    if (t.manual) {
+      lines.push(`- **Added manually by:** ${t.createdByAdmin ? `@${t.createdByAdmin}` : "a moderator"}`);
+      if (t.source) lines.push(`- **Source:** ${t.source}`);
+    }
     lines.push("", "### Description", "", quote(t.description));
 
     if (t.replies.length) {
