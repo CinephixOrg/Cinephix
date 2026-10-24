@@ -92,6 +92,16 @@ export default async function authMiddleware(req, res, next) {
     // both only need the id), for services/blockService.js's filtering.
     const [user, blocks] = await Promise.all([findUserById(decoded.id), blockSets(decoded.id)]);
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Changing your password bumps User.tokenVersion, which invalidates
+    // every token issued before that — ?? 0 on both sides so a token
+    // signed before this field existed (no tokenVersion in its payload)
+    // still matches an account that's never changed its password since
+    // (tokenVersion still 0), rather than mass-logging-out every existing
+    // session the moment this shipped.
+    if ((decoded.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+      return res.status(401).json({ message: "Session expired, please log in again", code: "token_revoked" });
+    }
     // A suspended account keeps its token but loses the app: every
     // authenticated request is refused, and 401 is what makes the client
     // sign itself out rather than retry (mobile/src/api/client.ts).
@@ -133,7 +143,10 @@ export const optionalAuth = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       if (decoded?.id) {
         const [user, blocks] = await Promise.all([findUserById(decoded.id), blockSets(decoded.id)]);
-        if (user && !user.isSuspended) {
+        // Same tokenVersion check as authMiddleware above — a revoked
+        // token should attach no user here either, not fall back to
+        // "anonymous" on a route that otherwise treats that as fine.
+        if (user && !user.isSuspended && (decoded.tokenVersion ?? 0) === (user.tokenVersion ?? 0)) {
           req.user = user;
           req.hiddenUsers = blocks.hidden;
           req.blockedByMe = blocks.blockedByMe;

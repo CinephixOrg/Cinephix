@@ -38,6 +38,15 @@ const userSchema = new Schema({
     type: String,
     minlength: 6,
   },
+  // Bumped on password change (and available for a future "sign out
+  // everywhere" action) — embedded in every JWT at sign time
+  // (authMiddleware.js compares it against this live value), so changing
+  // your password actually invalidates every token issued before that,
+  // not just the one you're currently using.
+  tokenVersion: {
+    type: Number,
+    default: 0,
+  },
   googleId: {
     type: String,
     unique: true,

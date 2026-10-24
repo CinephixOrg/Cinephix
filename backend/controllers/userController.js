@@ -1,4 +1,5 @@
 // controllers/userController.js
+import crypto from "node:crypto";
 import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
@@ -55,6 +56,7 @@ function isReservedUsername(username) {
 
 // New imports for consistent responses and error handling
 import { asyncHandler } from "../middleware/errorHandler.js";
+import { invalidateUserCache } from "../middleware/authMiddleware.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { validateEmail } from "../middleware/validation.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
@@ -146,7 +148,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   // Send email verification code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const code = crypto.randomInt(100000, 1000000).toString();
   user.emailVerificationCode = code;
   user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
   await user.save();
@@ -196,7 +198,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 
   // Generate token
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id, tokenVersion: user.tokenVersion ?? 0 }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 
@@ -219,7 +221,7 @@ export const getUsers = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const users = await User.find({})
-    .select('-password')
+    .select('-password -tokenVersion')
     .limit(parseInt(limit))
     .skip(skip)
     .lean();
@@ -562,7 +564,7 @@ export const updateFavorites = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     // Who someone blocked is theirs alone; the admin flag isn't public either.
-    const user = await User.findById(req.params.id).select('-password -blockedUsers -isAdmin').lean();
+    const user = await User.findById(req.params.id).select('-password -blockedUsers -isAdmin -tokenVersion').lean();
     // Nor is their email address: only a moderator reading this through
     // routes/adminRoute.js (showPrivate) gets it.
     if (user && !req.showPrivate) delete user.email;
@@ -627,7 +629,7 @@ export const setOwnAccountTier = asyncHandler(async (req, res) => {
     req.user.id,
     { accountTier: tier, tierUpdatedAt: new Date() },
     { new: true }
-  ).select('-password');
+  ).select('-password -tokenVersion');
 
   sendSuccess(res, { accountTier: user.accountTier }, 'Account tier updated');
 });
@@ -858,7 +860,7 @@ export const updateUserBio = asyncHandler(async (req, res) => {
     req.user.id,
     updateData,
     { new: true, runValidators: true }
-  ).select('-password');
+  ).select('-password -tokenVersion');
 
   if (!updatedUser) {
     return sendError(res, 'User not found', 404);
@@ -1302,9 +1304,18 @@ export const updatePassword = asyncHandler(async (req, res) => {
   // Yeni şifreyi hash'le ve kaydet
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(newPassword, salt);
+  // Invalidates every token issued before this change (authMiddleware.js
+  // compares this against each request's own token) — a stolen/leaked
+  // token no longer survives a password change. Re-issue a fresh token
+  // for THIS request's own session so the caller isn't logged out by
+  // their own password change.
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   await user.save();
+  invalidateUserCache(user._id);
 
-  sendSuccess(res, null, 'Password updated successfully', 200);
+  const token = jwt.sign({ id: user._id, tokenVersion: user.tokenVersion }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+  sendSuccess(res, { token }, 'Password updated successfully', 200);
 });
 
 /**
@@ -1361,7 +1372,7 @@ export const deleteAccount = asyncHandler(async (req, res) => {
 // @access  Private
 export const getMyProfile = asyncHandler(async (req, res) => {
   // Re-fetch without password hash and add a stable OAuth flag for frontend settings logic
-  const user = await User.findById(req.user.id).select('-password').lean();
+  const user = await User.findById(req.user.id).select('-password -tokenVersion').lean();
 
   if (!user) {
     return sendError(res, 'User not found', 404);
@@ -1540,17 +1551,21 @@ export const sendEmailVerificationCode = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) return sendError(res, 'Email is required', 400);
 
+  // Same response whether or not the email is registered (and whether or
+  // not it's already verified) — this endpoint is unauthenticated and
+  // public, so a distinct 404/400 here let anyone check which emails have
+  // an account on this app at all, just by calling it. Only sends a real
+  // code when there's actually an unverified account to send one to.
   const user = await User.findOne({ email });
-  if (!user) return sendError(res, 'User not found', 404);
-  if (user.isEmailVerified) return sendError(res, 'Email already verified', 400);
+  if (user && !user.isEmailVerified) {
+    const code = crypto.randomInt(100000, 1000000).toString();
+    user.emailVerificationCode = code;
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+    await sendVerificationEmail(email, code);
+  }
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  user.emailVerificationCode = code;
-  user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
-  await user.save();
-
-  await sendVerificationEmail(email, code);
-  sendSuccess(res, null, 'Verification code sent');
+  sendSuccess(res, null, 'If that email needs verifying, a code has been sent.');
 });
 
 // @desc    Verify email with code
@@ -1578,7 +1593,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.emailVerificationExpires = undefined;
   await user.save();
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  const token = jwt.sign({ id: user._id, tokenVersion: user.tokenVersion ?? 0 }, process.env.JWT_SECRET, { expiresIn: '30d' });
   sendSuccess(res, {
     _id: user._id,
     username: user.username,
@@ -1597,24 +1612,33 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) return sendError(res, 'Email is required', 400);
 
+  // Same response whether the email is registered, unregistered, or a
+  // Google-only account with no password to reset — this endpoint is
+  // unauthenticated and public, so a distinct 404/400 here let anyone
+  // check which emails have an account (and how they signed up) just by
+  // calling it. Only sends a real code when there's actually a password
+  // to reset.
   const user = await User.findOne({ email });
-  if (!user) return sendError(res, 'No account found with this email', 404);
-  if (user.googleId && !user.password) {
-    return sendError(res, 'This account was created with Google. Password reset is not required.', 400);
+  const canReset = user && !(user.googleId && !user.password);
+  const genericMessage = 'If that email has a resettable password, a code has been sent.';
+
+  if (canReset) {
+    const code = crypto.randomInt(100000, 1000000).toString();
+    user.passwordResetCode = code;
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    try {
+      await sendPasswordResetEmail(email, code);
+    } catch (emailErr) {
+      console.error('Password reset email failed:', emailErr.message);
+      // Still generic — a delivery failure shouldn't distinguish a real
+      // account from a fake one either.
+      return sendSuccess(res, null, genericMessage);
+    }
   }
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  user.passwordResetCode = code;
-  user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
-  await user.save();
-
-  try {
-    await sendPasswordResetEmail(email, code);
-  } catch (emailErr) {
-    console.error('Password reset email failed:', emailErr.message);
-    return sendError(res, 'Failed to send reset email. Please try again later.', 503);
-  }
-  sendSuccess(res, null, 'Password reset code sent to your email');
+  sendSuccess(res, null, genericMessage);
 });
 
 // @desc    Reset password with code
@@ -1645,7 +1669,15 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.password = await bcrypt.hash(newPassword, salt);
   user.passwordResetCode = undefined;
   user.passwordResetExpires = undefined;
+  // A password reset is often "I think someone else has my account" —
+  // this should kill any session that request started too, not just
+  // ones from a plain in-app password change. The user isn't
+  // authenticated during this flow (no current request's own token to
+  // replace), so no client-side change is needed here — they just log in
+  // fresh afterward, same as today.
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   await user.save();
+  invalidateUserCache(user._id);
 
   sendSuccess(res, null, 'Password successfully reset');
 });
@@ -1653,7 +1685,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
 // @desc    Google OAuth callback - generate JWT and redirect to frontend
 export const googleAuthCallback = asyncHandler(async (req, res) => {
   const user = req.user;
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  const token = jwt.sign({ id: user._id, tokenVersion: user.tokenVersion ?? 0 }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
   const userData = encodeURIComponent(JSON.stringify({
     _id: user._id,

@@ -241,6 +241,14 @@ export const getMessages = asyncHandler(async (req, res) => {
 export const markAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
 
+  // Same participant check sendMessage/getMessages already apply — this
+  // only ever zeroes the caller's own counter, but an arbitrary conversation
+  // id shouldn't be writable at all without being part of it.
+  const conversation = await Conversation.findById(req.params.id).select("participants").lean();
+  if (!conversation) return sendError(res, "Conversation not found", 404);
+  const isParticipant = conversation.participants.some((p) => p.toString() === userId);
+  if (!isParticipant) return sendError(res, "Not a participant in this conversation", 403);
+
   await Conversation.findByIdAndUpdate(req.params.id, {
     $set: { [`unreadCounts.${userId}`]: 0 },
   });

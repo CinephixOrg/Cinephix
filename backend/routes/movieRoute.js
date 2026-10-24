@@ -60,7 +60,7 @@ export default async function(movieModel) {
       res.status(500).json({
         success: false,
         message: "Search failed",
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });
@@ -170,7 +170,7 @@ export default async function(movieModel) {
       res.status(500).json({
         success: false,
         message: 'Error fetching movies',
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });
@@ -205,7 +205,7 @@ export default async function(movieModel) {
       return res.status(500).json({
         success: false,
         message: "Failed to fetch bulk movies",
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });
@@ -229,7 +229,7 @@ export default async function(movieModel) {
       res.status(500).json({
         success: false,
         message: 'Error fetching movie',
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });

@@ -10,7 +10,7 @@ import passport from "passport";
 import { configurePassport } from "./config/passportConfig.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { requestLogger, logger } from "./middleware/logger.js";
-import { simpleRateLimiter } from "./middleware/rateLimiter.js";
+import { simpleRateLimiter, MAX_REQUESTS, AUTH_MAX_REQUESTS, RATE_LIMIT_WINDOW_MINUTES } from "./middleware/rateLimiter.js";
 import { setupChat } from "./sockets/chatSocket.js";
 import { seedGroups } from "./scripts/seedGroups.js";
 import cron from "node-cron";
@@ -213,7 +213,7 @@ async function start() {
 
     const server = httpServer.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
-      logger.info("Rate limiting: 100 requests per 15 minutes per IP");
+      logger.info(`Rate limiting: ${MAX_REQUESTS} requests (${AUTH_MAX_REQUESTS} for auth endpoints) per ${RATE_LIMIT_WINDOW_MINUTES} minutes per IP`);
     });
 
     const shutdown = async () => {
