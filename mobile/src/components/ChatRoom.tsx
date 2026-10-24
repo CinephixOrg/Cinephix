@@ -47,6 +47,12 @@ interface Props {
   emptyText: string;
   /** Shown instead of the chat when `canChat` is false (a community you haven't joined). */
   lockedContent?: ReactNode;
+  /** Unlike `canChat` (hides the whole room), this still shows the real
+   * message history — only the composer is replaced by this text, greyed
+   * out and unsendable. For a room whose write-window has simply closed
+   * (TC-112: an ended watch party) rather than one the viewer never had
+   * access to. */
+  composeDisabledReason?: string;
   /** The other person in a DM, for cards that picture both people (a shared Sync). */
   counterpart?: MessageSender;
   // A first page the caller already has, so this room can render straight
@@ -280,6 +286,7 @@ export default function ChatRoom({
   canChat,
   emptyText,
   lockedContent,
+  composeDisabledReason,
   counterpart,
   initialMessages,
   fetchMessages,
@@ -476,7 +483,7 @@ export default function ChatRoom({
     );
   }
 
-  const canSend = text.trim().length > 0;
+  const canSend = !composeDisabledReason && text.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -516,10 +523,11 @@ export default function ChatRoom({
       <View style={styles.composer}>
         <TextInput
           style={styles.input}
-          placeholder={t("Message...")}
+          placeholder={composeDisabledReason ?? t("Message...")}
           placeholderTextColor={colors.placeholder}
-          value={text}
+          value={composeDisabledReason ? "" : text}
           onChangeText={setText}
+          editable={!composeDisabledReason}
           multiline
           maxLength={1000}
         />

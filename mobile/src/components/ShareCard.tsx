@@ -546,6 +546,11 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           bottom: 0,
           backgroundColor: colors.primary,
           opacity: 0.28,
+          // Same radius again, directly on the absolutely-positioned fill
+          // itself (TC-116) — Android doesn't reliably clip one of those to
+          // pollResultTrack's own rounded overflow, same root cause as the
+          // poster-corner regressions fixed elsewhere this session.
+          borderRadius: 8,
         },
         pollResultRow: {
           flexDirection: "row",
@@ -1582,7 +1587,10 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
       {share.type === "list" && share.listData && (
         <GestureDetector gesture={contentGesture}>
-          <GHPressable style={styles.listBox}>
+          {/* TC-114: goToList was already defined but never actually wired
+              to this box's own tap — clicking a list post did nothing at
+              all. */}
+          <GHPressable style={styles.listBox} onPress={goToList}>
             {/* The "shared a list" info line moved one step further out — no
                 longer even inside this box, now shared with review's own
                 equal line just above the header/box boundary (see there for
@@ -1622,8 +1630,16 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
       {share.type === "review" && share.contentData && (
         <GestureDetector gesture={contentGesture}>
-          <Pressable style={styles.shareBox} onPress={goToContent}>
-            <View style={styles.sharePoster}>{posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}</View>
+          <Pressable style={styles.shareBox} onPress={() => setFullReviewVisible(true)}>
+            {/* TC-113: the box's own tap opens the review itself (what
+                testers expect from "a review post" — this used to instead
+                navigate straight to content, a regression). The poster
+                specifically still jumps to content, same "inner tap wins"
+                pattern as everywhere else a poster sits inside a bigger
+                tappable card (ReviewFeedCard.tsx's own poster Pressable). */}
+            <Pressable style={styles.sharePoster} onPress={goToContent}>
+              {posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}
+            </Pressable>
             <View style={styles.shareTextCol}>
               <Text style={styles.shareTitle} numberOfLines={2}>
                 {share.contentData.title}
@@ -1639,15 +1655,11 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
                   or nothing at all when there isn't one (matching list's own
                   "no description = no extra line" behavior). Capped at
                   REVIEW_COLLAPSED_LINES so the post's own height stays fixed
-                  regardless of review length; a nested Pressable (proven
-                  pattern for "inner tap wins" over an ancestor Pressable,
-                  same as ListRailCard/ReviewSwipeCard's own details button)
-                  opens the full text in a Modal instead of triggering the
-                  outer box's own navigate-to-content tap. */}
+                  regardless of review length. Plain Text now, not its own
+                  nested Pressable — the whole box already opens the same
+                  modal this used to open on its own. */}
               {share.reviewText ? (
-                <Pressable onPress={() => setFullReviewVisible(true)}>
-                  <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={REVIEW_COLLAPSED_LINES}>{`"${share.reviewText}"`}</Text>
-                </Pressable>
+                <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={REVIEW_COLLAPSED_LINES}>{`"${share.reviewText}"`}</Text>
               ) : null}
             </View>
             {premiumBorder}
