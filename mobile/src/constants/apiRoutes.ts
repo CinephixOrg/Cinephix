@@ -175,6 +175,8 @@ export const API_ROUTES = {
     GET_OR_CREATE: "/conversations",
     GET_MESSAGES: (id: string) => `/conversations/${id}/messages`,
     MARK_READ: (id: string) => `/conversations/${id}/read`,
+    // Any room's message, DM or group; only its sender may ask.
+    MESSAGE_READERS: (messageId: string) => `/conversations/messages/${messageId}/readers`,
     SEND_MESSAGE: (id: string) => `/conversations/${id}/messages`,
   },
   BADGES: {

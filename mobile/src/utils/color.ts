@@ -15,6 +15,15 @@ function contrast(a: string, b: string): number {
 }
 
 /**
+ * The first of `candidates` that stands out on `background` — 3:1, the WCAG
+ * bar for icons — else `fallback`. For a colour that has to mean something
+ * (a read receipt's blue) on whatever a theme puts underneath it.
+ */
+export function firstVisibleOn(background: string, candidates: string[], fallback: string): string {
+  return candidates.find((color) => contrast(color, background) >= 3) ?? fallback;
+}
+
+/**
  * Black or white, whichever reads better on `background`.
  *
  * The palettes define `primaryContent` for the primary colour but have no

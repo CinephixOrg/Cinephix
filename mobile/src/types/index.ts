@@ -962,9 +962,31 @@ export interface Message {
     scheduledAt?: string;
   };
   createdAt: string;
+  // Read receipts, on your own messages only: everyone else who has read
+  // it, and when (backend/utils/readReceipts.js). Absent from older servers
+  // and from watch party chats. `at` is null for a DM message read before
+  // receipts were recorded — it's known to be read, not when.
+  readBy?: { user: string; at: string | null }[];
   // Local-only fields, never sent by the server.
   clientTempId?: string;
   status?: "pending";
+}
+
+/** The socket's word that someone has read some of your messages in a room. */
+export interface MessagesReadEvent {
+  roomType: RoomType;
+  roomId: string;
+  /** Who read them. */
+  userId: string;
+  at: string;
+  messageIds: string[];
+}
+
+/** One person who has read a message, for its info sheet. */
+export interface MessageReader {
+  user: MessageSender;
+  /** Null when it was read before receipts were recorded. */
+  at: string | null;
 }
 
 export interface Conversation {

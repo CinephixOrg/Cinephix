@@ -5,7 +5,7 @@ import { useAuth } from "./AuthContext";
 import { getConversations } from "../api/conversationService";
 import { clearRooms } from "../api/chatCache";
 import { unreadChatCount } from "../utils/chatMessages";
-import type { Conversation, GroupConversationRow, Message, RoomType, RoomUpdatedPayload } from "../types";
+import type { Conversation, GroupConversationRow, Message, MessagesReadEvent, RoomType, RoomUpdatedPayload } from "../types";
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || "http://localhost:5000";
 
@@ -22,6 +22,8 @@ interface ChatContextValue {
   leaveRoom: (roomType: RoomType, roomId: string) => void;
   sendMessage: (roomType: RoomType, roomId: string, text: string, clientTempId: string) => void;
   onNewMessage: (roomId: string, handler: (msg: Message) => void) => () => void;
+  /** Read receipts for your own messages in one room, live. */
+  onMessagesRead: (roomId: string, handler: (event: MessagesReadEvent) => void) => () => void;
   markReadLocally: (conversationId: string) => void;
   markGroupReadLocally: (groupId: string) => void;
 }
@@ -64,6 +66,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const activeRoomIdRef = useRef<string | null>(null);
   const messageHandlersRef = useRef<Map<string, (msg: Message) => void>>(new Map());
+  const readHandlersRef = useRef<Map<string, (event: MessagesReadEvent) => void>>(new Map());
   const inFlightRef = useRef<Promise<void> | null>(null);
   // Bumped on sign-in and sign-out, so an inbox fetched for the previous
   // account never lands in the next one.
@@ -162,6 +165,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       messageHandlersRef.current.get(message.roomId)?.(message);
     });
 
+    // Someone read some of your messages: their ticks turn, if that room's open.
+    socket.on("messages-read", (event: MessagesReadEvent) => {
+      readHandlersRef.current.get(event.roomId)?.(event);
+    });
+
     const handleAppStateChange = (state: AppStateStatus) => {
       if (state === "background" || state === "inactive") {
         socket.disconnect();
@@ -205,6 +213,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const onMessagesRead = useCallback((roomId: string, handler: (event: MessagesReadEvent) => void) => {
+    readHandlersRef.current.set(roomId, handler);
+    return () => {
+      if (readHandlersRef.current.get(roomId) === handler) readHandlersRef.current.delete(roomId);
+    };
+  }, []);
+
   const markReadLocally = useCallback((conversationId: string) => {
     setConversations((prev) =>
       prev.some((c) => c._id === conversationId && c.unreadCount > 0)
@@ -233,6 +248,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       leaveRoom,
       sendMessage,
       onNewMessage,
+      onMessagesRead,
       markReadLocally,
       markGroupReadLocally,
     }),
@@ -247,6 +263,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       leaveRoom,
       sendMessage,
       onNewMessage,
+      onMessagesRead,
       markReadLocally,
       markGroupReadLocally,
     ]

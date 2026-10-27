@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chatRows, confirmedOnly, dayHeading, dayLabel, formatInboxTime, inboxTimeKind, mergeLatestPage, messageRuns, unreadChatCount, upsertMessage } from "./chatMessages.ts";
+import { applyRead, chatRows, confirmedOnly, dayHeading, dayLabel, deliveryState, formatInboxTime, inboxTimeKind, mergeLatestPage, messageRuns, unreadChatCount, upsertMessage } from "./chatMessages.ts";
 import type { Message } from "../types/index.ts";
 
 function message(id: string, minute: number, extra: Partial<Message> = {}): Message {
@@ -135,4 +135,24 @@ test("the Socials badge counts chats with something new, not messages", () => {
   assert.equal(unreadChatCount([{ unreadCount: 99 }], []), 1);
   assert.equal(unreadChatCount([], []), 0);
   assert.equal(unreadChatCount([{ unreadCount: 0 }], [{ unreadCount: 0 }]), 0);
+});
+
+test("a read receipt adds its reader to the messages it names, once", () => {
+  const list = [message("a", 1), message("b", 2), message("c", 3, { readBy: [{ user: "bot", at: "t0" }] })];
+  const event = { roomType: "dm" as const, roomId: "room", userId: "bot", at: "t1", messageIds: ["b", "c"] };
+  const next = applyRead(list, event);
+  assert.equal(next[0], list[0]);
+  assert.deepEqual(next[1].readBy, [{ user: "bot", at: "t1" }]);
+  assert.equal(next[2], list[2], "already read by them: left as it was");
+  assert.equal(applyRead(next, event), next, "nothing new: the same array back");
+});
+
+test("ticks: sending, sent, then read once everyone it was for has read it", () => {
+  const read = (...users: string[]) => users.map((user) => ({ user, at: "t" }));
+  assert.equal(deliveryState(message("a", 1, { status: "pending" }), 1), "pending");
+  assert.equal(deliveryState(message("a", 1), 1), "sent");
+  assert.equal(deliveryState(message("a", 1, { readBy: read("bot") }), 1), "read");
+  assert.equal(deliveryState(message("a", 1, { readBy: read("x", "y") }), 3), "sent", "a group: not everyone yet");
+  assert.equal(deliveryState(message("a", 1, { readBy: read("x", "y", "z") }), 3), "read");
+  assert.equal(deliveryState(message("a", 1), 0), "sent", "no one to read it: never read");
 });

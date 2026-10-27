@@ -1,6 +1,6 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Conversation, ContentType, GroupConversationRow, Message, MessagePagination } from "../types";
+import type { Conversation, ContentType, GroupConversationRow, Message, MessagePagination, MessageReader } from "../types";
 import { createPrefetcher } from "../utils/prefetch";
 
 interface RecommendationPayload {
@@ -93,6 +93,12 @@ export async function getMessages(
 
 export async function markConversationRead(conversationId: string): Promise<void> {
   await API.post(API_ROUTES.CONVERSATIONS.MARK_READ(conversationId));
+}
+
+/** Who has read one of your messages and when, earliest first — for its info sheet. */
+export async function getMessageReaders(messageId: string): Promise<MessageReader[]> {
+  const res = await API.get(API_ROUTES.CONVERSATIONS.MESSAGE_READERS(messageId));
+  return (res.data as { readers?: MessageReader[] } | undefined)?.readers ?? [];
 }
 
 // REST send fallback — used only when the socket is disconnected at send

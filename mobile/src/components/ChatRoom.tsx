@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  AppState,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Pressable from "./common/TapSafePressable";
@@ -23,7 +24,18 @@ import { useBlockedIds } from "../hooks/useBlocked";
 import { isProtectedAccount } from "../api/blockStore";
 import { useSafety } from "../context/SafetyContext";
 import { cachedRoom, rememberRoom, roomKey, roomPrefetch } from "../api/chatCache";
-import { chatRows, dayHeading, mergeLatestPage, upsertMessage, type ChatRow } from "../utils/chatMessages";
+import {
+  applyRead,
+  chatRows,
+  dayHeading,
+  deliveryState,
+  mergeLatestPage,
+  upsertMessage,
+  type ChatRow,
+  type DeliveryState,
+} from "../utils/chatMessages";
+import { firstVisibleOn } from "../utils/color";
+import MessageInfoSheet from "./chat/MessageInfoSheet";
 import { SkeletonChatBubbles } from "./Skeleton";
 import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
@@ -60,7 +72,36 @@ interface Props {
   fetchMessages: (before?: string, limit?: number) => Promise<{ items: Message[]; pagination: MessagePagination }>;
   markRead: () => Promise<void>;
   sendRest: (text: string) => Promise<Message>;
+  /**
+   * How many people one of your messages is for — 1 in a DM, the other
+   * members in a group — so its ticks turn to read once they all have.
+   * Left out where reads aren't tracked (watch parties): no ticks there.
+   */
+  readersNeeded?: number;
 }
+
+// Read receipts' blue: the theme's own, unless it doesn't stand out on what's
+// underneath (a green bubble), then a darker one that does.
+const READ_BLUES = ["#1e3a8a"];
+const SEEN_BLUE_ON_BACKGROUND = ["#53bdeb"];
+
+interface TickColors {
+  sent: string;
+  read: string;
+}
+
+/** A message's ticks: a clock while sending, ✓ once sent, a blue ✓✓ once read. */
+const DeliveryTicks = memo(function DeliveryTicks({ state, colors }: { state: DeliveryState; colors: TickColors }) {
+  const { t } = useTranslation();
+  if (state === "pending") {
+    return <Ionicons name="time-outline" size={12} color={colors.sent} accessibilityLabel={t("Sending...")} />;
+  }
+  return state === "read" ? (
+    <Ionicons name="checkmark-done" size={15} color={colors.read} accessibilityLabel={t("Read")} />
+  ) : (
+    <Ionicons name="checkmark" size={14} color={colors.sent} accessibilityLabel={t("Sent")} />
+  );
+});
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
@@ -84,6 +125,10 @@ function createStyles(colors: Colors) {
     tailOwn: { borderBottomRightRadius: 5 },
     tailOther: { borderBottomLeftRadius: 5 },
     bubblePending: { opacity: 0.6 },
+    // Room on the right for the ticks, which sit in the bubble's corner.
+    bubbleWithTicks: { paddingRight: 13 + 18 },
+    bubbleTicks: { position: "absolute", right: 9, bottom: 7 },
+    meta: { flexDirection: "row", alignItems: "center", gap: 3 },
     textOwn: { color: colors.primaryContent, fontSize: 15, lineHeight: 20 },
     textOther: { color: colors.baseContent, fontSize: 15, lineHeight: 20 },
     time: { fontSize: 10.5, color: colors.placeholder, marginTop: 3, marginHorizontal: 6 },
@@ -146,6 +191,10 @@ const MessageRow = memo(function MessageRow({
   onOpenAnalysis,
   onOpenProfileAnalysis,
   onLongPress,
+  onOpenInfo,
+  delivery,
+  bubbleTicks,
+  metaTicks,
   styles,
 }: {
   message: Message;
@@ -160,11 +209,27 @@ const MessageRow = memo(function MessageRow({
   onOpenProfileAnalysis: (message: Message) => void;
   /** Report / block — offered on other people's messages only. */
   onLongPress?: (message: Message) => void;
+  /** Who has read it — offered on your own messages, where reads are tracked. */
+  onOpenInfo?: (message: Message) => void;
+  /** Your own message's ticks; absent on other people's and where reads aren't tracked. */
+  delivery?: DeliveryState;
+  /** Tick colours inside your (primary) bubble, and on the chat's background under a card. */
+  bubbleTicks: TickColors;
+  metaTicks: TickColors;
   styles: Styles;
 }) {
   const { t } = useTranslation();
   const pending = message.status === "pending";
-  const longPress = !isOwn && !pending && onLongPress && !isProtectedAccount(message.sender) ? () => onLongPress(message) : undefined;
+  const longPress = isOwn
+    ? !pending && onOpenInfo
+      ? () => onOpenInfo(message)
+      : undefined
+    : !pending && onLongPress && !isProtectedAccount(message.sender)
+      ? () => onLongPress(message)
+      : undefined;
+  const isText = !["recommendation", "profile_share", "list_share", "community_announcement", "analysis_share"].includes(
+    message.type
+  );
 
   let body: ReactNode;
   if (message.type === "recommendation") {
@@ -213,9 +278,15 @@ const MessageRow = memo(function MessageRow({
             isOwn ? styles.bubbleOwn : styles.bubbleOther,
             last && (isOwn ? styles.tailOwn : styles.tailOther),
             pending && styles.bubblePending,
+            delivery && styles.bubbleWithTicks,
           ]}
         >
           <Text style={isOwn ? styles.textOwn : styles.textOther}>{message.text}</Text>
+          {delivery ? (
+            <View style={styles.bubbleTicks}>
+              <DeliveryTicks state={delivery} colors={bubbleTicks} />
+            </View>
+          ) : null}
         </View>
       </Pressable>
     );
@@ -249,11 +320,15 @@ const MessageRow = memo(function MessageRow({
         {showName && first ? <Text style={styles.senderName}>{sender.username}</Text> : null}
         {body}
         {last ? (
-          <Text style={styles.time}>
-            {pending
-              ? t("Sending...")
-              : new Date(message.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-          </Text>
+          <View style={styles.meta}>
+            <Text style={styles.time}>
+              {pending
+                ? t("Sending...")
+                : new Date(message.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+            </Text>
+            {/* A card has no bubble to hold its ticks: they go by its time. */}
+            {delivery && !isText ? <DeliveryTicks state={delivery} colors={metaTicks} /> : null}
+          </View>
         ) : null}
       </View>
     </View>
@@ -296,13 +371,27 @@ export default function ChatRoom({
   fetchMessages,
   markRead,
   sendRest,
+  readersNeeded,
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const tickColors = useMemo(
+    () => ({
+      bubble: {
+        sent: `${colors.primaryContent}8C`,
+        read: firstVisibleOn(colors.primary, [colors.info, ...READ_BLUES], colors.primaryContent),
+      },
+      meta: {
+        sent: colors.placeholder,
+        read: firstVisibleOn(colors.base100, [colors.info, ...SEEN_BLUE_ON_BACKGROUND], colors.baseContent),
+      },
+    }),
+    [colors]
+  );
   const { t } = useTranslation();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const { connected, sendMessage, onNewMessage } = useChat();
+  const { connected, sendMessage, onNewMessage, onMessagesRead } = useChat();
   const key = roomKey(roomType, roomId);
   useKeyboardSafeExit();
 
@@ -315,6 +404,7 @@ export default function ChatRoom({
   const [text, setText] = useState("");
   const [viewingAnalysis, setViewingAnalysis] = useState<MatchAnalysis | null>(null);
   const [viewingProfileAnalysis, setViewingProfileAnalysis] = useState<ProfileAnalysis | null>(null);
+  const [infoMessage, setInfoMessage] = useState<Message | null>(null);
   // Refs for callbacks that must not change identity with every message.
   const markReadRef = useRef(markRead);
   markReadRef.current = markRead;
@@ -368,9 +458,29 @@ export default function ChatRoom({
     if (pagination) rememberRoom(key, { items: messages, pagination });
   }, [key, messages, pagination]);
 
+  // Someone else's message arriving while you're in the room is read there
+  // and then: mark it, so their ticks turn (and the room's unread count stays
+  // at zero). Bursts are marked once; not while the app is in the background.
+  const userIdRef = useRef(user?._id);
+  userIdRef.current = user?._id;
+  const markReadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(markReadTimer.current), []);
+
   useEffect(
-    () => onNewMessage(roomId, (incoming) => setMessages((prev) => upsertMessage(prev, incoming))),
+    () =>
+      onNewMessage(roomId, (incoming) => {
+        setMessages((prev) => upsertMessage(prev, incoming));
+        if (incoming.sender._id === userIdRef.current || AppState.currentState !== "active") return;
+        clearTimeout(markReadTimer.current);
+        markReadTimer.current = setTimeout(() => markReadRef.current().catch(() => {}), 400);
+      }),
     [roomId, onNewMessage]
+  );
+
+  // Your messages being read, live.
+  useEffect(
+    () => onMessagesRead(roomId, (event) => setMessages((prev) => applyRead(prev, event))),
+    [roomId, onMessagesRead]
   );
 
   const loadOlder = useCallback(async () => {
@@ -454,6 +564,8 @@ export default function ChatRoom({
 
   const userId = user?._id;
   const showNames = roomType === "group" || roomType === "watchparty";
+  // Reads are tracked in DMs and groups; readersNeeded says so.
+  const tracksReads = readersNeeded !== undefined;
   const renderItem = useCallback(
     ({ item }: { item: ChatRow }) => {
       if (item.kind === "day") return <DaySeparator iso={item.iso} styles={styles} />;
@@ -469,11 +581,15 @@ export default function ChatRoom({
           onOpenAnalysis={openAnalysis}
           onOpenProfileAnalysis={openProfileAnalysis}
           onLongPress={reportMessage}
+          onOpenInfo={tracksReads ? setInfoMessage : undefined}
+          delivery={isOwn && tracksReads ? deliveryState(item.message, readersNeeded ?? 0) : undefined}
+          bubbleTicks={tickColors.bubble}
+          metaTicks={tickColors.meta}
           styles={styles}
         />
       );
     },
-    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, reportMessage, styles]
+    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, reportMessage, tracksReads, readersNeeded, tickColors, styles]
   );
 
   if (!canChat) {
@@ -562,6 +678,9 @@ export default function ChatRoom({
           onClose={() => setViewingProfileAnalysis(null)}
           data={viewingProfileAnalysis}
         />
+        {tracksReads ? (
+          <MessageInfoSheet message={infoMessage} roomType={roomType} onClose={() => setInfoMessage(null)} />
+        ) : null}
       </KeyboardAvoidingView>
     </KeyboardInsetView>
   );

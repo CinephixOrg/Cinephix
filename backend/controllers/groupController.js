@@ -17,6 +17,8 @@ import { renderPollHighlight, renderWatchPartyHighlight } from "../services/high
 import { hydrateContentData } from "./shareController.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { normalizeListItems } from "../utils/listItems.js";
+import { recordRead } from "../services/readReceipts.js";
+import { receiptsForViewer } from "../utils/readReceipts.js";
 
 // Same value/reasoning as shareController.js's own RECOMMENDATION_COOLDOWN_MS
 // (Media) and conversationController.js's own copy (DMs) — see
@@ -313,7 +315,7 @@ export const getGroupMessages = asyncHandler(async (req, res) => {
     .lean();
 
   const hasMore = messages.length > limit;
-  const result = messages.slice(0, limit).reverse();
+  const result = receiptsForViewer(messages.slice(0, limit).reverse(), req.user._id);
 
   return res.status(200).json({
     success: true,
@@ -337,10 +339,13 @@ export const markGroupAsRead = asyncHandler(async (req, res) => {
   );
   if (!isMember) return sendError(res, "Not a member of this group", 403);
 
-  // Reset unread count for this user
+  // Reset unread count for this user, and give the messages it stood for a
+  // read receipt.
   const userId = req.user._id.toString();
+  const unread = group.unreadCounts.get(userId) ?? 0;
   group.unreadCounts.set(userId, 0);
   await group.save();
+  await recordRead({ roomType: "group", roomId: group._id, userId: req.user._id, unread });
 
   sendSuccess(res, null, "Group marked as read");
 });

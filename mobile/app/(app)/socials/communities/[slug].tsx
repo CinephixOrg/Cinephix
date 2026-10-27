@@ -640,6 +640,8 @@ export default function GroupDetailScreen() {
             fetchMessages={(before, limit) => getGroupMessages(group._id, before, limit)}
             markRead={() => markGroupRead(group._id)}
             sendRest={(text) => sendGroupMessageRest(group._id, text)}
+            // Everyone else in the community: a message reads as read once they all have.
+            readersNeeded={Math.max((group.memberCount ?? 1) - 1, 0)}
           />
         </View>
       ) : tab === "Members" ? (

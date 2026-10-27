@@ -106,6 +106,18 @@ const messageSchema = new Schema(
       partyId: { type: Schema.Types.ObjectId, ref: "GroupWatchParty" },
       scheduledAt: Date,
     },
+    // Read receipts: everyone other than the sender who has read this, and
+    // when. Written when a room is marked read (services/readReceipts.js),
+    // shown only to the sender (utils/readReceipts.js). Absent on messages
+    // from before read receipts, and on watch party messages, which aren't
+    // tracked.
+    readBy: [
+      {
+        _id: false,
+        user: { type: Schema.Types.ObjectId, ref: "User" },
+        at: Date,
+      },
+    ],
   },
   { timestamps: true }
 );

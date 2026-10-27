@@ -4,7 +4,7 @@
 //
 // Pure and React-free so it runs under `node --test` (chatMessages.test.mts).
 
-import type { Message } from "../types";
+import type { Message, MessagesReadEvent } from "../types";
 
 const isPending = (message: Message) => message.status === "pending";
 
@@ -61,6 +61,30 @@ export function upsertMessage(existing: Message[], incoming: Message): Message[]
 /** What a cache should hold: only messages the server has confirmed. */
 export function confirmedOnly(messages: readonly Message[]): Message[] {
   return messages.some(isPending) ? messages.filter((message) => !isPending(message)) : (messages as Message[]);
+}
+
+/** Someone's read receipt, live from the socket, onto the messages it names. Unchanged when it adds nothing. */
+export function applyRead(messages: readonly Message[], event: MessagesReadEvent): Message[] {
+  const ids = new Set(event.messageIds);
+  let changed = false;
+  const next = messages.map((message) => {
+    if (!ids.has(message._id) || message.readBy?.some((entry) => entry.user === event.userId)) return message;
+    changed = true;
+    return { ...message, readBy: [...(message.readBy ?? []), { user: event.userId, at: event.at }] };
+  });
+  return changed ? next : (messages as Message[]);
+}
+
+export type DeliveryState = "pending" | "sent" | "read";
+
+/**
+ * Where one of your own messages has got to, for its ticks: still sending,
+ * sent, or read — by the other person in a DM, by every other member in a
+ * group (`readersNeeded`).
+ */
+export function deliveryState(message: Message, readersNeeded: number): DeliveryState {
+  if (isPending(message)) return "pending";
+  return readersNeeded > 0 && (message.readBy?.length ?? 0) >= readersNeeded ? "read" : "sent";
 }
 
 /**
