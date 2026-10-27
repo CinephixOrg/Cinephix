@@ -58,6 +58,21 @@ export function upsertMessage(existing: Message[], incoming: Message): Message[]
   return [...existing, incoming];
 }
 
+/** The sender a message shows when the account that sent it has been deleted. */
+export const DELETED_SENDER_ID = "deleted-account";
+
+/**
+ * Messages as they come from the server, each given a sender: a deleted
+ * account's messages come back with none (the populate finds no one), and
+ * every screen reads `sender._id`. They show as "Deleted account" instead.
+ */
+export function withSenders(messages: Message[] | null | undefined): Message[] {
+  if (!messages) return [];
+  return messages.some((message) => !message.sender)
+    ? messages.map((message) => (message.sender ? message : { ...message, sender: { _id: DELETED_SENDER_ID, username: "" } }))
+    : messages;
+}
+
 /** What a cache should hold: only messages the server has confirmed. */
 export function confirmedOnly(messages: readonly Message[]): Message[] {
   return messages.some(isPending) ? messages.filter((message) => !isPending(message)) : (messages as Message[]);

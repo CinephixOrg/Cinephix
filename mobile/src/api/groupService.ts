@@ -1,5 +1,6 @@
 import API, { API_BASE_URL } from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
+import { withSenders } from "../utils/chatMessages";
 import type {
   ContentType,
   Group,
@@ -35,7 +36,8 @@ export async function leaveGroup(slug: string): Promise<void> {
 
 export async function getGroupMembers(slug: string): Promise<GroupMember[]> {
   const res = await API.get(API_ROUTES.GROUPS.GET_MEMBERS(slug));
-  return res.data;
+  // A member whose account has since been deleted comes back with no user.
+  return ((res.data ?? []) as (GroupMember | { user: null })[]).filter((member): member is GroupMember => !!member.user);
 }
 
 // ── Partner-community admin actions — every one of these 403s server-side
@@ -174,7 +176,7 @@ export async function getWatchPartyMessages(
   limit = 50
 ): Promise<{ items: Message[]; pagination: MessagePagination }> {
   const res = await API.get(API_ROUTES.GROUPS.GET_WATCH_PARTY_MESSAGES(slug, id), { params: { before, limit } });
-  return { items: res.data, pagination: (res as any).pagination };
+  return { items: withSenders(res.data), pagination: (res as any).pagination };
 }
 
 // Slug-free twin of the above — chatCache.ts's fetchFirstPage only ever has
@@ -182,7 +184,7 @@ export async function getWatchPartyMessages(
 // that works from that alone.
 export async function getWatchPartyMessagesById(id: string, before?: string, limit = 50): Promise<{ items: Message[]; pagination: MessagePagination }> {
   const res = await API.get(API_ROUTES.GROUPS.GET_WATCH_PARTY_MESSAGES_BY_ID(id), { params: { before, limit } });
-  return { items: res.data, pagination: (res as any).pagination };
+  return { items: withSenders(res.data), pagination: (res as any).pagination };
 }
 
 export async function sendWatchPartyMessageRest(slug: string, id: string, text: string): Promise<Message> {
@@ -220,7 +222,7 @@ export async function getGroupMessages(
   const res = await API.get(API_ROUTES.GROUPS.GET_MESSAGES(slugOrId), {
     params: { before, limit },
   });
-  return { items: res.data, pagination: (res as any).pagination };
+  return { items: withSenders(res.data), pagination: (res as any).pagination };
 }
 
 // REST send fallback for a disconnected socket — same role as

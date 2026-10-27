@@ -25,6 +25,7 @@ import { isProtectedAccount } from "../api/blockStore";
 import { useSafety } from "../context/SafetyContext";
 import { cachedRoom, rememberRoom, roomKey, roomPrefetch } from "../api/chatCache";
 import {
+  DELETED_SENDER_ID,
   applyRead,
   chatRows,
   dayHeading,
@@ -220,11 +221,13 @@ const MessageRow = memo(function MessageRow({
 }) {
   const { t } = useTranslation();
   const pending = message.status === "pending";
+  const deleted = message.sender._id === DELETED_SENDER_ID;
+  const senderName = deleted ? t("Deleted account") : message.sender.username;
   const longPress = isOwn
     ? !pending && onOpenInfo
       ? () => onOpenInfo(message)
       : undefined
-    : !pending && onLongPress && !isProtectedAccount(message.sender)
+    : !pending && !deleted && onLongPress && !isProtectedAccount(message.sender)
       ? () => onLongPress(message)
       : undefined;
   const isText = !["recommendation", "profile_share", "list_share", "community_announcement", "analysis_share"].includes(
@@ -308,7 +311,7 @@ const MessageRow = memo(function MessageRow({
                 />
               ) : (
                 <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                  <Text style={styles.avatarFallbackText}>{sender.username.slice(0, 2).toUpperCase()}</Text>
+                  <Text style={styles.avatarFallbackText}>{senderName.slice(0, 2).toUpperCase()}</Text>
                 </View>
               )
             }
@@ -317,7 +320,7 @@ const MessageRow = memo(function MessageRow({
           <View style={styles.avatarSpacer} />
         ))}
       <View style={[styles.column, isOwn && styles.columnOwn]}>
-        {showName && first ? <Text style={styles.senderName}>{sender.username}</Text> : null}
+        {showName && first ? <Text style={styles.senderName}>{senderName}</Text> : null}
         {body}
         {last ? (
           <View style={styles.meta}>

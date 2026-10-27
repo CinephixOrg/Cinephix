@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyRead, chatRows, confirmedOnly, dayHeading, dayLabel, deliveryState, formatInboxTime, inboxTimeKind, mergeLatestPage, messageRuns, unreadChatCount, upsertMessage } from "./chatMessages.ts";
+import { DELETED_SENDER_ID, applyRead, chatRows, confirmedOnly, dayHeading, dayLabel, deliveryState, formatInboxTime, inboxTimeKind, mergeLatestPage, messageRuns, unreadChatCount, upsertMessage, withSenders } from "./chatMessages.ts";
 import type { Message } from "../types/index.ts";
 
 function message(id: string, minute: number, extra: Partial<Message> = {}): Message {
@@ -155,4 +155,14 @@ test("ticks: sending, sent, then read once everyone it was for has read it", () 
   assert.equal(deliveryState(message("a", 1, { readBy: read("x", "y") }), 3), "sent", "a group: not everyone yet");
   assert.equal(deliveryState(message("a", 1, { readBy: read("x", "y", "z") }), 3), "read");
   assert.equal(deliveryState(message("a", 1), 0), "sent", "no one to read it: never read");
+});
+
+test("a deleted account's messages get a stand-in sender; others are untouched", () => {
+  const list = [message("a", 1), { ...message("b", 2), sender: null } as unknown as Message];
+  const out = withSenders(list);
+  assert.equal(out[0], list[0]);
+  assert.equal(out[1].sender._id, DELETED_SENDER_ID);
+  const intact = [message("c", 3)];
+  assert.equal(withSenders(intact), intact, "nothing to fix: the same array back");
+  assert.deepEqual(withSenders(undefined), []);
 });

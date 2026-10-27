@@ -77,6 +77,7 @@ import {
   averageRating
 } from "../utils/analysisMath.js";
 import ProfileAnalysis from "../models/ProfileAnalysis.js";
+import Group from "../models/Group.js";
 import { getOnlineUserIds } from "../services/presenceService.js";
 
 // @desc    Register a new user
@@ -1355,6 +1356,19 @@ export const deleteAccount = asyncHandler(async (req, res) => {
   await User.updateMany(
       { followers: user._id },
       { $pull: { followers: user._id } }
+  );
+
+  // 4. Topluluk üyeliklerinden çıkar (leaveGroup ile aynı güncelleme).
+  // Silinmiş bir hesap üye listesinde kalınca populate onu null döndürüyor
+  // ve üyeler ekranı çöküyordu. Mesajları sohbet geçmişi olarak kalır;
+  // uygulama onları "Silinmiş hesap" olarak gösterir.
+  await Group.updateMany(
+      { "members.user": user._id },
+      {
+        $pull: { members: { user: user._id } },
+        $inc: { memberCount: -1 },
+        $unset: { [`unreadCounts.${user._id}`]: "" },
+      }
   );
 
   // --- SON OLARAK KULLANICIYI SİL ---
