@@ -110,6 +110,7 @@ export default function LoginScreen() {
       <Text style={styles.title}>Cinephix</Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -121,6 +122,7 @@ export default function LoginScreen() {
         }}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Password")}
         secureTextEntry

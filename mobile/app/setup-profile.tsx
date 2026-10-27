@@ -134,6 +134,7 @@ export default function SetupProfileScreen() {
 
       <Text style={styles.label}>{t("Bio")}</Text>
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={[styles.input, styles.bioInput]}
         value={bio}
         onChangeText={setBio}

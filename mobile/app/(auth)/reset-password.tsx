@@ -98,6 +98,7 @@ export default function ResetPasswordScreen() {
       </Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -106,6 +107,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setEmail}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Verification code")}
         keyboardType="number-pad"
@@ -113,6 +115,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setCode}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("New password")}
         secureTextEntry
@@ -120,6 +123,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setNewPassword}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Confirm new password")}
         secureTextEntry

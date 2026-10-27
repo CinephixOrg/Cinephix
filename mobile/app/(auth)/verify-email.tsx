@@ -88,6 +88,7 @@ export default function VerifyEmailScreen() {
       </Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -96,6 +97,7 @@ export default function VerifyEmailScreen() {
         onChangeText={setEmail}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Verification code")}
         keyboardType="number-pad"

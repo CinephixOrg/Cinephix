@@ -66,6 +66,7 @@ export default function ForgotPasswordScreen() {
       <Text style={styles.subtitle}>{t("Enter your email to receive a reset code.")}</Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"

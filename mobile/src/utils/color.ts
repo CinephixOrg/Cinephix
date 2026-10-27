@@ -14,6 +14,11 @@ function contrast(a: string, b: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
+/** Whether `background` is a light colour — one that dark text reads better on. */
+export function isLight(background: string): boolean {
+  return readableOn(background) === "#000000";
+}
+
 /**
  * The first of `candidates` that stands out on `background` — 3:1, the WCAG
  * bar for icons — else `fallback`. For a colour that has to mean something

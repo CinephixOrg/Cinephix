@@ -85,6 +85,7 @@ export default function RegisterScreen() {
       <Text style={styles.title}>{t("Create account")}</Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Username")}
         autoCapitalize="none"
@@ -92,6 +93,7 @@ export default function RegisterScreen() {
         onChangeText={setUsername}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -100,6 +102,7 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Password")}
         secureTextEntry
