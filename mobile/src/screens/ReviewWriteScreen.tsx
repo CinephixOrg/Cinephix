@@ -18,6 +18,7 @@ import TutorialInfoBox from "../components/tutorial/TutorialInfoBox";
 import type { ContentType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 interface Props {
   contentType: ContentType;
@@ -50,6 +51,7 @@ interface Props {
 // data can change from a page it navigated to and back from.
 export default function ReviewWriteScreen({ contentType, contentId }: Props) {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigation = useNavigation();

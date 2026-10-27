@@ -45,6 +45,7 @@ import { snippet } from "../utils/shareCards";
 import { MemberAddToggle, SearchResults, VisibilityToggle } from "../components/lists/ListEditorParts";
 import MoreButton from "../components/safety/MoreButton";
 import { draftKey, type DraftItem } from "../utils/listDraft";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const GRID_PADDING_BOTTOM = 110;
 const UNDO_MS = 4000;
@@ -87,6 +88,7 @@ interface Props {
 
 export default function ListDetailScreen({ basePath = "/lists" }: Props) {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const { t } = useTranslation();
   const styles = useMemo(
     () =>

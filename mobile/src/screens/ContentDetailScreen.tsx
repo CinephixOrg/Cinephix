@@ -60,6 +60,7 @@ import { AD_UNIT_IDS } from "../constants/adUnitIds";
 import TutorialSpotlight from "../components/tutorial/TutorialSpotlight";
 import TutorialInfoBox from "../components/tutorial/TutorialInfoBox";
 import { useComposeTutorial } from "../context/ComposeTutorialContext";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 // Smaller than POSTER_BASE — every "Similar" rail poster is a small
@@ -84,6 +85,7 @@ const CURRENTLY_WATCHING_TTL_MS = 4 * 60 * 60 * 1000;
 // from, instead of bottom-tabs' default of jumping to the first tab.
 export default function ContentDetailScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const styles = useMemo(() => StyleSheet.create({
   container: { padding: 16, gap: 8, backgroundColor: colors.base100, flexGrow: 1 },
   center: {

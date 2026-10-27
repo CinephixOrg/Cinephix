@@ -12,6 +12,7 @@ import { ADDED_COLUMNS, ADDED_GAP, AddedGrid, SearchResults } from "../component
 import CollectionSearchBar from "../components/collection/CollectionSearchBar";
 import { addToDraft, draftKey, removeFromDraft, type DraftItem } from "../utils/listDraft";
 import { fonts } from "../theme/typography";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const PADDING_X = 16;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -36,6 +37,7 @@ const MOVE = LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, La
 // real Rating documents, so every item has to resolve to a real title).
 export default function GroupContentPickerScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();

@@ -45,6 +45,7 @@ import {
   type DraftItem,
 } from "../utils/listDraft";
 import { fonts } from "../theme/typography";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const PADDING_X = 16;
 const NAME_MAX = 80;
@@ -79,6 +80,7 @@ const MOVE = LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, La
 // dead code nothing could reach.
 export default function ListEditorScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const { t } = useTranslation();
   const { user } = useAuth();
   const { refresh: refreshProfile } = useProfile();
