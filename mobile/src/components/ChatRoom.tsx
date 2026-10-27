@@ -10,7 +10,9 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Pressable from "./common/TapSafePressable";
+import KeyboardInsetView from "./common/KeyboardInsetView";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -63,6 +65,7 @@ interface Props {
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.base100 },
+    fill: { flex: 1 },
     list: { paddingHorizontal: 14, paddingVertical: 12, flexGrow: 1 },
     locked: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     lockedText: { color: colors.placeholder, fontSize: 14, textAlign: "center" },
@@ -295,7 +298,6 @@ export default function ChatRoom({
   const key = roomKey(roomType, roomId);
   useKeyboardSafeExit();
 
-
   const [seed] = useState(() => initialMessages ?? cachedRoom(key));
   const [messages, setMessages] = useState<Message[]>(seed?.items ?? []);
   const [pagination, setPagination] = useState<MessagePagination | null>(seed?.pagination ?? null);
@@ -479,72 +481,80 @@ export default function ChatRoom({
   const canSend = text.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-      {loading ? (
-        <View style={{ flex: 1, justifyContent: "flex-end" }}>
-          <SkeletonChatBubbles />
-        </View>
-      ) : failed && messages.length === 0 ? (
-        <View style={styles.failed}>
-          <Text style={styles.lockedText}>{t("Couldn't load messages.")}</Text>
-          <Pressable style={({ pressed }) => [styles.retry, pressed && { opacity: 0.7 }]} onPress={loadLatest}>
-            <Text style={styles.retryText}>{t("Try again")}</Text>
+    // Android lifts the composer over the keyboard with KeyboardInsetView; iOS
+    // does it with the KeyboardAvoidingView inside.
+    <KeyboardInsetView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: "flex-end" }}>
+            <SkeletonChatBubbles />
+          </View>
+        ) : failed && messages.length === 0 ? (
+          <View style={styles.failed}>
+            <Text style={styles.lockedText}>{t("Couldn't load messages.")}</Text>
+            <Pressable style={({ pressed }) => [styles.retry, pressed && { opacity: 0.7 }]} onPress={loadLatest}>
+              <Text style={styles.retryText}>{t("Try again")}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            inverted
+            data={rows}
+            keyExtractor={(item) => item.key}
+            contentContainerStyle={styles.list}
+            renderItem={renderItem}
+            onEndReached={loadOlder}
+            onEndReachedThreshold={0.3}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            initialNumToRender={20}
+            windowSize={11}
+            ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
+            ListFooterComponent={loadingOlder ? <ActivityIndicator style={{ margin: 12 }} color={colors.primary} /> : null}
+          />
+        )}
+  
+        {/* Clear of the phone's own Back/Home buttons where the chat reaches the
+            bottom of the screen (a DM opened from a profile has no tab bar
+            under it). Only the part actually under those buttons is added, so
+            above a tab bar or the keyboard this adds nothing. */}
+        <SafeAreaView edges={["bottom"]} style={styles.composer}>
+          <TextInput
+            style={styles.input}
+            placeholder={t("Message...")}
+            placeholderTextColor={colors.placeholder}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={1000}
+          />
+          <Pressable
+            onPress={handleSend}
+            disabled={!canSend}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={t("Send")}
+            style={({ pressed }) => [
+              styles.send,
+              { backgroundColor: canSend ? colors.primary : colors.base200 },
+              pressed && { transform: [{ scale: 0.92 }] },
+            ]}
+          >
+            <Ionicons name="arrow-up" size={20} color={canSend ? colors.primaryContent : colors.placeholder} />
           </Pressable>
-        </View>
-      ) : (
-        <FlatList
-          inverted
-          data={rows}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.list}
-          renderItem={renderItem}
-          onEndReached={loadOlder}
-          onEndReachedThreshold={0.3}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          initialNumToRender={20}
-          windowSize={11}
-          ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
-          ListFooterComponent={loadingOlder ? <ActivityIndicator style={{ margin: 12 }} color={colors.primary} /> : null}
+        </SafeAreaView>
+  
+        <AnalyzeModal visible={!!viewingAnalysis} onClose={() => setViewingAnalysis(null)} data={viewingAnalysis} />
+        <ProfileAnalysisModal
+          visible={!!viewingProfileAnalysis}
+          onClose={() => setViewingProfileAnalysis(null)}
+          data={viewingProfileAnalysis}
         />
-      )}
-
-      <View style={styles.composer}>
-        <TextInput
-          style={styles.input}
-          placeholder={t("Message...")}
-          placeholderTextColor={colors.placeholder}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={1000}
-        />
-        <Pressable
-          onPress={handleSend}
-          disabled={!canSend}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel={t("Send")}
-          style={({ pressed }) => [
-            styles.send,
-            { backgroundColor: canSend ? colors.primary : colors.base200 },
-            pressed && { transform: [{ scale: 0.92 }] },
-          ]}
-        >
-          <Ionicons name="arrow-up" size={20} color={canSend ? colors.primaryContent : colors.placeholder} />
-        </Pressable>
-      </View>
-
-      <AnalyzeModal visible={!!viewingAnalysis} onClose={() => setViewingAnalysis(null)} data={viewingAnalysis} />
-      <ProfileAnalysisModal
-        visible={!!viewingProfileAnalysis}
-        onClose={() => setViewingProfileAnalysis(null)}
-        data={viewingProfileAnalysis}
-      />
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </KeyboardInsetView>
   );
 }
