@@ -195,20 +195,28 @@ const MessageRow = memo(function MessageRow({
       />
     );
   } else {
+    // The bubble's shape and colour live on a plain View inside the
+    // Pressable, not on the Pressable itself. Gesture handler's Pressable
+    // draws its own background on Android and doesn't undo a corner radius
+    // that's taken away: a message that stopped being the last of its run
+    // lost its tail corner and every rounded corner with it, turning square.
     body = (
       <Pressable
         onLongPress={longPress}
         delayLongPress={350}
         disabled={!longPress}
-        style={({ pressed }) => [
-          styles.bubble,
-          isOwn ? styles.bubbleOwn : styles.bubbleOther,
-          last && (isOwn ? styles.tailOwn : styles.tailOther),
-          pending && styles.bubblePending,
-          pressed && longPress && { opacity: 0.75 },
-        ]}
+        style={({ pressed }) => pressed && longPress && { opacity: 0.75 }}
       >
-        <Text style={isOwn ? styles.textOwn : styles.textOther}>{message.text}</Text>
+        <View
+          style={[
+            styles.bubble,
+            isOwn ? styles.bubbleOwn : styles.bubbleOther,
+            last && (isOwn ? styles.tailOwn : styles.tailOther),
+            pending && styles.bubblePending,
+          ]}
+        >
+          <Text style={isOwn ? styles.textOwn : styles.textOther}>{message.text}</Text>
+        </View>
       </Pressable>
     );
   }
