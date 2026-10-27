@@ -1657,30 +1657,36 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
       )}
 
       {share.type === "official" && share.officialText && (
-        <GestureDetector gesture={contentGesture}>
-          <Pressable style={styles.officialBox} onPress={share.contentId && share.contentType ? goToContent : undefined}>
-            {share.contentData ? (
-              // No separate title heading here (there used to be one) — every
-              // official post that reaches this branch already names the
-              // title inside its own sentence (e.g. "...right now:
-              // Oppenheimer!"), so a bold "Oppenheimer" heading right above
-              // that same sentence just repeated it. Poster + sentence only.
-              <View style={styles.officialContentRow}>
-                <Pressable style={styles.sharePoster} onPress={goToContent}>
-                  {posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}
-                </Pressable>
-                <View style={styles.shareTextCol}>
-                  <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+        // The heart burst sits beside the box, in this plain wrapper, not
+        // inside the Pressable — the badge boxes' fix (see there), needed
+        // here too: a text-only official post is shorter than the heart, and
+        // inside the Pressable the part of it past the box's edge was cut off.
+        <View>
+          <GestureDetector gesture={contentGesture}>
+            <Pressable style={styles.officialBox} onPress={share.contentId && share.contentType ? goToContent : undefined}>
+              {share.contentData ? (
+                // No separate title heading here (there used to be one) — every
+                // official post that reaches this branch already names the
+                // title inside its own sentence (e.g. "...right now:
+                // Oppenheimer!"), so a bold "Oppenheimer" heading right above
+                // that same sentence just repeated it. Poster + sentence only.
+                <View style={styles.officialContentRow}>
+                  <Pressable style={styles.sharePoster} onPress={goToContent}>
+                    {posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}
+                  </Pressable>
+                  <View style={styles.shareTextCol}>
+                    <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
-            )}
-            {premiumBorder}
-            {officialBorder}
-            {burstOverlayEl}
-          </Pressable>
-        </GestureDetector>
+              ) : (
+                <Text style={[styles.officialText, officialTextIsEmphasized && styles.officialTextEmphasis]}>{officialTextEl}</Text>
+              )}
+              {premiumBorder}
+              {officialBorder}
+            </Pressable>
+          </GestureDetector>
+          {burstOverlayEl}
+        </View>
       )}
 
       {share.type === "poll" && share.pollData && (
