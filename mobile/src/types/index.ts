@@ -35,6 +35,8 @@ export interface Movie {
   release_date?: string;
   vote_average?: number;
   genre_ids?: number[];
+  /** Where it was made (ISO codes), on the detail page only — looked up once from TMDB, empty when unknown. */
+  production_countries?: string[];
 }
 
 export interface Series {
@@ -45,6 +47,8 @@ export interface Series {
   first_air_date?: string;
   vote_average?: number;
   genre_ids?: number[];
+  /** Where it was made (ISO codes). */
+  origin_country?: string[];
 }
 
 export interface Rating {

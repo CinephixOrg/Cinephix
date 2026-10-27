@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { buildFuzzyTitleSearchStage, combinedScoreSortStages } from "../utils/atlasSearch.js";
+import { withProductionCountries } from "../services/movieCountries.js";
 
 // User text going into a hand-built $regex must be escaped first — an
 // unescaped string lets a caller inject regex metacharacters (at best
@@ -213,13 +214,16 @@ export default async function(movieModel) {
   // GET /api/movies/:id
   router.get("/:id", async (req, res) => {
     try {
-      const doc = await movieModel.findById(req.params.id).lean();
-      if (!doc) {
+      const found = await movieModel.findById(req.params.id).lean();
+      if (!found) {
         return res.status(404).json({
           success: false,
           message: 'Movie not found'
         });
       }
+      // The detail page shows where it was made; the catalog doesn't carry
+      // that, so it's looked up once and kept (services/movieCountries.js).
+      const doc = await withProductionCountries(movieModel, found);
       res.json({
         success: true,
         message: 'Movie fetched',

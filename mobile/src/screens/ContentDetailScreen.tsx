@@ -54,6 +54,8 @@ import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
 import { genreNames } from "../utils/recommend";
+import { countryName, flagCountries, flagEmoji } from "../utils/countries";
+import { COUNTRY_NAMES } from "../constants/countryNames";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../constants/contentGenreIds";
 import AdBanner from "../components/ads/AdBanner";
 import { AD_UNIT_IDS } from "../constants/adUnitIds";
@@ -151,6 +153,21 @@ export default function ContentDetailScreen() {
   titleRow: { gap: 2, marginBottom: 6 },
   title: { fontSize: 22, fontFamily: fonts.bold, color: colors.baseContent },
   year: { fontSize: 15, color: colors.placeholder },
+  // Year · Movie/Series · flags, under the title. The type tag is the chat's
+  // day pill (ChatRoom's dayPill): quiet on purpose.
+  metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 8, rowGap: 4 },
+  typeTag: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 2,
+    backgroundColor: colors.base200,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  typeTagText: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.placeholder, letterSpacing: 0.2 },
+  flags: { flexDirection: "row", alignItems: "center", gap: 6 },
+  flag: { fontSize: 16 },
+  countryName: { fontSize: 12.5, color: colors.placeholder },
   sectionTitle: {
     fontSize: 18,
     fontFamily: fonts.bold,
@@ -293,7 +310,7 @@ export default function ContentDetailScreen() {
   modalDoneButton: { alignItems: "center", marginTop: 16, paddingVertical: 8 },
   modalDoneText: { color: colors.secondary, fontFamily: fonts.medium },
 }), [colors]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { type, id } = useLocalSearchParams<{ type: ContentType; id: string }>();
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
@@ -347,6 +364,8 @@ export default function ContentDetailScreen() {
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const [posterHeight, setPosterHeight] = useState(0);
   const [titleRowHeight, setTitleRowHeight] = useState(0);
+  // A production country's flag that's been tapped, its name showing beside it.
+  const [namedCountry, setNamedCountry] = useState<string | null>(null);
 
   const [giftMenuVisible, setGiftMenuVisible] = useState(false);
   const [recommendPickerVisible, setRecommendPickerVisible] = useState(false);
@@ -779,6 +798,10 @@ export default function ContentDetailScreen() {
   const posterPath = content.poster_path;
   const overview = content.overview;
   const releaseDate = type === "movie" ? (content as Movie).release_date : (content as Series).first_air_date;
+  const countries = flagCountries(
+    type === "movie" ? (content as Movie).production_countries : (content as Series).origin_country,
+    COUNTRY_NAMES
+  );
   // Reads from whichever bucket `reviewsScope` currently points at (the
   // All/Friends toggle below) — 3 from either, still just a preview, not
   // the full list (that's ContentReviewsSection.tsx, one tap away via "See
@@ -980,7 +1003,31 @@ export default function ContentDetailScreen() {
         <View style={styles.topRightCol}>
           <View style={styles.titleRow} onLayout={(e) => setTitleRowHeight(e.nativeEvent.layout.height)}>
             <Text style={styles.title}>{title}</Text>
-            {releaseDate?.slice(0, 4) ? <Text style={styles.year}>{releaseDate.slice(0, 4)}</Text> : null}
+            <View style={styles.metaRow}>
+              {releaseDate?.slice(0, 4) ? <Text style={styles.year}>{releaseDate.slice(0, 4)}</Text> : null}
+              <View style={styles.typeTag}>
+                <Text style={styles.typeTagText}>{type === "movie" ? t("Movie") : t("Series")}</Text>
+              </View>
+              {countries.length > 0 ? (
+                <View style={styles.flags}>
+                  {countries.map((code) => (
+                    <Pressable
+                      key={code}
+                      onPress={() => setNamedCountry((current) => (current === code ? null : code))}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel={countryName(code, i18n.language, COUNTRY_NAMES)}
+                    >
+                      <Text style={styles.flag}>{flagEmoji(code)}</Text>
+                    </Pressable>
+                  ))}
+                  {/* The tapped flag's country, by name — for anyone who doesn't know the flag. */}
+                  {namedCountry && countries.includes(namedCountry) ? (
+                    <Text style={styles.countryName}>{countryName(namedCountry, i18n.language, COUNTRY_NAMES)}</Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
           </View>
           {overview ? (
             <Pressable onPress={() => setOverviewExpanded((e) => !e)}>
