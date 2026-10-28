@@ -86,6 +86,7 @@ import { hideBlockedContent } from "./middleware/blockFilter.js";
 import reportRoute from "./routes/reportRoute.js";
 import ticketRoute from "./routes/ticketRoute.js";
 import adminRoute from "./routes/adminRoute.js";
+import episodeRoute from "./routes/episodeRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -108,6 +109,7 @@ app.use("/api/waitlist", waitlistRoute);
 app.use("/api/reports", reportRoute);
 app.use("/api/tickets", ticketRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/episodes", episodeRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);

@@ -123,6 +123,12 @@ export const API_ROUTES = {
     GET_FAVORITED_BY: (type: string, id: string) => `/content/${type}/${id}/favorited-by`,
     GET_SIMILAR: (type: string, id: string) => `/content/${type}/${id}/similar`,
   },
+  EPISODES: {
+    GET: (seriesId: string) => `/episodes/${seriesId}`,
+    SEASON: (seriesId: string, season: number) => `/episodes/${seriesId}/seasons/${season}`,
+    WATCHED: (seriesId: string) => `/episodes/${seriesId}/watched`,
+    WATCHED_ALL: (seriesId: string) => `/episodes/${seriesId}/watched-all`,
+  },
   LISTS: {
     GET_MY_LISTS: "/lists/me",
     CREATE: "/lists",

@@ -10,6 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 import Notification from "../models/Notification.js";
 import ActivityLog from "../models/ActivityLog.js";
 import Rating from "../models/Rating.js";
+import EpisodeProgress from "../models/EpisodeProgress.js";
 import Review from "../models/Review.js";
 import { notifyFollow, retractFollow } from "../services/notifications.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
@@ -1332,6 +1333,8 @@ export const deleteAccount = asyncHandler(async (req, res) => {
   
   // 1. Verdiği oyları sil
   await Rating.deleteMany({ user: user._id });
+  // 1b. İzlediği bölümler (TC-141)
+  await EpisodeProgress.deleteMany({ user: user._id });
 
   // 2. Bildirimlerini sil
   await Notification.deleteMany({ user: user._id });

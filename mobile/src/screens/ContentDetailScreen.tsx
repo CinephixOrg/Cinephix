@@ -41,6 +41,9 @@ import UserAvatar from "../components/UserAvatar";
 import ShareOptionsMenu from "../components/ShareOptionsMenu";
 import UserSharePickerModal from "../components/UserSharePickerModal";
 import CurrentlyWatchingTutorialModal from "../components/CurrentlyWatchingTutorialModal";
+import SeasonsSection from "../components/series/SeasonsSection";
+import ConfirmDialog from "../components/settings/ConfirmDialog";
+import { setAllEpisodesWatched } from "../api/episodeService";
 import { SkeletonContentDetail } from "../components/Skeleton";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
 import { sendGroupRichMessage } from "../api/groupService";
@@ -345,6 +348,10 @@ export default function ContentDetailScreen() {
 
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistBusy, setWatchlistBusy] = useState(false);
+  // A series just put on the Watched list asks whether every episode was
+  // watched (TC-141); a yes marks them all and reloads the Seasons section.
+  const [askAllEpisodes, setAskAllEpisodes] = useState(false);
+  const [episodesRefreshKey, setEpisodesRefreshKey] = useState(0);
 
   const [inToWatchList, setInToWatchList] = useState(false);
   const [toWatchBusy, setToWatchBusy] = useState(false);
@@ -588,7 +595,7 @@ export default function ContentDetailScreen() {
     }
   };
 
-  const toggleWatchlist = async () => {
+  const toggleWatchlist = async ({ askAboutEpisodes = true }: { askAboutEpisodes?: boolean } = {}) => {
     setWatchlistBusy(true);
     try {
       if (inWatchlist) {
@@ -612,6 +619,7 @@ export default function ContentDetailScreen() {
         setInWatchlist(true);
         watchedCache.invalidate();
         reportEarnedBadges(newlyEarnedBadges);
+        if (type === "series" && askAboutEpisodes) setAskAllEpisodes(true);
         // Mirrors the backend's own auto-clear (userWatchlistRoute.js) —
         // this add just stopped "Currently Watching" server-side if this
         // was that item, keep the cached button state in sync without a
@@ -1067,7 +1075,7 @@ export default function ContentDetailScreen() {
       <View style={styles.actionRow}>
         <Pressable
           style={[styles.toggleButton, inWatchlist && styles.toggleButtonActive]}
-          onPress={toggleWatchlist}
+          onPress={() => toggleWatchlist()}
           disabled={watchlistBusy}
         >
           <Text style={[styles.toggleButtonText, inWatchlist && styles.toggleButtonTextActive]}>
@@ -1135,6 +1143,21 @@ export default function ContentDetailScreen() {
       {showWriteReviewTutorial && (
         <TutorialInfoBox text={t("Tap here to write your review.")} onDismiss={endComposeTutorial} />
       )}
+
+      {type === "series" && user ? (
+        <>
+          <View style={styles.divider} />
+          <SeasonsSection
+            seriesId={id}
+            refreshKey={episodesRefreshKey}
+            // Every episode watched is the series watched: onto the Watched
+            // list, without asking the question it was just answered.
+            onAllWatched={() => {
+              if (!inWatchlist) toggleWatchlist({ askAboutEpisodes: false });
+            }}
+          />
+        </>
+      ) : null}
 
       <View style={styles.divider} />
 
@@ -1362,6 +1385,23 @@ export default function ContentDetailScreen() {
         visible={currentlyWatchingTutorialVisible}
         onConfirm={handleConfirmCurrentlyWatchingTutorial}
         onCancel={handleCancelCurrentlyWatchingTutorial}
+      />
+
+      <ConfirmDialog
+        visible={askAllEpisodes}
+        icon="checkmark-done-outline"
+        title={t("Did you watch every episode?")}
+        message={t("Every episode aired so far is marked as watched. Past viewing isn't counted in this month's stats.")}
+        confirmLabel={t("Yes, all of them")}
+        cancelLabel={t("Not yet")}
+        emphasis="solid"
+        onConfirm={() => {
+          setAskAllEpisodes(false);
+          setAllEpisodesWatched(id, true)
+            .then(() => setEpisodesRefreshKey((key) => key + 1))
+            .catch(() => showToast(t("Something went wrong. Please try again.")));
+        }}
+        onCancel={() => setAskAllEpisodes(false)}
       />
     </ScrollView>
   );
