@@ -12,6 +12,7 @@ import type { CineGraphData, MatchUser } from "../../types";
 import type { MatchFilters } from "../../api/matchService";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { RIBBON_TOP_RIGHT } from "../UpgradeRibbon";
 
 interface Props {
   filters: MatchFilters;
@@ -178,7 +179,7 @@ export default function MatchFilterStrip({
         // ribbon's own diagonal overhang gets trimmed to the card's rounded
         // corner instead of spilling past it — never applied when there's
         // no ribbon to clip, zero risk to any other tier's card.
-        upgradeRibbonWrap: { position: "absolute", top: 14, right: -32 },
+        upgradeRibbonWrap: RIBBON_TOP_RIGHT,
       }),
     [colors]
   );

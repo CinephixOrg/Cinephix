@@ -29,6 +29,42 @@ export async function tmdbIdFor(model, doc, type) {
   return match?.id ?? null;
 }
 
+// A stored TMDB rating is refreshed once it's this old.
+const RATING_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+// Fewer votes than this and TMDB's average says little (a new show's "3.5
+// from 2 votes"): no rating is shown.
+export const MIN_TMDB_VOTES = 10;
+
+/**
+ * A title's TMDB rating — { average, count } — or null when there isn't one
+ * worth showing.
+ *
+ * Kept on the title in the catalog's own vote_average/vote_count (the fields
+ * the daily TMDB sync already fills), with tmdb_rated_at saying when, and
+ * fetched again once that's a month old. Never throws: no match, too few
+ * votes, or TMDB down or slow, and there's simply no rating.
+ */
+export async function tmdbRating(model, doc, type) {
+  try {
+    let average = doc.vote_average;
+    let count = doc.vote_count;
+    const fresh = doc.tmdb_rated_at && Date.now() - new Date(doc.tmdb_rated_at).getTime() < RATING_MAX_AGE_MS;
+    if (!fresh) {
+      const tmdbId = await tmdbIdFor(model, doc, type);
+      if (!tmdbId) return null;
+      const details = await tmdbGetCached(`/${type === "series" ? "tv" : "movie"}/${tmdbId}`);
+      average = details.vote_average;
+      count = details.vote_count;
+      await model.collection.updateOne({ _id: doc._id }, { $set: { vote_average: average, vote_count: count, tmdb_rated_at: new Date() } });
+    }
+    if (!(count >= MIN_TMDB_VOTES) || typeof average !== "number") return null;
+    return { average: Math.round(average * 10) / 10, count };
+  } catch (error) {
+    if (error?.name !== "AbortError") console.error("TMDB rating lookup failed:", error?.message);
+    return null;
+  }
+}
+
 /**
  * A title's production countries (ISO codes), for its detail page.
  *

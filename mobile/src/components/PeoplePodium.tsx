@@ -24,12 +24,13 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import PeoplePodiumCard from "./PeoplePodiumCard";
 import PodiumSkeletonSlot from "./PodiumSkeletonSlot";
-import UpgradeRibbon from "./UpgradeRibbon";
+import UpgradeRibbon, { RIBBON_TOP_RIGHT } from "./UpgradeRibbon";
 import { getPeopleLeaderboard } from "../api/feedService";
 import { useAuth } from "../context/AuthContext";
 import type { ContentType, PeopleLeaderboardResult } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
+import UpgradeBannerText from "./common/UpgradeBannerText";
 
 // Bigger than an earlier round's own 44/34/34 (direct ask: "podyum
 // çerçevesini biraz büyüt") — matches LeaderboardPodium.tsx's own
@@ -336,7 +337,7 @@ function PeoplePodium({ jumpToCategory }: Props) {
         // constant for why it's snug.
         adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, position: "relative" },
         adFrameRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12 },
-        adRibbonWrap: { position: "absolute", top: 4, right: -30 },
+        adRibbonWrap: RIBBON_TOP_RIGHT,
         // Sits inside titleRow, replacing the plain category title while
         // the ad page is showing — direct ask ("başlık hizasında reklam
         // metni olacak"). This file's own mode toggle *is* a sibling here
@@ -445,7 +446,7 @@ function PeoplePodium({ jumpToCategory }: Props) {
         {activePage?.type === "real" ? (
           <Text style={styles.title}>{categoryMeta[activePage.key].title}</Text>
         ) : (
-          <Text style={styles.adBannerTitle}>{adBannerText}</Text>
+          <UpgradeBannerText text={adBannerText} style={styles.adBannerTitle} />
         )}
         {/* Always rendered (never conditionally mounted) so titleRow's own
             height never changes as `page` updates mid-swipe — a

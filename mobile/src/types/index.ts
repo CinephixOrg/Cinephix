@@ -1306,7 +1306,15 @@ export interface PopularThisWeekItem {
 // of list, simplified back to one metric per page per a follow-up
 // request). mostWatched/mostReviewed added later, content-side twins of
 // the people podium's own identically-named categories below.
+/** A title's rating on TMDB, shown beside the app's own; absent when TMDB has too few votes. */
+export interface TmdbRating {
+  average: number;
+  count: number;
+}
+
 interface LeaderboardContent {
+  /** Null when TMDB has too few votes, or none to find; absent from older servers. */
+  tmdbRating?: TmdbRating | null;
   id: string;
   title: string;
   poster_path?: string;

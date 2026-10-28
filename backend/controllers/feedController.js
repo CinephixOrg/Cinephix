@@ -12,6 +12,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 import { computeAllUsersBadgeCounts, tierForCount } from "./badgeController.js";
+import { tmdbRating } from "../services/tmdbTitles.js";
 
 // ── helpers ──────────────────────────────────────────────────────
 const getMovie = () => mongoose.connection.model("Movie");
@@ -444,27 +445,34 @@ async function hydrateLeaderboardEntries(entries) {
   const movieIds = entries.filter((e) => e.itemType === "movie").map((e) => e.itemId);
   const seriesIds = entries.filter((e) => e.itemType === "series").map((e) => e.itemId);
 
+  // Beyond what the card shows: what finding the title on TMDB takes, and
+  // its stored TMDB rating (services/tmdbTitles.js).
+  const fields = "_id title name poster_path release_date first_air_date tmdb_id id.tmdb tmdb tmdb_unmatched vote_average vote_count tmdb_rated_at";
   const [movies, seriesList] = await Promise.all([
-    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select("_id title name poster_path").lean() : [],
-    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select("_id title name poster_path").lean() : [],
+    movieIds.length ? getMovie().find({ _id: { $in: movieIds } }).select(fields).lean() : [],
+    seriesIds.length ? getSeries().find({ _id: { $in: seriesIds } }).select(fields).lean() : [],
   ]);
   const movieMap = Object.fromEntries(movies.map((m) => [m._id.toString(), m]));
   const seriesMap = Object.fromEntries(seriesList.map((s) => [s._id.toString(), s]));
 
-  return entries.reduce((acc, e) => {
-    const item = e.itemType === "movie" ? movieMap[e.itemId] : seriesMap[e.itemId];
-    if (!item) return acc;
-    acc.push({
-      ...e,
-      content: {
-        id: e.itemId,
-        title: item.title || item.name,
-        poster_path: item.poster_path,
-        type: e.itemType,
-      },
-    });
-    return acc;
-  }, []);
+  const hydrated = await Promise.all(
+    entries.map(async (e) => {
+      const item = e.itemType === "movie" ? movieMap[e.itemId] : seriesMap[e.itemId];
+      if (!item) return null;
+      return {
+        ...e,
+        content: {
+          id: e.itemId,
+          title: item.title || item.name,
+          poster_path: item.poster_path,
+          type: e.itemType,
+          // Shown beside the app's own rating; null when TMDB has too few votes.
+          tmdbRating: await tmdbRating(e.itemType === "movie" ? getMovie() : getSeries(), item, e.itemType),
+        },
+      };
+    })
+  );
+  return hydrated.filter(Boolean);
 }
 
 // A single vote (10/10 from one person) shouldn't be able to top the

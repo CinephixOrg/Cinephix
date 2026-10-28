@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { getNewReleases, type NewReleaseItem } from "../../api/feedService";
 import ContentRail from "../ContentRail";
 import MiniContentCard from "../MiniContentCard";
+import ContentTypeToggle from "../common/ContentTypeToggle";
 import { useTranslation } from "react-i18next";
+import type { ContentType } from "../../types";
 
 const RAIL_COUNT = 20;
 const CARD_WIDTH = 100;
@@ -18,21 +20,37 @@ interface Props {
 // already watched/queued the way WhatToWatchRail.tsx's own rail is.
 // Same poster-only MiniContentCard treatment as that rail, direct ask to
 // keep Discover's rails visually consistent with each other.
+//
+// Movies or series, one at a time (FB-14), switched with the same toggle as
+// the podium above it — movies first, as there.
 export default function NewReleasesRail({ basePath }: Props) {
   const { t } = useTranslation();
+  const [mode, setMode] = useState<ContentType>("movie");
   const [items, setItems] = useState<NewReleaseItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    getNewReleases(RAIL_COUNT)
-      .then((res) => setItems(res.items))
+    let cancelled = false;
+    // The other list stays up until this one arrives, so switching doesn't
+    // empty the rail (and shift the page) in between.
+    getNewReleases(RAIL_COUNT, mode)
+      .then((res) => {
+        if (cancelled) return;
+        setItems(res.items);
+        setLoaded(true);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
 
-  if (items.length === 0) return null;
+  if (!loaded) return null;
 
   return (
     <ContentRail
       title={t("New Releases")}
+      titleAccessory={<ContentTypeToggle value={mode} onChange={setMode} />}
       data={items}
       keyExtractor={(item) => `${item.contentType}-${item._id}`}
       emptyText={t("Nothing new released recently.")}

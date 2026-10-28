@@ -48,6 +48,10 @@ interface Props<T> {
   // Friends mode toggle, which isn't a link or an edit action so neither
   // existing slot fit it.
   headerRight?: React.ReactNode;
+  // Content right after the title rather than at the row's far end — New
+  // Releases' Movies/Series toggle, placed where the podium above it has
+  // the same toggle.
+  titleAccessory?: React.ReactNode;
   // Makes `data` itself drag-to-reorder (long-press a card to pick it up),
   // added for the profile Favorites rails' own edit mode — direct ask,
   // "watchedlistteki gibi" but for reordering rather than removal. Off by
@@ -81,6 +85,7 @@ export default function ContentRail<T>({
   editLabel,
   height,
   headerRight,
+  titleAccessory,
   dragEnabled,
   onReorder,
   footer,
@@ -103,6 +108,8 @@ export default function ContentRail<T>({
           paddingHorizontal: 16,
         },
         title: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent },
+        // The podium's own title row spacing (LeaderboardPodium's titleRow gap).
+        titleGroup: { flexDirection: "row", alignItems: "center", gap: 10 },
         actions: { flexDirection: "row", alignItems: "center", gap: 12 },
         seeAll: { fontFamily: fonts.medium, fontSize: 12, color: colors.primary },
         editButton: { padding: 2 },
@@ -116,7 +123,14 @@ export default function ContentRail<T>({
   return (
     <View style={styles.section}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>{title}</Text>
+        {titleAccessory ? (
+          <View style={styles.titleGroup}>
+            <Text style={styles.title}>{title}</Text>
+            {titleAccessory}
+          </View>
+        ) : (
+          <Text style={styles.title}>{title}</Text>
+        )}
         <View style={styles.actions}>
           {onSeeAllPress && (
             <Pressable onPress={onSeeAllPress} hitSlop={8}>
