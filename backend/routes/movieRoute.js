@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { buildFuzzyTitleSearchStage, combinedScoreSortStages } from "../utils/atlasSearch.js";
-import { withProductionCountries } from "../services/movieCountries.js";
+import { productionCountries } from "../services/tmdbTitles.js";
 
 // User text going into a hand-built $regex must be escaped first — an
 // unescaped string lets a caller inject regex metacharacters (at best
@@ -221,9 +221,9 @@ export default async function(movieModel) {
           message: 'Movie not found'
         });
       }
-      // The detail page shows where it was made; the catalog doesn't carry
-      // that, so it's looked up once and kept (services/movieCountries.js).
-      const doc = await withProductionCountries(movieModel, found);
+      // The detail page shows where it was made, which the catalog doesn't
+      // carry: from TMDB, never stored (services/tmdbTitles.js).
+      const doc = { ...found, production_countries: await productionCountries(movieModel, found, "movie") };
       res.json({
         success: true,
         message: 'Movie fetched',

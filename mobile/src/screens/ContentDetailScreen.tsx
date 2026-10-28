@@ -54,7 +54,7 @@ import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
 import { genreNames } from "../utils/recommend";
-import { countryName, flagCountries, flagEmoji } from "../utils/countries";
+import { countryName, knownCountries } from "../utils/countries";
 import { COUNTRY_NAMES } from "../constants/countryNames";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../constants/contentGenreIds";
 import AdBanner from "../components/ads/AdBanner";
@@ -153,8 +153,8 @@ export default function ContentDetailScreen() {
   titleRow: { gap: 2, marginBottom: 6 },
   title: { fontSize: 22, fontFamily: fonts.bold, color: colors.baseContent },
   year: { fontSize: 15, color: colors.placeholder },
-  // Year · Movie/Series · flags, under the title. The type tag is the chat's
-  // day pill (ChatRoom's dayPill): quiet on purpose.
+  // Year · Movie/Series · where it was made, under the title. The type tag is
+  // the chat's day pill (ChatRoom's dayPill): quiet on purpose.
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 8, rowGap: 4 },
   typeTag: {
     borderRadius: 999,
@@ -165,9 +165,8 @@ export default function ContentDetailScreen() {
     borderColor: colors.border,
   },
   typeTagText: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.placeholder, letterSpacing: 0.2 },
-  flags: { flexDirection: "row", alignItems: "center", gap: 6 },
-  flag: { fontSize: 16 },
-  countryName: { fontSize: 12.5, color: colors.placeholder },
+  // The same as the year beside it.
+  countries: { flexShrink: 1, fontSize: 15, color: colors.placeholder },
   sectionTitle: {
     fontSize: 18,
     fontFamily: fonts.bold,
@@ -364,8 +363,6 @@ export default function ContentDetailScreen() {
   const [overviewExpanded, setOverviewExpanded] = useState(false);
   const [posterHeight, setPosterHeight] = useState(0);
   const [titleRowHeight, setTitleRowHeight] = useState(0);
-  // A production country's flag that's been tapped, its name showing beside it.
-  const [namedCountry, setNamedCountry] = useState<string | null>(null);
 
   const [giftMenuVisible, setGiftMenuVisible] = useState(false);
   const [recommendPickerVisible, setRecommendPickerVisible] = useState(false);
@@ -798,7 +795,7 @@ export default function ContentDetailScreen() {
   const posterPath = content.poster_path;
   const overview = content.overview;
   const releaseDate = type === "movie" ? (content as Movie).release_date : (content as Series).first_air_date;
-  const countries = flagCountries(
+  const countries = knownCountries(
     type === "movie" ? (content as Movie).production_countries : (content as Series).origin_country,
     COUNTRY_NAMES
   );
@@ -1009,23 +1006,9 @@ export default function ContentDetailScreen() {
                 <Text style={styles.typeTagText}>{type === "movie" ? t("Movie") : t("Series")}</Text>
               </View>
               {countries.length > 0 ? (
-                <View style={styles.flags}>
-                  {countries.map((code) => (
-                    <Pressable
-                      key={code}
-                      onPress={() => setNamedCountry((current) => (current === code ? null : code))}
-                      hitSlop={6}
-                      accessibilityRole="button"
-                      accessibilityLabel={countryName(code, i18n.language, COUNTRY_NAMES)}
-                    >
-                      <Text style={styles.flag}>{flagEmoji(code)}</Text>
-                    </Pressable>
-                  ))}
-                  {/* The tapped flag's country, by name — for anyone who doesn't know the flag. */}
-                  {namedCountry && countries.includes(namedCountry) ? (
-                    <Text style={styles.countryName}>{countryName(namedCountry, i18n.language, COUNTRY_NAMES)}</Text>
-                  ) : null}
-                </View>
+                <Text style={styles.countries} numberOfLines={1}>
+                  {countries.map((code) => countryName(code, i18n.language, COUNTRY_NAMES)).join(", ")}
+                </Text>
               ) : null}
             </View>
           </View>

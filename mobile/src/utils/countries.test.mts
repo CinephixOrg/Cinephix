@@ -1,23 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { countryName, flagCountries, flagEmoji } from "./countries.ts";
+import { countryName, knownCountries } from "./countries.ts";
 
 const NAMES = {
   KR: { en: "South Korea", tr: "Güney Kore" },
   US: { en: "United States", tr: "Amerika Birleşik Devletleri" },
   FR: { en: "France", tr: "Fransa" },
-  DE: { en: "Germany", tr: "Almanya" },
 };
 
-test("flags: known countries only, once each, the first few", () => {
-  assert.deepEqual(flagCountries(["kr", "US", "KR", "SU", null], NAMES), ["KR", "US"]);
-  assert.deepEqual(flagCountries(["KR", "US", "FR", "DE"], NAMES), ["KR", "US", "FR"]);
-  assert.deepEqual(flagCountries(undefined, NAMES), []);
-});
-
-test("a flag is the code's two regional-indicator letters", () => {
-  assert.equal(flagEmoji("KR"), "🇰🇷");
-  assert.equal(flagEmoji("tr"), "🇹🇷");
+test("countries: known ones only, once each, the first few", () => {
+  assert.deepEqual(knownCountries(["kr", "US", "KR", "SU", null], NAMES), ["KR", "US"]);
+  assert.deepEqual(knownCountries(["KR", "US", "FR"], NAMES), ["KR", "US"]);
+  assert.deepEqual(knownCountries(undefined, NAMES), []);
 });
 
 test("names follow the app's language, English when there's nothing better", () => {

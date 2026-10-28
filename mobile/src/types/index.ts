@@ -35,7 +35,7 @@ export interface Movie {
   release_date?: string;
   vote_average?: number;
   genre_ids?: number[];
-  /** Where it was made (ISO codes), on the detail page only — looked up once from TMDB, empty when unknown. */
+  /** Where it was made (ISO codes), on the detail page only — from TMDB each time, empty when unknown. */
   production_countries?: string[];
 }
 
