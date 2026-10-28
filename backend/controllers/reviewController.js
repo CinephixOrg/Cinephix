@@ -141,12 +141,17 @@ export const getContentReviews = asyncHandler(async (req, res) => {
   const query = sort === "liked_by_me" ? { contentId, likes: userId } : { contentId };
   const sortQuery = sort === "popular" ? {} : { createdAt: -1 };
 
-  let reviews = await Review.find(query)
-    .populate('user', 'username profile_pic_url')
-    .sort(sortQuery)
-    .limit(parseInt(limit))
-    .skip(skip)
-    .lean();
+  let reviews = (
+    await Review.find(query)
+      .populate('user', 'username profile_pic_url')
+      .sort(sortQuery)
+      .limit(parseInt(limit))
+      .skip(skip)
+      .lean()
+  )
+    // A review whose author's account is gone comes back with no user, and
+    // the detail page reads review.user — it crashed on such a title.
+    .filter((review) => review.user);
 
   if (sort === "popular") {
     reviews = reviews.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));

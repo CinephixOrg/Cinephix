@@ -1358,6 +1358,16 @@ export const deleteAccount = asyncHandler(async (req, res) => {
       { $pull: { followers: user._id } }
   );
 
+  // 3b. Yorum, paylaşım ve listelerdeki beğenilerini kaldır — silinmiş bir
+  // kullanıcıya işaret eden beğeni, beğenenler listesinde boş satır olarak
+  // kalıyordu.
+  await Review.updateMany(
+      { $or: [{ likes: user._id }, { "likeEvents.user": user._id }] },
+      { $pull: { likes: user._id, likeEvents: { user: user._id } } }
+  );
+  await Share.updateMany({ likes: user._id }, { $pull: { likes: user._id } });
+  await CustomList.updateMany({ likes: user._id }, { $pull: { likes: user._id } });
+
   // 4. Topluluk üyeliklerinden çıkar (leaveGroup ile aynı güncelleme).
   // Silinmiş bir hesap üye listesinde kalınca populate onu null döndürüyor
   // ve üyeler ekranı çöküyordu. Mesajları sohbet geçmişi olarak kalır;
