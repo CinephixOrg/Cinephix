@@ -43,7 +43,8 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((url) => url.trim().replace(/\/+$/, "")).filter(Boolean)
   : ["http://localhost:5173", "http://127.0.0.1:5173"];
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+// Content-Disposition is exposed so the dashboard can read an export's file name.
+app.use(cors({ origin: allowedOrigins, credentials: true, exposedHeaders: ["Content-Disposition"] }));
 app.use(express.json());
 app.use(requestLogger);
 configurePassport();
@@ -85,6 +86,7 @@ import { hideBlockedContent } from "./middleware/blockFilter.js";
 import reportRoute from "./routes/reportRoute.js";
 import ticketRoute from "./routes/ticketRoute.js";
 import adminRoute from "./routes/adminRoute.js";
+import episodeRoute from "./routes/episodeRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -107,6 +109,7 @@ app.use("/api/waitlist", waitlistRoute);
 app.use("/api/reports", reportRoute);
 app.use("/api/tickets", ticketRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/episodes", episodeRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);

@@ -10,6 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 import Notification from "../models/Notification.js";
 import ActivityLog from "../models/ActivityLog.js";
 import Rating from "../models/Rating.js";
+import EpisodeProgress from "../models/EpisodeProgress.js";
 import Review from "../models/Review.js";
 import { notifyFollow, retractFollow } from "../services/notifications.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
@@ -77,6 +78,7 @@ import {
   averageRating
 } from "../utils/analysisMath.js";
 import ProfileAnalysis from "../models/ProfileAnalysis.js";
+import Group from "../models/Group.js";
 import { getOnlineUserIds } from "../services/presenceService.js";
 
 // @desc    Register a new user
@@ -1331,6 +1333,8 @@ export const deleteAccount = asyncHandler(async (req, res) => {
   
   // 1. Verdiği oyları sil
   await Rating.deleteMany({ user: user._id });
+  // 1b. İzlediği bölümler (TC-141)
+  await EpisodeProgress.deleteMany({ user: user._id });
 
   // 2. Bildirimlerini sil
   await Notification.deleteMany({ user: user._id });
@@ -1355,6 +1359,29 @@ export const deleteAccount = asyncHandler(async (req, res) => {
   await User.updateMany(
       { followers: user._id },
       { $pull: { followers: user._id } }
+  );
+
+  // 3b. Yorum, paylaşım ve listelerdeki beğenilerini kaldır — silinmiş bir
+  // kullanıcıya işaret eden beğeni, beğenenler listesinde boş satır olarak
+  // kalıyordu.
+  await Review.updateMany(
+      { $or: [{ likes: user._id }, { "likeEvents.user": user._id }] },
+      { $pull: { likes: user._id, likeEvents: { user: user._id } } }
+  );
+  await Share.updateMany({ likes: user._id }, { $pull: { likes: user._id } });
+  await CustomList.updateMany({ likes: user._id }, { $pull: { likes: user._id } });
+
+  // 4. Topluluk üyeliklerinden çıkar (leaveGroup ile aynı güncelleme).
+  // Silinmiş bir hesap üye listesinde kalınca populate onu null döndürüyor
+  // ve üyeler ekranı çöküyordu. Mesajları sohbet geçmişi olarak kalır;
+  // uygulama onları "Silinmiş hesap" olarak gösterir.
+  await Group.updateMany(
+      { "members.user": user._id },
+      {
+        $pull: { members: { user: user._id } },
+        $inc: { memberCount: -1 },
+        $unset: { [`unreadCounts.${user._id}`]: "" },
+      }
   );
 
   // --- SON OLARAK KULLANICIYI SİL ---

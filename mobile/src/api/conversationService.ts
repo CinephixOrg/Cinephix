@@ -1,7 +1,8 @@
 import API from "./client";
 import { API_ROUTES } from "../constants/apiRoutes";
-import type { Conversation, ContentType, GroupConversationRow, Message, MessagePagination } from "../types";
+import type { Conversation, ContentType, GroupConversationRow, Message, MessagePagination, MessageReader } from "../types";
 import { createPrefetcher } from "../utils/prefetch";
+import { withSenders } from "../utils/chatMessages";
 
 interface RecommendationPayload {
   text: string;
@@ -69,7 +70,8 @@ export async function getConversations(): Promise<{
 
 export async function getOrCreateConversation(participantId: string): Promise<Conversation> {
   const res = await API.post(API_ROUTES.CONVERSATIONS.GET_OR_CREATE, { participantId });
-  return res.data;
+  const conversation: Conversation = res.data;
+  return conversation.messages ? { ...conversation, messages: withSenders(conversation.messages) } : conversation;
 }
 
 // The DM with a person, started by a tap that's about to open it (a message
@@ -88,11 +90,17 @@ export async function getMessages(
   const res = await API.get(API_ROUTES.CONVERSATIONS.GET_MESSAGES(conversationId), {
     params: { before, limit },
   });
-  return { items: res.data, pagination: (res as any).pagination };
+  return { items: withSenders(res.data), pagination: (res as any).pagination };
 }
 
 export async function markConversationRead(conversationId: string): Promise<void> {
   await API.post(API_ROUTES.CONVERSATIONS.MARK_READ(conversationId));
+}
+
+/** Who has read one of your messages and when, earliest first — for its info sheet. */
+export async function getMessageReaders(messageId: string): Promise<MessageReader[]> {
+  const res = await API.get(API_ROUTES.CONVERSATIONS.MESSAGE_READERS(messageId));
+  return (res.data as { readers?: MessageReader[] } | undefined)?.readers ?? [];
 }
 
 // REST send fallback — used only when the socket is disconnected at send

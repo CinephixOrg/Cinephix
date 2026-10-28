@@ -85,7 +85,7 @@ test("the enrichment write re-checks at write time that no TMDB id was added mea
 });
 
 test("a document already carrying the TMDB id wins, and is left alone without refresh fields", () => {
-  const rich = { _id: "rich-1", tmdb_id: 37165, title: "The Truman Show", release_date: "1998-06-04" };
+  const rich = { _id: "rich-1", tmdb_id: 37165, title: "The Truman Show", original_title: "The Truman Show", release_date: "1998-06-04" };
   const { ops, resolved } = plan({
     type: "movie",
     hits: [TRUMAN_HIT],
@@ -97,7 +97,7 @@ test("a document already carrying the TMDB id wins, and is left alone without re
 });
 
 test("refresh fields are the only thing overwritten on an existing document", () => {
-  const rich = { _id: "rich-1", tmdb_id: 37165 };
+  const rich = { _id: "rich-1", tmdb_id: 37165, original_title: "Old original" };
   const { ops } = plan({
     type: "movie",
     hits: [TRUMAN_HIT],
@@ -105,6 +105,20 @@ test("refresh fields are the only thing overwritten on an existing document", ()
     refreshFields: ["popularity", "vote_count"],
   });
   assert.deepEqual(ops[0].updateOne.update.$set, { popularity: 42, vote_count: 20000, updated_at: NOW });
+});
+
+test("an existing document missing its original name and language gets them, and nothing else", () => {
+  const rich = { _id: "rich-1", tmdb_id: 1, name: "The Valley of The Wolves", origin_country: ["TR"] };
+  const hit = { id: 1, name: "The Valley of The Wolves", original_name: "Kurtlar Vadisi", original_language: "tr", origin_country: ["TR"], overview: "x" };
+  const { ops } = plan({ type: "series", hits: [hit], existingByTmdb: new Map([[1, rich]]) });
+  assert.deepEqual(ops[0].updateOne.update.$set, { original_name: "Kurtlar Vadisi", original_language: "tr", updated_at: NOW });
+});
+
+test("metadata keeps the original name with its language", () => {
+  const movie = metadataFromTmdb({ title: "Ayla", original_title: "Ayla: The Daughter of War", original_language: "tr" }, "movie");
+  assert.equal(movie.original_language, "tr");
+  const series = metadataFromTmdb({ name: "Back Streets", original_name: "Arka Sokaklar", original_language: "tr", origin_country: ["TR"] }, "series");
+  assert.deepEqual([series.original_name, series.original_language, series.origin_country], ["Arka Sokaklar", "tr", ["TR"]]);
 });
 
 test("with no twin at all, a complete new document is created", () => {
@@ -146,6 +160,35 @@ test("legacy records duplicated with the same title and date resolve to the olde
 test("title comparison ignores case and surrounding whitespace", () => {
   const legacy = { ...TRUMAN_LEGACY, title: "  the truman show " };
   assert.equal(findLegacyTwin([legacy], metadataFromTmdb(TRUMAN_HIT, "movie"), "movie")?._id, legacy._id);
+});
+
+// The spellings that made the 2026-10-28 Turkish backfill (TC-140) create
+// twins of legacy records instead of enriching them.
+test("legacy titles spelled differently still match: case, accents, punctuation, a leading The", () => {
+  const cases = [
+    ["Wild heart", "Wild Heart"],
+    ["Recep Ivedik", "Recep İvedik"],
+    ["Yor: The Hunter from the Future", "Yor, the Hunter from the Future"],
+    ["Valley of the Wolves", "The Valley of The Wolves"],
+  ];
+  for (const [tmdbTitle, legacyTitle] of cases) {
+    const legacy = { _id: "old", title: legacyTitle, release_date: "2008-02-22" };
+    assert.equal(findLegacyTwin([legacy], { title: tmdbTitle, release_date: "2008-02-22" }, "movie")?._id, "old", tmdbTitle);
+  }
+});
+
+test("a legacy record stored under the original name matches TMDB's English title", () => {
+  const legacy = { _id: "old", name: "Deniz Yıldızı", first_air_date: "2009-08-24" };
+  const meta = metadataFromTmdb({ name: "Starfish", original_name: "Deniz Yıldızı", first_air_date: "2009-08-24", original_language: "tr" }, "series");
+  assert.equal(findLegacyTwin([legacy], meta, "series")?._id, "old");
+});
+
+test("a loose title match still needs the dates to agree", () => {
+  const legacy = { _id: "old", title: "The Guard", release_date: "2011-07-07" };
+  assert.equal(findLegacyTwin([legacy], { title: "Guard", release_date: "1985-01-13" }, "movie"), null);
+  // Same date, different title: a different film released that day.
+  const sameDay = { _id: "other", title: "Bekçi", release_date: "1985-01-13" };
+  assert.equal(findLegacyTwin([sameDay], { title: "The Guard", release_date: "1985-01-13" }, "movie"), null);
 });
 
 test("a candidate that already has a TMDB id is never treated as legacy", () => {

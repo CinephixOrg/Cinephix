@@ -21,7 +21,9 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import LeaderboardCard from "./LeaderboardCard";
 import PodiumSkeletonSlot from "./PodiumSkeletonSlot";
-import UpgradeRibbon from "./UpgradeRibbon";
+import UpgradeRibbon, { RIBBON_TOP_RIGHT } from "./UpgradeRibbon";
+import ContentTypeToggle from "./common/ContentTypeToggle";
+import UpgradeBannerText from "./common/UpgradeBannerText";
 import { getLeaderboard } from "../api/feedService";
 import { useAuth } from "../context/AuthContext";
 import type { ContentType, LeaderboardResult } from "../types";
@@ -41,13 +43,6 @@ const TEASER_POSTER_WIDTH = { 1: 78, 2: 62, 3: 62 } as const;
 const TEASER_CYCLE_MS = 2200;
 const TEASER_FADE_MS = 280;
 
-// Only movie/series — a 3rd "both" mode was tried and dropped: with only
-// 2 icons in the toggle, a state where neither reads as selected doesn't
-// actually communicate "showing both", it just looks unset. Defaults to
-// "movie" so the toggle always shows one concrete selected state, never an
-// ambiguous starting one.
-const MODE_CYCLE: ContentType[] = ["movie", "series"];
-
 // Same bob-loop technique as MatchSummarySwiper.tsx's own scroll-hint chevron
 // (Animated.loop + Animated.sequence, Easing.inOut(Easing.sin)) — reused
 // horizontally here instead of vertically, so a "swipe for more" hint reads
@@ -55,10 +50,10 @@ const MODE_CYCLE: ContentType[] = ["movie", "series"];
 const HINT_BOB_MS = 900;
 const HINT_BOB_DISTANCE = 5;
 // Tall enough for the biggest card (rank-1's bigger poster + platform line
-// + name + a metric row) — a horizontal ScrollView's cross-axis doesn't
-// reliably auto-size to its tallest child, same caution ContentRail.tsx's
-// own optional `height` prop documents.
-const PODIUM_HEIGHT = 220;
+// + name + a metric row + TMDB's rating under it) — a horizontal
+// ScrollView's cross-axis doesn't reliably auto-size to its tallest child,
+// same caution ContentRail.tsx's own optional `height` prop documents.
+const PODIUM_HEIGHT = 248;
 
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace("#", "");
@@ -192,8 +187,6 @@ export default function LeaderboardPodium({ basePath }: Props) {
     };
   }, [mode]);
 
-  const cycleMode = () => setMode((prev) => MODE_CYCLE[(MODE_CYCLE.indexOf(prev) + 1) % MODE_CYCLE.length]);
-
   const bobAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -258,21 +251,8 @@ export default function LeaderboardPodium({ basePath }: Props) {
         // footprint either way.
         titleRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, marginBottom: 12, minHeight: 46 },
         title: { fontFamily: fonts.bold, fontSize: 17, color: colors.baseContent },
-        // The round movie/series mode toggle, right where the title ends —
-        // both icons always visible, only the active one recolored (no
-        // filled background chip — the user found that too heavy, wanted
-        // just the icon's own color to carry the selected state).
-        modeToggle: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          height: 34,
-          paddingHorizontal: 12,
-          borderRadius: 17,
-          backgroundColor: colors.base200,
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: colors.border,
-        },
+        // The round movie/series mode toggle (common/ContentTypeToggle.tsx),
+        // right where the title ends.
         modeToggleHidden: { opacity: 0 },
         // Ad page only, alongside modeToggleHidden — the hidden toggle is
         // invisible but, left as a normal flex sibling, still reserves its
@@ -329,7 +309,7 @@ export default function LeaderboardPodium({ basePath }: Props) {
         // the ribbon's diagonal to sit fully inside it.
         adPage: { width: screenWidth, height: PODIUM_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, position: "relative" },
         adFrameRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 12 },
-        adRibbonWrap: { position: "absolute", top: 4, right: -30 },
+        adRibbonWrap: RIBBON_TOP_RIGHT,
         // Sits inside titleRow itself, replacing the plain category title
         // there while the ad page is showing — direct ask ("başlık hizasında
         // reklam metni olacak"). titleRow's own `minHeight:46` already
@@ -401,7 +381,7 @@ export default function LeaderboardPodium({ basePath }: Props) {
         {activePage?.type === "real" ? (
           <Text style={styles.title}>{categoryMeta[activePage.key].title}</Text>
         ) : (
-          <Text style={styles.adBannerTitle}>{adBannerText}</Text>
+          <UpgradeBannerText text={adBannerText} style={styles.adBannerTitle} />
         )}
         {/* Always rendered (never conditionally mounted) so titleRow's own
             height never changes as `page` updates mid-swipe — see
@@ -409,15 +389,12 @@ export default function LeaderboardPodium({ basePath }: Props) {
             now (every one of the 5 categories respects `?type=`, unlike
             the people podium's own Most Watched-only dimension), hidden
             only on the ad page. */}
-        <Pressable
-          style={[styles.modeToggle, activePage?.type !== "real" && [styles.modeToggleHidden, styles.modeToggleAbsolute]]}
-          onPress={cycleMode}
-          hitSlop={8}
+        <ContentTypeToggle
+          value={mode}
+          onChange={setMode}
+          style={activePage?.type !== "real" && [styles.modeToggleHidden, styles.modeToggleAbsolute]}
           pointerEvents={activePage?.type === "real" ? "auto" : "none"}
-        >
-          <Ionicons name="film-outline" size={16} color={mode === "movie" ? colors.primary : colors.placeholder} />
-          <Ionicons name="tv-outline" size={16} color={mode === "series" ? colors.primary : colors.placeholder} />
-        </Pressable>
+        />
       </View>
 
       {loading ? (

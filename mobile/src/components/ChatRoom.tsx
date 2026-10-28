@@ -9,8 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  AppState,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Pressable from "./common/TapSafePressable";
+import KeyboardInsetView from "./common/KeyboardInsetView";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -21,7 +24,19 @@ import { useBlockedIds } from "../hooks/useBlocked";
 import { isProtectedAccount } from "../api/blockStore";
 import { useSafety } from "../context/SafetyContext";
 import { cachedRoom, rememberRoom, roomKey, roomPrefetch } from "../api/chatCache";
-import { chatRows, dayHeading, mergeLatestPage, upsertMessage, type ChatRow } from "../utils/chatMessages";
+import {
+  DELETED_SENDER_ID,
+  applyRead,
+  chatRows,
+  dayHeading,
+  deliveryState,
+  mergeLatestPage,
+  upsertMessage,
+  type ChatRow,
+  type DeliveryState,
+} from "../utils/chatMessages";
+import { firstVisibleOn } from "../utils/color";
+import MessageInfoSheet from "./chat/MessageInfoSheet";
 import { SkeletonChatBubbles } from "./Skeleton";
 import TierAvatarFrame from "./TierAvatarFrame";
 import RecommendationMessageCard from "./RecommendationMessageCard";
@@ -58,11 +73,41 @@ interface Props {
   fetchMessages: (before?: string, limit?: number) => Promise<{ items: Message[]; pagination: MessagePagination }>;
   markRead: () => Promise<void>;
   sendRest: (text: string) => Promise<Message>;
+  /**
+   * How many people one of your messages is for — 1 in a DM, the other
+   * members in a group — so its ticks turn to read once they all have.
+   * Left out where reads aren't tracked (watch parties): no ticks there.
+   */
+  readersNeeded?: number;
 }
+
+// Read receipts' blue: the theme's own, unless it doesn't stand out on what's
+// underneath (a green bubble), then a darker one that does.
+const READ_BLUES = ["#1e3a8a"];
+const SEEN_BLUE_ON_BACKGROUND = ["#53bdeb"];
+
+interface TickColors {
+  sent: string;
+  read: string;
+}
+
+/** A message's ticks: a clock while sending, ✓ once sent, a blue ✓✓ once read. */
+const DeliveryTicks = memo(function DeliveryTicks({ state, colors }: { state: DeliveryState; colors: TickColors }) {
+  const { t } = useTranslation();
+  if (state === "pending") {
+    return <Ionicons name="time-outline" size={12} color={colors.sent} accessibilityLabel={t("Sending...")} />;
+  }
+  return state === "read" ? (
+    <Ionicons name="checkmark-done" size={15} color={colors.read} accessibilityLabel={t("Read")} />
+  ) : (
+    <Ionicons name="checkmark" size={14} color={colors.sent} accessibilityLabel={t("Sent")} />
+  );
+});
 
 function createStyles(colors: Colors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.base100 },
+    fill: { flex: 1 },
     list: { paddingHorizontal: 14, paddingVertical: 12, flexGrow: 1 },
     locked: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     lockedText: { color: colors.placeholder, fontSize: 14, textAlign: "center" },
@@ -81,6 +126,10 @@ function createStyles(colors: Colors) {
     tailOwn: { borderBottomRightRadius: 5 },
     tailOther: { borderBottomLeftRadius: 5 },
     bubblePending: { opacity: 0.6 },
+    // Room on the right for the ticks, which sit in the bubble's corner.
+    bubbleWithTicks: { paddingRight: 13 + 18 },
+    bubbleTicks: { position: "absolute", right: 9, bottom: 7 },
+    meta: { flexDirection: "row", alignItems: "center", gap: 3 },
     textOwn: { color: colors.primaryContent, fontSize: 15, lineHeight: 20 },
     textOther: { color: colors.baseContent, fontSize: 15, lineHeight: 20 },
     time: { fontSize: 10.5, color: colors.placeholder, marginTop: 3, marginHorizontal: 6 },
@@ -143,6 +192,10 @@ const MessageRow = memo(function MessageRow({
   onOpenAnalysis,
   onOpenProfileAnalysis,
   onLongPress,
+  onOpenInfo,
+  delivery,
+  bubbleTicks,
+  metaTicks,
   styles,
 }: {
   message: Message;
@@ -157,11 +210,29 @@ const MessageRow = memo(function MessageRow({
   onOpenProfileAnalysis: (message: Message) => void;
   /** Report / block — offered on other people's messages only. */
   onLongPress?: (message: Message) => void;
+  /** Who has read it — offered on your own messages, where reads are tracked. */
+  onOpenInfo?: (message: Message) => void;
+  /** Your own message's ticks; absent on other people's and where reads aren't tracked. */
+  delivery?: DeliveryState;
+  /** Tick colours inside your (primary) bubble, and on the chat's background under a card. */
+  bubbleTicks: TickColors;
+  metaTicks: TickColors;
   styles: Styles;
 }) {
   const { t } = useTranslation();
   const pending = message.status === "pending";
-  const longPress = !isOwn && !pending && onLongPress && !isProtectedAccount(message.sender) ? () => onLongPress(message) : undefined;
+  const deleted = message.sender._id === DELETED_SENDER_ID;
+  const senderName = deleted ? t("Deleted account") : message.sender.username;
+  const longPress = isOwn
+    ? !pending && onOpenInfo
+      ? () => onOpenInfo(message)
+      : undefined
+    : !pending && !deleted && onLongPress && !isProtectedAccount(message.sender)
+      ? () => onLongPress(message)
+      : undefined;
+  const isText = !["recommendation", "profile_share", "list_share", "community_announcement", "analysis_share"].includes(
+    message.type
+  );
 
   let body: ReactNode;
   if (message.type === "recommendation") {
@@ -192,20 +263,34 @@ const MessageRow = memo(function MessageRow({
       />
     );
   } else {
+    // The bubble's shape and colour live on a plain View inside the
+    // Pressable, not on the Pressable itself. Gesture handler's Pressable
+    // draws its own background on Android and doesn't undo a corner radius
+    // that's taken away: a message that stopped being the last of its run
+    // lost its tail corner and every rounded corner with it, turning square.
     body = (
       <Pressable
         onLongPress={longPress}
         delayLongPress={350}
         disabled={!longPress}
-        style={({ pressed }) => [
-          styles.bubble,
-          isOwn ? styles.bubbleOwn : styles.bubbleOther,
-          last && (isOwn ? styles.tailOwn : styles.tailOther),
-          pending && styles.bubblePending,
-          pressed && longPress && { opacity: 0.75 },
-        ]}
+        style={({ pressed }) => pressed && longPress && { opacity: 0.75 }}
       >
-        <Text style={isOwn ? styles.textOwn : styles.textOther}>{message.text}</Text>
+        <View
+          style={[
+            styles.bubble,
+            isOwn ? styles.bubbleOwn : styles.bubbleOther,
+            last && (isOwn ? styles.tailOwn : styles.tailOther),
+            pending && styles.bubblePending,
+            delivery && styles.bubbleWithTicks,
+          ]}
+        >
+          <Text style={isOwn ? styles.textOwn : styles.textOther}>{message.text}</Text>
+          {delivery ? (
+            <View style={styles.bubbleTicks}>
+              <DeliveryTicks state={delivery} colors={bubbleTicks} />
+            </View>
+          ) : null}
+        </View>
       </Pressable>
     );
   }
@@ -226,7 +311,7 @@ const MessageRow = memo(function MessageRow({
                 />
               ) : (
                 <View style={[styles.avatarFallback, { width: innerSize, height: innerSize, borderRadius: innerSize / 2 }]}>
-                  <Text style={styles.avatarFallbackText}>{sender.username.slice(0, 2).toUpperCase()}</Text>
+                  <Text style={styles.avatarFallbackText}>{senderName.slice(0, 2).toUpperCase()}</Text>
                 </View>
               )
             }
@@ -235,14 +320,18 @@ const MessageRow = memo(function MessageRow({
           <View style={styles.avatarSpacer} />
         ))}
       <View style={[styles.column, isOwn && styles.columnOwn]}>
-        {showName && first ? <Text style={styles.senderName}>{sender.username}</Text> : null}
+        {showName && first ? <Text style={styles.senderName}>{senderName}</Text> : null}
         {body}
         {last ? (
-          <Text style={styles.time}>
-            {pending
-              ? t("Sending...")
-              : new Date(message.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-          </Text>
+          <View style={styles.meta}>
+            <Text style={styles.time}>
+              {pending
+                ? t("Sending...")
+                : new Date(message.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+            </Text>
+            {/* A card has no bubble to hold its ticks: they go by its time. */}
+            {delivery && !isText ? <DeliveryTicks state={delivery} colors={metaTicks} /> : null}
+          </View>
         ) : null}
       </View>
     </View>
@@ -285,16 +374,29 @@ export default function ChatRoom({
   fetchMessages,
   markRead,
   sendRest,
+  readersNeeded,
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const tickColors = useMemo(
+    () => ({
+      bubble: {
+        sent: `${colors.primaryContent}8C`,
+        read: firstVisibleOn(colors.primary, [colors.info, ...READ_BLUES], colors.primaryContent),
+      },
+      meta: {
+        sent: colors.placeholder,
+        read: firstVisibleOn(colors.base100, [colors.info, ...SEEN_BLUE_ON_BACKGROUND], colors.baseContent),
+      },
+    }),
+    [colors]
+  );
   const { t } = useTranslation();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const { connected, sendMessage, onNewMessage } = useChat();
+  const { connected, sendMessage, onNewMessage, onMessagesRead } = useChat();
   const key = roomKey(roomType, roomId);
   useKeyboardSafeExit();
-
 
   const [seed] = useState(() => initialMessages ?? cachedRoom(key));
   const [messages, setMessages] = useState<Message[]>(seed?.items ?? []);
@@ -305,6 +407,7 @@ export default function ChatRoom({
   const [text, setText] = useState("");
   const [viewingAnalysis, setViewingAnalysis] = useState<MatchAnalysis | null>(null);
   const [viewingProfileAnalysis, setViewingProfileAnalysis] = useState<ProfileAnalysis | null>(null);
+  const [infoMessage, setInfoMessage] = useState<Message | null>(null);
   // Refs for callbacks that must not change identity with every message.
   const markReadRef = useRef(markRead);
   markReadRef.current = markRead;
@@ -358,9 +461,29 @@ export default function ChatRoom({
     if (pagination) rememberRoom(key, { items: messages, pagination });
   }, [key, messages, pagination]);
 
+  // Someone else's message arriving while you're in the room is read there
+  // and then: mark it, so their ticks turn (and the room's unread count stays
+  // at zero). Bursts are marked once; not while the app is in the background.
+  const userIdRef = useRef(user?._id);
+  userIdRef.current = user?._id;
+  const markReadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(markReadTimer.current), []);
+
   useEffect(
-    () => onNewMessage(roomId, (incoming) => setMessages((prev) => upsertMessage(prev, incoming))),
+    () =>
+      onNewMessage(roomId, (incoming) => {
+        setMessages((prev) => upsertMessage(prev, incoming));
+        if (incoming.sender._id === userIdRef.current || AppState.currentState !== "active") return;
+        clearTimeout(markReadTimer.current);
+        markReadTimer.current = setTimeout(() => markReadRef.current().catch(() => {}), 400);
+      }),
     [roomId, onNewMessage]
+  );
+
+  // Your messages being read, live.
+  useEffect(
+    () => onMessagesRead(roomId, (event) => setMessages((prev) => applyRead(prev, event))),
+    [roomId, onMessagesRead]
   );
 
   const loadOlder = useCallback(async () => {
@@ -444,6 +567,8 @@ export default function ChatRoom({
 
   const userId = user?._id;
   const showNames = roomType === "group" || roomType === "watchparty";
+  // Reads are tracked in DMs and groups; readersNeeded says so.
+  const tracksReads = readersNeeded !== undefined;
   const renderItem = useCallback(
     ({ item }: { item: ChatRow }) => {
       if (item.kind === "day") return <DaySeparator iso={item.iso} styles={styles} />;
@@ -459,11 +584,15 @@ export default function ChatRoom({
           onOpenAnalysis={openAnalysis}
           onOpenProfileAnalysis={openProfileAnalysis}
           onLongPress={reportMessage}
+          onOpenInfo={tracksReads ? setInfoMessage : undefined}
+          delivery={isOwn && tracksReads ? deliveryState(item.message, readersNeeded ?? 0) : undefined}
+          bubbleTicks={tickColors.bubble}
+          metaTicks={tickColors.meta}
           styles={styles}
         />
       );
     },
-    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, reportMessage, styles]
+    [userId, showNames, counterpart, openAnalysis, openProfileAnalysis, reportMessage, tracksReads, readersNeeded, tickColors, styles]
   );
 
   if (!canChat) {
@@ -479,72 +608,83 @@ export default function ChatRoom({
   const canSend = text.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-      {loading ? (
-        <View style={{ flex: 1, justifyContent: "flex-end" }}>
-          <SkeletonChatBubbles />
-        </View>
-      ) : failed && messages.length === 0 ? (
-        <View style={styles.failed}>
-          <Text style={styles.lockedText}>{t("Couldn't load messages.")}</Text>
-          <Pressable style={({ pressed }) => [styles.retry, pressed && { opacity: 0.7 }]} onPress={loadLatest}>
-            <Text style={styles.retryText}>{t("Try again")}</Text>
+    // Android lifts the composer over the keyboard with KeyboardInsetView; iOS
+    // does it with the KeyboardAvoidingView inside.
+    <KeyboardInsetView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: "flex-end" }}>
+            <SkeletonChatBubbles />
+          </View>
+        ) : failed && messages.length === 0 ? (
+          <View style={styles.failed}>
+            <Text style={styles.lockedText}>{t("Couldn't load messages.")}</Text>
+            <Pressable style={({ pressed }) => [styles.retry, pressed && { opacity: 0.7 }]} onPress={loadLatest}>
+              <Text style={styles.retryText}>{t("Try again")}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            inverted
+            data={rows}
+            keyExtractor={(item) => item.key}
+            contentContainerStyle={styles.list}
+            renderItem={renderItem}
+            onEndReached={loadOlder}
+            onEndReachedThreshold={0.3}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            initialNumToRender={20}
+            windowSize={11}
+            ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
+            ListFooterComponent={loadingOlder ? <ActivityIndicator style={{ margin: 12 }} color={colors.primary} /> : null}
+          />
+        )}
+  
+        {/* Clear of the phone's own Back/Home buttons where the chat reaches the
+            bottom of the screen (a DM opened from a profile has no tab bar
+            under it). Only the part actually under those buttons is added, so
+            above a tab bar or the keyboard this adds nothing. */}
+        <SafeAreaView edges={["bottom"]} style={styles.composer}>
+          <TextInput
+            style={styles.input}
+            placeholder={t("Message...")}
+            placeholderTextColor={colors.placeholder}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={1000}
+          />
+          <Pressable
+            onPress={handleSend}
+            disabled={!canSend}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={t("Send")}
+            style={({ pressed }) => [
+              styles.send,
+              { backgroundColor: canSend ? colors.primary : colors.base200 },
+              pressed && { transform: [{ scale: 0.92 }] },
+            ]}
+          >
+            <Ionicons name="arrow-up" size={20} color={canSend ? colors.primaryContent : colors.placeholder} />
           </Pressable>
-        </View>
-      ) : (
-        <FlatList
-          inverted
-          data={rows}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.list}
-          renderItem={renderItem}
-          onEndReached={loadOlder}
-          onEndReachedThreshold={0.3}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          initialNumToRender={20}
-          windowSize={11}
-          ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
-          ListFooterComponent={loadingOlder ? <ActivityIndicator style={{ margin: 12 }} color={colors.primary} /> : null}
+        </SafeAreaView>
+  
+        <AnalyzeModal visible={!!viewingAnalysis} onClose={() => setViewingAnalysis(null)} data={viewingAnalysis} />
+        <ProfileAnalysisModal
+          visible={!!viewingProfileAnalysis}
+          onClose={() => setViewingProfileAnalysis(null)}
+          data={viewingProfileAnalysis}
         />
-      )}
-
-      <View style={styles.composer}>
-        <TextInput
-          style={styles.input}
-          placeholder={t("Message...")}
-          placeholderTextColor={colors.placeholder}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={1000}
-        />
-        <Pressable
-          onPress={handleSend}
-          disabled={!canSend}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel={t("Send")}
-          style={({ pressed }) => [
-            styles.send,
-            { backgroundColor: canSend ? colors.primary : colors.base200 },
-            pressed && { transform: [{ scale: 0.92 }] },
-          ]}
-        >
-          <Ionicons name="arrow-up" size={20} color={canSend ? colors.primaryContent : colors.placeholder} />
-        </Pressable>
-      </View>
-
-      <AnalyzeModal visible={!!viewingAnalysis} onClose={() => setViewingAnalysis(null)} data={viewingAnalysis} />
-      <ProfileAnalysisModal
-        visible={!!viewingProfileAnalysis}
-        onClose={() => setViewingProfileAnalysis(null)}
-        data={viewingProfileAnalysis}
-      />
-    </KeyboardAvoidingView>
+        {tracksReads ? (
+          <MessageInfoSheet message={infoMessage} roomType={roomType} onClose={() => setInfoMessage(null)} />
+        ) : null}
+      </KeyboardAvoidingView>
+    </KeyboardInsetView>
   );
 }

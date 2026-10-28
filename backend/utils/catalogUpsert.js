@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { normalizeTitle } from "./tmdbMatch.js";
 
 // Legacy-aware catalogue writes for TMDB results.
 //
@@ -13,6 +14,8 @@ import mongoose from "mongoose";
 //   1. a document that already carries this TMDB id
 //   2. a legacy document (no TMDB id) with the same title and release date,
 //      or failing that the only legacy document with that title and year —
+//      "the same title" loosely (see sameTitle below), since legacy records
+//      spell titles their own way —
 //      which is enriched in place with the TMDB id and any metadata it lacks,
 //      keeping its _id, and so every reference already pointing at it
 //   3. otherwise a new document
@@ -22,9 +25,14 @@ import mongoose from "mongoose";
 
 const TMDB_ID_PATHS = ["id.tmdb", "tmdb_id", "tmdb"];
 
+// Filled on a document already matched by TMDB id where it has none: records
+// created before these were kept would otherwise never get the name and
+// language the app picks a displayed title by (utils/catalogTitles.js).
+const BACKFILL_ON_MATCH = ["original_title", "original_name", "original_language", "origin_country"];
+
 const METADATA_KEYS = {
-  movie: ["title", "original_title", "release_date", "poster_path", "backdrop_path", "overview", "vote_average", "vote_count", "popularity", "genre_ids", "type"],
-  series: ["name", "title", "original_name", "first_air_date", "poster_path", "backdrop_path", "overview", "vote_average", "vote_count", "popularity", "genre_ids", "type"],
+  movie: ["title", "original_title", "original_language", "release_date", "poster_path", "backdrop_path", "overview", "vote_average", "vote_count", "popularity", "genre_ids", "type"],
+  series: ["name", "title", "original_name", "original_language", "origin_country", "first_air_date", "poster_path", "backdrop_path", "overview", "vote_average", "vote_count", "popularity", "genre_ids", "type"],
 };
 
 export function catalogShape(type) {
@@ -47,8 +55,12 @@ const isBlank = (value) =>
 export function metadataFromTmdb(hit, type) {
   const raw =
     type === "series"
-      ? { name: hit.name, title: hit.name, original_name: hit.original_name, first_air_date: hit.first_air_date }
+      ? { name: hit.name, title: hit.name, original_name: hit.original_name, first_air_date: hit.first_air_date, origin_country: hit.origin_country }
       : { title: hit.title, original_title: hit.original_title, release_date: hit.release_date };
+  // The original name is only worth keeping with the language it is in —
+  // that pair is what the app picks a title's displayed name by
+  // (utils/catalogTitles.js).
+  raw.original_language = hit.original_language;
   Object.assign(raw, {
     poster_path: hit.poster_path,
     backdrop_path: hit.backdrop_path,
@@ -66,8 +78,32 @@ export function metadataFromTmdb(hit, type) {
   return meta;
 }
 
-const titleOf = (doc, type) => (type === "series" ? doc.name ?? doc.title : doc.title ?? doc.name) ?? "";
-const titleKey = (value) => String(value).trim().toLowerCase();
+/**
+ * Every name a document or TMDB result goes by, reduced for comparing.
+ *
+ * A strict comparison (trimmed, lower-cased) let the Turkish-catalogue
+ * backfill of 2026-10-28 (TC-140) create 245 twins of legacy records it
+ * should have enriched. The legacy import spelled titles its own way, and
+ * TMDB has since renamed some:
+ *   - case and accents:  "Wild heart" / "Wild Heart", "Recep İvedik" / "Recep Ivedik"
+ *   - punctuation:       "Yor, the Hunter…" / "Yor: The Hunter…"
+ *   - a leading "The":   "The Valley of The Wolves" / "Valley of the Wolves"
+ *   - the original name: a legacy "Deniz Yıldızı" is TMDB's "Starfish",
+ *     original name "Deniz Yıldızı"
+ * So both sides offer their title, series name and original name, each
+ * normalized (utils/tmdbMatch.js) with a leading "the" dropped, and one
+ * shared name is a title match. The date rules in findLegacyTwin still have
+ * to agree, which is what keeps two different films apart.
+ */
+function titleKeys(doc) {
+  const keys = new Set();
+  for (const value of [doc.title, doc.name, doc.original_title, doc.original_name]) {
+    const key = normalizeTitle(value).replace(/^the /, "");
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+const sharesTitle = (a, b) => [...a].some((key) => b.has(key));
 const yearOf = (date) => (typeof date === "string" && /^\d{4}/.test(date) ? date.slice(0, 4) : null);
 const byOldestId = (a, b) => (String(a._id) < String(b._id) ? -1 : 1);
 
@@ -83,11 +119,11 @@ const byOldestId = (a, b) => (String(a._id) < String(b._id) ? -1 : 1);
  */
 export function findLegacyTwin(candidates, meta, type, claimed = new Set()) {
   const { dateField } = catalogShape(type);
-  const title = titleKey(titleOf(meta, type));
-  if (!title) return null;
+  const keys = titleKeys(meta);
+  if (keys.size === 0) return null;
 
   const sameTitle = candidates
-    .filter((doc) => !claimed.has(String(doc._id)) && readTmdbId(doc) === null && titleKey(titleOf(doc, type)) === title)
+    .filter((doc) => !claimed.has(String(doc._id)) && readTmdbId(doc) === null && sharesTitle(keys, titleKeys(doc)))
     .sort(byOldestId);
 
   const date = meta[dateField] ?? null;
@@ -142,8 +178,13 @@ export function planCatalogWrites({
     const existing = existingByTmdb.get(tmdbId);
     if (existing) {
       resolved.set(tmdbId, { _id: existing._id, via: "tmdb" });
-      if (Object.keys(refresh).length > 0) {
-        ops.push({ updateOne: { filter: { _id: existing._id }, update: { $set: { ...refresh, updated_at: now } } } });
+      const backfill = {};
+      for (const key of BACKFILL_ON_MATCH) {
+        if (meta[key] !== undefined && isBlank(existing[key])) backfill[key] = meta[key];
+      }
+      const set = { ...backfill, ...refresh };
+      if (Object.keys(set).length > 0) {
+        ops.push({ updateOne: { filter: { _id: existing._id }, update: { $set: { ...set, updated_at: now } } } });
       }
       continue;
     }
@@ -186,6 +227,40 @@ export function planCatalogWrites({
 }
 
 /**
+ * Legacy records released the same day as one of `hits` under a differently
+ * spelled title (titleKeys) — the ones the exact-title lookup can't find,
+ * since an index only looks up a title spelled exactly the same.
+ *
+ * By date instead, the date being indexed (models/Movie.js,
+ * models/Series.js), with two limits that keep this cheap enough for a
+ * user-facing request (services/listSuggestions.js):
+ *   - January 1st is skipped. Legacy records that only knew their year carry
+ *     YYYY-01-01, tens of thousands of them: 200 films' dates matched 51,520
+ *     records and took two minutes. Those still match by exact title.
+ *   - Only names and dates are read for the whole day; the full record only
+ *     for the few whose name matches.
+ */
+async function legacySpelledDifferently(Model, type, hits, projection, noTmdbId) {
+  const { dateField } = catalogShape(type);
+  const dates = [
+    ...new Set(hits.map((hit) => (type === "series" ? hit.first_air_date : hit.release_date)).filter((date) => date && !/-01-01$/.test(date))),
+  ];
+  if (dates.length === 0) return [];
+
+  const keysByDate = new Map();
+  for (const hit of hits) {
+    const meta = metadataFromTmdb(hit, type);
+    const date = meta[dateField];
+    if (date) keysByDate.set(date, new Set([...(keysByDate.get(date) ?? []), ...titleKeys(meta)]));
+  }
+  const sameDay = await Model.find({ $and: [{ [dateField]: { $in: dates } }, ...noTmdbId] })
+    .select(`_id title name original_title original_name ${dateField}`)
+    .lean();
+  const ids = sameDay.filter((doc) => keysByDate.has(doc[dateField]) && sharesTitle(keysByDate.get(doc[dateField]), titleKeys(doc))).map((doc) => doc._id);
+  return ids.length > 0 ? Model.find({ _id: { $in: ids } }).select(projection).lean() : [];
+}
+
+/**
  * Resolves TMDB results to catalogue documents, enriching legacy twins
  * instead of duplicating them.
  *
@@ -208,22 +283,22 @@ export async function resolveTmdbHits(Model, type, hits, { refreshFields = [], w
 
   const { titleFields, dateField } = catalogShape(type);
   const tmdbIds = unique.map((hit) => Number(hit.id));
-  const titles = [...new Set(unique.map((hit) => (type === "series" ? hit.name : hit.title)).filter(Boolean))];
+  const titles = [
+    ...new Set(unique.flatMap((hit) => (type === "series" ? [hit.name, hit.original_name] : [hit.title, hit.original_title])).filter(Boolean)),
+  ];
   const projection = [...new Set(["_id", "id", "tmdb_id", "tmdb", dateField, ...METADATA_KEYS[type]])].join(" ");
+  const noTmdbId = TMDB_ID_PATHS.map((path) => ({ [path]: { $exists: false } }));
 
-  const [withTmdbId, legacy] = await Promise.all([
+  const [withTmdbId, legacyByTitle, legacyByDate] = await Promise.all([
     Model.find({ $or: TMDB_ID_PATHS.map((path) => ({ [path]: { $in: tmdbIds } })) }).select(projection).lean(),
     titles.length > 0
-      ? Model.find({
-          $and: [
-            { $or: titleFields.map((field) => ({ [field]: { $in: titles } })) },
-            ...TMDB_ID_PATHS.map((path) => ({ [path]: { $exists: false } })),
-          ],
-        })
+      ? Model.find({ $and: [{ $or: titleFields.map((field) => ({ [field]: { $in: titles } })) }, ...noTmdbId] })
           .select(projection)
           .lean()
       : [],
+    legacySpelledDifferently(Model, type, unique, projection, noTmdbId),
   ]);
+  const legacy = [...new Map([...legacyByTitle, ...legacyByDate].map((doc) => [String(doc._id), doc])).values()];
 
   const existingByTmdb = new Map();
   for (const doc of withTmdbId) {

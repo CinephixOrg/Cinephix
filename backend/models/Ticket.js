@@ -8,6 +8,13 @@ export const TICKET_STATUSES = ["Open", "In Progress", "Resolved", "Closed"];
 // app's Help & Feedback screen, answered by a moderator from the web
 // dashboard.
 //
+// A moderator can also add a ticket by hand (`manual`), for feedback that
+// came in some other way — `source` says where. Those are internal: never
+// in anyone's app, never pushed, not counted against the daily limit. They
+// may name a reporter in `userId` for the dashboard's sake, or none at all.
+// Tickets from before this have no `manual` field, so the app's queries ask
+// for `manual: { $ne: true }`, never `manual: false`.
+//
 // `adminReply` is the answer the app shows — the latest one. Every answer is
 // also kept in `replies`, so a ticket answered more than once reads as the
 // conversation it was rather than only its last line. `userReadAt` is when
@@ -15,7 +22,13 @@ export const TICKET_STATUSES = ["Open", "In Progress", "Resolved", "Closed"];
 // as unread in their list.
 const ticketSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: function () {
+        return !this.manual;
+      },
+    },
     type: { type: String, enum: TICKET_TYPES, required: true },
     title: { type: String, required: true, trim: true, maxlength: 120 },
     description: { type: String, required: true, trim: true, maxlength: 4000 },
@@ -31,6 +44,9 @@ const ticketSchema = new Schema(
     repliedAt: { type: Date },
     statusChangedAt: { type: Date },
     userReadAt: { type: Date },
+    manual: { type: Boolean, default: false },
+    createdByAdmin: { type: Schema.Types.ObjectId, ref: "User" },
+    source: { type: String, trim: true, maxlength: 200 },
   },
   { timestamps: true }
 );

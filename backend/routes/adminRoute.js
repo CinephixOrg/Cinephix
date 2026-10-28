@@ -2,6 +2,7 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import requireAdmin from "../middleware/requireAdmin.js";
 import {
+  adminSearchUsers,
   adminUserReviews,
   adminUserSummary,
   decideReport,
@@ -10,7 +11,7 @@ import {
   reportStats,
   setSuspension,
 } from "../controllers/moderationController.js";
-import { listTickets, ticketStats, updateTicket } from "../controllers/ticketController.js";
+import { createAdminTicket, exportTickets, listTickets, ticketStats, updateTicket } from "../controllers/ticketController.js";
 import {
   getUserCineGraph,
   getUserCollectionEntries,
@@ -38,15 +39,21 @@ router.get("/reports", listReports);
 router.get("/reports/stats", reportStats);
 router.patch("/reports/:id", decideReport);
 
-// Support tickets: the queue, and answering one.
+// Support tickets: the queue, adding one by hand, and answering one.
 router.get("/tickets", listTickets);
+router.post("/tickets", createAdminTicket);
 router.get("/tickets/stats", ticketStats);
+// Downloads: CSV, or a ZIP of CSV + JSON + Markdown (ticketController.js).
+router.get("/tickets/export", exportTickets);
 router.patch("/tickets/:id", updateTicket);
 // Recent signups. Registered before /users/:id, which would otherwise take
 // "recent" for a user id.
 router.get("/users/recent", recentSignups);
 router.get("/users/recent/stats", recentSignupStats);
 router.get("/users/:id/email", revealUserEmail);
+// Finding someone by username (the new-ticket form's reporter). Before
+// /users/:id for the same reason.
+router.get("/users/search", adminSearchUsers);
 
 router.get("/users/:id", adminUserSummary);
 

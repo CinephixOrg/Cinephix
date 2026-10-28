@@ -14,6 +14,27 @@ function contrast(a: string, b: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
+/** `hex` moved `amount` (0–1) of the way towards `toward`: a lighter or darker shade of the same colour. */
+export function mix(hex: string, toward: string, amount: number): string {
+  const channels = (value: string) => [0, 2, 4].map((i) => parseInt(value.replace("#", "").slice(i, i + 2), 16));
+  const [a, b] = [channels(hex), channels(toward)];
+  return `#${a.map((c, i) => Math.round(c + (b[i] - c) * amount).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Whether `background` is a light colour — one that dark text reads better on. */
+export function isLight(background: string): boolean {
+  return readableOn(background) === "#000000";
+}
+
+/**
+ * The first of `candidates` that stands out on `background` — 3:1, the WCAG
+ * bar for icons — else `fallback`. For a colour that has to mean something
+ * (a read receipt's blue) on whatever a theme puts underneath it.
+ */
+export function firstVisibleOn(background: string, candidates: string[], fallback: string): string {
+  return candidates.find((color) => contrast(color, background) >= 3) ?? fallback;
+}
+
 /**
  * Black or white, whichever reads better on `background`.
  *

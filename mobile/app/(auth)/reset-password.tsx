@@ -12,9 +12,11 @@ import { useTranslation } from "react-i18next";
 import * as authService from "../../src/api/authService";
 import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
+import { useKeyboardSafeExit } from "../../src/hooks/useKeyboardSafeExit";
 
 export default function ResetPasswordScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 24, gap: 12, backgroundColor: colors.base100 },
   title: { fontSize: 26, fontFamily: fonts.bold, textAlign: "center", color: colors.primary },
@@ -96,6 +98,7 @@ export default function ResetPasswordScreen() {
       </Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -104,6 +107,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setEmail}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Verification code")}
         keyboardType="number-pad"
@@ -111,6 +115,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setCode}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("New password")}
         secureTextEntry
@@ -118,6 +123,7 @@ export default function ResetPasswordScreen() {
         onChangeText={setNewPassword}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Confirm new password")}
         secureTextEntry

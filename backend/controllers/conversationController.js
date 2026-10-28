@@ -8,6 +8,9 @@ import Message from "../models/Message.js";
 import User from "../models/User.js";
 import Group from "../models/Group.js";
 import { notifyMessage } from "../services/notifications.js";
+import { recordRead } from "../services/readReceipts.js";
+import { receiptsForViewer, visibleReaders, withInferredReads } from "../utils/readReceipts.js";
+import mongoose from "mongoose";
 
 // How many messages ship alongside a conversation from
 // getOrCreateConversation. Matches the client's own default page size, so
@@ -134,7 +137,7 @@ export const getOrCreateConversation = asyncHandler(async (req, res) => {
     ),
     unreadCount: conversation.unreadCounts?.get?.(userId.toString()) ?? 0,
     // Oldest-first, matching what GET /:id/messages returns.
-    messages: messages.slice(0, INITIAL_MESSAGE_PAGE).reverse(),
+    messages: await withLegacyReads(conversation, messages.slice(0, INITIAL_MESSAGE_PAGE).reverse(), userId),
     messagesPagination: { hasMore, limit: INITIAL_MESSAGE_PAGE, before: null },
   };
 
@@ -157,7 +160,7 @@ export const getMessages = asyncHandler(async (req, res) => {
   if (before) dmQuery.createdAt = { $lt: before };
 
   let [conversation, dmMessages] = await Promise.all([
-    Conversation.findById(id).select("participants").lean(),
+    Conversation.findById(id).select("participants unreadCounts").lean(),
     Message.find(dmQuery)
       .populate("sender", "username profile_pic_url accountTier")
       .sort({ createdAt: -1 })
@@ -178,7 +181,7 @@ export const getMessages = asyncHandler(async (req, res) => {
     const messages = dmMessages;
 
     const hasMore = messages.length > limit;
-    const result = messages.slice(0, limit).reverse();
+    const result = await withLegacyReads(conversation, messages.slice(0, limit).reverse(), req.user._id);
 
     return res.status(200).json({
       success: true,
@@ -218,7 +221,7 @@ export const getMessages = asyncHandler(async (req, res) => {
       .lean();
 
     const hasMore = messages.length > limit;
-    const result = messages.slice(0, limit).reverse();
+    const result = receiptsForViewer(messages.slice(0, limit).reverse(), req.user._id);
 
     return res.status(200).json({
       success: true,
@@ -237,16 +240,86 @@ export const getMessages = asyncHandler(async (req, res) => {
 });
 
 // POST /api/conversations/:id/read
-// Resets the current user's unread count to 0.
+// Resets the current user's unread count to 0, and gives the messages that
+// count stood for a read receipt.
 export const markAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
 
-  await Conversation.findByIdAndUpdate(req.params.id, {
-    $set: { [`unreadCounts.${userId}`]: 0 },
-  });
+  // The document as it was, for the unread count the reset just cleared.
+  const previous = await Conversation.findOneAndUpdate(
+    { _id: req.params.id, participants: req.user._id },
+    { $set: { [`unreadCounts.${userId}`]: 0 } },
+    { projection: { unreadCounts: 1 } }
+  ).lean();
+
+  if (previous) {
+    await recordRead({
+      roomType: "dm",
+      roomId: previous._id,
+      userId: req.user._id,
+      unread: previous.unreadCounts?.[userId] ?? 0,
+    });
+  }
 
   sendSuccess(res, null, "Marked as read");
 });
+
+// GET /api/conversations/messages/:messageId/readers
+// Who has read one of your messages and when — for its info sheet, in a DM
+// or a group. Only the message's sender may ask.
+export const getMessageReaders = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.messageId)) return sendError(res, "Message not found", 404);
+  const message = await Message.findById(req.params.messageId)
+    .select("sender roomType roomId readBy createdAt")
+    .populate("readBy.user", "username profile_pic_url accountTier")
+    .lean();
+  if (!message) return sendError(res, "Message not found", 404);
+  if (message.sender.toString() !== req.user._id.toString())
+    return sendError(res, "Only the sender can see who read a message", 403);
+
+  let readBy = message.readBy ?? [];
+  if (message.roomType === "dm") {
+    // A DM message from before receipts: read if the unread count says so.
+    const conversation = await Conversation.findById(message.roomId).select("participants unreadCounts").lean();
+    if (conversation) {
+      const [withReads] = await withLegacyReads(conversation, [{ ...message, readBy }], req.user._id);
+      const inferred = withReads.readBy.find((entry) => entry.at === null);
+      if (inferred) {
+        const user = await User.findById(inferred.user).select("username profile_pic_url accountTier").lean();
+        readBy = [...readBy, { user, at: null }];
+      }
+    }
+  }
+
+  sendSuccess(res, { roomType: message.roomType, readers: visibleReaders(readBy, req.hiddenUsers) });
+});
+
+/**
+ * A DM's messages with receipts filled in for the viewer's older ones, from
+ * before receipts were recorded (utils/readReceipts.js withInferredReads):
+ * the other person's unread count says which of the viewer's messages they
+ * haven't read — the newest that many — so every one before those has been.
+ */
+async function withLegacyReads(conversation, messages, viewerId) {
+  const viewer = viewerId.toString();
+  const other = conversation.participants.find((p) => String(p._id ?? p) !== viewer);
+  if (!other || !messages.some((m) => String(m.sender?._id ?? m.sender) === viewer)) return messages;
+  const otherId = other._id ?? other;
+  const counts = conversation.unreadCounts;
+  const unread = (counts?.get ? counts.get(String(otherId)) : counts?.[String(otherId)]) ?? 0;
+
+  let unreadFrom = null;
+  if (unread > 0) {
+    // The oldest of the viewer's messages they haven't read: the unread-th newest.
+    const oldestUnread = await Message.findOne({ roomType: "dm", roomId: conversation._id, sender: viewerId })
+      .sort({ createdAt: -1 })
+      .skip(unread - 1)
+      .select("createdAt")
+      .lean();
+    unreadFrom = oldestUnread?.createdAt ?? new Date(0);
+  }
+  return withInferredReads(messages, { viewerId: viewer, otherId, unreadFrom });
+}
 
 // POST /api/conversations/:id/messages  (REST fallback)
 export const sendMessage = asyncHandler(async (req, res) => {

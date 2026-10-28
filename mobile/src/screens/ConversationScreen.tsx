@@ -164,6 +164,7 @@ export default function ConversationScreen({ linkTitleToProfile = true, particip
       fetchMessages={(before, limit) => getMessages(conversationId, before, limit)}
       markRead={() => markConversationRead(conversationId)}
       sendRest={(text) => sendMessageRest(conversationId, text)}
+      readersNeeded={1}
     />
   );
 }

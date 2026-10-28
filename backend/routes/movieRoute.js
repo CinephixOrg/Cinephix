@@ -2,6 +2,8 @@
 import mongoose from "mongoose";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { buildFuzzyTitleSearchStage, combinedScoreSortStages } from "../utils/atlasSearch.js";
+import { ORIGINAL_TITLE_PROJECTION } from "../utils/catalogTitles.js";
+import { productionCountries } from "../services/tmdbTitles.js";
 
 // User text going into a hand-built $regex must be escaped first — an
 // unescaped string lets a caller inject regex metacharacters (at best
@@ -35,6 +37,7 @@ export default async function(movieModel) {
           $project: {
             _id: 1,
             title: 1,
+            ...ORIGINAL_TITLE_PROJECTION,
             posterUrl: {
               $cond: [
                 { $ifNull: ["$poster_path", false] },
@@ -132,6 +135,7 @@ export default async function(movieModel) {
         $project: {
           _id: 1,
           title: 1,
+          ...ORIGINAL_TITLE_PROJECTION,
           poster_path: 1,
           release_date: 1,
           overview: 1,
@@ -213,13 +217,16 @@ export default async function(movieModel) {
   // GET /api/movies/:id
   router.get("/:id", async (req, res) => {
     try {
-      const doc = await movieModel.findById(req.params.id).lean();
-      if (!doc) {
+      const found = await movieModel.findById(req.params.id).lean();
+      if (!found) {
         return res.status(404).json({
           success: false,
           message: 'Movie not found'
         });
       }
+      // The detail page shows where it was made, which the catalog doesn't
+      // carry: from TMDB, never stored (services/tmdbTitles.js).
+      const doc = { ...found, production_countries: await productionCountries(movieModel, found, "movie") };
       res.json({
         success: true,
         message: 'Movie fetched',

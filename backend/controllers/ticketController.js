@@ -1,29 +1,46 @@
+import { once } from "node:events";
+import AdmZip from "adm-zip";
 import mongoose from "mongoose";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendError, sendSuccess } from "../utils/response.js";
 import Ticket, { TICKET_STATUSES, TICKET_TYPES } from "../models/Ticket.js";
 import { pushTicketUpdate } from "../services/push.js";
-import { TICKETS_PER_DAY, hasUnreadReply, parseTicketInput, parseTicketQuery, parseTicketUpdate } from "../utils/ticketRules.js";
+import User from "../models/User.js";
+import {
+  TICKETS_PER_DAY,
+  appTicketFilter,
+  dailyLimitFilter,
+  forUser,
+  manualTicketDoc,
+  parseAdminTicketInput,
+  parseTicketExportQuery,
+  parseTicketInput,
+  parseTicketQuery,
+  parseTicketUpdate,
+  shouldPushTicketUpdate,
+} from "../utils/ticketRules.js";
+import {
+  CSV_BOM,
+  EXPORT_USER_FIELDS,
+  csvHeader,
+  csvRow,
+  exportFilename,
+  ticketRecord,
+  ticketsCsv,
+  ticketsJson,
+  ticketsMarkdown,
+} from "../utils/ticketExport.js";
 
 // Support tickets: written from the app's Help & Feedback screen, answered
-// from the web dashboard's Support Tickets queue.
+// from the web dashboard's Support Tickets queue. Moderators can add one by
+// hand too (`manual`); those never reach the app — see utils/ticketRules.js.
 
-/** A ticket as the app reads it — no moderator's notes, plus its unread flag. */
-function forUser(ticket) {
-  return {
-    _id: ticket._id,
-    type: ticket.type,
-    title: ticket.title,
-    description: ticket.description,
-    status: ticket.status,
-    adminReply: ticket.adminReply,
-    replies: (ticket.replies ?? []).map((reply) => ({ text: reply.text, createdAt: reply.createdAt })),
-    repliedAt: ticket.repliedAt,
-    hasUnreadReply: hasUnreadReply(ticket),
-    createdAt: ticket.createdAt,
-    updatedAt: ticket.updatedAt,
-  };
-}
+// The reporter and the moderators involved, for the dashboard only.
+const populateForAdmin = (query) =>
+  query
+    .populate("userId", "username profile_pic_url accountTier isSuspended")
+    .populate("replies.adminId", "username")
+    .populate("createdByAdmin", "username");
 
 // ─── The app ─────────────────────────────────────────────────────────────────
 
@@ -32,8 +49,7 @@ export const createTicket = asyncHandler(async (req, res) => {
   const { value, error } = parseTicketInput(req.body);
   if (error) return sendError(res, error, 400);
 
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const today = await Ticket.countDocuments({ userId: req.user._id, createdAt: { $gte: since } });
+  const today = await Ticket.countDocuments(dailyLimitFilter(req.user._id));
   if (today >= TICKETS_PER_DAY) return sendError(res, "You've opened a lot of tickets today. Please try again tomorrow.", 429);
 
   const ticket = await Ticket.create({ ...value, userId: req.user._id });
@@ -44,7 +60,7 @@ export const createTicket = asyncHandler(async (req, res) => {
 export const myTickets = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-  const filter = { userId: req.user._id };
+  const filter = appTicketFilter(req.user._id);
   const [tickets, total] = await Promise.all([
     Ticket.find(filter)
       .sort({ createdAt: -1 })
@@ -64,7 +80,7 @@ export const myTickets = asyncHandler(async (req, res) => {
 // GET /api/tickets/:id — one of their own.
 export const getMyTicket = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, "Ticket not found", 404);
-  const ticket = await Ticket.findOne({ _id: req.params.id, userId: req.user._id }).lean();
+  const ticket = await Ticket.findOne(appTicketFilter(req.user._id, { _id: req.params.id })).lean();
   if (!ticket) return sendError(res, "Ticket not found", 404);
   sendSuccess(res, forUser(ticket), "Ticket fetched");
 });
@@ -73,7 +89,7 @@ export const getMyTicket = asyncHandler(async (req, res) => {
 export const markTicketRead = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, "Ticket not found", 404);
   const ticket = await Ticket.findOneAndUpdate(
-    { _id: req.params.id, userId: req.user._id },
+    appTicketFilter(req.user._id, { _id: req.params.id }),
     { $set: { userReadAt: new Date() } },
     { new: true }
   ).lean();
@@ -87,13 +103,12 @@ export const markTicketRead = asyncHandler(async (req, res) => {
 export const listTickets = asyncHandler(async (req, res) => {
   const { filter, page, limit } = parseTicketQuery(req.query);
   const [items, total] = await Promise.all([
-    Ticket.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("userId", "username profile_pic_url accountTier isSuspended")
-      .populate("replies.adminId", "username")
-      .lean(),
+    populateForAdmin(
+      Ticket.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+    ).lean(),
     Ticket.countDocuments(filter),
   ]);
   sendSuccess(res, { items, page, limit, total, hasMore: page * limit < total }, "Tickets fetched");
@@ -114,7 +129,7 @@ export const ticketStats = asyncHandler(async (_req, res) => {
 // PATCH /api/admin/tickets/:id { status?, reply? }
 //
 // Either changes the status, adds an answer, or both — and tells the person
-// so, on their devices. The answer is appended to the ticket's replies and
+// so, on their devices (unless it's a manual ticket, which is never pushed). The answer is appended to the ticket's replies and
 // becomes the one the app shows.
 export const updateTicket = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, "Ticket not found", 404);
@@ -137,12 +152,82 @@ export const updateTicket = asyncHandler(async (req, res) => {
   }
   await ticket.save();
 
-  // Only a real change is worth a notification.
-  pushTicketUpdate(ticket.toObject(), { replied: Boolean(value.reply), statusChanged });
+  // Only a real change is worth a notification, and only to someone who
+  // wrote the ticket themselves.
+  const saved = ticket.toObject();
+  if (shouldPushTicketUpdate(saved)) pushTicketUpdate(saved, { replied: Boolean(value.reply), statusChanged });
 
-  const populated = await Ticket.findById(ticket._id)
-    .populate("userId", "username profile_pic_url accountTier isSuspended")
-    .populate("replies.adminId", "username")
-    .lean();
+  const populated = await populateForAdmin(Ticket.findById(ticket._id)).lean();
   sendSuccess(res, populated, "Ticket updated");
+});
+
+// POST /api/admin/tickets { type, title, description, status?, reporterId?, source? }
+//
+// A ticket added by hand: feedback that came in some other way. Internal —
+// the reporter, if any, is named for the dashboard only; it never shows in
+// their app, never pushes, and doesn't count against their daily limit.
+export const createAdminTicket = asyncHandler(async (req, res) => {
+  const { value, error } = parseAdminTicketInput(req.body);
+  if (error) return sendError(res, error, 400);
+  if (value.reporterId && !(await User.exists({ _id: value.reporterId }))) return sendError(res, "Reporter not found", 400);
+
+  const ticket = await Ticket.create(manualTicketDoc(value, req.user._id));
+  const populated = await populateForAdmin(Ticket.findById(ticket._id)).lean();
+  sendSuccess(res, populated, "Ticket created", 201);
+});
+
+// GET /api/admin/tickets/export?format=csv|zip&status=&type=&userId=&from=&to=&tz=
+//
+// Every ticket matching the queue's filters (or every ticket, with none), as
+// a download. CSV streams straight from the database cursor. ZIP holds
+// tickets.csv, tickets.json and tickets.md and is built in memory: tickets
+// are text only, a few KB each.
+export const exportTickets = asyncHandler(async (req, res) => {
+  const { value, error } = parseTicketExportQuery(req.query);
+  if (error) return sendError(res, error, 400);
+  const { filter, applied, format, tzOffset } = value;
+
+  const now = new Date();
+  const query = () =>
+    Ticket.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("userId", EXPORT_USER_FIELDS)
+      .populate("replies.adminId", "username")
+      .populate("createdByAdmin", "username")
+      .lean();
+  const download = (contentType) => {
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${exportFilename(format, now, tzOffset)}"`);
+    res.setHeader("Cache-Control", "no-store");
+  };
+
+  if (format === "zip") {
+    const records = (await query()).map(ticketRecord);
+    const meta = { exportedAt: now, filters: applied };
+    const zip = new AdmZip();
+    zip.addFile("tickets.csv", Buffer.from(ticketsCsv(records), "utf8"));
+    zip.addFile("tickets.json", Buffer.from(ticketsJson(records, meta), "utf8"));
+    zip.addFile("tickets.md", Buffer.from(ticketsMarkdown(records, meta), "utf8"));
+    download("application/zip");
+    return res.send(zip.toBuffer());
+  }
+
+  // CSV, a row at a time. Once the first byte is out the error handler can't
+  // answer with JSON any more, so a failure part-way cuts the download off
+  // instead — the browser then reports it as failed rather than saving half.
+  const cursor = query().cursor();
+  download("text/csv; charset=utf-8");
+  try {
+    res.write(CSV_BOM + csvHeader());
+    for await (const ticket of cursor) {
+      if (res.destroyed) break;
+      if (!res.write(csvRow(ticketRecord(ticket)))) await once(res, "drain");
+    }
+    res.end();
+  } catch (err) {
+    console.error("Ticket export failed:", err);
+    res.destroy(err);
+  } finally {
+    await cursor.close().catch(() => {});
+  }
 });

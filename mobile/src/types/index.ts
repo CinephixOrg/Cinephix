@@ -35,6 +35,8 @@ export interface Movie {
   release_date?: string;
   vote_average?: number;
   genre_ids?: number[];
+  /** Where it was made (ISO codes), on the detail page only — from TMDB each time, empty when unknown. */
+  production_countries?: string[];
 }
 
 export interface Series {
@@ -45,6 +47,8 @@ export interface Series {
   first_air_date?: string;
   vote_average?: number;
   genre_ids?: number[];
+  /** Where it was made (ISO codes). */
+  origin_country?: string[];
 }
 
 export interface Rating {
@@ -962,9 +966,31 @@ export interface Message {
     scheduledAt?: string;
   };
   createdAt: string;
+  // Read receipts, on your own messages only: everyone else who has read
+  // it, and when (backend/utils/readReceipts.js). Absent from older servers
+  // and from watch party chats. `at` is null for a DM message read before
+  // receipts were recorded — it's known to be read, not when.
+  readBy?: { user: string; at: string | null }[];
   // Local-only fields, never sent by the server.
   clientTempId?: string;
   status?: "pending";
+}
+
+/** The socket's word that someone has read some of your messages in a room. */
+export interface MessagesReadEvent {
+  roomType: RoomType;
+  roomId: string;
+  /** Who read them. */
+  userId: string;
+  at: string;
+  messageIds: string[];
+}
+
+/** One person who has read a message, for its info sheet. */
+export interface MessageReader {
+  user: MessageSender;
+  /** Null when it was read before receipts were recorded. */
+  at: string | null;
 }
 
 export interface Conversation {
@@ -1280,7 +1306,15 @@ export interface PopularThisWeekItem {
 // of list, simplified back to one metric per page per a follow-up
 // request). mostWatched/mostReviewed added later, content-side twins of
 // the people podium's own identically-named categories below.
+/** A title's rating on TMDB, shown beside the app's own; absent when TMDB has too few votes. */
+export interface TmdbRating {
+  average: number;
+  count: number;
+}
+
 interface LeaderboardContent {
+  /** Null when TMDB has too few votes, or none to find; absent from older servers. */
+  tmdbRating?: TmdbRating | null;
   id: string;
   title: string;
   poster_path?: string;

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { FiRefreshCw } from "react-icons/fi";
-import { getTicketStats, getTickets } from "../../api/adminService.js";
+import { FiDownload, FiPlus, FiRefreshCw } from "react-icons/fi";
+import toast from "react-hot-toast";
+import { exportTickets, getTicketStats, getTickets } from "../../api/adminService.js";
 import AdminNav from "./AdminNav.jsx";
+import NewTicketForm from "./NewTicketForm.jsx";
 import TicketDetail from "./TicketDetail.jsx";
 import TicketRow from "./TicketRow.jsx";
 import { TICKET_STATUSES, TICKET_TYPES } from "./ticketMeta.js";
@@ -20,6 +22,7 @@ export default function TicketQueue({ me, onSignOut }) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [adding, setAdding] = useState(false);
 
   const loadStats = useCallback(() => {
     getTicketStats()
@@ -55,6 +58,14 @@ export default function TicketQueue({ me, onSignOut }) {
     loadStats();
   };
 
+  // A ticket added by hand: open it, if the filters show it.
+  const onCreated = (ticket) => {
+    setAdding(false);
+    setSelectedId(ticket._id);
+    load();
+    loadStats();
+  };
+
   const selected = data?.items.find((ticket) => ticket._id === selectedId) ?? null;
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
@@ -64,11 +75,20 @@ export default function TicketQueue({ me, onSignOut }) {
         me={me}
         onSignOut={onSignOut}
         right={
-          <button onClick={() => { load(); loadStats(); }} className="btn btn-sm btn-ghost" aria-label="Refresh" title="Refresh">
-            <FiRefreshCw className={loading ? "animate-spin" : ""} />
-          </button>
+          <>
+            <button onClick={() => setAdding(true)} className="btn btn-sm btn-ghost gap-1.5" aria-label="New ticket" title="New ticket">
+              <FiPlus />
+              <span className="hidden sm:inline">New ticket</span>
+            </button>
+            <ExportMenu status={status} type={type} />
+            <button onClick={() => { load(); loadStats(); }} className="btn btn-sm btn-ghost" aria-label="Refresh" title="Refresh">
+              <FiRefreshCw className={loading ? "animate-spin" : ""} />
+            </button>
+          </>
         }
       />
+
+      <NewTicketForm open={adding} onClose={() => setAdding(false)} onCreated={onCreated} />
 
       {/* Counts per status — also the status tabs. */}
       <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
@@ -141,6 +161,57 @@ export default function TicketQueue({ me, onSignOut }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Downloading tickets to read or analyse elsewhere: the ones the filters
+// above show (every page of them), or every ticket there is. CSV for a
+// spreadsheet; ZIP adds tickets.json and tickets.md alongside it.
+function ExportMenu({ status, type }) {
+  const [busy, setBusy] = useState(false);
+  const filtered = Boolean(status || type);
+  const filterLabel = [status || "All statuses", type || "All types"].join(" · ");
+
+  const run = async (format, filters) => {
+    document.activeElement?.blur(); // closes the dropdown
+    setBusy(true);
+    try {
+      const filename = await exportTickets(format, filters);
+      toast.success(`Downloaded ${filename}`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Couldn't export tickets");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="dropdown dropdown-end">
+      <button tabIndex={0} className="btn btn-sm btn-ghost gap-1.5" disabled={busy} aria-label="Export tickets" title="Export tickets">
+        {busy ? <span className="loading loading-spinner loading-xs" /> : <FiDownload />}
+        <span className="hidden sm:inline">Export</span>
+      </button>
+      <ul tabIndex={0} className="dropdown-content menu z-20 mt-2 w-64 rounded-xl border border-zinc-800 bg-zinc-900 p-2 text-zinc-200 shadow-xl">
+        {filtered && (
+          <>
+            <li className="menu-title text-xs text-zinc-500">These filters · {filterLabel}</li>
+            <li>
+              <button onClick={() => run("csv", { status, type })}>Export CSV</button>
+            </li>
+            <li>
+              <button onClick={() => run("zip", { status, type })}>Export ZIP (CSV + JSON + Markdown)</button>
+            </li>
+          </>
+        )}
+        <li className="menu-title text-xs text-zinc-500">All tickets</li>
+        <li>
+          <button onClick={() => run("csv")}>Export all as CSV</button>
+        </li>
+        <li>
+          <button onClick={() => run("zip")}>Export all as ZIP</button>
+        </li>
+      </ul>
     </div>
   );
 }

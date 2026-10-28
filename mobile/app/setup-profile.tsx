@@ -16,9 +16,11 @@ import { useAuth } from "../src/context/AuthContext";
 import { updateBio, uploadAvatar } from "../src/api/userService";
 import { useTheme } from "../src/context/ThemeContext";
 import { fonts } from "../src/theme/typography";
+import { useKeyboardSafeExit } from "../src/hooks/useKeyboardSafeExit";
 
 export default function SetupProfileScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const styles = useMemo(() => StyleSheet.create({
   container: { padding: 20, backgroundColor: colors.base100, flexGrow: 1 },
   title: { fontSize: 24, fontFamily: fonts.bold, textAlign: "center", color: colors.primary, marginTop: 16 },
@@ -132,6 +134,7 @@ export default function SetupProfileScreen() {
 
       <Text style={styles.label}>{t("Bio")}</Text>
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={[styles.input, styles.bioInput]}
         value={bio}
         onChangeText={setBio}

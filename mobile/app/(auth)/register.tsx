@@ -14,9 +14,11 @@ import { openLegal } from "../../src/constants/legal";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
+import { useKeyboardSafeExit } from "../../src/hooks/useKeyboardSafeExit";
 
 export default function RegisterScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 24, gap: 12, backgroundColor: colors.base100 },
   title: { fontSize: 28, fontFamily: fonts.bold, textAlign: "center", marginBottom: 24, color: colors.primary },
@@ -83,6 +85,7 @@ export default function RegisterScreen() {
       <Text style={styles.title}>{t("Create account")}</Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Username")}
         autoCapitalize="none"
@@ -90,6 +93,7 @@ export default function RegisterScreen() {
         onChangeText={setUsername}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -98,6 +102,7 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Password")}
         secureTextEntry

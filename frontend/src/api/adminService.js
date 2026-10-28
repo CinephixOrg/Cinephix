@@ -99,6 +99,64 @@ export async function getTicketStats() {
 }
 
 /**
+ * Adds a ticket by hand: { type, title, description, status?, reporterId?,
+ * source? }. It stays internal — never in the reporter's app, never pushed.
+ * Returns the saved ticket, shaped like the queue's.
+ */
+export async function createTicket(body) {
+  const res = await API.post("/admin/tickets", body);
+  return res.data;
+}
+
+/** Up to 10 people whose username contains `q`: [{ _id, username, accountTier }]. */
+export async function searchUsers(q) {
+  const res = await API.get("/admin/users/search", { params: { q } });
+  return res.data.items;
+}
+
+/**
+ * Downloads every ticket matching the filters — all of them with none — as
+ * "csv", or "zip" (tickets.csv + tickets.json + tickets.md). Fetched as a
+ * blob rather than linked to, since the admin token travels in a header.
+ * `from`/`to` (YYYY-MM-DD) are supported by the server; the page doesn't
+ * offer them yet.
+ */
+export async function exportTickets(format, { status, type, userId, from, to } = {}) {
+  const params = { format, tz: new Date().getTimezoneOffset() };
+  if (status) params.status = status;
+  if (type) params.type = type;
+  if (userId) params.userId = userId;
+  if (from) params.from = from;
+  if (to) params.to = to;
+  let res;
+  try {
+    res = await API.get("/admin/tickets/export", { params, responseType: "blob" });
+  } catch (err) {
+    // An error's JSON body arrives as a blob too; read its message out.
+    const body = err?.response?.data;
+    if (body instanceof Blob) {
+      try {
+        err.response.data = JSON.parse(await body.text());
+      } catch {
+        // Not JSON — leave it.
+      }
+    }
+    throw err;
+  }
+  const disposition = res.headers["content-disposition"] ?? "";
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `tickets-export.${format}`;
+  const url = URL.createObjectURL(res.data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return filename;
+}
+
+/**
  * Sets a ticket's status, adds a reply, or both — and the server tells the
  * person on their devices. Returns the updated ticket.
  */

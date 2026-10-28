@@ -41,6 +41,9 @@ import UserAvatar from "../components/UserAvatar";
 import ShareOptionsMenu from "../components/ShareOptionsMenu";
 import UserSharePickerModal from "../components/UserSharePickerModal";
 import CurrentlyWatchingTutorialModal from "../components/CurrentlyWatchingTutorialModal";
+import SeasonsSection from "../components/series/SeasonsSection";
+import ConfirmDialog from "../components/settings/ConfirmDialog";
+import { setAllEpisodesWatched } from "../api/episodeService";
 import { SkeletonContentDetail } from "../components/Skeleton";
 import { getOrCreateConversation, sendRichMessage } from "../api/conversationService";
 import { sendGroupRichMessage } from "../api/groupService";
@@ -54,12 +57,15 @@ import { useWatchlistGraph } from "../context/WatchlistGraphContext";
 import { useRecentShares } from "../context/RecentSharesContext";
 import { fonts } from "../theme/typography";
 import { genreNames } from "../utils/recommend";
+import { countryName, knownCountries } from "../utils/countries";
+import { COUNTRY_NAMES } from "../constants/countryNames";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../constants/contentGenreIds";
 import AdBanner from "../components/ads/AdBanner";
 import { AD_UNIT_IDS } from "../constants/adUnitIds";
 import TutorialSpotlight from "../components/tutorial/TutorialSpotlight";
 import TutorialInfoBox from "../components/tutorial/TutorialInfoBox";
 import { useComposeTutorial } from "../context/ComposeTutorialContext";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 // Smaller than POSTER_BASE — every "Similar" rail poster is a small
@@ -84,6 +90,7 @@ const CURRENTLY_WATCHING_TTL_MS = 4 * 60 * 60 * 1000;
 // from, instead of bottom-tabs' default of jumping to the first tab.
 export default function ContentDetailScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const styles = useMemo(() => StyleSheet.create({
   container: { padding: 16, gap: 8, backgroundColor: colors.base100, flexGrow: 1 },
   center: {
@@ -149,6 +156,20 @@ export default function ContentDetailScreen() {
   titleRow: { gap: 2, marginBottom: 6 },
   title: { fontSize: 22, fontFamily: fonts.bold, color: colors.baseContent },
   year: { fontSize: 15, color: colors.placeholder },
+  // Year · Movie/Series · where it was made, under the title. The type tag is
+  // the chat's day pill (ChatRoom's dayPill): quiet on purpose.
+  metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 8, rowGap: 4 },
+  typeTag: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 2,
+    backgroundColor: colors.base200,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  typeTagText: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.placeholder, letterSpacing: 0.2 },
+  // The same as the year beside it.
+  countries: { flexShrink: 1, fontSize: 15, color: colors.placeholder },
   sectionTitle: {
     fontSize: 18,
     fontFamily: fonts.bold,
@@ -291,7 +312,7 @@ export default function ContentDetailScreen() {
   modalDoneButton: { alignItems: "center", marginTop: 16, paddingVertical: 8 },
   modalDoneText: { color: colors.secondary, fontFamily: fonts.medium },
 }), [colors]);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { type, id } = useLocalSearchParams<{ type: ContentType; id: string }>();
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
@@ -327,6 +348,10 @@ export default function ContentDetailScreen() {
 
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistBusy, setWatchlistBusy] = useState(false);
+  // A series just put on the Watched list asks whether every episode was
+  // watched (TC-141); a yes marks them all and reloads the Seasons section.
+  const [askAllEpisodes, setAskAllEpisodes] = useState(false);
+  const [episodesRefreshKey, setEpisodesRefreshKey] = useState(0);
 
   const [inToWatchList, setInToWatchList] = useState(false);
   const [toWatchBusy, setToWatchBusy] = useState(false);
@@ -570,7 +595,7 @@ export default function ContentDetailScreen() {
     }
   };
 
-  const toggleWatchlist = async () => {
+  const toggleWatchlist = async ({ askAboutEpisodes = true }: { askAboutEpisodes?: boolean } = {}) => {
     setWatchlistBusy(true);
     try {
       if (inWatchlist) {
@@ -594,6 +619,7 @@ export default function ContentDetailScreen() {
         setInWatchlist(true);
         watchedCache.invalidate();
         reportEarnedBadges(newlyEarnedBadges);
+        if (type === "series" && askAboutEpisodes) setAskAllEpisodes(true);
         // Mirrors the backend's own auto-clear (userWatchlistRoute.js) —
         // this add just stopped "Currently Watching" server-side if this
         // was that item, keep the cached button state in sync without a
@@ -777,6 +803,10 @@ export default function ContentDetailScreen() {
   const posterPath = content.poster_path;
   const overview = content.overview;
   const releaseDate = type === "movie" ? (content as Movie).release_date : (content as Series).first_air_date;
+  const countries = knownCountries(
+    type === "movie" ? (content as Movie).production_countries : (content as Series).origin_country,
+    COUNTRY_NAMES
+  );
   // Reads from whichever bucket `reviewsScope` currently points at (the
   // All/Friends toggle below) — 3 from either, still just a preview, not
   // the full list (that's ContentReviewsSection.tsx, one tap away via "See
@@ -978,7 +1008,17 @@ export default function ContentDetailScreen() {
         <View style={styles.topRightCol}>
           <View style={styles.titleRow} onLayout={(e) => setTitleRowHeight(e.nativeEvent.layout.height)}>
             <Text style={styles.title}>{title}</Text>
-            {releaseDate?.slice(0, 4) ? <Text style={styles.year}>{releaseDate.slice(0, 4)}</Text> : null}
+            <View style={styles.metaRow}>
+              {releaseDate?.slice(0, 4) ? <Text style={styles.year}>{releaseDate.slice(0, 4)}</Text> : null}
+              <View style={styles.typeTag}>
+                <Text style={styles.typeTagText}>{type === "movie" ? t("Movie") : t("Series")}</Text>
+              </View>
+              {countries.length > 0 ? (
+                <Text style={styles.countries} numberOfLines={1}>
+                  {countries.map((code) => countryName(code, i18n.language, COUNTRY_NAMES)).join(", ")}
+                </Text>
+              ) : null}
+            </View>
           </View>
           {overview ? (
             <Pressable onPress={() => setOverviewExpanded((e) => !e)}>
@@ -1035,7 +1075,7 @@ export default function ContentDetailScreen() {
       <View style={styles.actionRow}>
         <Pressable
           style={[styles.toggleButton, inWatchlist && styles.toggleButtonActive]}
-          onPress={toggleWatchlist}
+          onPress={() => toggleWatchlist()}
           disabled={watchlistBusy}
         >
           <Text style={[styles.toggleButtonText, inWatchlist && styles.toggleButtonTextActive]}>
@@ -1103,6 +1143,21 @@ export default function ContentDetailScreen() {
       {showWriteReviewTutorial && (
         <TutorialInfoBox text={t("Tap here to write your review.")} onDismiss={endComposeTutorial} />
       )}
+
+      {type === "series" && user ? (
+        <>
+          <View style={styles.divider} />
+          <SeasonsSection
+            seriesId={id}
+            refreshKey={episodesRefreshKey}
+            // Every episode watched is the series watched: onto the Watched
+            // list, without asking the question it was just answered.
+            onAllWatched={() => {
+              if (!inWatchlist) toggleWatchlist({ askAboutEpisodes: false });
+            }}
+          />
+        </>
+      ) : null}
 
       <View style={styles.divider} />
 
@@ -1330,6 +1385,23 @@ export default function ContentDetailScreen() {
         visible={currentlyWatchingTutorialVisible}
         onConfirm={handleConfirmCurrentlyWatchingTutorial}
         onCancel={handleCancelCurrentlyWatchingTutorial}
+      />
+
+      <ConfirmDialog
+        visible={askAllEpisodes}
+        icon="checkmark-done-outline"
+        title={t("Did you watch every episode?")}
+        message={t("Every episode aired so far is marked as watched. Past viewing isn't counted in this month's stats.")}
+        confirmLabel={t("Yes, all of them")}
+        cancelLabel={t("Not yet")}
+        emphasis="solid"
+        onConfirm={() => {
+          setAskAllEpisodes(false);
+          setAllEpisodesWatched(id, true)
+            .then(() => setEpisodesRefreshKey((key) => key + 1))
+            .catch(() => showToast(t("Something went wrong. Please try again.")));
+        }}
+        onCancel={() => setAskAllEpisodes(false)}
       />
     </ScrollView>
   );

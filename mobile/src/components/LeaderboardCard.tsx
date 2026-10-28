@@ -5,7 +5,8 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import StarRatingDisplay from "./StarRatingDisplay";
-import type { ContentType } from "../types";
+import TmdbScore from "./TmdbScore";
+import type { ContentType, TmdbRating } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
@@ -55,7 +56,7 @@ type LeaderboardMetric =
 
 interface Props {
   rank: 1 | 2 | 3;
-  content: { id: string; title: string; poster_path?: string; type: ContentType };
+  content: { id: string; title: string; poster_path?: string; type: ContentType; tmdbRating?: TmdbRating | null };
   basePath: "/home" | "/search";
   metric: LeaderboardMetric;
   // Free-tier viewer gate — same technique as Media's own PeoplePodiumCard:
@@ -222,6 +223,8 @@ export default function LeaderboardCard({ rank, content, basePath, metric, locke
           <Text style={styles.metricText}>{metric.reviewCount}</Text>
         </View>
       )}
+      {/* TMDB's rating under the app's own, its logo telling the two apart. */}
+      {content.tmdbRating && !locked ? <TmdbScore rating={content.tmdbRating} /> : null}
     </Pressable>
   );
 }

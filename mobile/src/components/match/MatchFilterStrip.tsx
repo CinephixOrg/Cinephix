@@ -12,6 +12,7 @@ import type { CineGraphData, MatchUser } from "../../types";
 import type { MatchFilters } from "../../api/matchService";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
+import { RIBBON_TOP_RIGHT } from "../UpgradeRibbon";
 
 interface Props {
   filters: MatchFilters;
@@ -178,7 +179,7 @@ export default function MatchFilterStrip({
         // ribbon's own diagonal overhang gets trimmed to the card's rounded
         // corner instead of spilling past it — never applied when there's
         // no ribbon to clip, zero risk to any other tier's card.
-        upgradeRibbonWrap: { position: "absolute", top: 14, right: -32 },
+        upgradeRibbonWrap: RIBBON_TOP_RIGHT,
       }),
     [colors]
   );
@@ -200,37 +201,54 @@ export default function MatchFilterStrip({
           <Text style={styles.infoNote}>{t("Find your closest match on Cinephix. Tap your whole CineGraph or just the genres you want to filter by.")}</Text>
 
           <View style={styles.restWrap}>
+            {/* Each label + switch is one toggle: the Pressable takes the tap
+                and flips the value, the Switch only shows it. Gesture
+                handler's Pressable (TapSafePressable) keeps every touch inside
+                it for itself, so a Switch nested in one never saw a tap and
+                couldn't be turned on at all (FB-18). */}
             <View style={styles.signalsRow}>
               <Pressable
                 style={styles.signalUnit}
-                onPress={advancedLocked ? () => showToast(upgradeAdvancedMessage) : undefined}
+                onPress={
+                  advancedLocked ? () => showToast(upgradeAdvancedMessage) : () => onChange({ ...filters, useCount: !filters.useCount })
+                }
+                accessibilityRole="switch"
+                accessibilityState={{ checked: filters.useCount, disabled: advancedLocked }}
               >
                 <Text style={styles.signalLabel}>{t("Watched Count")}</Text>
                 {advancedLocked ? (
                   <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
                 ) : (
-                  <Switch
-                    value={filters.useCount}
-                    onValueChange={(v) => onChange({ ...filters, useCount: v })}
-                    trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
-                    thumbColor={filters.useCount ? "#fff" : colors.placeholder}
-                  />
+                  <View pointerEvents="none">
+                    <Switch
+                      value={filters.useCount}
+                      trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
+                      thumbColor={filters.useCount ? "#fff" : colors.placeholder}
+                    />
+                  </View>
                 )}
               </Pressable>
               <Pressable
                 style={styles.signalUnit}
-                onPress={advancedLocked ? () => showToast(upgradeAdvancedMessage) : undefined}
+                onPress={
+                  advancedLocked
+                    ? () => showToast(upgradeAdvancedMessage)
+                    : () => onChange({ ...filters, useAvgRating: !filters.useAvgRating })
+                }
+                accessibilityRole="switch"
+                accessibilityState={{ checked: filters.useAvgRating, disabled: advancedLocked }}
               >
                 <Text style={styles.signalLabel}>{t("Average Rating")}</Text>
                 {advancedLocked ? (
                   <Ionicons name="lock-closed" size={16} color={colors.placeholder} />
                 ) : (
-                  <Switch
-                    value={filters.useAvgRating}
-                    onValueChange={(v) => onChange({ ...filters, useAvgRating: v })}
-                    trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
-                    thumbColor={filters.useAvgRating ? "#fff" : colors.placeholder}
-                  />
+                  <View pointerEvents="none">
+                    <Switch
+                      value={filters.useAvgRating}
+                      trackColor={{ true: hexToRgba(colors.baseContent, 0.3), false: colors.border }}
+                      thumbColor={filters.useAvgRating ? "#fff" : colors.placeholder}
+                    />
+                  </View>
                 )}
               </Pressable>
             </View>

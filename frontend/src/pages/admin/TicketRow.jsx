@@ -5,6 +5,7 @@ import { STATUS_STYLE, TYPE_STYLE } from "./ticketMeta.js";
 const ago = (date) => (date ? formatDistanceToNow(new Date(date), { addSuffix: true }) : "");
 
 // One ticket in the queue list: who wrote it, what about, and how it's going.
+// A manual ticket (added by a moderator) says so, and may have no reporter.
 export default function TicketRow({ ticket, active, onClick }) {
   const user = ticket.userId;
   return (
@@ -17,6 +18,7 @@ export default function TicketRow({ ticket, active, onClick }) {
       <div className="flex items-center gap-2 text-[11px]">
         <span className={`rounded-md px-2 py-0.5 font-semibold ${TYPE_STYLE[ticket.type] ?? ""}`}>{ticket.type}</span>
         <span className={`rounded-md px-2 py-0.5 font-medium ${STATUS_STYLE[ticket.status] ?? ""}`}>{ticket.status}</span>
+        {ticket.manual && <span className="rounded-md bg-zinc-700/60 px-2 py-0.5 font-medium text-zinc-300">Manual</span>}
         <span className="ml-auto text-zinc-500" title={new Date(ticket.createdAt).toLocaleString()}>
           {ago(ticket.createdAt)}
         </span>
@@ -33,7 +35,10 @@ export default function TicketRow({ ticket, active, onClick }) {
             {(user?.username ?? "?").slice(0, 2).toUpperCase()}
           </span>
         )}
-        <span className="truncate">{user ? `@${user.username}` : "Deleted account"}</span>
+        <span className="truncate" title={user ? `User id ${user._id}` : undefined}>
+          {user ? `@${user.username}` : ticket.manual ? "No reporter" : "Deleted account"}
+        </span>
+        {user && <span className="shrink-0 capitalize text-zinc-600">{user.accountTier ?? "free"}</span>}
         {ticket.adminReply && (
           <span className="ml-auto inline-flex items-center gap-1 text-emerald-300/80" title="Answered">
             <FiCornerUpLeft className="h-3 w-3" /> {ticket.replies?.length ?? 1}

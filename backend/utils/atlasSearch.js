@@ -11,24 +11,30 @@
 
 /**
  * Builds the `{ $search: {...} }` aggregation stage used for fuzzy/
- * autocomplete title search against a single text field ("title" for
- * movies, "name" for series). `compound.should` with no `must`/`filter`
- * requires at least one should clause to match by Atlas Search's own
- * default (`minimumShouldMatch` implicitly becomes 1 in that case) — this
- * isn't an unbounded "match everything, just rank it" query.
+ * autocomplete title search against a title field ("title" for movies,
+ * "name" for series) and the title's name in its original language
+ * ("original_title" / "original_name"), so "Kurtlar Vadisi" finds the
+ * series catalogued as "The Valley of The Wolves". Both fields are mapped
+ * in each collection's "default" search index. `compound.should` with no
+ * `must`/`filter` requires at least one should clause to match by Atlas
+ * Search's own default (`minimumShouldMatch` implicitly becomes 1 in that
+ * case) — this isn't an unbounded "match everything, just rank it" query.
  */
 export function buildFuzzyTitleSearchStage(query, path) {
-  const safeQuery = query.replace(/[^\w\s]/gi, "");
+  // Letters of any alphabet survive (`\w` alone dropped every ş, ı, ğ, ü,
+  // ö and ç, so "Muhteşem" searched for "Muhteem").
+  const safeQuery = query.replace(/[^\p{L}\p{N}\s]/gu, "");
   const tokens = safeQuery.split(/\s+/).filter((w) => w);
   const queryStr = tokens.length > 0 ? tokens.map((w) => `${w}*`).join(" AND ") : "";
+  const originalPath = path === "name" ? "original_name" : "original_title";
 
-  const should = [
-    { autocomplete: { query, path } },
-    { text: { query, path, fuzzy: { maxEdits: 1, prefixLength: 2 } } },
-  ];
-
-  if (queryStr) {
-    should.push({ queryString: { defaultPath: path, query: queryStr } });
+  const should = [];
+  for (const field of [path, originalPath]) {
+    should.push(
+      { autocomplete: { query, path: field } },
+      { text: { query, path: field, fuzzy: { maxEdits: 1, prefixLength: 2 } } }
+    );
+    if (queryStr) should.push({ queryString: { defaultPath: field, query: queryStr } });
   }
 
   return { $search: { index: "default", compound: { should } } };

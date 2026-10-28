@@ -14,9 +14,11 @@ import { signInWithGoogle } from "../../src/api/googleAuth";
 import { openLegal } from "../../src/constants/legal";
 import { useTheme } from "../../src/context/ThemeContext";
 import { fonts } from "../../src/theme/typography";
+import { useKeyboardSafeExit } from "../../src/hooks/useKeyboardSafeExit";
 
 export default function LoginScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const styles = useMemo(() => StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 24, gap: 12, backgroundColor: colors.base100 },
   title: {
@@ -108,6 +110,7 @@ export default function LoginScreen() {
       <Text style={styles.title}>Cinephix</Text>
 
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Email")}
         autoCapitalize="none"
@@ -119,6 +122,7 @@ export default function LoginScreen() {
         }}
       />
       <TextInput
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder={t("Password")}
         secureTextEntry

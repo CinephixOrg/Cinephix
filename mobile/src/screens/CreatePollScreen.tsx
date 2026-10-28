@@ -13,6 +13,7 @@ import CollectionSearchBar from "../components/collection/CollectionSearchBar";
 import { SearchResults } from "../components/lists/ListEditorParts";
 import { draftKey, type DraftItem } from "../utils/listDraft";
 import { fonts } from "../theme/typography";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const PADDING_X = 16;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -40,6 +41,7 @@ function optionKey(option: PollDraftOption): string {
 
 export default function CreatePollScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();

@@ -42,6 +42,7 @@ import {
   type DraftItem,
 } from "../utils/listDraft";
 import { fonts } from "../theme/typography";
+import { useKeyboardSafeExit } from "../hooks/useKeyboardSafeExit";
 
 const PADDING_X = 16;
 const NAME_MAX = 80;
@@ -61,6 +62,7 @@ const MOVE = LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, La
 // community had pinned before, same as a new poll or challenge would.
 export default function GroupListEditorScreen() {
   const { colors } = useTheme();
+  useKeyboardSafeExit();
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();

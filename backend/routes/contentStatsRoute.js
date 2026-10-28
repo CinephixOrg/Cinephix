@@ -6,6 +6,7 @@ import Rating from "../models/Rating.js";
 import CustomList from "../models/CustomList.js";
 import FavoriteEvent from "../models/FavoriteEvent.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { titleFields } from "../utils/catalogTitles.js";
 
 const router = express.Router();
 
@@ -90,7 +91,7 @@ router.get("/:type/:id/similar", async (req, res) => {
     const start = (page - 1) * limit;
     const items = ranked.slice(start, start + limit).map(({ c }) => ({
       id: c._id.toString(),
-      title: c.title || c.name,
+      ...titleFields(c),
       poster_path: c.poster_path,
       type,
     }));
