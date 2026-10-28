@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { buildFuzzyTitleSearchStage, combinedScoreSortStages } from "../utils/atlasSearch.js";
+import { ORIGINAL_TITLE_PROJECTION } from "../utils/catalogTitles.js";
 
 // User text going into a hand-built $regex must be escaped first — same
 // helper as customListRoute.js/reviewController.js/movieRoute.js.
@@ -30,6 +31,7 @@ export default async function (seriesModel) {
           $project: {
             _id: 1,
             title: "$name",
+            ...ORIGINAL_TITLE_PROJECTION,
             posterUrl: {
               $cond: [
                 { $ifNull: ["$poster_path", false] },
@@ -117,6 +119,7 @@ export default async function (seriesModel) {
         $project: {
           _id: 1,
           name: 1,
+          ...ORIGINAL_TITLE_PROJECTION,
           poster_path: 1,
           first_air_date: 1,
           overview: 1,

@@ -10,6 +10,7 @@ import GroupWatchParty from "../models/GroupWatchParty.js";
 import GroupAnnouncement from "../models/GroupAnnouncement.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
+import { titleFields, ORIGINAL_TITLE_PROJECTION } from "../utils/catalogTitles.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
 import { computeAllUsersBadgeCounts, tierForCount } from "./badgeController.js";
 import { tmdbRating } from "../services/tmdbTitles.js";
@@ -125,7 +126,7 @@ export const getFeed = asyncHandler(async (req, res) => {
     if (!item) return null;
     return {
       id: contentId,
-      title: item.title || item.name,
+      ...titleFields(item),
       poster_path: item.poster_path,
       type: contentType,
     };
@@ -244,7 +245,7 @@ export const getTopPicks = asyncHandler(async (req, res) => {
     acc.push({
       content: {
         id: c.contentId,
-        title: item.title || item.name,
+        ...titleFields(item),
         poster_path: item.poster_path,
         type: c.contentType,
       },
@@ -346,7 +347,7 @@ async function getPopularAdds({ matchUsers, type, limit, sinceDate }) {
             from: "movies",
             localField: "_itemIdOid",
             foreignField: "_id",
-            pipeline: [{ $project: { title: 1, name: 1, poster_path: 1, release_date: 1 } }],
+            pipeline: [{ $project: { title: 1, name: 1, ...ORIGINAL_TITLE_PROJECTION, poster_path: 1, release_date: 1 } }],
             as: "_movieMatch",
           },
         },
@@ -355,7 +356,7 @@ async function getPopularAdds({ matchUsers, type, limit, sinceDate }) {
             from: "series",
             localField: "_itemIdOid",
             foreignField: "_id",
-            pipeline: [{ $project: { title: 1, name: 1, poster_path: 1, first_air_date: 1 } }],
+            pipeline: [{ $project: { title: 1, name: 1, ...ORIGINAL_TITLE_PROJECTION, poster_path: 1, first_air_date: 1 } }],
             as: "_seriesMatch",
           },
         },
@@ -396,7 +397,7 @@ async function getPopularAdds({ matchUsers, type, limit, sinceDate }) {
     acc.push({
       content: {
         id: c.itemId,
-        title: item.title || item.name,
+        ...titleFields(item),
         poster_path: item.poster_path,
         type: c.itemType,
         releaseYear: date ? new Date(date).getFullYear() : undefined,
@@ -463,7 +464,7 @@ async function hydrateLeaderboardEntries(entries) {
         ...e,
         content: {
           id: e.itemId,
-          title: item.title || item.name,
+          ...titleFields(item),
           poster_path: item.poster_path,
           type: e.itemType,
           // Shown beside the app's own rating; null when TMDB has too few votes.
@@ -1127,7 +1128,7 @@ export const getCurrentlyWatchingFeed = asyncHandler(async (req, res) => {
         user: { _id: u._id, username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
         contentId: cw.itemId,
         contentType: cw.itemType,
-        title: content.title || content.name,
+        ...titleFields(content),
         posterUrl: content.poster_path,
         startedAt: cw.startedAt,
       };

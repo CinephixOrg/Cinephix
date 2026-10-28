@@ -34,6 +34,28 @@ async function fetchFromTMDB(url) {
 // poster.
 const REFRESH_FIELDS = ["popularity", "vote_average", "vote_count"];
 
+const isoDate = (daysFromToday) => new Date(Date.now() + daysFromToday * 864e5).toISOString().slice(0, 10);
+
+// Turkish productions, beside the worldwide lists: almost none of them ever
+// trend worldwide, so a new Turkish series or film never reached the
+// catalogue. Films released in the last two weeks, and series with an
+// episode airing a week either side of today — re-run daily, the windows
+// overlap, so nothing falls between two runs.
+function turkishEndpoints() {
+  return [
+    {
+      url: `https://api.themoviedb.org/3/discover/movie?with_origin_country=TR&primary_release_date.gte=${isoDate(-14)}&primary_release_date.lte=${isoDate(0)}&sort_by=primary_release_date.desc`,
+      type: "movie",
+      pages: 3,
+    },
+    {
+      url: `https://api.themoviedb.org/3/discover/tv?with_origin_country=TR&air_date.gte=${isoDate(-7)}&air_date.lte=${isoDate(7)}&sort_by=popularity.desc`,
+      type: "series",
+      pages: 3,
+    },
+  ];
+}
+
 export async function syncTMDBTrending() {
   console.log("Starting TMDB Trending Sync...");
   
@@ -41,14 +63,16 @@ export async function syncTMDBTrending() {
     { url: "https://api.themoviedb.org/3/trending/movie/week", type: "movie" },
     { url: "https://api.themoviedb.org/3/movie/now_playing", type: "movie" },
     { url: "https://api.themoviedb.org/3/trending/tv/week", type: "series" },
-    { url: "https://api.themoviedb.org/3/tv/on_the_air", type: "series" }
+    { url: "https://api.themoviedb.org/3/tv/on_the_air", type: "series" },
+    ...turkishEndpoints(),
   ];
 
   for (const endpoint of endpoints) {
     console.log(`Fetching from ${endpoint.url}...`);
     // Let's fetch the first 2 pages for each to get a good chunk of data
-    for (let page = 1; page <= 2; page++) {
-      const data = await fetchFromTMDB(`${endpoint.url}?page=${page}`);
+    for (let page = 1; page <= (endpoint.pages ?? 2); page++) {
+      const separator = endpoint.url.includes("?") ? "&" : "?";
+      const data = await fetchFromTMDB(`${endpoint.url}${separator}page=${page}`);
       if (data && data.results && Array.isArray(data.results)) {
         console.log(`Processing ${data.results.length} items from page ${page}...`);
         // Resolved as one batch: an existing TMDB id, else a legacy record
@@ -64,6 +88,8 @@ export async function syncTMDBTrending() {
         } catch (err) {
           console.error(`Failed to sync ${endpoint.type} page ${page}:`, err.message);
         }
+        // No point asking for page 3 of a list that ended on page 1.
+        if (page >= (data.total_pages ?? 0)) break;
       }
       await delay(500); // 500ms delay between pages
     }

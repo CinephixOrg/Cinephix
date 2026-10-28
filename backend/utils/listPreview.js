@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { titleFields, ORIGINAL_TITLE_PROJECTION } from "../utils/catalogTitles.js";
 
 
 // Attaches previewItems (title+poster for the first N items of each list,
@@ -43,7 +44,7 @@ export async function hydratePreviewItems(lists, limit = 5) {
               from: "movies",
               localField: "itemId",
               foreignField: "_id",
-              pipeline: [{ $project: { title: 1, name: 1, poster_path: 1, release_date: 1, popularity: 1 } }],
+              pipeline: [{ $project: { title: 1, name: 1, ...ORIGINAL_TITLE_PROJECTION, poster_path: 1, release_date: 1, popularity: 1 } }],
               as: "_movieMatch",
             },
           },
@@ -52,7 +53,7 @@ export async function hydratePreviewItems(lists, limit = 5) {
               from: "series",
               localField: "itemId",
               foreignField: "_id",
-              pipeline: [{ $project: { title: 1, name: 1, poster_path: 1, first_air_date: 1, popularity: 1 } }],
+              pipeline: [{ $project: { title: 1, name: 1, ...ORIGINAL_TITLE_PROJECTION, poster_path: 1, first_air_date: 1, popularity: 1 } }],
               as: "_seriesMatch",
             },
           },
@@ -79,7 +80,7 @@ export async function hydratePreviewItems(lists, limit = 5) {
         return {
           itemId: item.itemId.toString(),
           itemType: item.itemType,
-          title: doc.title || doc.name,
+          ...titleFields(doc),
           poster_path: doc.poster_path,
           // Added for ListDetailScreen.tsx's own CollectionEntry mapping
           // (Release-date sort, and popularity as a search tie-break) —

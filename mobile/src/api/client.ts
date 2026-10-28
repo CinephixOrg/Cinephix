@@ -2,6 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { STORAGE_KEYS } from "../constants/apiRoutes";
 import i18next from "../i18n";
+import { localizeTitles } from "../utils/localizedTitles";
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
@@ -36,6 +37,10 @@ API.interceptors.request.use(async (req) => {
 // watchlistService instead of relying on this unwrap.
 API.interceptors.response.use(
   (res) => {
+    // Every film and series in the app's own language shows under its
+    // original name, everything else under its English one
+    // (utils/localizedTitles.ts) — once, here, for every screen.
+    localizeTitles(res.data, i18next.language);
     if (res.data && res.data.pagination) {
       const { data, pagination, success, message, ...rest } = res.data;
       res.data = data;

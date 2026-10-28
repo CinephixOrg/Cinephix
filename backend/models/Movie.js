@@ -1,5 +1,6 @@
 // backend/models/Movie.js
 import mongoose from "mongoose";
+import { selectOriginalTitles } from "../utils/catalogTitles.js";
 
 const movieSchema = new mongoose.Schema(
   {},
@@ -13,6 +14,9 @@ const movieSchema = new mongoose.Schema(
     autoIndex: false,
   }
 );
+
+// Every title it returns carries its original-language name (utils/catalogTitles.js).
+movieSchema.plugin(selectOriginalTitles);
 
 // Exact-title lookups: the import's candidate query, the TMDB resolver's
 // legacy-twin query (utils/catalogUpsert.js) and the duplicate cleanup scripts.

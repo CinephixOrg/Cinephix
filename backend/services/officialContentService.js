@@ -7,6 +7,7 @@ import OfficialContent from "../models/OfficialContent.js";
 import OfficialContentLapState from "../models/OfficialContentLapState.js";
 import { computeLeaderboard, getPeopleThreePodiums } from "../controllers/feedController.js";
 import { logger } from "../middleware/logger.js";
+import { titleFields } from "../utils/catalogTitles.js";
 
 const getMovie = () => mongoose.connection.model("Movie");
 const getSeries = () => mongoose.connection.model("Series");
@@ -53,7 +54,7 @@ async function hydrateContentData(contentId, contentType) {
   if (!doc) return null;
   const date = contentType === "movie" ? doc.release_date : doc.first_air_date;
   return {
-    title: doc.title || doc.name,
+    ...titleFields(doc),
     posterUrl: doc.poster_path || null,
     releaseYear: date ? new Date(date).getFullYear() : undefined,
   };

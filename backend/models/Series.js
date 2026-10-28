@@ -1,5 +1,6 @@
 // backend/models/Series.js
 import mongoose from "mongoose";
+import { selectOriginalTitles } from "../utils/catalogTitles.js";
 
 const seriesSchema = new mongoose.Schema(
   {},
@@ -10,6 +11,9 @@ const seriesSchema = new mongoose.Schema(
     autoIndex: false,
   }
 );
+
+// Every title it returns carries its original-language name (utils/catalogTitles.js).
+seriesSchema.plugin(selectOriginalTitles);
 
 // Series store their title in `name` (almost all) or `title` (a few older
 // records), and every title query checks both.

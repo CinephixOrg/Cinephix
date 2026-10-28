@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import CustomList from "../models/CustomList.js";
 import Group from "../models/Group.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
+import { titleFields } from "../utils/catalogTitles.js";
 import { removeShareNotifications, syncShareLikeNotification } from "../services/notifications.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
@@ -125,7 +126,7 @@ export async function hydrateContentData(contentId, contentType) {
   if (!doc) return null;
   const date = contentType === "movie" ? doc.release_date : doc.first_air_date;
   return {
-    title: doc.title || doc.name,
+    ...titleFields(doc),
     posterUrl: doc.poster_path || null,
     releaseYear: date ? new Date(date).getFullYear() : undefined,
   };

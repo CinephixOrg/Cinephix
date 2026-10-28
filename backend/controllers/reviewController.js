@@ -7,6 +7,7 @@ import User from '../models/User.js';
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response.js";
 import { buildFuzzyTitleSearchStage } from "../utils/atlasSearch.js";
+import { titleFields, ORIGINAL_TITLE_PROJECTION } from "../utils/catalogTitles.js";
 import { REVIEW_COUNT_TIERS, crossedActivityTier, bumpStreak } from "./badgeController.js";
 
 const getMovie = () => mongoose.connection.model("Movie");
@@ -71,7 +72,7 @@ async function hydrateReviewResults(reviews, userId) {
           from: "movies",
           localField: "_cidOid",
           foreignField: "_id",
-          pipeline: [{ $project: { title: 1, name: 1, poster_path: 1 } }],
+          pipeline: [{ $project: { title: 1, name: 1, ...ORIGINAL_TITLE_PROJECTION, poster_path: 1 } }],
           as: "_movieMatch",
         },
       },
@@ -80,7 +81,7 @@ async function hydrateReviewResults(reviews, userId) {
           from: "series",
           localField: "_cidOid",
           foreignField: "_id",
-          pipeline: [{ $project: { title: 1, name: 1, poster_path: 1 } }],
+          pipeline: [{ $project: { title: 1, name: 1, ...ORIGINAL_TITLE_PROJECTION, poster_path: 1 } }],
           as: "_seriesMatch",
         },
       },
@@ -109,7 +110,7 @@ async function hydrateReviewResults(reviews, userId) {
       rating: r.rating ?? null,
       content: {
         id: r.contentId,
-        title: item.title || item.name,
+        ...titleFields(item),
         poster_path: item.poster_path,
         type: r.contentType,
       },
@@ -479,7 +480,7 @@ export const getReviewsFromFriends = asyncHandler(async (req, res) => {
       rating: ratingMap[`${r.user._id.toString()}:${r.contentId}`] ?? null,
       content: {
         id: r.contentId,
-        title: item.title || item.name,
+        ...titleFields(item),
         poster_path: item.poster_path,
         type: r.contentType,
       },
