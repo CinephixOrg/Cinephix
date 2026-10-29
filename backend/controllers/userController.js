@@ -23,7 +23,7 @@ import { refreshUserCineGraph } from "../utils/cineGraph.js";
 import { buildCollectionEntries } from "../utils/publicCollection.js";
 import { PUBLIC_ACCESS, PUBLIC_PROFILE } from "../utils/publicProfile.js";
 import { isAllowedMobileRedirect } from "../utils/oauthRedirect.js";
-import { DEFAULT_GEMINI_MODEL } from "../services/llmAdapter.js";
+import { DEFAULT_GEMINI_MODEL, fetchWithTimeout } from "../services/llmAdapter.js";
 import { expireTierGrantIfDue } from "../services/tierGrants.js";
 // --- END ---
 import mongoose from 'mongoose'; // <-- NEW IMPORT (REQUIRED)
@@ -2241,7 +2241,15 @@ export const getProfileAnalysis = asyncHandler(async (req, res) => {
         ? `Analyze the user profile metrics:\n${JSON.stringify(llmPayload, null, 2)}\n\nTheir previous analysis result was:\n${JSON.stringify(lastAnalysis.result, null, 2)}`
         : `Analyze the user profile metrics:\n${JSON.stringify(llmPayload, null, 2)}`;
 
-      const response = await fetch(
+      // fetchWithTimeout, not a raw fetch — direct report: this hung for
+      // 226 SECONDS on a slow/unresponsive Gemini (plain fetch has no
+      // timeout of its own, so a hung provider just sat there with
+      // nothing to cut it short). Same 15s-default guard llmAdapter.js's
+      // own callGemini already uses for the identical reason; a timeout
+      // here is caught below same as any other Gemini failure and falls
+      // straight through to the mock analysis, so the viewer gets SOME
+      // result quickly either way instead of staring at a spinner.
+      const response = await fetchWithTimeout(
         `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_GEMINI_MODEL}:generateContent?key=${apiKey}`,
         {
           method: "POST",

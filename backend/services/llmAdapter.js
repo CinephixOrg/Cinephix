@@ -33,7 +33,11 @@ const RATE_LIMIT_PER_MIN = parseInt(process.env.LLM_RATE_LIMIT_PER_MIN || "60", 
 // callX() below now races its fetch against this via fetchWithTimeout.
 const LLM_REQUEST_TIMEOUT_MS = parseInt(process.env.LLM_REQUEST_TIMEOUT_MS || "15000", 10);
 
-async function fetchWithTimeout(url, options, timeoutMs = LLM_REQUEST_TIMEOUT_MS) {
+// Exported for userController.js's getProfileAnalysis — that one makes its
+// own direct Gemini call (a different request/response shape than
+// callGemini's below, so it isn't routed through callLLM) but needs this
+// exact same timeout guard for the exact same reason documented above.
+export async function fetchWithTimeout(url, options, timeoutMs = LLM_REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {

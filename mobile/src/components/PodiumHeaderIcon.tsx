@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet } from "react-native";
 // Gesture handler's Pressable: see src/components/socials/MessagesSection.tsx for why.
 import { Pressable } from "react-native-gesture-handler";
+import { Ionicons } from "@expo/vector-icons";
 import GradientIcon from "./GradientIcon";
 import { TIER_FRAME_STYLES } from "../theme/tierFrames";
 
@@ -23,7 +24,20 @@ const RING_DEG = 8;
 // podium for Shares. Gold gradient reuses TIER_FRAME_STYLES.premium's own
 // pair — the same gold this app already uses everywhere else (avatar
 // rings, ShareCard's Premium frame), not a new ad-hoc color choice.
-export default function PodiumHeaderIcon({ onPress }: { onPress: () => void }) {
+//
+// `name`/`colors` are overridable (default: trophy + gold) so the same
+// "gradient glyph that periodically rings" language can be reused for a
+// different header trigger entirely — e.g. Profile's own "Analyze"
+// icon — without duplicating this animation.
+export default function PodiumHeaderIcon({
+  onPress,
+  name = "trophy",
+  colors = TIER_FRAME_STYLES.premium!.gradient,
+}: {
+  onPress: () => void;
+  name?: keyof typeof Ionicons.glyphMap;
+  colors?: [string, string];
+}) {
   const wiggle = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -44,7 +58,7 @@ export default function PodiumHeaderIcon({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} hitSlop={8} style={styles.wrap}>
       <Animated.View style={{ transform: [{ rotate }] }}>
-        <GradientIcon name="trophy" size={ICON_SIZE} colors={TIER_FRAME_STYLES.premium!.gradient} />
+        <GradientIcon name={name} size={ICON_SIZE} colors={colors} />
       </Animated.View>
     </Pressable>
   );

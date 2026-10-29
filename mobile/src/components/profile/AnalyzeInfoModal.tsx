@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { useMemo } from "react";
+import { Animated, View, Text, StyleSheet } from "react-native";
 import Modal from "../common/GestureModal";
 import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getProfileAnalysis } from "../../api/userService";
-import { setPendingProfileAnalysis } from "../../utils/pendingProfileAnalysis";
+import { useAnalyzeProfile } from "../../hooks/useAnalyzeProfile";
 import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 
@@ -31,59 +29,19 @@ export default function AnalyzeInfoModal({ visible, onClose }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { showToast } = useToast();
   const router = useRouter();
 
   const tier = user?.accountTier ?? "free";
   const hasAccess = tier === "plus" || tier === "premium" || tier === "dev";
 
-  const [analyzing, setAnalyzing] = useState(false);
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
-  const [, forceTick] = useState(0);
-
-  useEffect(() => {
-    if (!cooldownUntil) return;
-    const interval = setInterval(() => {
-      if (Date.now() >= cooldownUntil) {
-        setCooldownUntil(null);
-      } else {
-        forceTick((n) => n + 1);
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [cooldownUntil]);
-
-  // A tier change shortens (or removes) the cooldown window, but the timer
-  // above was computed under the previous tier — clear it so the next tap
-  // re-checks with the server instead of coasting on a stale estimate.
-  useEffect(() => {
-    setCooldownUntil(null);
-  }, [tier]);
-
-  const formatCooldown = (ms: number) => {
-    const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  };
+  // Shared with AnalyzeIntroStory's own final-slide CTA (useAnalyzeProfile.ts)
+  // — same cooldown/429 handling, same countdown formatting, same rotating
+  // "still working" status line, one call site for the actual "run it and
+  // go look" logic.
+  const { analyzing, statusMessage, statusOpacity, cooldownUntil, formatCooldown, runAnalysis } = useAnalyzeProfile();
 
   const handleAnalyze = async () => {
-    setAnalyzing(true);
-    try {
-      const data = await getProfileAnalysis();
-      setPendingProfileAnalysis(data);
-      onClose();
-      router.push("/profile/analyze-story" as any);
-    } catch (e: any) {
-      const retryAfterMs = e?.response?.data?.errors?.retryAfterMs;
-      if (e?.response?.status === 429 && retryAfterMs) {
-        setCooldownUntil(Date.now() + retryAfterMs);
-      } else {
-        showToast(e?.response?.data?.message || t("Something went wrong. Please try again."));
-      }
-    } finally {
-      setAnalyzing(false);
-    }
+    if (await runAnalysis()) onClose();
   };
 
   const styles = useMemo(
@@ -127,7 +85,9 @@ export default function AnalyzeInfoModal({ visible, onClose }: Props) {
               </Text>
               <Pressable style={styles.confirmButton} onPress={handleAnalyze} disabled={analyzing || Boolean(cooldownUntil)}>
                 {analyzing ? (
-                  <ActivityIndicator color={colors.primaryContent} />
+                  <Animated.Text style={[styles.confirmButtonText, { opacity: statusOpacity }]} numberOfLines={1}>
+                    {statusMessage}
+                  </Animated.Text>
                 ) : cooldownUntil ? (
                   <Text style={styles.confirmButtonText}>
                     {t("Available in")} {formatCooldown(cooldownUntil - Date.now())}

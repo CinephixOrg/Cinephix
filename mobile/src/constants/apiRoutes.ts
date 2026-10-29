@@ -264,6 +264,10 @@ export const STORAGE_KEYS = {
   // intro card again under its new placement rules — a deliberate reset,
   // not a rename; SecureStore has no server-side reach to clear per-device.
   SYNC_INTRO_SEEN: "cinephix_sync_intro_seen_v2",
+  // Same per-user-keyed SecureStore convention as SYNC_INTRO_SEEN — the
+  // full-screen story shown the first time the Profile header's Analyze
+  // icon is ever tapped (AnalyzeIntroStory.tsx), never again after.
+  ANALYZE_INTRO_SEEN: "cinephix_analyze_intro_seen",
   // Stores "<category>:<rank>" for whichever podium placement was last
   // actually shown via PodiumNewsModal.tsx — compared on every app launch
   // so an unchanged placement doesn't re-show the same "you made the

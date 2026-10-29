@@ -18,9 +18,12 @@ export default function ProfileStackLayout() {
         name="index"
         options={{
           title: t("Profile"),
-          // headerRight is set dynamically by index.tsx itself (a hamburger
-          // opening the new drawer, whose open/close state lives there) —
-          // no static override needed here.
+          // headerTitle/headerRight are both overridden dynamically by
+          // index.tsx itself — headerTitle adds the ringing gradient
+          // Analyze icon beside the title text, headerRight is the
+          // compose "+"/hamburger pair (whose open/close state lives
+          // there). `title` above is just the fallback before that first
+          // effect run.
         }}
       />
       <Stack.Screen name="content/[type]/[id]" options={{ title: "" }} />

@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import Pressable from "../../../src/components/common/TapSafePressable";
+import GestureModal from "../../../src/components/common/GestureModal";
+import * as SecureStore from "expo-secure-store";
 import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import PodiumHeaderIcon from "../../../src/components/PodiumHeaderIcon";
 import ProfileDrawer from "../../../src/components/profile/ProfileDrawer";
 import { useProfile } from "../../../src/context/ProfileContext";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
 import ProfileCategoryTabs, { type Category } from "../../../src/components/profile/ProfileCategoryTabs";
 import ProfileDrawerContent from "../../../src/components/profile/ProfileDrawerContent";
 import AnalyzeInfoModal from "../../../src/components/profile/AnalyzeInfoModal";
+import AnalyzeIntroStory from "../../../src/components/profile/AnalyzeIntroStory";
+import { useAnalyzeProfile } from "../../../src/hooks/useAnalyzeProfile";
+import { STORAGE_KEYS } from "../../../src/constants/apiRoutes";
 import PostComposeMenu from "../../../src/components/home/PostComposeMenu";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import { useTheme } from "../../../src/context/ThemeContext";
@@ -38,28 +44,73 @@ export default function ProfileScreen() {
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
   tabContent: { paddingTop: 4 },
   error: { color: colors.error, fontSize: 16 },
-  // Compact, inline at the end of the username row — not the old Analyze
-  // tab's own full-width button, which was sized for a tab's whole content
-  // column. Opens AnalyzeInfoModal rather than running the analysis
-  // directly, direct ask.
-  analyzeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginLeft: 4,
+  // The header's own custom title: "Profile" + the ringing gradient
+  // Analyze icon right beside it — direct ask, after the full-width
+  // gradient button under the bio read as too heavy. headerTitleStyle
+  // (profile/_layout.tsx) sets fontFamily/color app-wide; this just adds
+  // the row layout and matches that same font size.
+  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  // Direct report: the icon read as misaligned next to the text — Android
+  // pads a Text's own box above/below its visible glyphs by default
+  // (includeFontPadding), so its box was taller than what's actually
+  // drawn, throwing off `alignItems:"center"` against the icon's own
+  // tightly-bounded box next to it. Same fix UpgradeRibbon.tsx's own text
+  // already needed for an identical reason.
+  headerTitleText: {
+    fontFamily: fonts.bold,
+    fontSize: 17,
+    lineHeight: 20,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+    color: colors.baseContent,
   },
-  analyzeButtonText: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.baseContent },
 }), [colors]);
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { profile, cineGraph, favorites, shareCount, loaded, error, ensureLoaded, refresh } = useProfile();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [analyzeInfoVisible, setAnalyzeInfoVisible] = useState(false);
+  // First-ever tap on the header's Analyze icon gets a full-screen story
+  // pitch (AnalyzeIntroStory) instead of jumping straight to the info box
+  // — direct ask, same per-user SecureStore "seen" flag Sync's own intro
+  // already established (see match/index.tsx's identical showIntro/
+  // dismissIntro pair for the full reasoning, account-scoped for the same
+  // reason). Defaults to false (not yet confirmed unseen) so a tap that
+  // somehow lands before this check resolves just opens the info box —
+  // same acceptable tradeoff Sync's own version already made.
+  const [showAnalyzeIntro, setShowAnalyzeIntro] = useState(false);
+  const [analyzeIntroVisible, setAnalyzeIntroVisible] = useState(false);
+  useEffect(() => {
+    if (!profile?._id) return;
+    SecureStore.getItemAsync(`${STORAGE_KEYS.ANALYZE_INTRO_SEEN}_${profile._id}`)
+      .then((seen) => setShowAnalyzeIntro(!seen))
+      .catch(() => {});
+  }, [profile?._id]);
+  const openAnalyze = useCallback(() => {
+    if (showAnalyzeIntro) setAnalyzeIntroVisible(true);
+    else setAnalyzeInfoVisible(true);
+  }, [showAnalyzeIntro]);
+  // Shared with AnalyzeInfoModal's own confirm button (useAnalyzeProfile.ts)
+  // — same cooldown/429 handling, one call site for "run it and go look."
+  const { statusMessage, statusOpacity, runAnalysis } = useAnalyzeProfile();
+  const hasAnalyzeAccess = profile?.accountTier === "plus" || profile?.accountTier === "premium" || profile?.accountTier === "dev";
+  // Direct follow-up ask: the intro's own final-slide CTA now starts the
+  // real analysis directly — no reason to land back on the info box one
+  // more time just to press the same button there. Free tier (never
+  // entitled to begin with) and a failed/cooldown attempt are the two
+  // genuine exceptions that still need that box's own messaging.
+  const finishAnalyzeIntro = useCallback(async () => {
+    setShowAnalyzeIntro(false);
+    if (profile?._id) SecureStore.setItemAsync(`${STORAGE_KEYS.ANALYZE_INTRO_SEEN}_${profile._id}`, "1").catch(() => {});
+    if (!hasAnalyzeAccess) {
+      setAnalyzeIntroVisible(false);
+      setAnalyzeInfoVisible(true);
+      return;
+    }
+    const ok = await runAnalysis();
+    setAnalyzeIntroVisible(false);
+    if (!ok) setAnalyzeInfoVisible(true);
+  }, [profile?._id, hasAnalyzeAccess, runAnalysis]);
   // "Analyze" compose-tutorial walkthrough (Shares' "+" menu) — this
   // button is now step 1 (moved here from the removed Analyze tab's own
   // handleAnalyze button); step 2 lives in the new full-screen story
@@ -152,6 +203,20 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     navigation.setOptions({
+      // "Profile" + the ringing gradient Analyze icon right beside it —
+      // direct ask, after a full-width gradient button under the bio read
+      // as too heavy. Same ring animation as Media's own PodiumHeaderIcon
+      // (now generalized to take its own icon/colors), just a distinct
+      // glyph so it doesn't read as the same feature as Sync (whose own
+      // tab icon is "sparkles") or the podium's trophy.
+      headerTitle: () => (
+        <View style={styles.headerTitleRow}>
+          <Text style={styles.headerTitleText}>{t("Profile")}</Text>
+          <TutorialSpotlight active={showAnalyzeTutorial} borderRadius={16}>
+            <PodiumHeaderIcon name="color-wand" colors={[colors.primary, colors.secondary]} onPress={openAnalyze} />
+          </TutorialSpotlight>
+        </View>
+      ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable onPress={() => setComposeMenuVisible(true)} hitSlop={8} style={{ padding: 4 }}>
@@ -163,7 +228,7 @@ export default function ProfileScreen() {
         </View>
       ),
     });
-  }, [navigation, colors]);
+  }, [navigation, colors, t, showAnalyzeTutorial, openAnalyze, styles.headerTitleRow, styles.headerTitleText]);
 
   // ensureLoaded() is a no-op once data already exists (or a load is already
   // in flight) — refresh() on top of that is the "revalidate silently" half:
@@ -223,14 +288,6 @@ export default function ProfileScreen() {
           profile={profile}
           shareCount={shareCount}
           onSharesPress={handleSharesPress}
-          usernameRowEnd={
-            <TutorialSpotlight active={showAnalyzeTutorial} borderRadius={8}>
-              <Pressable style={styles.analyzeButton} onPress={() => setAnalyzeInfoVisible(true)}>
-                <Ionicons name="sparkles-outline" size={12} color={colors.primary} />
-                <Text style={styles.analyzeButtonText}>{t("Analyze Profile")}</Text>
-              </Pressable>
-            </TutorialSpotlight>
-          }
         />
         {showAnalyzeTutorial && <TutorialInfoBox text={t("Tap here to analyze your profile.")} onDismiss={endComposeTutorial} />}
         <View style={styles.tabContent} onLayout={(e: LayoutChangeEvent) => setTabsY(e.nativeEvent.layout.y)}>
@@ -246,6 +303,13 @@ export default function ProfileScreen() {
       </ScrollView>
       <PostComposeMenu visible={composeMenuVisible} onClose={() => setComposeMenuVisible(false)} categories={composeCategories} />
       <AnalyzeInfoModal visible={analyzeInfoVisible} onClose={() => setAnalyzeInfoVisible(false)} />
+      {/* GestureModal, not react-native's own Modal — see common/
+          GestureModal.tsx's own comment: a plain Modal has no gesture
+          root, so AnalyzeIntroStory's tap-left/right zones (TapSafePressable)
+          wouldn't respond to anything inside it otherwise. */}
+      <GestureModal visible={analyzeIntroVisible} animationType="slide" onRequestClose={() => setAnalyzeIntroVisible(false)}>
+        <AnalyzeIntroStory onFinish={finishAnalyzeIntro} statusMessage={statusMessage} statusOpacity={statusOpacity} />
+      </GestureModal>
     </ProfileDrawer>
   );
 }
