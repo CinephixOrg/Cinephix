@@ -92,6 +92,14 @@ export async function discoverLists(limit = 20): Promise<DiscoverListItem[]> {
   return res.data.lists;
 }
 
+// Search's Lists tab empty state — public lists that contain something the
+// viewer has already watched. Returns a pool, not just the final handful
+// shown, so the caller can sample a fresh few on every visit.
+export async function getSuggestedLists(): Promise<DiscoverListItem[]> {
+  const res = await API.get(API_ROUTES.LISTS.SUGGESTED);
+  return res.data.lists;
+}
+
 export type ListSort = "liked" | "items" | "newest";
 export type ListMode = "all" | "friends" | "liked";
 

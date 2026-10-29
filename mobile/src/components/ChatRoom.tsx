@@ -32,6 +32,7 @@ import {
   deliveryState,
   mergeLatestPage,
   upsertMessage,
+  withSenders,
   type ChatRow,
   type DeliveryState,
 } from "../utils/chatMessages";
@@ -46,7 +47,8 @@ import ListShareMessageCard from "./ListShareMessageCard";
 import CommunityAnnouncementMessageCard from "./CommunityAnnouncementMessageCard";
 import ProfileAnalysisShareMessageCard from "./ProfileAnalysisShareMessageCard";
 import AnalyzeModal from "./AnalyzeModal";
-import ProfileAnalysisModal from "./ProfileAnalysisModal";
+import { usePathname, useRouter } from "expo-router";
+import { setPendingProfileAnalysis } from "../utils/pendingProfileAnalysis";
 import type { MatchAnalysis, Message, MessagePagination, MessageSender, ProfileAnalysis, RoomType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -62,6 +64,12 @@ interface Props {
   emptyText: string;
   /** Shown instead of the chat when `canChat` is false (a community you haven't joined). */
   lockedContent?: ReactNode;
+  /** Unlike `canChat` (hides the whole room), this still shows the real
+   * message history — only the composer is replaced by this text, greyed
+   * out and unsendable. For a room whose write-window has simply closed
+   * (TC-112: an ended watch party) rather than one the viewer never had
+   * access to. */
+  composeDisabledReason?: string;
   /** The other person in a DM, for cards that picture both people (a shared Sync). */
   counterpart?: MessageSender;
   // A first page the caller already has, so this room can render straight
@@ -221,8 +229,14 @@ const MessageRow = memo(function MessageRow({
 }) {
   const { t } = useTranslation();
   const pending = message.status === "pending";
-  const deleted = message.sender._id === DELETED_SENDER_ID;
-  const senderName = deleted ? t("Deleted account") : message.sender.username;
+  // Belt-and-suspenders: every entry point already runs messages through
+  // withSenders() (conversationService.ts/groupService.ts on fetch, this
+  // file's own onNewMessage handler on the socket path), which replaces a
+  // null sender with this exact placeholder shape — but a stray caller
+  // that skipped that step shouldn't crash this row either.
+  const sender = message.sender ?? { _id: DELETED_SENDER_ID, username: "" };
+  const deleted = sender._id === DELETED_SENDER_ID;
+  const senderName = deleted ? t("Deleted account") : sender.username;
   const longPress = isOwn
     ? !pending && onOpenInfo
       ? () => onOpenInfo(message)
@@ -295,7 +309,6 @@ const MessageRow = memo(function MessageRow({
     );
   }
 
-  const sender = message.sender;
   return (
     // The list is inverted, which flips each row: a bottom margin here is the
     // gap *above* the row on screen, separating one run from the last.
@@ -369,6 +382,7 @@ export default function ChatRoom({
   canChat,
   emptyText,
   lockedContent,
+  composeDisabledReason,
   counterpart,
   initialMessages,
   fetchMessages,
@@ -406,8 +420,20 @@ export default function ChatRoom({
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState("");
   const [viewingAnalysis, setViewingAnalysis] = useState<MatchAnalysis | null>(null);
-  const [viewingProfileAnalysis, setViewingProfileAnalysis] = useState<ProfileAnalysis | null>(null);
   const [infoMessage, setInfoMessage] = useState<Message | null>(null);
+  const router = useRouter();
+  // Self-derived, same reasoning as ContentDetailScreen.tsx/
+  // AnalyzeStoryScreen.tsx: this component is reused across Socials'
+  // communities chat, Socials' DM conversation, a public profile's chat,
+  // and a watch-party room (all under their own tab's stack), so it
+  // resolves which stack it's running under from the URL rather than
+  // taking a basePath prop from each of those 4 call sites.
+  const pathname = usePathname();
+  const basePath = useMemo(() => {
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments[0] === "user" && segments[1]) return `/user/${segments[1]}`;
+    return segments[0] ? `/${segments[0]}` : "/socials";
+  }, [pathname]);
   // Refs for callbacks that must not change identity with every message.
   const markReadRef = useRef(markRead);
   markReadRef.current = markRead;
@@ -472,8 +498,14 @@ export default function ChatRoom({
   useEffect(
     () =>
       onNewMessage(roomId, (incoming) => {
-        setMessages((prev) => upsertMessage(prev, incoming));
-        if (incoming.sender._id === userIdRef.current || AppState.currentState !== "active") return;
+        // Normalized the same way the REST fetch already is (conversationService.ts/
+        // groupService.ts both wrap their responses in withSenders) — a
+        // socket-delivered message skipped that wrapping entirely, so a
+        // deleted account's live message still arrived with a genuinely
+        // null `sender` and crashed on the very next line.
+        const [normalized] = withSenders([incoming]);
+        setMessages((prev) => upsertMessage(prev, normalized));
+        if (normalized.sender?._id === userIdRef.current || AppState.currentState !== "active") return;
         clearTimeout(markReadTimer.current);
         markReadTimer.current = setTimeout(() => markReadRef.current().catch(() => {}), 400);
       }),
@@ -542,7 +574,9 @@ export default function ChatRoom({
   // live messages in a community included); the server does the rest.
   const blocked = useBlockedIds();
   const rows = useMemo(
-    () => chatRows(blocked.size ? messages.filter((m) => !blocked.has(m.sender._id)) : messages).reverse(),
+    // `sender` can be null for a message from a since-deleted account — not
+    // in `blocked` either way, so it's never incorrectly filtered out.
+    () => chatRows(blocked.size ? messages.filter((m) => !blocked.has(m.sender?._id ?? "")) : messages).reverse(),
     [messages, blocked]
   );
   const { openContentActions } = useSafety();
@@ -551,18 +585,27 @@ export default function ChatRoom({
       openContentActions({
         entityType: "Message",
         entityId: message._id,
-        author: { _id: message.sender._id, username: message.sender.username },
+        author: message.sender ? { _id: message.sender._id, username: message.sender.username } : { _id: "", username: t("Deleted account") },
       }),
-    [openContentActions]
+    [openContentActions, t]
   );
 
   const openAnalysis = useCallback(
     (message: Message) => setViewingAnalysis((message.analysisData as MatchAnalysis) ?? null),
     []
   );
+  // Opens the same full-screen analysis story the owner sees on their own
+  // Profile (AnalyzeStoryScreen), staged with origin "shared" so it shows
+  // an ownership header instead of a Share CTA — viewing someone else's
+  // shared analysis here isn't a re-share decision.
   const openProfileAnalysis = useCallback(
-    (message: Message) => setViewingProfileAnalysis((message.analysisData as ProfileAnalysis) ?? null),
-    []
+    (message: Message) => {
+      const data = message.analysisData as ProfileAnalysis | undefined;
+      if (!data) return;
+      setPendingProfileAnalysis(data, "shared");
+      router.push(`${basePath}/analyze-story` as never);
+    },
+    [router, basePath]
   );
 
   const userId = user?._id;
@@ -572,7 +615,8 @@ export default function ChatRoom({
   const renderItem = useCallback(
     ({ item }: { item: ChatRow }) => {
       if (item.kind === "day") return <DaySeparator iso={item.iso} styles={styles} />;
-      const isOwn = item.message.sender._id === userId;
+      // sender?._id — a message from a deleted account is never "own".
+      const isOwn = item.message.sender?._id === userId;
       return (
         <MessageRow
           message={item.message}
@@ -605,7 +649,7 @@ export default function ChatRoom({
     );
   }
 
-  const canSend = text.trim().length > 0;
+  const canSend = !composeDisabledReason && text.trim().length > 0;
 
   return (
     // Android lifts the composer over the keyboard with KeyboardInsetView; iOS
@@ -652,10 +696,11 @@ export default function ChatRoom({
         <SafeAreaView edges={["bottom"]} style={styles.composer}>
           <TextInput
             style={styles.input}
-            placeholder={t("Message...")}
+            placeholder={composeDisabledReason ?? t("Message...")}
             placeholderTextColor={colors.placeholder}
-            value={text}
+            value={composeDisabledReason ? "" : text}
             onChangeText={setText}
+            editable={!composeDisabledReason}
             multiline
             maxLength={1000}
           />
@@ -676,11 +721,6 @@ export default function ChatRoom({
         </SafeAreaView>
   
         <AnalyzeModal visible={!!viewingAnalysis} onClose={() => setViewingAnalysis(null)} data={viewingAnalysis} />
-        <ProfileAnalysisModal
-          visible={!!viewingProfileAnalysis}
-          onClose={() => setViewingProfileAnalysis(null)}
-          data={viewingProfileAnalysis}
-        />
         {tracksReads ? (
           <MessageInfoSheet message={infoMessage} roomType={roomType} onClose={() => setInfoMessage(null)} />
         ) : null}

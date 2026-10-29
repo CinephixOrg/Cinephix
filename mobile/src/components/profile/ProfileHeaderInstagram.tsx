@@ -37,6 +37,12 @@ interface Props {
   // (not in each page) so both pages get it for free from this one shared
   // header instead of wiring the tap+modal twice.
   photoViewerActions?: PhotoViewerAction[];
+  // Own-profile only (profile/index.tsx's "Analyze Profile" button) —
+  // rendered at the very end of the username row itself, direct ask,
+  // distinct from actionsSlot below (which renders under the bio/stats,
+  // not inline with the username). Omitted everywhere else, including
+  // Public Profile — this isn't something you do to someone else's taste.
+  usernameRowEnd?: ReactElement | null;
 }
 
 // Instagram-style header: avatar left, username + follower/following stats
@@ -51,6 +57,7 @@ export default function ProfileHeaderInstagram({
   shareCount,
   onSharesPress,
   photoViewerActions,
+  usernameRowEnd,
 }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -80,7 +87,11 @@ export default function ProfileHeaderInstagram({
         officialAvatarFill: { alignItems: "center", justifyContent: "center" },
         rightCol: { flex: 1, justifyContent: "flex-start" },
         usernameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-        username: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent },
+        // flexShrink so a long username truncates instead of pushing
+        // usernameRowEnd (the own-profile "Analyze" button) off-screen —
+        // this row previously only ever had to fit the username + a small
+        // 14px tier diamond, not a whole button too.
+        username: { fontFamily: fonts.bold, fontSize: 18, color: colors.baseContent, flexShrink: 1 },
         // A bit wider than before — three tight stat columns read as
         // asymmetric/cramped next to the avatar's own generous spacing.
         statsRow: { flexDirection: "row", gap: 34, marginTop: 10 },
@@ -126,7 +137,9 @@ export default function ProfileHeaderInstagram({
 
         <View style={styles.rightCol}>
           <View style={styles.usernameRow}>
-            <Text style={styles.username}>{profile.isOfficial ? profile.username.toUpperCase() : profile.username}</Text>
+            <Text style={styles.username} numberOfLines={1}>
+              {profile.isOfficial ? profile.username.toUpperCase() : profile.username}
+            </Text>
             {/* Same diamond-mark convention PeoplePodiumCard.tsx/
                 SuggestedUsersBox.tsx already use (Ionicons "diamond",
                 colored from TIER_FRAME_STYLES' own glowColor — gold for
@@ -138,6 +151,7 @@ export default function ProfileHeaderInstagram({
             {(profile.accountTier === "plus" || profile.accountTier === "premium") && (
               <Ionicons name="diamond" size={14} color={TIER_FRAME_STYLES[profile.accountTier]?.glowColor} />
             )}
+            {usernameRowEnd}
           </View>
           <View style={styles.statsRow}>
             {shareCount != null && (

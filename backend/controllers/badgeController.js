@@ -173,6 +173,31 @@ const tierForVolume = (count) => tierForCount(count, VOLUME_TIERS);
 // above, for the 5-rung volume ladder instead of the 2-rung genre one.
 export const crossedVolumeTier = (count) => crossedCountTier(count, VOLUME_TIERS);
 
+// crossedThresholdTier/crossedVolumeTier above only work because every
+// real single-item add moves a count by exactly 1, so "landed exactly on
+// a threshold" and "just crossed a threshold" are the same question. A
+// bulk add (userWatchlistRoute.js's /watchlist/bulk, TC-133's onboarding
+// quiz) can jump a genre or volume count by many at once and skip clean
+// over a threshold without ever equaling it — e.g. 0 -> 18 never equals
+// 15, so the devotee badge would silently never fire. This answers the
+// real question for that case: every tier whose threshold falls strictly
+// after `prevCount` and at or before `newCount`, i.e. every tier newly
+// crossed by this one jump — possibly more than one at once (a big enough
+// jump can cross both devotee and master, or several volume rungs, in a
+// single bulk add), unlike the single-item helpers above which can only
+// ever report one.
+function crossedTiersInRange(prevCount, newCount, tiers) {
+  return tiers.filter((t) => prevCount < t.threshold && t.threshold <= newCount).map((t) => t.tier);
+}
+
+export const crossedGenreTiersInRange = (prevCount, newCount) =>
+  crossedTiersInRange(prevCount, newCount, [
+    { tier: "devotee", threshold: DEVOTEE_THRESHOLD },
+    { tier: "master", threshold: MASTER_THRESHOLD },
+  ]);
+
+export const crossedVolumeTiersInRange = (prevCount, newCount) => crossedTiersInRange(prevCount, newCount, VOLUME_TIERS);
+
 // Same "count from an already-in-hand watchlist array" split as
 // countGenreBadgesFromWatchlist/computeGenreBadgeCounts above, for the
 // identical reason (userWatchlistRoute.js's add handler already has the
@@ -460,14 +485,22 @@ export const STREAK_TIERS = [
 // today's own qualifying action just hasn't happened yet), decayed to 0
 // otherwise — the underlying stored fields themselves are only ever
 // corrected for real on the user's own next bumpStreak call.
-function currentStreakValue(user) {
-  if (!user?.lastStreakDate) return 0;
+// Pulled out of currentStreakValue so TC-136's separate puzzle-streak
+// fields (puzzleStreak/lastPuzzleStreakDate) can share the exact same
+// decay math against their own field pair, instead of a second copy of
+// this date arithmetic.
+export function decayedStreakCount(count, lastDate) {
+  if (!lastDate) return 0;
   const now = new Date();
   const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const last = new Date(user.lastStreakDate);
+  const last = new Date(lastDate);
   const lastUTC = Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), last.getUTCDate());
   const daysSince = (todayUTC - lastUTC) / 86400000;
-  return daysSince <= 1 ? user.currentStreak || 0 : 0;
+  return daysSince <= 1 ? count || 0 : 0;
+}
+
+function currentStreakValue(user) {
+  return decayedStreakCount(user?.currentStreak, user?.lastStreakDate);
 }
 
 export async function computeStreakBadge(userId) {
@@ -517,6 +550,51 @@ export async function bumpStreak(userId) {
   if (!crossedTier) return null;
   const threshold = STREAK_TIERS.find((t) => t.tier === crossedTier).threshold;
   return { family: "streak", key: "streak", count: newStreak, tier: crossedTier, threshold };
+}
+
+// TC-136's daily guessing game — its own streak, deliberately separate
+// from bumpStreak/STREAK_TIERS above (see User.js's own field comment for
+// why). Same ladder shape/day-count tier values, same decay-on-read
+// contract, same "exact threshold crossing" event-detection — a direct
+// copy against puzzleStreak/lastPuzzleStreakDate instead of
+// currentStreak/lastStreakDate, not a generalization of the one above,
+// matching this file's own existing tolerance for this kind of small
+// per-feature duplication over a shared parameterized helper.
+export const PUZZLE_STREAK_TIERS = [
+  { tier: "7day", threshold: 7 },
+  { tier: "30day", threshold: 30 },
+  { tier: "100day", threshold: 100 },
+];
+
+export async function computePuzzleStreakBadge(userId) {
+  const user = await User.findById(userId).select("puzzleStreak lastPuzzleStreakDate").lean();
+  const count = decayedStreakCount(user?.puzzleStreak, user?.lastPuzzleStreakDate);
+  return [{ key: "puzzleStreak", count, tier: tierForCount(count, PUZZLE_STREAK_TIERS) }];
+}
+
+export async function bumpPuzzleStreak(userId) {
+  const user = await User.findById(userId).select("puzzleStreak lastPuzzleStreakDate").lean();
+  if (!user) return null;
+
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  let newStreak;
+  if (user.lastPuzzleStreakDate) {
+    const last = new Date(user.lastPuzzleStreakDate);
+    const lastUTC = Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), last.getUTCDate());
+    const daysSince = (todayUTC - lastUTC) / 86400000;
+    if (daysSince === 0) return null; // already solved today's puzzle
+    newStreak = daysSince === 1 ? (user.puzzleStreak || 0) + 1 : 1;
+  } else {
+    newStreak = 1;
+  }
+
+  await User.updateOne({ _id: userId }, { $set: { puzzleStreak: newStreak, lastPuzzleStreakDate: new Date(todayUTC) } });
+
+  const crossedTier = crossedActivityTier(newStreak, PUZZLE_STREAK_TIERS);
+  if (!crossedTier) return null;
+  const threshold = PUZZLE_STREAK_TIERS.find((t) => t.tier === crossedTier).threshold;
+  return { family: "puzzleStreak", key: "puzzleStreak", count: newStreak, tier: crossedTier, threshold };
 }
 
 // Special + seasonal badges — 7 one-off badges (same degenerate 1-rung-

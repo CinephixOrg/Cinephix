@@ -57,7 +57,7 @@ export default async function (seriesModel) {
       res.status(500).json({
         success: false,
         message: "Search failed",
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });
@@ -159,7 +159,7 @@ export default async function (seriesModel) {
       res.status(500).json({
         success: false,
         message: 'Error fetching series',
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });
@@ -192,7 +192,7 @@ export default async function (seriesModel) {
       return res.status(500).json({
         success: false,
         message: "Failed to fetch bulk series",
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });
@@ -216,7 +216,7 @@ export default async function (seriesModel) {
       res.status(500).json({
         success: false,
         message: 'Error fetching series',
-        error: e.message
+        ...(process.env.NODE_ENV === 'development' && { error: e.message })
       });
     }
   });

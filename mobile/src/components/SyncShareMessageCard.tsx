@@ -44,7 +44,9 @@ function SyncShareMessageCard({ message, isOwn, onPress, counterpart, onLongPres
   const pct = typeof analysis?.matchPercentage === "number" ? Math.round(analysis.matchPercentage) : null;
   const tone = pct !== null ? MATCH_TONE_COLOR[matchTone(pct)] : NEUTRAL_ACCENT;
 
-  const sender = message.sender;
+  // sender can be null for a since-deleted account — same "Deleted
+  // account" convention ChatRoom.tsx's own MessageRow already uses.
+  const sender = message.sender ?? { _id: "", username: t("Deleted account") };
   const other = isOwn
     ? counterpart
     : user

@@ -11,6 +11,7 @@ import { getWatchParty, getWatchPartyMessages, sendWatchPartyMessageRest, toggle
 import ChatRoom from "../components/ChatRoom";
 import type { GroupWatchParty } from "../types";
 import { fonts } from "../theme/typography";
+import { isWatchPartyLive } from "../utils/watchParty";
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w92";
 const WAITING_POSTER_BASE = "https://image.tmdb.org/t/p/w342";
@@ -63,6 +64,12 @@ export default function WatchPartyRoomScreen() {
   }, [slug, id, rsvping, showToast, t]);
 
   const started = party ? new Date(party.scheduledAt).getTime() <= Date.now() : false;
+  // TC-112: started alone never turns back off once durationMinutes has
+  // elapsed — the composer stayed open forever after a party ended. The
+  // message history itself still needs to stay visible/scrollable, so
+  // this doesn't hide the room (canChat) — just the composer
+  // (ChatRoom's own composeDisabledReason).
+  const live = party ? isWatchPartyLive(party) : false;
 
   const styles = useMemo(
     () =>
@@ -200,6 +207,7 @@ export default function WatchPartyRoomScreen() {
           roomType="watchparty"
           roomId={id}
           canChat
+          composeDisabledReason={live ? undefined : t("This watch party has ended")}
           emptyText={t("No messages yet. Start the conversation!")}
           fetchMessages={(before, limit) => getWatchPartyMessages(slug, id, before, limit)}
           markRead={async () => {}}

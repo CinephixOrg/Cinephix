@@ -3,10 +3,12 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Pressable from "../common/TapSafePressable";
 import { Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
 import { updatePassword } from "../../api/userService";
+import { STORAGE_KEYS } from "../../constants/apiRoutes";
 import SettingsField from "./SettingsField";
 import SettingsNotice from "./SettingsNotice";
 
@@ -35,7 +37,12 @@ function SecuritySection() {
     setMessage(null);
     setSaving(true);
     try {
-      await updatePassword(oldPassword, newPassword);
+      const { token } = await updatePassword(oldPassword, newPassword);
+      // The old token this request itself was still carrying is now
+      // revoked server-side — store the fresh one immediately, or the
+      // very next API call would read as "session expired" right after a
+      // successful password change.
+      await SecureStore.setItemAsync(STORAGE_KEYS.TOKEN, token);
       setOldPassword("");
       setNewPassword("");
       setMessage(t("Password updated."));

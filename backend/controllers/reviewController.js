@@ -244,7 +244,20 @@ export const getPopularReviews = asyncHandler(async (req, res) => {
   // this file (attachRatings, getReviewsFromFriends): resolve matching
   // content IDs first, then filter reviews by contentId.
   let contentIdFilter = null;
-  if (q) {
+  // Search's Reviews tab empty state (direct ask) — popular reviews, but
+  // only for titles the viewer has actually watched ("userın
+  // watchedlistinde bulunan film ya da dizilere yazılmış popüler
+  // reviewlar"), not a poster browse of the watched titles themselves.
+  // authMiddleware already fetched the caller's full document with no
+  // field projection, so `req.user.watchlist` (the watched list — see
+  // User.js's own field-naming comment) is already on hand, no extra query
+  // needed. Mutually exclusive with `q` in practice (this flag's only
+  // caller never also searches by title), so it short-circuits past the
+  // text-search branch entirely rather than trying to combine with it.
+  if (req.query.watchedOnly === "true") {
+    contentIdFilter = (req.user.watchlist || []).map((w) => w.itemId.toString());
+    if (contentIdFilter.length === 0) return sendSuccess(res, { items: [], page, hasMore: false }, "No popular reviews yet");
+  } else if (q) {
     // Used to be a plain `{title: {$regex: q, $options:"i"}}` .find() with no
     // cap — an unanchored, case-insensitive regex can't use any index, so
     // this was a full collection scan (578k movies + 166k series) on every

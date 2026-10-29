@@ -22,6 +22,21 @@ interface Props {
   // the list you came from rather than jumping tabs.
   basePath: "/lists" | "/home" | "/search" | "/profile" | "/watchlist" | "/to-watch" | `/user/${string}`;
   onRemove?: () => void;
+  // Quick add-to-watchlist overlay (WhatToWatchRail's "Suggested for you"
+  // enhancement, TC-133) — symmetric with onRemove above, a small "+"
+  // instead of an "x", flipping to a checkmark once `added` so a second tap
+  // can't double-POST. Tapping it does NOT navigate (stopPropagation'd via
+  // its own Pressable, same as onRemove's).
+  onAdd?: () => void;
+  added?: boolean;
+  // Multi-select overlay for the onboarding suggestion grid (TC-133 Step
+  // 5) — mutually exclusive with onAdd/onRemove in practice (no caller
+  // passes both), but kept as its own independent prop pair rather than
+  // overloading onAdd/added, since "selected, pending one batched submit"
+  // and "already added, this instant" are different states with different
+  // icons (checkbox vs. checkmark-done).
+  onToggleSelect?: () => void;
+  selected?: boolean;
   // Explicit pixel width + spacing from the grid (fixed values computed by
   // the caller from screen width) rather than a percentage — keeps the gap
   // between cards constant regardless of how many items land in the last,
@@ -31,7 +46,19 @@ interface Props {
 
 // Small card for dense grids (List Detail's 6-per-row, Search's 5-per-row)
 // — poster-only unless a title is passed.
-export default function MiniContentCard({ id, type, posterPath, title, basePath, onRemove, style }: Props) {
+export default function MiniContentCard({
+  id,
+  type,
+  posterPath,
+  title,
+  basePath,
+  onRemove,
+  onAdd,
+  added,
+  onToggleSelect,
+  selected,
+  style,
+}: Props) {
   const { colors } = useTheme();
   const router = useRouter();
   const styles = useMemo(
@@ -60,6 +87,21 @@ export default function MiniContentCard({ id, type, posterPath, title, basePath,
           alignItems: "center",
           justifyContent: "center",
         },
+        // Bigger than removeButton (20 vs 16) — this is a primary tappable
+        // action on the card (add/select), not an edit-mode affordance, so
+        // it needs a more comfortable hit target.
+        cornerButton: {
+          position: "absolute",
+          top: 4,
+          right: 4,
+          backgroundColor: "rgba(0,0,0,0.6)",
+          borderRadius: 10,
+          width: 20,
+          height: 20,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        cornerButtonActive: { backgroundColor: colors.primary },
         title: { fontFamily: fonts.medium, fontSize: 11, color: colors.baseContent, marginTop: 4, textAlign: "center" },
       }),
     [colors]
@@ -76,6 +118,21 @@ export default function MiniContentCard({ id, type, posterPath, title, basePath,
         {onRemove && (
           <Pressable style={styles.removeButton} onPress={onRemove} hitSlop={6}>
             <Ionicons name="close" size={11} color="#fff" />
+          </Pressable>
+        )}
+        {onAdd && (
+          <Pressable
+            style={[styles.cornerButton, added && styles.cornerButtonActive]}
+            onPress={added ? undefined : onAdd}
+            disabled={added}
+            hitSlop={6}
+          >
+            <Ionicons name={added ? "checkmark" : "add"} size={14} color="#fff" />
+          </Pressable>
+        )}
+        {onToggleSelect && (
+          <Pressable style={[styles.cornerButton, selected && styles.cornerButtonActive]} onPress={onToggleSelect} hitSlop={6}>
+            <Ionicons name={selected ? "checkmark" : "add"} size={14} color="#fff" />
           </Pressable>
         )}
         {title ? (

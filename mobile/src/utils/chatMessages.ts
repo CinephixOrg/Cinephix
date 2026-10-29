@@ -144,8 +144,13 @@ export interface MessageRun {
  */
 export function messageRuns(messages: readonly Message[]): MessageRun[] {
   const joined = (a: Message | undefined, b: Message | undefined) =>
-    Boolean(a && b) &&
-    a!.sender._id === b!.sender._id &&
+    // `sender` can be null for a message whose author's account was later
+    // deleted (the server still populates it, Mongoose just returns null
+    // for a ref that no longer resolves) — such a message always starts
+    // its own run rather than crashing on `._id`, same as any other
+    // message without a resolvable sender.
+    Boolean(a && b && a.sender && b.sender) &&
+    a!.sender!._id === b!.sender!._id &&
     Math.abs(new Date(b!.createdAt).getTime() - new Date(a!.createdAt).getTime()) <= RUN_BREAK_MS &&
     // A date separator sits between days, so a run never crosses one.
     dayKey(a!.createdAt) === dayKey(b!.createdAt);

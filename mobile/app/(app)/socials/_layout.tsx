@@ -40,6 +40,7 @@ export default function SocialsStackLayout() {
       <Stack.Screen name="content/[type]/[id]/favorited" options={{ title: t("Favorites") }} />
       <Stack.Screen name="content/[type]/[id]/write-review" options={{ title: "" }} />
       <Stack.Screen name="content/[type]/[id]/similar" options={{ title: t("Similar") }} />
+      <Stack.Screen name="analyze-story" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { View, Animated, StyleSheet, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { useNavigation, useLocalSearchParams } from "expo-router";
+import { useNavigation, useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import SharesFeedSection from "../../../src/components/home/SharesFeedSection";
 import KesfetSection from "../../../src/components/home/KesfetSection";
 import CapsuleTabSwitcher from "../../../src/components/CapsuleTabSwitcher";
+import PodiumHeaderIcon from "../../../src/components/PodiumHeaderIcon";
 import { useTheme } from "../../../src/context/ThemeContext";
 
 type OuterTab = "shares" | "discover";
@@ -31,15 +32,11 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation();
-  // Set only by PodiumNewsModal.tsx's own "you made the podium!" popup
-  // (`router.push` to `/home?podiumCategory=liked` etc.) — read once below
-  // to force the Paylaşımlar tab and hand the category down to
-  // SharesFeedSection/PeoplePodium, which does the actual page-jump.
+  const router = useRouter();
   const {
-    podiumCategory,
     outerTab: outerTabParam,
     scope: scopeParam,
-  } = useLocalSearchParams<{ podiumCategory?: string; outerTab?: string; scope?: string }>();
+  } = useLocalSearchParams<{ outerTab?: string; scope?: string }>();
   const { width: screenWidth } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   // Drives CapsuleTabSwitcher's window directly off the pager's own live
@@ -60,24 +57,10 @@ export default function HomeScreen() {
 
   const markVisited = (tab: OuterTab) => setVisitedTabs((prev) => (prev.has(tab) ? prev : new Set(prev).add(tab)));
 
-  // Forces Paylaşımlar when arriving with a `podiumCategory` param — covers
-  // the case where this screen was already mounted with Keşfet showing
-  // (outerTab's own default is already "shares", so a *fresh* mount needs
-  // no forcing at all; this only matters if the user had switched tabs
-  // before tapping the podium popup). Not animated — reads as instant
-  // rather than an unrelated slide happening right as the screen appears.
-  useEffect(() => {
-    if (!podiumCategory) return;
-    setOuterTab("shares");
-    markVisited("shares");
-    scrollRef.current?.scrollTo({ x: 0, animated: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [podiumCategory]);
-
   // Forces Keşfet when arriving with `?outerTab=discover` — an official-
-  // account tip's own "Discover" link uses this. Independent of the
-  // podiumCategory effect above (the two params are never sent together in
-  // practice); not animated, same "reads as instant" reasoning.
+  // account tip's own "Discover" link uses this. Not animated, reads as
+  // instant rather than an unrelated slide happening right as the screen
+  // appears.
   useEffect(() => {
     if (outerTabParam !== "discover") return;
     setOuterTab("discover");
@@ -141,22 +124,28 @@ export default function HomeScreen() {
           ]}
         />
       ),
+      // Replaces NotificationBell here (direct ask) — context-aware: routes
+      // to whichever podium page matches the tab actually showing, since
+      // Paylaşımlar/Keşfet share this one screen/header.
+      headerRight: () => (
+        <PodiumHeaderIcon onPress={() => router.push(outerTab === "discover" ? "/content-podium" : "/people-podium")} />
+      ),
     });
-  }, [navigation, outerTab, t, screenWidth]);
+  }, [navigation, outerTab, t, screenWidth, router]);
 
   return (
     <View style={styles.container}>
       {/* Imported from react-native-gesture-handler, not react-native: Discover
-          is full of its own horizontal rails (Trending, Friends' Choice,
-          LeaderboardPodium) nested inside this horizontal pager. Plain RN
+          is full of its own horizontal rails (Trending, Friends' Choice)
+          nested inside this horizontal pager. Plain RN
           ScrollViews can't negotiate that same-axis nesting — this outer one
           would just eat every horizontal drag. Gesture-handler's ScrollView
           participates in its native pan-gesture resolution, so an inner rail
           that can still scroll wins the gesture; only at its edge does the
           drag bubble up to page-switch. Requires every intermediate
           ancestor/descendant scroller in this chain to also use
-          gesture-handler's ScrollView/FlatList (KesfetSection, ContentRail,
-          LeaderboardPodium) — mixing with plain RN ScrollView breaks it. */}
+          gesture-handler's ScrollView/FlatList (KesfetSection, ContentRail)
+          — mixing with plain RN ScrollView breaks it. */}
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -167,7 +156,7 @@ export default function HomeScreen() {
       >
         <View style={styles.page}>
           {visitedTabs.has("shares") && (
-            <SharesFeedSection jumpToPodiumCategory={podiumCategory} initialScope={scopeParam === "following" ? "following" : undefined} />
+            <SharesFeedSection initialScope={scopeParam === "following" ? "following" : undefined} />
           )}
         </View>
         <View style={styles.page}>{visitedTabs.has("discover") && <KesfetSection isActive={outerTab === "discover"} />}</View>

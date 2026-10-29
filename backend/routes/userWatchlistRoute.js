@@ -19,6 +19,8 @@ import {
   countVolumeBadgesFromWatchlist,
   VOLUME_TIERS,
   bumpStreak,
+  crossedGenreTiersInRange,
+  crossedVolumeTiersInRange,
 } from "../controllers/badgeController.js";
 
 const Movie = createMovieModel(conn);
@@ -143,6 +145,155 @@ router.post("/watchlist", authMiddleware, async (req, res) => {
     return res.status(201).json({
       message: "Added",
       watchlist: user.watchlist,
+      newlyEarnedBadges,
+      currentlyWatching: user.currentlyWatching?.itemId ? user.currentlyWatching : null,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Bulk add — TC-133's first-run taste-onboarding wizard is the only real
+// caller. Writes to BOTH watchlist and favorites (favoriteMovies/
+// favoriteSeries) per direct product decision: a title picked during
+// onboarding, whether from the suggested-posters grid or the user's own
+// search, counts as a favorite too. The singular /watchlist endpoint above
+// stays untouched for every other call site (e.g. ContentDetailScreen's
+// rate modal), which must keep writing only to watchlist, not favorites.
+const MAX_BULK_WATCHLIST_ITEMS = 30;
+
+router.post("/watchlist/bulk", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { items } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Missing items" });
+    }
+    if (items.length > MAX_BULK_WATCHLIST_ITEMS) {
+      return res.status(400).json({ message: `At most ${MAX_BULK_WATCHLIST_ITEMS} items at once` });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user.watchlist) user.watchlist = [];
+    if (!user.favoriteMovies) user.favoriteMovies = [];
+    if (!user.favoriteSeries) user.favoriteSeries = [];
+
+    // Snapshot counts BEFORE the push — the range-crossing badge check
+    // below needs both ends of the jump, not just the final count.
+    const genreCountsBefore = await countGenreBadgesFromWatchlist(user.watchlist);
+    const genreCountBeforeByKey = new Map(genreCountsBefore.map((c) => [c.key, c.count]));
+    const volumeCountsBefore = countVolumeBadgesFromWatchlist(user.watchlist);
+    const volumeCountBeforeByKey = new Map(volumeCountsBefore.map((c) => [c.key, c.count]));
+
+    // Dedupe against the existing watchlist AND within the incoming batch
+    // itself — a batch add shouldn't fail wholesale over one already-added
+    // title, it should just skip it and keep going.
+    const existingKeys = new Set(user.watchlist.map((w) => `${w.itemId?.toString()}_${w.itemType}`));
+    const seenInBatch = new Set();
+    const toAdd = [];
+    let skippedCount = 0;
+
+    for (const raw of items) {
+      const contentId = raw?.id || raw?.itemId;
+      const contentType = raw?.type || raw?.itemType;
+      if (!contentId || !["movie", "series"].includes(contentType)) {
+        skippedCount++;
+        continue;
+      }
+      const key = `${contentId.toString()}_${contentType}`;
+      if (existingKeys.has(key) || seenInBatch.has(key)) {
+        skippedCount++;
+        continue;
+      }
+      seenInBatch.add(key);
+      toAdd.push({ itemId: contentId, itemType: contentType });
+    }
+
+    if (toAdd.length === 0) {
+      return res.status(200).json({
+        message: "Nothing new to add",
+        watchlist: user.watchlist,
+        favoriteMovies: user.favoriteMovies,
+        favoriteSeries: user.favoriteSeries,
+        addedCount: 0,
+        skippedCount,
+        newlyEarnedBadges: [],
+        currentlyWatching: user.currentlyWatching?.itemId ? user.currentlyWatching : null,
+      });
+    }
+
+    user.watchlist.push(...toAdd);
+    for (const item of toAdd) {
+      const favorites = item.itemType === "movie" ? user.favoriteMovies : user.favoriteSeries;
+      if (!favorites.some((f) => f?.toString() === item.itemId.toString())) {
+        favorites.push(item.itemId);
+      }
+    }
+
+    let newlyEarnedBadges = [];
+
+    // Streak — one call, same as the singular endpoint (already idempotent
+    // per UTC day regardless of how many items landed in this one batch).
+    const streakBadge = await bumpStreak(userId);
+    if (streakBadge) newlyEarnedBadges.push(streakBadge);
+
+    // Genre badges — range-crossing check (crossedGenreTiersInRange's own
+    // doc comment explains why), since this one push can jump a genre's
+    // count by more than 1, unlike the singular endpoint's always-exactly-1
+    // step. countGenreBadgesFromWatchlist already does its genre lookups in
+    // exactly 2 batched queries (one Movie.find, one Series.find), so this
+    // stays cheap regardless of batch size.
+    const genreCountsAfter = await countGenreBadgesFromWatchlist(user.watchlist);
+    for (const after of genreCountsAfter) {
+      const before = genreCountBeforeByKey.get(after.key) || 0;
+      for (const tier of crossedGenreTiersInRange(before, after.count)) {
+        newlyEarnedBadges.push({
+          family: "genre",
+          key: after.key,
+          count: after.count,
+          tier,
+          threshold: tier === "master" ? MASTER_THRESHOLD : DEVOTEE_THRESHOLD,
+        });
+      }
+    }
+
+    // Volume badges — same range-crossing reasoning.
+    const volumeCountsAfter = countVolumeBadgesFromWatchlist(user.watchlist);
+    for (const after of volumeCountsAfter) {
+      const before = volumeCountBeforeByKey.get(after.key) || 0;
+      for (const tier of crossedVolumeTiersInRange(before, after.count)) {
+        const threshold = VOLUME_TIERS.find((t) => t.tier === tier).threshold;
+        newlyEarnedBadges.push({ family: "volume", key: after.key, count: after.count, tier, threshold });
+      }
+    }
+
+    // Same auto-clear as the singular endpoint, checked against the batch.
+    if (
+      user.currentlyWatching &&
+      toAdd.some(
+        (item) =>
+          user.currentlyWatching.itemId?.toString() === item.itemId.toString() &&
+          user.currentlyWatching.itemType === item.itemType
+      )
+    ) {
+      user.currentlyWatching = undefined;
+    }
+
+    await user.save();
+    // One rebuild, not one per item — the actual point of this being a
+    // bulk endpoint (rebuildUserCineGraph always recomputes from scratch).
+    await refreshUserCineGraph(userId);
+
+    return res.status(201).json({
+      message: "Added",
+      watchlist: user.watchlist,
+      favoriteMovies: user.favoriteMovies,
+      favoriteSeries: user.favoriteSeries,
+      addedCount: toAdd.length,
+      skippedCount,
       newlyEarnedBadges,
       currentlyWatching: user.currentlyWatching?.itemId ? user.currentlyWatching : null,
     });

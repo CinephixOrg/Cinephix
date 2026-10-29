@@ -41,7 +41,6 @@ import StackedAvatars from "./StackedAvatars";
 import { CASCADE_POSTER_RADIUS } from "./PosterCascade";
 import StarRatingDisplay from "./StarRatingDisplay";
 import FollowButton from "./FollowButton";
-import ProfileAnalysisModal from "./ProfileAnalysisModal";
 import MatchGradientTitle from "./match/MatchGradientTitle";
 import { GENRE_BADGE_DEFINITIONS } from "../data/genreBadgeDefinitions";
 import { VOLUME_BADGE_DEFINITIONS } from "../data/volumeBadgeDefinitions";
@@ -54,6 +53,7 @@ import { SPECIAL_BADGE_DEFINITIONS } from "../data/specialBadgeDefinitions";
 import { registerShareView, voteOnPoll } from "../api/shareService";
 import { addToToWatchList } from "../api/toWatchService";
 import { toWatchCache } from "../api/collectionCache";
+import { setPendingProfileAnalysis } from "../utils/pendingProfileAnalysis";
 import type { ActivityTier, OfficialContentCategory, PollOption, ProfileAnalysis, Share, StreakTier, VolumeTier } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
@@ -353,14 +353,17 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
   const watchlistGraph = useWatchlistGraph();
   const { height: screenHeight } = useWindowDimensions();
 
-  // Opens the exact same full-size card deck the owner sees on their own
-  // Profile (ProfileAnalysisModal), same as ChatRoom.tsx's own analysis-
-  // share bubble — neither `shareable` nor `navigable` passed, matching
-  // that precedent exactly: viewing someone else's shared analysis here
-  // isn't a re-share decision, and a poster tap inside the deck has no
-  // sensible destination from this basePath (ProfileAnalysisModal's own
-  // onOpenItem is hardcoded to the `/profile` stack).
-  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
+  // Opens the same full-screen analysis story the owner sees on their own
+  // Profile (AnalyzeStoryScreen), same as ChatRoom.tsx's own analysis-share
+  // bubble — staged with origin "shared" so it shows an ownership header
+  // instead of a Share CTA (viewing someone else's shared analysis isn't a
+  // re-share decision), and pushed under this card's own basePath so a
+  // poster tap inside it resolves to the correct tab's stack.
+  const openSharedAnalysis = () => {
+    if (!share.analysisData) return;
+    setPendingProfileAnalysis(share.analysisData as ProfileAnalysis, "shared");
+    router.push(`${basePath}/analyze-story` as never);
+  };
 
   const styles = useMemo(
     () =>
@@ -428,11 +431,12 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           borderRadius: 8,
         },
         typeChipText: { fontFamily: fonts.bold, fontSize: 10, color: "#fff", letterSpacing: 0.3 },
-        // A cover, not the full deck — tapping it opens the exact same
-        // ProfileAnalysisCardDeck full-size in a Modal (ProfileAnalysisModal,
-        // rendered below) instead of embedding it inline, same "compact
-        // preview, full thing behind a tap" shape shareBox/listBox already
-        // use. `overflow:"hidden"` clips the gradient-fill Svg background
+        // A cover, not the full deck — tapping it opens the same full-screen
+        // analysis story the owner sees on their own Profile
+        // (AnalyzeStoryScreen, see openSharedAnalysis below) instead of
+        // embedding it inline, same "compact preview, full thing behind a
+        // tap" shape shareBox/listBox already use. `overflow:"hidden"` clips
+        // the gradient-fill Svg background
         // and the watermark icon to the box's own rounded corners; no
         // separate background/border here since the Svg IS the fill (see
         // analysisCoverBg below) — this file's own established technique
@@ -546,6 +550,11 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           bottom: 0,
           backgroundColor: colors.primary,
           opacity: 0.28,
+          // Same radius again, directly on the absolutely-positioned fill
+          // itself (TC-116) — Android doesn't reliably clip one of those to
+          // pollResultTrack's own rounded overflow, same root cause as the
+          // poster-corner regressions fixed elsewhere this session.
+          borderRadius: 8,
         },
         pollResultRow: {
           flexDirection: "row",
@@ -1538,8 +1547,8 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
       {share.type === "analysis" && share.analysisData && (
         // A poster-style cover, not the full deck inline — tapping it opens
-        // the exact same ProfileAnalysisCardDeck the owner sees on their own
-        // Profile, full-size, in a Modal (ProfileAnalysisModal below). The
+        // the same full-screen analysis story the owner sees on their own
+        // Profile (see openSharedAnalysis above). The
         // "shared their profile analysis" meaning that used to sit in its
         // own line above this box is carried by the header's own "ANALYSIS"
         // type chip instead — no eyebrow label, no tasteCategory subtitle,
@@ -1549,7 +1558,7 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         // above) — a wordless, self-animating teaser of everything actually
         // inside, rather than a sentence that only ever repeats what the
         // headline+chip already said.
-        <Pressable style={styles.analysisCover} onPress={() => setAnalysisModalVisible(true)}>
+        <Pressable style={styles.analysisCover} onPress={openSharedAnalysis}>
           <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
             <Defs>
               <LinearGradient id={`analysisCoverBg-${share._id}`} x1="0" y1="0" x2="1" y2="1">
@@ -1582,7 +1591,10 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
       {share.type === "list" && share.listData && (
         <GestureDetector gesture={contentGesture}>
-          <GHPressable style={styles.listBox}>
+          {/* TC-114: goToList was already defined but never actually wired
+              to this box's own tap — clicking a list post did nothing at
+              all. */}
+          <GHPressable style={styles.listBox} onPress={goToList}>
             {/* The "shared a list" info line moved one step further out — no
                 longer even inside this box, now shared with review's own
                 equal line just above the header/box boundary (see there for
@@ -1622,8 +1634,16 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
       {share.type === "review" && share.contentData && (
         <GestureDetector gesture={contentGesture}>
-          <Pressable style={styles.shareBox} onPress={goToContent}>
-            <View style={styles.sharePoster}>{posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}</View>
+          <Pressable style={styles.shareBox} onPress={() => setFullReviewVisible(true)}>
+            {/* TC-113: the box's own tap opens the review itself (what
+                testers expect from "a review post" — this used to instead
+                navigate straight to content, a regression). The poster
+                specifically still jumps to content, same "inner tap wins"
+                pattern as everywhere else a poster sits inside a bigger
+                tappable card (ReviewFeedCard.tsx's own poster Pressable). */}
+            <Pressable style={styles.sharePoster} onPress={goToContent}>
+              {posterUri && <Image source={{ uri: posterUri }} style={styles.sharePosterImage} resizeMode="cover" />}
+            </Pressable>
             <View style={styles.shareTextCol}>
               <Text style={styles.shareTitle} numberOfLines={2}>
                 {share.contentData.title}
@@ -1639,15 +1659,11 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
                   or nothing at all when there isn't one (matching list's own
                   "no description = no extra line" behavior). Capped at
                   REVIEW_COLLAPSED_LINES so the post's own height stays fixed
-                  regardless of review length; a nested Pressable (proven
-                  pattern for "inner tap wins" over an ancestor Pressable,
-                  same as ListRailCard/ReviewSwipeCard's own details button)
-                  opens the full text in a Modal instead of triggering the
-                  outer box's own navigate-to-content tap. */}
+                  regardless of review length. Plain Text now, not its own
+                  nested Pressable — the whole box already opens the same
+                  modal this used to open on its own. */}
               {share.reviewText ? (
-                <Pressable onPress={() => setFullReviewVisible(true)}>
-                  <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={REVIEW_COLLAPSED_LINES}>{`"${share.reviewText}"`}</Text>
-                </Pressable>
+                <Text style={[styles.shareMessage, styles.shareMessageItalic]} numberOfLines={REVIEW_COLLAPSED_LINES}>{`"${share.reviewText}"`}</Text>
               ) : null}
             </View>
             {premiumBorder}
@@ -2054,13 +2070,6 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         </Modal>
       )}
 
-      {share.type === "analysis" && share.analysisData && (
-        <ProfileAnalysisModal
-          visible={analysisModalVisible}
-          onClose={() => setAnalysisModalVisible(false)}
-          data={share.analysisData as ProfileAnalysis}
-        />
-      )}
     </View>
   );
 }

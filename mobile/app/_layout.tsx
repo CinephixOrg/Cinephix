@@ -132,6 +132,17 @@ function RootNavigator() {
             headerTintColor: colors.baseContent,
           }}
         />
+        <Stack.Screen
+          name="daily-game"
+          options={{
+            presentation: "modal",
+            headerShown: true,
+            title: t("Daily Movie Guess"),
+            headerStyle: { backgroundColor: colors.base200 },
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
         <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
         <Stack.Screen
           name="list-editor"
@@ -199,6 +210,32 @@ function RootNavigator() {
           options={{
             headerShown: true,
             title: t("Followers"),
+            headerStyle: { backgroundColor: colors.base200 },
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        {/* Dedicated pages for the two podiums, each reached via
+            PodiumHeaderIcon in Media's own header (replacing
+            NotificationBell there) — direct feedback that the inline
+            carousels made Discover/Shares feel cluttered. Normal pushed
+            screens, not modals, same as `network` above (a content-browse
+            page, not a transient action like `daily-game`). */}
+        <Stack.Screen
+          name="content-podium"
+          options={{
+            headerShown: true,
+            title: t("Podium"),
+            headerStyle: { backgroundColor: colors.base200 },
+            headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
+            headerTintColor: colors.baseContent,
+          }}
+        />
+        <Stack.Screen
+          name="people-podium"
+          options={{
+            headerShown: true,
+            title: t("Podium"),
             headerStyle: { backgroundColor: colors.base200 },
             headerTitleStyle: { fontFamily: fonts.bold, color: colors.baseContent },
             headerTintColor: colors.baseContent,

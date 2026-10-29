@@ -22,6 +22,10 @@ type MenuItem = {
 
 const ITEMS: MenuItem[] = [
   { key: "activity", label: "Activity", icon: "pulse-outline", route: "/profile/activity" },
+  // Relocated out of the removed Analyze tab, direct ask — "Analyze
+  // Profile" itself moved to a button at the end of the username row
+  // (profile/index.tsx), this is just the history list now.
+  { key: "analyses", label: "My Analyses", icon: "document-text-outline", route: "/profile/analyses" },
   { key: "watched", label: "Watched List", icon: "checkmark-done-outline", route: "/watchlist" },
   { key: "lists", label: "Lists", icon: "list-outline", route: "/lists" },
   { key: "watchlist", label: "Watchlist", icon: "bookmark-outline", route: "/to-watch" },

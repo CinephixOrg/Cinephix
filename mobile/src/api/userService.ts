@@ -101,8 +101,13 @@ export async function uploadAvatar(id: string, imageUri: string): Promise<{ prof
   return res.data;
 }
 
-export async function updatePassword(oldPassword: string, newPassword: string): Promise<void> {
-  await API.put(API_ROUTES.USERS.UPDATE_PASSWORD, { oldPassword, newPassword });
+// Changing your password now revokes every token issued before it
+// (backend/middleware/authMiddleware.js's own tokenVersion check) — the
+// server returns a fresh one in the same response specifically so this
+// request's own session doesn't get logged out by its own success.
+export async function updatePassword(oldPassword: string, newPassword: string): Promise<{ token: string }> {
+  const res = await API.put(API_ROUTES.USERS.UPDATE_PASSWORD, { oldPassword, newPassword });
+  return res.data;
 }
 
 // DEV-ONLY: simulates a tier purchase by setting your own account tier
@@ -110,6 +115,17 @@ export async function updatePassword(oldPassword: string, newPassword: string): 
 export async function setOwnAccountTier(tier: AccountTier): Promise<AccountTier> {
   const res = await API.patch(API_ROUTES.USERS.UPDATE_TIER, { tier });
   return res.data.accountTier;
+}
+
+// TC-133's onboarding wizard calls this on every step transition (so a
+// killed/backgrounded app resumes on the right step — see User.ts's own
+// comment on onboardingStep/onboardingCompletedAt) and once more with
+// `completed: true` on finish/full-skip.
+export async function updateOnboardingProgress(
+  params: { step?: number; completed?: boolean }
+): Promise<{ onboardingStep: number; onboardingCompletedAt: string | null }> {
+  const res = await API.patch(API_ROUTES.USERS.ONBOARDING_PROGRESS, params);
+  return res.data;
 }
 
 // Content Detail's "Currently Watching" button — see CurrentlyWatching's
@@ -162,6 +178,12 @@ export async function searchUsers(
 ): Promise<ListResult<UserSearchResult>> {
   const res = await API.get(API_ROUTES.USERS.SEARCH, { params: { query, page, limit } });
   return { items: res.data, pagination: (res as any).pagination };
+}
+
+// Search's Users tab empty state — recently-joined accounts, newest first.
+export async function getNewUsers(limit = 20): Promise<UserSearchResult[]> {
+  const res = await API.get(API_ROUTES.USERS.NEW_USERS, { params: { limit } });
+  return res.data;
 }
 
 // Every profile is public, so a follow always takes effect immediately.

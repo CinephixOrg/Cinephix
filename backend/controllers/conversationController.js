@@ -245,21 +245,25 @@ export const getMessages = asyncHandler(async (req, res) => {
 export const markAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
 
-  // The document as it was, for the unread count the reset just cleared.
-  const previous = await Conversation.findOneAndUpdate(
-    { _id: req.params.id, participants: req.user._id },
-    { $set: { [`unreadCounts.${userId}`]: 0 } },
-    { projection: { unreadCounts: 1 } }
-  ).lean();
+  // Same participant check sendMessage/getMessages already apply — this
+  // only ever zeroes the caller's own counter, but an arbitrary conversation
+  // id shouldn't be writable at all without being part of it.
+  const conversation = await Conversation.findById(req.params.id).select("participants unreadCounts").lean();
+  if (!conversation) return sendError(res, "Conversation not found", 404);
+  const isParticipant = conversation.participants.some((p) => p.toString() === userId);
+  if (!isParticipant) return sendError(res, "Not a participant in this conversation", 403);
 
-  if (previous) {
-    await recordRead({
-      roomType: "dm",
-      roomId: previous._id,
-      userId: req.user._id,
-      unread: previous.unreadCounts?.[userId] ?? 0,
-    });
-  }
+  await Conversation.findByIdAndUpdate(req.params.id, {
+    $set: { [`unreadCounts.${userId}`]: 0 },
+  });
+
+  // The count as it stood right before this reset, for the read receipt.
+  await recordRead({
+    roomType: "dm",
+    roomId: conversation._id,
+    userId: req.user._id,
+    unread: conversation.unreadCounts?.[userId] ?? 0,
+  });
 
   sendSuccess(res, null, "Marked as read");
 });

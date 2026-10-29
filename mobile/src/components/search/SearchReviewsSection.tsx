@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, FlatList, ScrollView, ActivityIndicator, Text, StyleSheet } from "react-native";
 import Pressable from "../common/TapSafePressable";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
 import { SkeletonListRow } from "../Skeleton";
 import { getPopularReviews, type ReviewSort } from "../../api/reviewService";
 import SearchReviewCard from "./SearchReviewCard";
 import FilterBottomSheet from "./FilterBottomSheet";
 import SortOptionsList from "./SortOptionsList";
+import SuggestedReviewsSection from "./SuggestedReviewsSection";
 import type { PopularReview } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
@@ -167,9 +167,10 @@ export default function SearchReviewsSection({ query, showFilters, onCloseFilter
 
   if (!hasSearchCriteria) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name="chatbox-ellipses-outline" size={40} color={colors.placeholder} />
-        <Text style={styles.empty}>{t("Search any review you want to find it.")}</Text>
+      <View style={{ flex: 1, backgroundColor: colors.base100 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <SuggestedReviewsSection />
+        </ScrollView>
         {filterSheet}
       </View>
     );

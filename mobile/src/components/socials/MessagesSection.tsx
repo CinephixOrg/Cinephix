@@ -25,7 +25,11 @@ import { useBlockedIds } from "../../hooks/useBlocked";
 import AdBanner from "../ads/AdBanner";
 import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
-const AVATAR_SIZE = 52;
+// Direct report: avatars/names/previews read too large on this list —
+// shrunk roughly 15% across the board (avatar, both text sizes, row
+// padding/gap) rather than just the avatar alone, so the row still reads
+// proportioned instead of a big avatar next to now-relatively-huge text.
+const AVATAR_SIZE = 44;
 
 type InboxItem = Conversation | GroupConversationRow;
 type Colors = ReturnType<typeof useTheme>["colors"];
@@ -34,38 +38,38 @@ function createStyles(colors: Colors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.base100 },
     list: { paddingHorizontal: 10, paddingTop: 6, paddingBottom: 24, flexGrow: 1 },
-    row: { flexDirection: "row", alignItems: "center", gap: 13, paddingHorizontal: 8, paddingVertical: 10, borderRadius: 16 },
+    row: { flexDirection: "row", alignItems: "center", gap: 11, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 16 },
     rowPressed: { backgroundColor: colors.base200 },
     avatarFallback: { backgroundColor: colors.base200, alignItems: "center", justifyContent: "center" },
-    avatarFallbackText: { fontFamily: fonts.bold, fontSize: 16, color: colors.primary },
+    avatarFallbackText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
     groupTile: {
       width: AVATAR_SIZE,
       height: AVATAR_SIZE,
-      borderRadius: 17,
+      borderRadius: 15,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: `${colors.primary}1F`,
     },
-    groupImage: { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 17 },
+    groupImage: { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: 15 },
     text: { flex: 1, minWidth: 0 },
     topLine: { flexDirection: "row", alignItems: "center", gap: 8 },
-    name: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.baseContent },
+    name: { flex: 1, fontFamily: fonts.bold, fontSize: 13.5, color: colors.baseContent },
     nameUnread: { fontFamily: fonts.extrabold },
-    time: { fontFamily: fonts.medium, fontSize: 12, color: colors.placeholder },
+    time: { fontFamily: fonts.medium, fontSize: 11, color: colors.placeholder },
     timeUnread: { color: colors.primary, fontFamily: fonts.bold },
-    bottomLine: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 3 },
-    preview: { flex: 1, fontSize: 14, lineHeight: 19, color: colors.placeholder },
+    bottomLine: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+    preview: { flex: 1, fontSize: 12.5, lineHeight: 17, color: colors.placeholder },
     previewUnread: { color: colors.baseContent, fontFamily: fonts.medium },
     badge: {
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      paddingHorizontal: 6,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 5,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
     },
-    badgeText: { fontSize: 11, fontFamily: fonts.bold, color: colors.primaryContent },
+    badgeText: { fontSize: 10, fontFamily: fonts.bold, color: colors.primaryContent },
     empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 36, paddingBottom: 60, gap: 10 },
     emptyIcon: {
       width: 72,

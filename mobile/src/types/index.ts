@@ -24,6 +24,13 @@ export interface User {
   isOAuthUser?: boolean;
   accountTier?: AccountTier;
   currentlyWatching?: CurrentlyWatching | null;
+  // First-run taste onboarding (TC-133) — null/0 until the wizard finishes
+  // or is fully skipped. AuthContext derives `needsProfileSetup` from
+  // `onboardingCompletedAt` directly (not a separate in-memory flag) so a
+  // killed/backgrounded app resumes the wizard on relaunch instead of
+  // silently dropping it; `onboardingStep` is where the wizard resumes.
+  onboardingCompletedAt?: string | null;
+  onboardingStep?: number;
   token: string;
 }
 
@@ -912,7 +919,10 @@ export interface Message {
   _id: string;
   roomType: RoomType;
   roomId: string;
-  sender: MessageSender;
+  // null when the sender's account has since been deleted — the server
+  // still returns the message, Mongoose's populate just can't resolve a
+  // ref that no longer exists. Every reader must handle this case.
+  sender: MessageSender | null;
   text: string;
   type: MessageType;
   contentId?: string;
@@ -1323,23 +1333,28 @@ interface LeaderboardContent {
 export interface FavoritedLeaderboardItem {
   content: LeaderboardContent;
   favoriteCount: number;
+  rank: number;
 }
 export interface RatedLeaderboardItem {
   content: LeaderboardContent;
   avgRating: number; // 1-10 scale, same as everywhere else — StarRatingDisplay expects this directly
   ratingCount: number;
+  rank: number;
 }
 export interface RecommendedLeaderboardItem {
   content: LeaderboardContent;
   recommendCount: number;
+  rank: number;
 }
 export interface WatchedLeaderboardItem {
   content: LeaderboardContent;
   watchedCount: number;
+  rank: number;
 }
 export interface ReviewedLeaderboardItem {
   content: LeaderboardContent;
   reviewCount: number;
+  rank: number;
 }
 export interface LeaderboardResult {
   mostFavorited: FavoritedLeaderboardItem[];
@@ -1364,22 +1379,27 @@ interface PodiumUser {
 export interface MostFollowedItem {
   user: PodiumUser;
   followerCount: number;
+  rank: number;
 }
 export interface MostWatchedItem {
   user: PodiumUser;
   watchedCount: number;
+  rank: number;
 }
 export interface MostReviewedItem {
   user: PodiumUser;
   reviewCount: number;
+  rank: number;
 }
 export interface MostLikedItem {
   user: PodiumUser;
   likeCount: number;
+  rank: number;
 }
 export interface TopRecommenderItem {
   user: PodiumUser;
   recommendCount: number;
+  rank: number;
 }
 // Total badge count across BOTH badge families (genre + volume) — see
 // computeAllUsersBadgeCounts's own doc comment in the backend's
@@ -1388,14 +1408,73 @@ export interface TopRecommenderItem {
 export interface MostBadgesItem {
   user: PodiumUser;
   badgeCount: number;
+  rank: number;
+}
+// TC-136's daily guessing game — current puzzle-solving streak leaderboard.
+export interface MostPuzzleStreakItem {
+  user: PodiumUser;
+  puzzleStreak: number;
+  rank: number;
+}
+
+// One box in the daily guessing game's letter grid — `letter` is null
+// until a letter-hint (or the final solve reveal) fills it; the server
+// never sends real, un-hinted letters.
+export interface DailyGameBox {
+  index: number;
+  letter: string | null;
+}
+export interface DailyGameState {
+  date: string;
+  contentType: ContentType;
+  // When this attempt started (real, server-authoritative) — the client's
+  // own visible running timer just ticks a plain local setInterval
+  // against this instant; the real time-based score penalty is always
+  // computed server-side in submitGuess, never trusted from the client.
+  startedAt: string;
+  posterPath: string | null;
+  shape: DailyGameBox[][]; // one array per word
+  blurLevel: number;
+  maxBlurLevel: number;
+  hintsUsed: number;
+  maxLetterReveals: number;
+  revealedCount: number;
+  guessesCount: number;
+  solved: boolean;
+  score: number;
+  puzzleStreak: number;
+}
+export interface DailyGameGuessResult extends DailyGameState {
+  correct: boolean;
+  title?: string; // only present once solved
+  newlyEarnedBadges: NewlyEarnedBadge[];
+}
+// GET /daily-game/leaderboard — today's top scorers, already sorted
+// score desc (ties broken server-side by faster solve) — serves both the
+// in-game list and the Shares-feed ticker, same one call.
+export interface DailyGameLeaderboardEntry {
+  user: PodiumUser;
+  score: number;
+}
+// GET /feed/people-leaderboard's own per-category shape, direct ask for
+// the People Podium page's steps+list redesign: `entries` is the visible
+// ranked list (server-capped, see PEOPLE_LEADERBOARD_SIZE in
+// feedController.js), `viewerEntry` is the viewer's own full entry (real
+// `rank` included) only when they exist in the ranking but fall outside
+// `entries` — lets the client pin one extra row at the list's bottom
+// without duplicating someone already shown in it.
+export interface PeoplePodiumCategory<T> {
+  entries: T[];
+  viewerEntry: T | null;
 }
 export interface PeopleLeaderboardResult {
-  mostFollowed: MostFollowedItem[];
-  mostWatched: MostWatchedItem[];
-  mostReviewed: MostReviewedItem[];
-  mostLiked: MostLikedItem[];
-  topRecommenders: TopRecommenderItem[];
-  mostBadges: MostBadgesItem[];
+  mostFollowed: PeoplePodiumCategory<MostFollowedItem>;
+  mostWatched: PeoplePodiumCategory<MostWatchedItem>;
+  mostReviewed: PeoplePodiumCategory<MostReviewedItem>;
+  mostLiked: PeoplePodiumCategory<MostLikedItem>;
+  topRecommenders: PeoplePodiumCategory<TopRecommenderItem>;
+  mostBadges: PeoplePodiumCategory<MostBadgesItem>;
+  mostPuzzleStreak: PeoplePodiumCategory<MostPuzzleStreakItem>;
 }
 
 // GET /feed/my-podium-placements — powers the "you made the podium!" popup
@@ -1404,7 +1483,7 @@ export interface PeopleLeaderboardResult {
 // PeoplePodium.tsx's own shorter CategoryKey union — PodiumNewsModal.tsx
 // maps between the two.
 export interface PodiumPlacement {
-  category: "mostFollowed" | "mostWatched" | "mostReviewed" | "mostLiked" | "topRecommenders" | "mostBadges";
+  category: "mostFollowed" | "mostWatched" | "mostReviewed" | "mostLiked" | "topRecommenders" | "mostBadges" | "mostPuzzleStreak";
   rank: 1 | 2 | 3;
 }
 

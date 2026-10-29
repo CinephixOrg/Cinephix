@@ -10,7 +10,7 @@ import passport from "passport";
 import { configurePassport } from "./config/passportConfig.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { requestLogger, logger } from "./middleware/logger.js";
-import { simpleRateLimiter } from "./middleware/rateLimiter.js";
+import { simpleRateLimiter, MAX_REQUESTS, AUTH_MAX_REQUESTS, RATE_LIMIT_WINDOW_MINUTES } from "./middleware/rateLimiter.js";
 import { setupChat } from "./sockets/chatSocket.js";
 import { seedGroups } from "./scripts/seedGroups.js";
 import cron from "node-cron";
@@ -19,6 +19,9 @@ import { postOfficialContent } from "./services/officialContentService.js";
 import { checkWatchPartyReminders } from "./services/watchPartyReminders.js";
 import { postWeeklyLeaderboardAnnouncements } from "./services/weeklyLeaderboardAnnouncer.js";
 import { expireDueTierGrants } from "./services/tierGrants.js";
+import { pickTodaysPuzzle } from "./services/dailyPuzzleService.js";
+import { notifyDailyPuzzleReady } from "./services/dailyPuzzleNotifier.js";
+import { notifyIfLeaderChanged } from "./services/dailyLeaderboardNotifier.js";
 
 dotenv.config();
 const app = express();
@@ -87,6 +90,7 @@ import reportRoute from "./routes/reportRoute.js";
 import ticketRoute from "./routes/ticketRoute.js";
 import adminRoute from "./routes/adminRoute.js";
 import episodeRoute from "./routes/episodeRoute.js";
+import dailyGameRoute from "./routes/dailyGameRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -110,6 +114,7 @@ app.use("/api/reports", reportRoute);
 app.use("/api/tickets", ticketRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/episodes", episodeRoute);
+app.use("/api/daily-game", dailyGameRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);
@@ -208,6 +213,27 @@ async function start() {
         .catch(err => logger.error(`Tier grant expiry error: ${err.message}`));
     });
 
+    // TC-136 daily guessing game — one deterministic pick for everyone,
+    // written once at UTC midnight (getOrCreateTodaysPuzzle also
+    // self-heals lazily on first real request if this tick is ever
+    // missed, so the feature never hard-fails over a cron hiccup). The
+    // push fires 5 minutes later so the pick is always already written by
+    // the time any notified user opens the app.
+    cron.schedule("0 0 * * *", () => {
+      logger.info("Picking today's daily-guessing-game puzzle...");
+      pickTodaysPuzzle().catch(err => logger.error(`Daily puzzle pick error: ${err.message}`));
+    });
+    cron.schedule("5 0 * * *", () => {
+      logger.info("Sending daily-puzzle-ready push notifications...");
+      notifyDailyPuzzleReady().catch(err => logger.error(`Daily puzzle notify error: ${err.message}`));
+    });
+    // Every 4 hours (splitting the discussed 3-6h window) — a no-op most
+    // ticks, since notifyIfLeaderChanged itself only actually sends
+    // anything once the real leader has changed since the last time it did.
+    cron.schedule("0 */4 * * *", () => {
+      notifyIfLeaderChanged().catch(err => logger.error(`Daily leaderboard notify error: ${err.message}`));
+    });
+
     // Attach Socket.io chat handler
     setupChat(io);
     logger.info("Socket.io chat handler attached");
@@ -226,7 +252,7 @@ async function start() {
 
     const server = httpServer.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
-      logger.info("Rate limiting: 100 requests per 15 minutes per IP");
+      logger.info(`Rate limiting: ${MAX_REQUESTS} requests (${AUTH_MAX_REQUESTS} for auth endpoints) per ${RATE_LIMIT_WINDOW_MINUTES} minutes per IP`);
     });
 
     const shutdown = async () => {

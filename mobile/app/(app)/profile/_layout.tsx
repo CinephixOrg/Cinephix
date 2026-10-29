@@ -44,6 +44,12 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="privacy" options={{ title: t("Privacy Policy") }} />
       <Stack.Screen name="terms" options={{ title: t("Terms of Service") }} />
       <Stack.Screen name="credits" options={{ title: t("Credits") }} />
+      <Stack.Screen name="analyses" options={{ title: t("My Analyses") }} />
+      {/* No native header — a full-screen story takeover (progress bar +
+          close button are its own chrome), same reasoning
+          SyncIntroStory.tsx's own screen (app/(app)/match/index.tsx) has
+          no header either. */}
+      <Stack.Screen name="analyze-story" options={{ headerShown: false }} />
     </Stack>
   );
 }

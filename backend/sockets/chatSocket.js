@@ -98,10 +98,21 @@ export const setupChat = (io) => {
         // ChatRoom.tsx actually uses while connected (groupController.js's
         // own sendWatchPartyMessage only ever runs as the disconnected
         // fallback), so the same guard has to live here too, not just there.
+        // TC-112: an ENDED party could still be posted in too — mobile only
+        // disabled its own composer, the server itself never rejected one
+        // that arrived anyway. Same DEFAULT_WATCH_PARTY_DURATION value as
+        // groupController.js's own copy — not imported from there, to
+        // avoid groupController.js (which already imports roomKey from
+        // this file) and this file importing each other.
         if (roomType === "watchparty") {
-          const party = await GroupWatchParty.findById(roomId).select("scheduledAt").lean();
+          const party = await GroupWatchParty.findById(roomId).select("scheduledAt durationMinutes").lean();
           if (!party || party.scheduledAt > new Date()) {
             socket.emit("error", { message: "This watch party hasn't started yet" });
+            return;
+          }
+          const durationMs = (party.durationMinutes ?? 240) * 60 * 1000;
+          if (party.scheduledAt.getTime() + durationMs < Date.now()) {
+            socket.emit("error", { message: "This watch party has ended" });
             return;
           }
         }

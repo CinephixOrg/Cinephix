@@ -85,7 +85,9 @@ function ProfileAnalysisShareMessageCard({ message, isOwn, onPress, onLongPress 
   const { t } = useTranslation();
   const analysis = message.analysisData as ProfileAnalysis | undefined;
   const { top, other } = useMemo(() => cineGraphSlices(analysis?.stats?.genreBreakdown), [analysis]);
-  const owner = message.sender.username;
+  // sender can be null for a since-deleted account — same "Deleted
+  // account" convention ChatRoom.tsx's own MessageRow already uses.
+  const owner = message.sender?.username ?? t("Deleted account");
   const nickname = analysis?.nickname?.trim();
 
   return (

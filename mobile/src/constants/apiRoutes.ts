@@ -38,6 +38,7 @@ export const API_ROUTES = {
   WATCHLIST: {
     GET: "/users/me/watchlist",
     ADD: "/users/me/watchlist",
+    BULK_ADD: "/users/me/watchlist/bulk",
     REMOVE: (itemId: string, itemType: string) =>
       `/users/me/watchlist/${itemId}?itemType=${itemType}`,
   },
@@ -65,10 +66,12 @@ export const API_ROUTES = {
     SET_CURRENTLY_WATCHING: "/users/me/currently-watching",
     STOP_CURRENTLY_WATCHING: "/users/me/currently-watching",
     UPDATE_TIER: "/users/me/tier", // DEV-ONLY: simulates a tier purchase
+    ONBOARDING_PROGRESS: "/users/me/onboarding-progress",
     DELETE_ACCOUNT: "/users/profile",
     GET_FOLLOWING: "/users/me/following",
     GET_FOLLOWERS: "/users/me/followers",
     SEARCH: "/users/search",
+    NEW_USERS: "/users/new",
     FOLLOW: "/users/follow",
     UNFOLLOW: "/users/unfollow",
     REMOVE_FOLLOWER: "/users/remove-follower",
@@ -140,6 +143,7 @@ export const API_ROUTES = {
     REMOVE_ITEM: (id: string, itemId: string, itemType: string) =>
       `/lists/${id}/items/${itemId}?itemType=${itemType}`,
     DISCOVER: "/lists/discover",
+    SUGGESTED: "/lists/suggested",
     POPULAR: "/lists/popular",
     FOR_CONTENT: (contentType: string, contentId: string) => `/lists/for-content/${contentType}/${contentId}`,
     TOGGLE_LIKE: (id: string) => `/lists/${id}/like`,
@@ -240,6 +244,13 @@ export const API_ROUTES = {
     SEND_WATCH_PARTY_MESSAGE: (slug: string, id: string) => `/groups/${slug}/watch-parties/${id}/messages`,
     POLL_HIGHLIGHT_CARD: (slug: string) => `/groups/${slug}/poll/highlight-card`,
     WATCH_PARTY_HIGHLIGHT_CARD: (slug: string, id: string) => `/groups/${slug}/watch-parties/${id}/highlight-card`,
+  },
+  DAILY_GAME: {
+    STREAK: "/daily-game/streak",
+    TODAY: "/daily-game/today",
+    HINT: "/daily-game/hint",
+    GUESS: "/daily-game/guess",
+    LEADERBOARD: "/daily-game/leaderboard",
   },
   HEALTH: "/health",
 };

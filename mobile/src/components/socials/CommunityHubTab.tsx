@@ -87,7 +87,11 @@ function createStyles(colors: Colors, accent: string) {
     pollOptionRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     pollPoster: { width: 28, height: 42, borderRadius: 5, backgroundColor: colors.base300 },
     pollResultTrack: { flex: 1, borderRadius: 8, backgroundColor: colors.base300, overflow: "hidden", justifyContent: "center" },
-    pollResultFill: { position: "absolute", left: 0, top: 0, bottom: 0, opacity: 0.28 },
+    // borderRadius matches pollResultTrack's own — Android doesn't
+    // reliably clip an absolutely-positioned fill to an ancestor's rounded
+    // overflow alone (TC-116, same root cause as ShareCard.tsx's identical
+    // poll fill).
+    pollResultFill: { position: "absolute", left: 0, top: 0, bottom: 0, opacity: 0.28, borderRadius: 8 },
     pollResultRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 7, paddingHorizontal: 12 },
     pollResultLabel: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.baseContent, flexShrink: 1, marginRight: 6 },
     pollResultLabelChosen: { fontFamily: fonts.bold },

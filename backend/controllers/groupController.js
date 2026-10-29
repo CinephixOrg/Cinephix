@@ -1346,7 +1346,7 @@ export const sendWatchPartyMessage = asyncHandler(async (req, res) => {
   const { text } = req.body;
   if (!text?.trim() || text.length > 1000) return sendError(res, "Invalid message text", 400);
 
-  const party = await GroupWatchParty.findById(req.params.id).select("group scheduledAt").lean();
+  const party = await GroupWatchParty.findById(req.params.id).select("group scheduledAt durationMinutes").lean();
   if (!party) return sendError(res, "Watch party not found", 404);
   const isMember = await Group.exists({ _id: party.group, "members.user": req.user._id });
   if (!isMember) return sendError(res, "Not a member of this group", 403);
@@ -1355,6 +1355,13 @@ export const sendWatchPartyMessage = asyncHandler(async (req, res) => {
   // (so RSVPs/reads work early), but talking in it is gated to once it's
   // actually started.
   if (party.scheduledAt > new Date()) return sendError(res, "This watch party hasn't started yet", 403);
+  // TC-112: and gated to before it's ENDED too — this is the disconnected-
+  // socket fallback (sockets/chatSocket.js's own send-message is the one
+  // actually used while connected, with the identical pair of checks).
+  const durationMs = (party.durationMinutes ?? DEFAULT_WATCH_PARTY_DURATION) * 60 * 1000;
+  if (party.scheduledAt.getTime() + durationMs < Date.now()) {
+    return sendError(res, "This watch party has ended", 403);
+  }
 
   const message = await Message.create({
     roomType: "watchparty",

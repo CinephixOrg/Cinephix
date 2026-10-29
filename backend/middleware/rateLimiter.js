@@ -6,11 +6,18 @@
 
 const requestCounts = new Map();
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 100000; // Temporarily raised significantly for testing throughput
+// Was temporarily raised to 100000 "for testing throughput" and left that
+// way — meant no real rate limiting was live at all. 600/15min (~40/min)
+// is generous enough for this app's own normal usage (e.g. the unread-
+// count poll alone is ~90 requests/15min) while still capping scripted
+// abuse. Per-IP, so a shared IP (NAT, campus wifi) splits this across
+// however many real people are behind it — a real limitation of a plain
+// per-IP limiter, not fixed here, just worth knowing.
+const MAX_REQUESTS = 600;
 
 /**
  * Simple rate limiter middleware
- * Limits each IP to 100 requests per 15 minutes
+ * Limits each IP to MAX_REQUESTS requests per 15 minutes
  */
 export const simpleRateLimiter = (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;
@@ -63,11 +70,21 @@ setInterval(() => {
 }, 60 * 60 * 1000); // Every hour
 
 /**
- * Strict rate limiter for auth endpoints (login/register)
- * Limits each IP to 10 requests per 15 minutes — brute-force protection
+ * Strict rate limiter for auth endpoints (register/login/send-verification/
+ * verify-email/forgot-password/reset-password — see userRoute.js) — these
+ * share one counter per IP, so this is the real brute-force/credential-
+ * stuffing defense for the whole account-security surface. Same "was
+ * raised to 10000 for testing, left that way" issue as MAX_REQUESTS above
+ * — meant login/reset had no real protection at all.
  */
 const authRequestCounts = new Map();
-const AUTH_MAX_REQUESTS = 10000; // Temporarily raised significantly for testing throughput
+const AUTH_MAX_REQUESTS = 20;
+
+// Exported so server.js's own startup log can report the real numbers
+// instead of a hardcoded string that silently goes stale (as the old
+// "100 requests per 15 minutes" log did once MAX_REQUESTS was bumped).
+export const RATE_LIMIT_WINDOW_MINUTES = WINDOW_MS / 60000;
+export { MAX_REQUESTS, AUTH_MAX_REQUESTS };
 
 export const authRateLimiter = (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;

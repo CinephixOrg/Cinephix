@@ -373,14 +373,20 @@ async function getFollowedPodiumEvents(followingIds) {
   const { mostFollowed, mostWatched, mostReviewed } = await getPeopleThreePodiums(null);
   const now = new Date();
   const events = [];
+  // Each category's own array now holds everyone who qualifies, not just
+  // the top 3 (direct ask on the People Podium page, see
+  // feedController.js's own computePeopleThreePodiums doc comment) — "made
+  // the podium" here still means literally top 3, so this only collects
+  // entries whose own `rank` says so, same guard getMyPodiumPlacements/
+  // computePodiumBadge in feedController.js needed for the same reason.
   const collect = (list, category) => {
-    list.forEach((entry, i) => {
-      if (!followingSet.has(entry.user.id)) return;
+    list.forEach((entry) => {
+      if (entry.rank > 3 || !followingSet.has(entry.user.id)) return;
       events.push({
         type: "podium",
         actor: { _id: entry.user.id, username: entry.user.username, profile_pic_url: entry.user.profile_pic_url, accountTier: entry.user.accountTier },
         category,
-        rank: i + 1,
+        rank: entry.rank,
         createdAt: now,
       });
     });
