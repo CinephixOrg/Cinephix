@@ -48,6 +48,9 @@ type PeopleMetric =
   | { kind: "liked"; count: number }
   | { kind: "recommended"; count: number }
   | { kind: "badges"; count: number }
+  // TC-136's daily guessing game — current puzzle-solving streak (days),
+  // separate field from the general engagement streak elsewhere.
+  | { kind: "puzzle"; count: number }
   // A community's own weekly leaderboard score (CommunityRailCard.tsx's
   // leaderboard-category announcement card) — not a follow-graph/activity
   // count like the others, so its own icon/wording.
@@ -227,6 +230,12 @@ export default function PeoplePodiumCard({ rank, user, metric, locked }: Props) 
       {metric.kind === "badges" && (
         <View style={styles.metricRow}>
           <Ionicons name="ribbon" size={12} color={colors.warning} />
+          <Text style={styles.metricText}>{metric.count}</Text>
+        </View>
+      )}
+      {metric.kind === "puzzle" && (
+        <View style={styles.metricRow}>
+          <Ionicons name="flame" size={12} color={colors.warning} />
           <Text style={styles.metricText}>{metric.count}</Text>
         </View>
       )}

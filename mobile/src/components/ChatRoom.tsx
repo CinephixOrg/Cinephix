@@ -31,7 +31,8 @@ import ListShareMessageCard from "./ListShareMessageCard";
 import CommunityAnnouncementMessageCard from "./CommunityAnnouncementMessageCard";
 import ProfileAnalysisShareMessageCard from "./ProfileAnalysisShareMessageCard";
 import AnalyzeModal from "./AnalyzeModal";
-import ProfileAnalysisModal from "./ProfileAnalysisModal";
+import { usePathname, useRouter } from "expo-router";
+import { setPendingProfileAnalysis } from "../utils/pendingProfileAnalysis";
 import type { MatchAnalysis, Message, MessagePagination, MessageSender, ProfileAnalysis, RoomType } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
@@ -216,7 +217,14 @@ const MessageRow = memo(function MessageRow({
     );
   }
 
-  const sender = message.sender;
+  // Direct report: a message from a since-deleted account (sender is null
+  // — the server still populates it, Mongoose just can't resolve a ref
+  // that no longer exists) crashed this whole screen on open, since every
+  // existing message's avatar/name read straight off `message.sender`
+  // with no null check. A visible "Deleted user" placeholder instead of a
+  // crash — same shape as a real sender, so nothing below needs its own
+  // special case.
+  const sender = message.sender ?? { _id: "", username: t("Deleted user") };
   return (
     // The list is inverted, which flips each row: a bottom margin here is the
     // gap *above* the row on screen, separating one run from the last.
@@ -311,7 +319,19 @@ export default function ChatRoom({
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState("");
   const [viewingAnalysis, setViewingAnalysis] = useState<MatchAnalysis | null>(null);
-  const [viewingProfileAnalysis, setViewingProfileAnalysis] = useState<ProfileAnalysis | null>(null);
+  const router = useRouter();
+  // Self-derived, same reasoning as ContentDetailScreen.tsx/
+  // AnalyzeStoryScreen.tsx: this component is reused across Socials'
+  // communities chat, Socials' DM conversation, a public profile's chat,
+  // and a watch-party room (all under their own tab's stack), so it
+  // resolves which stack it's running under from the URL rather than
+  // taking a basePath prop from each of those 4 call sites.
+  const pathname = usePathname();
+  const basePath = useMemo(() => {
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments[0] === "user" && segments[1]) return `/user/${segments[1]}`;
+    return segments[0] ? `/${segments[0]}` : "/socials";
+  }, [pathname]);
   // Refs for callbacks that must not change identity with every message.
   const markReadRef = useRef(markRead);
   markReadRef.current = markRead;
@@ -426,7 +446,9 @@ export default function ChatRoom({
   // live messages in a community included); the server does the rest.
   const blocked = useBlockedIds();
   const rows = useMemo(
-    () => chatRows(blocked.size ? messages.filter((m) => !blocked.has(m.sender._id)) : messages).reverse(),
+    // `sender` can be null for a message from a since-deleted account — not
+    // in `blocked` either way, so it's never incorrectly filtered out.
+    () => chatRows(blocked.size ? messages.filter((m) => !blocked.has(m.sender?._id ?? "")) : messages).reverse(),
     [messages, blocked]
   );
   const { openContentActions } = useSafety();
@@ -435,18 +457,27 @@ export default function ChatRoom({
       openContentActions({
         entityType: "Message",
         entityId: message._id,
-        author: { _id: message.sender._id, username: message.sender.username },
+        author: message.sender ? { _id: message.sender._id, username: message.sender.username } : { _id: "", username: t("Deleted user") },
       }),
-    [openContentActions]
+    [openContentActions, t]
   );
 
   const openAnalysis = useCallback(
     (message: Message) => setViewingAnalysis((message.analysisData as MatchAnalysis) ?? null),
     []
   );
+  // Opens the same full-screen analysis story the owner sees on their own
+  // Profile (AnalyzeStoryScreen), staged with origin "shared" so it shows
+  // an ownership header instead of a Share CTA — viewing someone else's
+  // shared analysis here isn't a re-share decision.
   const openProfileAnalysis = useCallback(
-    (message: Message) => setViewingProfileAnalysis((message.analysisData as ProfileAnalysis) ?? null),
-    []
+    (message: Message) => {
+      const data = message.analysisData as ProfileAnalysis | undefined;
+      if (!data) return;
+      setPendingProfileAnalysis(data, "shared");
+      router.push(`${basePath}/analyze-story` as never);
+    },
+    [router, basePath]
   );
 
   const userId = user?._id;
@@ -454,7 +485,8 @@ export default function ChatRoom({
   const renderItem = useCallback(
     ({ item }: { item: ChatRow }) => {
       if (item.kind === "day") return <DaySeparator iso={item.iso} styles={styles} />;
-      const isOwn = item.message.sender._id === userId;
+      // sender?._id — a message from a deleted account is never "own".
+      const isOwn = item.message.sender?._id === userId;
       return (
         <MessageRow
           message={item.message}
@@ -548,11 +580,6 @@ export default function ChatRoom({
       </View>
 
       <AnalyzeModal visible={!!viewingAnalysis} onClose={() => setViewingAnalysis(null)} data={viewingAnalysis} />
-      <ProfileAnalysisModal
-        visible={!!viewingProfileAnalysis}
-        onClose={() => setViewingProfileAnalysis(null)}
-        data={viewingProfileAnalysis}
-      />
     </KeyboardAvoidingView>
   );
 }

@@ -38,12 +38,14 @@ import {
   uploadProfilePic,
   getMyProfile,
   getSuggestedUsers,
+  getNewUsers,
   getOnlineFriends,
   getProfileAnalysis,
   getProfileAnalysisHistory,
   setOwnAccountTier,
   setCurrentlyWatching,
-  stopCurrentlyWatching
+  stopCurrentlyWatching,
+  updateOnboardingProgress
 } from "../controllers/userController.js";
 import { getImportSources, runImport } from "../controllers/importController.js";
 import { getLogs, revertLogs, resetData } from "../controllers/logController.js";
@@ -189,6 +191,7 @@ router.put("/me/favorites", authMiddleware, validateRequest(validationSchemas.up
 
 // Search users
 router.get("/search", authMiddleware, searchUsers);
+router.get("/new", authMiddleware, getNewUsers);
 
 // Get user profile and related data
 // Blocking: either person disappears for the other (services/blockService.js).
@@ -208,6 +211,7 @@ router.patch("/profile/:id/bio", authMiddleware, validateRequest(validationSchem
 router.post("/me/currently-watching", authMiddleware, setCurrentlyWatching);
 router.delete("/me/currently-watching", authMiddleware, stopCurrentlyWatching);
 router.patch("/me/tier", authMiddleware, setOwnAccountTier); // DEV-ONLY: simulates a tier purchase, disabled in production
+router.patch("/me/onboarding-progress", authMiddleware, updateOnboardingProgress); // TC-133: first-run taste wizard resume point
 
 router.get("/ratings/:id", authMiddleware, notHiddenUser("id"), getUserRatings);
 router.get("/cinegraph-data/:id", authMiddleware, notHiddenUser("id"), getUserCineGraph);

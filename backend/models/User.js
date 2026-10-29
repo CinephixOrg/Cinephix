@@ -121,6 +121,14 @@ const userSchema = new Schema({
   watchlist: { type: [WatchItemSchema], default: [] }, // Bu alan sizde mevcuttu
   toWatchList: { type: [WatchItemSchema], default: [] },
 
+  // First-run taste onboarding (TC-133) — the wizard's own progress, so a
+  // killed/backgrounded app resumes on the right step instead of silently
+  // skipping the whole thing on relaunch. `onboardingCompletedAt` (not a
+  // plain boolean) is the single source of truth for whether the wizard
+  // still needs to show at all; `null` means "still needs it."
+  onboardingCompletedAt: { type: Date, default: null },
+  onboardingStep: { type: Number, default: 0 },
+
   // --- YENİ EKLENEN TAKİP ALANLARI ---
   followers: [{
     type: Schema.Types.ObjectId,
@@ -170,6 +178,16 @@ seriesCineGraph: {
   // user's own next action, not by a cron job.
   currentStreak: { type: Number, default: 0 },
   lastStreakDate: { type: Date },
+
+  // Separate from the general engagement streak above — TC-136's daily
+  // guessing game is its own distinct daily action (solving today's
+  // puzzle), deliberately not folded into currentStreak/lastStreakDate,
+  // which already means "any of rating/review/list/watchlist, once a
+  // day." Same day-truncated-UTC-date/lazy-decay shape, just its own
+  // field pair (badgeController.js's bumpPuzzleStreak/
+  // computePuzzleStreakBadge).
+  puzzleStreak: { type: Number, default: 0 },
+  lastPuzzleStreakDate: { type: Date },
 
   // Single active "Currently Watching" status — a real explicit user
   // action (a button on Content Detail, not inferred from rating/

@@ -43,6 +43,11 @@ export default function WhatToWatchRail({ basePath }: Props) {
           type={item.contentType}
           posterPath={item.poster_path}
           basePath={basePath}
+          // Direct ask: no "+" add-to-watchlist corner button here —
+          // every poster in this rail is already a "you haven't watched
+          // this" suggestion, so a second control for the same idea was
+          // redundant. MiniContentCard only renders that button when
+          // `onAdd` is passed, so simply not passing it is enough.
           style={{ width: CARD_WIDTH, marginRight: CARD_GAP }}
         />
       )}

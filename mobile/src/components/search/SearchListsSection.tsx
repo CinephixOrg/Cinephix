@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, FlatList, ScrollView, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
 import { SkeletonListRow } from "../Skeleton";
 import { getPopularListsPaginated, type ListSort } from "../../api/listService";
 import SearchListCard from "./SearchListCard";
 import FilterBottomSheet from "./FilterBottomSheet";
 import SortOptionsList from "./SortOptionsList";
+import SuggestedListsSection from "./SuggestedListsSection";
 import type { DiscoverListItem } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -131,9 +131,10 @@ export default function SearchListsSection({ query, showFilters, onCloseFilters,
 
   if (!hasSearchCriteria) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name="albums-outline" size={40} color={colors.placeholder} />
-        <Text style={styles.empty}>{t("Search any list you want to find it.")}</Text>
+      <View style={{ flex: 1, backgroundColor: colors.base100 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <SuggestedListsSection />
+        </ScrollView>
         {filterSheet}
       </View>
     );

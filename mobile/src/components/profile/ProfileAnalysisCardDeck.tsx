@@ -1,24 +1,6 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
-import {
-  Animated,
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
-} from "react-native";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Animated, View, Text, StyleSheet } from "react-native";
 import Pressable from "../common/TapSafePressable";
-// Only the deck's own top-level card pager needs this — same same-axis
-// nesting fix as AnalysisPosterRow's own ScrollView (see its own comment):
-// this deck now also renders embedded inside ShareCard's feed row, itself
-// nested inside home/index.tsx's horizontal Shares/Discover gesture-handler
-// pager, so the card pager has to participate in GH's own pan arbitration
-// or the outer pager simply eats every horizontal drag before it reaches
-// this component. Harmless in ProfileAnalysisModal's Modal context too,
-// which carries its own gesture root (common/GestureModal).
-import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import MatchGradientTitle from "../match/MatchGradientTitle";
@@ -42,34 +24,7 @@ import { useTheme } from "../../context/ThemeContext";
 import type { ColorPalette } from "../../theme/palettes";
 import { fonts } from "../../theme/typography";
 
-const AnimatedGHScrollView = Animated.createAnimatedComponent(GHScrollView);
-
-const CARD_GAP = 12;
-const HORIZONTAL_PADDING = 18;
-const IDEAL_CARD_HEIGHT = 540;
-const MAX_CARD_HEIGHT_RATIO = 0.64;
-// How many posters a collapsed strip shows before "See all" is worth
-// offering. Roughly two screens' worth of sideways scrolling.
-const COLLAPSED_ITEM_COUNT = 6;
-
-// Everything the deck needs to look untouched after the user taps a poster,
-// visits that title's page, and comes back. The deck itself unmounts while
-// that happens (an RN Modal drops its children when hidden), so this lives
-// in a ref owned by ProfileAnalysisModal, which stays mounted throughout.
-export interface AnalysisDeckState {
-  activeIndex: number;
-  revealedKeys: string[];
-  // Per-card selected genre / rating / month, keyed by card key.
-  selectionByCard: Record<string, string | null>;
-}
-
-export const createAnalysisDeckState = (): AnalysisDeckState => ({
-  activeIndex: 0,
-  revealedKeys: [],
-  selectionByCard: {},
-});
-
-interface CardDef {
+export interface CardDef {
   key: string;
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -159,22 +114,48 @@ function PersonaBody({ data, active }: { data: ProfileAnalysis; active: boolean 
           <Text style={styles.tasteChipText}>{data.tasteCategory}</Text>
         </View>
       )}
+      {/* The card's own lead sentence — deliberately left unboxed, unlike
+          the three sections below it, so it still reads as the headline
+          the nickname/chip are introducing, not one more callout in a row
+          of them. */}
       <Text style={styles.paragraph}>{data.personalitySummary}</Text>
 
+      {/* All three direct ask — a consistent icon-badge + boxed treatment
+          for every subsection, not just "Did You Know" (the only one that
+          had one before). Same cardIcon badge language the deck's own
+          generic per-card header already uses elsewhere in this file, just
+          color-coded per section instead of off each card's own `accent`.
+          Emoji prefixes dropped from the label text now that there's a
+          real icon doing that job — keeping both read as doubled-up. */}
       {data.trendVsLastAnalysis && (
-        <View style={styles.subsection}>
-          <Text style={styles.sectionLabel}>{`📈 ${t("Since Last Time")}`.toUpperCase()}</Text>
+        <View style={styles.sectionBox}>
+          <View style={styles.sectionBoxHeader}>
+            <View style={[styles.cardIcon, { backgroundColor: colors.success + "22" }]}>
+              <Ionicons name="trending-up-outline" size={13} color={colors.success} />
+            </View>
+            <Text style={styles.sectionLabel}>{t("Since Last Time").toUpperCase()}</Text>
+          </View>
           <Text style={styles.paragraph}>{data.trendVsLastAnalysis}</Text>
         </View>
       )}
 
-      <View style={styles.subsection}>
-        <Text style={styles.sectionLabel}>{`💡 ${t("Recommended Vibe")}`.toUpperCase()}</Text>
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionBoxHeader}>
+          <View style={[styles.cardIcon, { backgroundColor: colors.primary + "22" }]}>
+            <Ionicons name="bulb-outline" size={13} color={colors.primary} />
+          </View>
+          <Text style={styles.sectionLabel}>{t("Recommended Vibe").toUpperCase()}</Text>
+        </View>
         <Text style={styles.paragraph}>{data.recommendedConcept}</Text>
       </View>
 
-      <View style={styles.funFactBox}>
-        <Text style={styles.sectionLabel}>{`🍿 ${t("Did You Know?")}`.toUpperCase()}</Text>
+      <View style={styles.sectionBox}>
+        <View style={styles.sectionBoxHeader}>
+          <View style={[styles.cardIcon, { backgroundColor: colors.warning + "22" }]}>
+            <Ionicons name="film-outline" size={13} color={colors.warning} />
+          </View>
+          <Text style={styles.sectionLabel}>{t("Did You Know?").toUpperCase()}</Text>
+        </View>
         <Text style={styles.funFactText}>"{data.funFact}"</Text>
       </View>
     </Animated.View>
@@ -312,13 +293,7 @@ const GenreBreakdownBody = memo(function GenreBreakdownBody({
           {/* Keyed by genre so the row remounts on every selection change —
               that's what re-runs its stagger, giving each newly-picked genre
               its own little deal-in instead of swapping posters in place. */}
-          <AnalysisPosterRow
-            key={focused?.genre}
-            items={focusedItems}
-            gradientId="analysisGenrePosterFade"
-            active={active}
-            onPressItem={onOpenItem}
-          />
+          <AnalysisPosterRow key={focused?.genre} items={focusedItems} active={active} onPressItem={onOpenItem} />
         </View>
       )}
     </View>
@@ -394,13 +369,7 @@ const RecentTasteBody = memo(function RecentTasteBody({
           <Text style={styles.sectionLabel}>
             {(selection ? t("Recent {{genre}} picks", { genre: selection }) : t("Recently Rated")).toUpperCase()}
           </Text>
-          <AnalysisPosterRow
-            key={selection ?? "all"}
-            items={shownItems}
-            gradientId="analysisRecentPosterFade"
-            active={active}
-            onPressItem={onOpenItem}
-          />
+          <AnalysisPosterRow key={selection ?? "all"} items={shownItems} active={active} onPressItem={onOpenItem} />
         </View>
       )}
     </View>
@@ -490,13 +459,7 @@ const FavoriteGenresBody = memo(function FavoriteGenresBody({
           <Text style={styles.sectionLabel}>
             {(selection ? t("Favorite {{genre}} picks", { genre: selection }) : t("In Your Favorites")).toUpperCase()}
           </Text>
-          <AnalysisPosterRow
-            key={selection ?? "all"}
-            items={shownItems}
-            gradientId="analysisFavoritePosterFade"
-            active={active}
-            onPressItem={onOpenItem}
-          />
+          <AnalysisPosterRow key={selection ?? "all"} items={shownItems} active={active} onPressItem={onOpenItem} />
         </View>
       )}
     </View>
@@ -587,10 +550,6 @@ const RatingCurveBody = memo(function RatingCurveBody({
   const { t } = useTranslation();
   const styles = useMemo(() => buildStyles(colors), [colors]);
   const [selection, onSelect] = usePersistedSelection(initialSelection, onSelectionChange);
-  // Collapses back to a strip whenever a different bar is picked — "See all"
-  // is a statement about one bucket, not a mode the card stays in.
-  const [expanded, setExpanded] = useState(false);
-  useEffect(() => setExpanded(false), [selection]);
 
   const curve = stats.ratingCurve ?? [];
   const totalRated = curve.reduce((sum, c) => sum + c.count, 0);
@@ -620,8 +579,6 @@ const RatingCurveBody = memo(function RatingCurveBody({
   // The bucket's real size, straight off the chart — may exceed how many
   // titles the analysis actually stored for it.
   const selectedCount = selection ? curve.find((c) => String(c.value) === selection)?.count ?? 0 : 0;
-  const canExpand = selectedItems.length > COLLAPSED_ITEM_COUNT;
-  const visibleItems = expanded ? selectedItems : selectedItems.slice(0, COLLAPSED_ITEM_COUNT);
 
   return (
     <View>
@@ -650,36 +607,15 @@ const RatingCurveBody = memo(function RatingCurveBody({
       ) : (
         selectedItems.length > 0 && (
           <View style={styles.posterSection}>
-            <View style={styles.posterHeader}>
-              <Text style={[styles.sectionLabel, styles.posterHeaderLabel]} numberOfLines={1}>
-                {t("Titles you rated {{score}}", { score: formatFiveScale(Number(selection)) }).toUpperCase()}
-              </Text>
-              {/* Only offered when expanding would actually reveal something
-                  we hold. An analysis generated before the per-bucket cap was
-                  raised only stored COLLAPSED_ITEM_COUNT titles, so there's
-                  genuinely nothing behind the button on that data — the
-                  "showing X of Y" line below carries the truth instead. */}
-              {canExpand && (
-                <Pressable onPress={() => setExpanded((prev) => !prev)} hitSlop={8}>
-                  <Text style={styles.seeAll}>
-                    {expanded ? t("Show less") : t("See all ({{count}})", { count: selectedItems.length })}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-            <AnalysisPosterRow
-              key={`${selection}-${expanded ? "grid" : "row"}`}
-              items={visibleItems}
-              gradientId="analysisCurvePosterFade"
-              active={active}
-              onPressItem={onOpenItem}
-              layout={expanded ? "grid" : "row"}
-            />
+            <Text style={styles.sectionLabel}>
+              {t("Titles you rated {{score}}", { score: formatFiveScale(Number(selection)) }).toUpperCase()}
+            </Text>
+            <AnalysisPosterRow key={selection} items={selectedItems} active={active} onPressItem={onOpenItem} />
             {/* The bar's real height can exceed what the analysis stored for
-                it, so never let the row imply it's the whole bucket. */}
-            {selectedCount > visibleItems.length && (
+                it, so never let the grid imply it's the whole bucket. */}
+            {selectedCount > selectedItems.length && (
               <Text style={styles.footnote}>
-                {t("Showing {{shown}} of {{total}}.", { shown: visibleItems.length, total: selectedCount })}
+                {t("Showing {{shown}} of {{total}}.", { shown: selectedItems.length, total: selectedCount })}
               </Text>
             )}
           </View>
@@ -749,13 +685,7 @@ const ActivityTimelineBody = memo(function ActivityTimelineBody({
                 .toLocaleDateString(i18n.language, { month: "long", year: "numeric" })
                 .toUpperCase()}
             </Text>
-            <AnalysisPosterRow
-              key={selection}
-              items={selectedItems}
-              gradientId="analysisTimelinePosterFade"
-              active={active}
-              onPressItem={onOpenItem}
-            />
+            <AnalysisPosterRow key={selection} items={selectedItems} active={active} onPressItem={onOpenItem} />
           </View>
         )
       )}
@@ -789,151 +719,45 @@ const PremiumTeaseBody = memo(function PremiumTeaseBody({ onUpgrade }: { onUpgra
   );
 });
 
-// One page indicator, driven straight off the deck's scroll offset rather
-// than off activeIndex.
-//
-// activeIndex only updates when a gesture *ends* (onMomentumScrollEnd /
-// onScrollEndDrag), so a dot keyed on it sat perfectly still through the
-// entire swipe and then teleported — which reads as dropped frames even
-// though nothing was actually dropping. Interpolating `scrollX` instead
-// means the dot tracks the card under your thumb continuously.
-//
-// Everything animated here is opacity + scaleX, the two things the native
-// driver can own outright: once mounted, this costs the JS thread nothing
-// per frame. (Width can't ride the native driver, which is why the active
-// pill grows via scaleX inside a fixed-width slot instead — that also stops
-// the row from reflowing every time the active dot changes.)
-const DeckDot = memo(function DeckDot({
-  scrollX,
-  index,
-  pageWidth,
-  onPress,
-  styles,
-}: {
-  scrollX: Animated.Value;
-  index: number;
-  pageWidth: number;
-  onPress: () => void;
-  styles: ReturnType<typeof buildStyles>;
-}) {
-  // Clamped to at least 1px: interpolate() requires a strictly increasing
-  // inputRange, and a zero/negative page width (possible for one frame if
-  // the sheet measures oddly) would collapse all three stops together and
-  // throw.
-  const page = Math.max(1, pageWidth);
-  const activeness = scrollX.interpolate({
-    inputRange: [(index - 1) * page, index * page, (index + 1) * page],
-    outputRange: [0, 1, 0],
-    extrapolate: "clamp",
-  });
-
-  return (
-    <Pressable onPress={onPress} hitSlop={8} style={styles.dotSlot}>
-      <Animated.View
-        style={[
-          styles.dotIdle,
-          { opacity: activeness.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) },
-        ]}
-      />
-      <Animated.View
-        style={[
-          styles.dotActivePill,
-          {
-            opacity: activeness,
-            transform: [{ scaleX: activeness.interpolate({ inputRange: [0, 1], outputRange: [0.36, 1] }) }],
-          },
-        ]}
-      />
-    </Pressable>
-  );
-});
-
 // ---------------------------------------------------------------------------
-// Deck
+// Card list
 // ---------------------------------------------------------------------------
 
-// Card-paging deck for a Profile Analysis result — same "one topic per
-// swipeable card" structure as CineMatch's MatchAnalysisPanel (horizontal
-// snap-scroll, dot pager, base200 cards with an uppercase section title),
-// reused deliberately for visual consistency across the app's two AI/algo
-// features, but its own composition: card 1 is the LLM narrative, and every
-// card after it is computed straight from rating data — a tappable donut,
-// 30-day trend bars, favorite weighting, all-time and monthly stat grids,
-// and (on Premium) two tappable charts, each backed by the real posters
-// behind the numbers.
-export default function ProfileAnalysisCardDeck({
+// Builds the deck's own CardDef[] list — extracted verbatim from this
+// component's own inline useMemo (same construction, same tier filtering
+// via analysisCardMinTier/tierAllows) so it can be reused by the Profile
+// Analyze redesign's new full-screen story screen
+// (app/(app)/profile/analyze-story.tsx) without duplicating ~200 lines of
+// card-building logic. Every *Body component below stays exactly where it
+// is — only this list-building logic is shared, not the bodies themselves.
+export function useAnalysisCards({
   data,
-  containerWidth,
   viewerTier,
+  bgLuminance,
   onUpgrade,
   onOpenItem,
-  stateRef,
+  selectionFor,
+  selectFor,
+  showPremiumTease = true,
 }: {
   data: ProfileAnalysis;
-  // The modal sheet's own measured content width, so a card fills exactly
-  // that width the same way MatchAnalysisPanel's cards fill their parent's
-  // — sourced from the caller rather than re-derived from the full screen
-  // width here, which would disagree with the sheet's own padding.
-  containerWidth: number;
-  // Drives the per-card minTier gate (see analysisCardAccess.ts). Every card
-  // is visible to every tier today; this is the seam for changing that.
   viewerTier?: AccountTier;
-  // Closes the modal and heads to settings. Optional because the deck also
-  // renders inside ChatRoom, where a received analysis isn't the viewer's
-  // own upgrade decision to make.
+  bgLuminance: number;
   onUpgrade?: () => void;
-  // Opens a title's detail page. Only wired where coming back to this modal
-  // afterwards works (see ProfileAnalysisModal's `navigable`).
   onOpenItem?: (item: ProfileAnalysisItem) => void;
-  // Survives this deck unmounting while the user is off looking at a title.
-  stateRef?: MutableRefObject<AnalysisDeckState>;
-}) {
+  selectionFor: (key: string) => string | null;
+  selectFor: (key: string) => (next: string | null) => void;
+  // Whether a Rating Curve/Watch Timeline lacking from `data` (the original
+  // owner's tier didn't compute them) should fall back to an "Upgrade to
+  // unlock" tease card. True for the owner's own analysis — upgrading is a
+  // real next step for them. False when viewing someone ELSE's shared
+  // analysis: upgrading the viewer's own account can never retroactively add
+  // those cards to a friend's already-generated result, so prompting them
+  // to upgrade here was a straight dead end — direct report.
+  showPremiumTease?: boolean;
+}): CardDef[] {
   const { colors } = useTheme();
   const { t, i18n } = useTranslation();
-  const { height: screenHeight } = useWindowDimensions();
-  const cardHeight = Math.min(IDEAL_CARD_HEIGHT, screenHeight * MAX_CARD_HEIGHT_RATIO);
-  const cardWidth = containerWidth - HORIZONTAL_PADDING * 2;
-  const scrollRef = useRef<ScrollView>(null);
-  // Live scroll offset, fed natively by Animated.event below. Only the page
-  // dots read it, and they do so entirely on the UI thread.
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const bgLuminance = useMemo(() => hexLuminance(colors.base100), [colors.base100]);
-  const styles = useMemo(() => buildStyles(colors), [colors]);
-
-  // Seeded from the caller's ref so a round trip to a title's page and back
-  // lands on the same card, without replaying every chart's entrance.
-  const [activeIndex, setActiveIndex] = useState(() => stateRef?.current.activeIndex ?? 0);
-  const [revealedKeys, setRevealedKeys] = useState<string[]>(() => stateRef?.current.revealedKeys ?? []);
-
-  useEffect(() => {
-    if (!stateRef) return;
-    stateRef.current = { ...stateRef.current, activeIndex, revealedKeys };
-  }, [stateRef, activeIndex, revealedKeys]);
-
-  // Per-card selection is written straight to the ref rather than held in
-  // deck state: it only ever needs to survive a remount, and routing it
-  // through state here would rebuild all eight cards on every genre tap.
-  const selectionFor = useCallback(
-    (key: string) => stateRef?.current.selectionByCard[key] ?? null,
-    [stateRef]
-  );
-  // One stable callback per card key, so the memoized bodies actually stay
-  // memoized instead of seeing a new function identity on each render.
-  const selectHandlers = useRef(new Map<string, (next: string | null) => void>()).current;
-  const selectFor = useCallback(
-    (key: string) => {
-      let handler = selectHandlers.get(key);
-      if (!handler) {
-        handler = (next: string | null) => {
-          if (stateRef) stateRef.current.selectionByCard[key] = next;
-        };
-        selectHandlers.set(key, handler);
-      }
-      return handler;
-    },
-    [selectHandlers, stateRef]
-  );
-
   const stats = data.stats;
 
   const cards = useMemo<CardDef[]>(() => {
@@ -1124,7 +948,7 @@ export default function ProfileAnalysisCardDeck({
           ),
         });
       }
-    } else {
+    } else if (showPremiumTease) {
       list.push({
         key: "premium-tease",
         title: t("Premium"),
@@ -1136,101 +960,9 @@ export default function ProfileAnalysisCardDeck({
     }
 
     return list.filter((card) => tierAllows(viewerTier, card.minTier));
-  }, [data, stats, colors, bgLuminance, t, i18n.language, onUpgrade, onOpenItem, selectionFor, selectFor, viewerTier]);
+  }, [data, stats, colors, bgLuminance, t, i18n.language, onUpgrade, onOpenItem, selectionFor, selectFor, viewerTier, showPremiumTease]);
 
-  // Wired to onMomentumScrollEnd *and* onScrollEndDrag: a slow drag released
-  // exactly on a snap point carries no residual momentum, so iOS/Android
-  // never fire the momentum event for it. Relying on that alone would leave
-  // activeIndex stale — and since every card's entrance animation is gated
-  // on being reached, a card arrived at that way would sit there blank
-  // (bars at zero width, donut at zero stroke) instead of animating in.
-  const onScrollSettled = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / (cardWidth + CARD_GAP));
-    setActiveIndex((prev) => (prev === index ? prev : index));
-  };
-
-  const goToCard = (index: number) => {
-    scrollRef.current?.scrollTo({ x: index * (cardWidth + CARD_GAP), animated: true });
-    setActiveIndex(index);
-  };
-
-  // Restore scroll position on mount when returning from a title's page —
-  // un-animated, so it reads as "the modal was still open behind that
-  // screen" rather than as a fresh deck scrolling itself into place.
-  useEffect(() => {
-    const restoreTo = stateRef?.current.activeIndex ?? 0;
-    if (restoreTo > 0) {
-      scrollRef.current?.scrollTo({ x: restoreTo * (cardWidth + CARD_GAP), animated: false });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const key = cards[activeIndex]?.key;
-    if (!key) return;
-    setRevealedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
-  }, [activeIndex, cards]);
-
-  return (
-    <View style={styles.wrap}>
-      {/* Animated.ScrollView, not a plain one: Animated.event returns an
-          AnimatedEvent object, not a callable, and only an
-          Animated.createAnimatedComponent-wrapped component knows to attach
-          it natively. A plain ScrollView would forward that object as the
-          literal onScroll prop and call it — an "Object is not a function"
-          crash on every scroll frame. */}
-      <AnimatedGHScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={cardWidth + CARD_GAP}
-        decelerationRate="fast"
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
-        scrollEventThrottle={16}
-        onMomentumScrollEnd={onScrollSettled}
-        onScrollEndDrag={onScrollSettled}
-        contentContainerStyle={{ gap: CARD_GAP }}
-      >
-        {cards.map((card) => (
-          <View key={card.key} style={[styles.card, { width: cardWidth, height: cardHeight }]}>
-            {card.key !== "ai-summary" && (
-              <View style={styles.cardHeader}>
-                <View style={[styles.cardIcon, { backgroundColor: `${card.accent}22` }]}>
-                  <Ionicons name={card.icon} size={13} color={card.accent} />
-                </View>
-                <Text style={styles.sectionTitle}>{card.title.toUpperCase()}</Text>
-              </View>
-            )}
-            {/* Gesture-handler's ScrollView here too, not plain RN's — this
-                deck now also renders inside ProfileAnalysisModal when opened
-                from a Shares feed post (ShareCard's own cover card), and
-                while that's still just a Modal (no outer same-axis
-                competitor, same as this component's original Profile-tab
-                use), keeping every nested scroller in this file GH-based is
-                one less thing to re-audit if that ever changes. */}
-            <GHScrollView style={styles.cardScroll} showsVerticalScrollIndicator={false}>
-              {card.render(revealedKeys.includes(card.key))}
-            </GHScrollView>
-          </View>
-        ))}
-      </AnimatedGHScrollView>
-
-      {cards.length > 1 && (
-        <View style={styles.dotsRow}>
-          {cards.map((card, i) => (
-            <DeckDot
-              key={card.key}
-              scrollX={scrollX}
-              index={i}
-              pageWidth={cardWidth + CARD_GAP}
-              onPress={() => goToCard(i)}
-              styles={styles}
-            />
-          ))}
-        </View>
-      )}
-    </View>
-  );
+  return cards;
 }
 
 function buildStyles(colors: ColorPalette) {
@@ -1260,9 +992,14 @@ function buildStyles(colors: ColorPalette) {
     },
     tasteChipText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 12 },
     paragraph: { color: colors.baseContent, fontSize: 14, lineHeight: 20 },
-    subsection: { marginTop: 14 },
     sectionLabel: { fontFamily: fonts.bold, fontSize: 11, color: colors.placeholder, marginBottom: 6 },
-    funFactBox: { backgroundColor: colors.base300, borderRadius: 10, padding: 14, marginTop: 14 },
+    // PersonaBody's own 3 subsections (Since Last Time / Recommended Vibe /
+    // Did You Know) — same boxed treatment for all three now, direct ask,
+    // not just the last one. sectionBoxHeader's own marginBottom matches
+    // sectionLabel's so the label still sits the same distance from its
+    // own paragraph as every other card's sectionLabel usage does.
+    sectionBox: { backgroundColor: colors.base300, borderRadius: 12, padding: 14, marginTop: 14 },
+    sectionBoxHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
     funFactText: { color: colors.baseContent, fontSize: 13, lineHeight: 19, fontStyle: "italic" },
     cardSubtitle: { color: colors.placeholder, fontSize: 12, marginBottom: 12 },
     // The "here's proof it's real" line — a tinted block rather than plain
@@ -1336,11 +1073,6 @@ function buildStyles(colors: ColorPalette) {
     },
     insightText: { flex: 1, color: colors.baseContent, fontSize: 12.5, lineHeight: 18 },
     posterSection: { marginTop: 16 },
-    posterHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-    // flexShrink so a long localized label can never push the "See all"
-    // control off the edge of the card.
-    posterHeaderLabel: { flexShrink: 1 },
-    seeAll: { fontFamily: fonts.bold, fontSize: 11, color: colors.primary, marginBottom: 6 },
     footnote: {
       color: colors.placeholder,
       fontSize: 10.5,

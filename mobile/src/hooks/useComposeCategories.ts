@@ -49,7 +49,9 @@ export function useComposeCategories(onPick?: () => void): ComposeCategory[] {
         onPress: () => {
           onPick?.();
           startAnalyzeTutorial();
-          router.navigate("/profile?tab=analyses" as any);
+          // The Analyze tab is gone — "Analyze Profile" now lives in the
+          // header's own username row on every category, no `?tab=` needed.
+          router.navigate("/profile" as any);
         },
       },
       {

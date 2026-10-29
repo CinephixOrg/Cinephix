@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, FlatList, ScrollView, ActivityIndicator, Text, StyleSheet } from "react-native";
 import Pressable from "../common/TapSafePressable";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
 import { SkeletonRow } from "../Skeleton";
 import { searchUsers } from "../../api/userService";
 import UserAvatar from "../UserAvatar";
+import NewUsersSection from "./NewUsersSection";
 import type { UserSearchResult } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/typography";
@@ -106,9 +106,10 @@ export default function SearchUsersSection({ query }: Props) {
 
   if (!hasQuery) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name="person-outline" size={40} color={colors.placeholder} />
-        <Text style={styles.empty}>{t("Search any username you want to find them.")}</Text>
+      <View style={{ flex: 1, backgroundColor: colors.base100 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <NewUsersSection />
+        </ScrollView>
       </View>
     );
   }

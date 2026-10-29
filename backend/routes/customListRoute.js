@@ -3,6 +3,7 @@ import { recordFootprint, clearFootprint } from "../models/FootprintEvent.js";
 import express from "express";
 import authMiddleware, { optionalAuth } from "../middleware/authMiddleware.js";
 import CustomList from "../models/CustomList.js";
+import User from "../models/User.js";
 import Group from "../models/Group.js";
 import { hydratePreviewItems } from "../utils/listPreview.js";
 import { LIST_COUNT_TIERS, crossedActivityTier, bumpStreak } from "../controllers/badgeController.js";
@@ -67,6 +68,36 @@ router.get("/discover", authMiddleware, async (req, res) => {
       }));
 
     return res.json({ lists: await hydratePreviewItems(lists, 20) });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ── GET /api/lists/suggested ── Search's Lists tab empty state (no query,
+// no filter) — direct ask: public lists that actually contain something
+// the viewer has already watched ("lists içeren filmleri/dizileri userın
+// watchedlistinde olan"), not a generic popular/discover set. A pool (not
+// just the final handful shown) comes back so the client can pick a fresh
+// few on every visit, same reasoning as feedController.js's
+// getRecommendations feeding WhatToWatchRail/SuggestedForYouGrid.
+router.get("/suggested", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("watchlist").lean();
+    const watchedIds = (user?.watchlist || []).map((w) => w.itemId);
+    if (watchedIds.length === 0) return res.json({ lists: [] });
+
+    const lists = await CustomList.find({
+      isPublic: true,
+      owner: { $ne: req.user.id },
+      "items.itemId": { $in: watchedIds },
+    })
+      .sort({ updatedAt: -1 })
+      .limit(20)
+      .populate("owner", "username profile_pic_url accountTier")
+      .lean();
+
+    return res.json({ lists: await hydratePreviewItems(lists.filter((l) => l.owner), 20) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });

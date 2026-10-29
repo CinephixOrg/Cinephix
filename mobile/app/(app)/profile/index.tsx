@@ -9,10 +9,15 @@ import { useProfile } from "../../../src/context/ProfileContext";
 import ProfileHeaderInstagram from "../../../src/components/profile/ProfileHeaderInstagram";
 import ProfileCategoryTabs, { type Category } from "../../../src/components/profile/ProfileCategoryTabs";
 import ProfileDrawerContent from "../../../src/components/profile/ProfileDrawerContent";
+import AnalyzeInfoModal from "../../../src/components/profile/AnalyzeInfoModal";
 import PostComposeMenu from "../../../src/components/home/PostComposeMenu";
 import { SkeletonProfileHeader } from "../../../src/components/Skeleton";
 import { useTheme } from "../../../src/context/ThemeContext";
 import { useComposeCategories } from "../../../src/hooks/useComposeCategories";
+import { useComposeTutorial } from "../../../src/context/ComposeTutorialContext";
+import TutorialSpotlight from "../../../src/components/tutorial/TutorialSpotlight";
+import TutorialInfoBox from "../../../src/components/tutorial/TutorialInfoBox";
+import { fonts } from "../../../src/theme/typography";
 
 // The outer Profile/WatchedList/Lists/Watchlist tab bar and the category
 // row's old Activity icon are both gone — this is a single screen now.
@@ -33,21 +38,45 @@ export default function ProfileScreen() {
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.base100 },
   tabContent: { paddingTop: 4 },
   error: { color: colors.error, fontSize: 16 },
+  // Compact, inline at the end of the username row — not the old Analyze
+  // tab's own full-width button, which was sized for a tab's whole content
+  // column. Opens AnalyzeInfoModal rather than running the analysis
+  // directly, direct ask.
+  analyzeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginLeft: 4,
+  },
+  analyzeButtonText: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.baseContent },
 }), [colors]);
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { profile, cineGraph, favorites, shareCount, loaded, error, ensureLoaded, refresh } = useProfile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [analyzeInfoVisible, setAnalyzeInfoVisible] = useState(false);
+  // "Analyze" compose-tutorial walkthrough (Shares' "+" menu) — this
+  // button is now step 1 (moved here from the removed Analyze tab's own
+  // handleAnalyze button); step 2 lives in the new full-screen story
+  // screen's own Share button instead of ProfileAnalysisModal's.
+  const { tutorial: composeTutorial, endTutorial: endComposeTutorial } = useComposeTutorial();
+  const showAnalyzeTutorial = composeTutorial?.id === "analyze" && composeTutorial.step === "tapAnalyze";
   // Same "+" compose-hub menu the Shares feed's own header carries — direct
   // ask, Profile should offer that same entry point too, not just Home.
   const [composeMenuVisible, setComposeMenuVisible] = useState(false);
   const composeCategories = useComposeCategories(() => setComposeMenuVisible(false));
   // Deep-link support (e.g. official-account tip posts linking a word
-  // straight to "your favorites"/"your CineGraph"/"your analysis") — same
-  // `tab` param name and validation shape as app/user/[id]/index.tsx's own
-  // public-profile equivalent.
+  // straight to "your favorites"/"your CineGraph") — same `tab` param name
+  // and validation shape as app/user/[id]/index.tsx's own public-profile
+  // equivalent. "analyses" is no longer a category — that tab is gone,
+  // Analyze/My Analyses both moved out of this tab row entirely.
   const { tab } = useLocalSearchParams<{ tab?: string }>();
-  const VALID_CATEGORIES: Category[] = ["sharings", "favorites", "cinegraph", "analyses", "badges"];
+  const VALID_CATEGORIES: Category[] = ["sharings", "favorites", "cinegraph", "badges"];
   const initialCategory = VALID_CATEGORIES.includes(tab as Category) ? (tab as Category) : undefined;
 
   // Category lives here (not inside ProfileCategoryTabs) so the header's
@@ -190,7 +219,20 @@ export default function ProfileScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={200}
       >
-        <ProfileHeaderInstagram profile={profile} shareCount={shareCount} onSharesPress={handleSharesPress} />
+        <ProfileHeaderInstagram
+          profile={profile}
+          shareCount={shareCount}
+          onSharesPress={handleSharesPress}
+          usernameRowEnd={
+            <TutorialSpotlight active={showAnalyzeTutorial} borderRadius={8}>
+              <Pressable style={styles.analyzeButton} onPress={() => setAnalyzeInfoVisible(true)}>
+                <Ionicons name="sparkles-outline" size={12} color={colors.primary} />
+                <Text style={styles.analyzeButtonText}>{t("Analyze Profile")}</Text>
+              </Pressable>
+            </TutorialSpotlight>
+          }
+        />
+        {showAnalyzeTutorial && <TutorialInfoBox text={t("Tap here to analyze your profile.")} onDismiss={endComposeTutorial} />}
         <View style={styles.tabContent} onLayout={(e: LayoutChangeEvent) => setTabsY(e.nativeEvent.layout.y)}>
           <ProfileCategoryTabs
             favorites={favorites}
@@ -203,6 +245,7 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
       <PostComposeMenu visible={composeMenuVisible} onClose={() => setComposeMenuVisible(false)} categories={composeCategories} />
+      <AnalyzeInfoModal visible={analyzeInfoVisible} onClose={() => setAnalyzeInfoVisible(false)} />
     </ProfileDrawer>
   );
 }

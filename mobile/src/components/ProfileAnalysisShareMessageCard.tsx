@@ -85,7 +85,8 @@ function ProfileAnalysisShareMessageCard({ message, isOwn, onPress, onLongPress 
   const { t } = useTranslation();
   const analysis = message.analysisData as ProfileAnalysis | undefined;
   const { top, other } = useMemo(() => cineGraphSlices(analysis?.stats?.genreBreakdown), [analysis]);
-  const owner = message.sender.username;
+  // Direct report: sender can be null for a since-deleted account.
+  const owner = message.sender?.username ?? t("Deleted user");
   const nickname = analysis?.nickname?.trim();
 
   return (

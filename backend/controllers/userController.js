@@ -210,6 +210,8 @@ export const loginUser = asyncHandler(async (req, res) => {
     googleId: user.googleId || null,
     isOAuthUser: Boolean(user.googleId && !user.password),
     accountTier: user.accountTier || 'free',
+    onboardingCompletedAt: user.onboardingCompletedAt || null,
+    onboardingStep: user.onboardingStep || 0,
     token,
   }, 'Login successful', 200);
 });
@@ -632,6 +634,31 @@ export const setOwnAccountTier = asyncHandler(async (req, res) => {
   ).select('-password -tokenVersion');
 
   sendSuccess(res, { accountTier: user.accountTier }, 'Account tier updated');
+});
+
+// @desc    Persists the first-run taste-onboarding wizard's own progress
+//          (TC-133) — called by the mobile wizard on every step transition
+//          so a killed/backgrounded app resumes on the right step instead
+//          of the old in-memory-only flag silently dropping the user
+//          straight to /home on relaunch. `completed` sets
+//          onboardingCompletedAt, the actual source of truth for whether
+//          the wizard still needs to show at all.
+// @route   PATCH /api/users/me/onboarding-progress
+// @access  Private
+export const updateOnboardingProgress = asyncHandler(async (req, res) => {
+  const { step, completed } = req.body;
+  const updateData = {};
+  if (step !== undefined) {
+    if (!Number.isInteger(step) || step < 0) return sendError(res, 'Invalid step', 400);
+    updateData.onboardingStep = step;
+  }
+  if (completed) updateData.onboardingCompletedAt = new Date();
+
+  const user = await User.findByIdAndUpdate(req.user.id, updateData, { new: true }).select(
+    'onboardingStep onboardingCompletedAt'
+  );
+
+  sendSuccess(res, { onboardingStep: user.onboardingStep, onboardingCompletedAt: user.onboardingCompletedAt }, 'Onboarding progress updated');
 });
 
 // controllers/userController.js
@@ -1526,6 +1553,28 @@ export const getSuggestedUsers = asyncHandler(async (req, res) => {
   sendSuccess(res, result, 'Suggestions fetched');
 });
 
+// @desc    Recently-joined accounts — Search's Users tab empty state
+//          (direct ask: "new users" to give that tab something to show
+//          before anyone's typed a name, same idea as the other 4 tabs'
+//          own "suggested for you"/"you might be interested" sections).
+//          Sorted by signup date, newest first. Unlike getSuggestedUsers
+//          this needs no existing follow graph to work from, so it never
+//          comes back empty for a brand-new account either.
+// @route   GET /api/users/new
+// @access  Private
+export const getNewUsers = asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 30);
+  const selfId = new mongoose.Types.ObjectId(req.user.id);
+
+  const users = await User.find({ _id: { $ne: selfId }, isSuspended: { $ne: true } })
+    .select('_id username profile_pic_url accountTier')
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  sendSuccess(res, users, 'New users fetched');
+});
+
 // @desc    Which of the people I follow are currently connected (Media's
 //          online-friends bar) — backed by presenceService's in-memory
 //          socket refcount, not a persisted field.
@@ -1602,6 +1651,8 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     googleId: user.googleId || null,
     isOAuthUser: Boolean(user.googleId && !user.password),
     accountTier: user.accountTier || 'free',
+    onboardingCompletedAt: user.onboardingCompletedAt || null,
+    onboardingStep: user.onboardingStep || 0,
     token,
   }, 'Email verified successfully');
 });
@@ -1695,6 +1746,8 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     googleId: user.googleId || null,
     isOAuthUser: Boolean(user.googleId && !user.password),
     accountTier: user.accountTier || 'free',
+    onboardingCompletedAt: user.onboardingCompletedAt || null,
+    onboardingStep: user.onboardingStep || 0,
     token,
     isNewOAuthUser: req.authInfo?.isNewOAuthUser || false
   }));
@@ -1714,22 +1767,27 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
   res.redirect(`${frontendUrl}/oauth-success?data=${userData}`);
 });
 
-// How many real titles (posters) each of the Recent Taste / Favorite Genres
-// cards gets to preview under its percentages. A horizontally scrollable
-// row, not the full list — and every entry here is persisted on the
-// ProfileAnalysis history row forever, so it stays deliberately small.
-const ITEM_PREVIEW_LIMIT = 20;
-// Per-genre poster list revealed by tapping a genre in Genre Breakdown,
-// highest-rated first. Smaller than the row limits above because it's paid
-// once per genre in the breakdown, not once per card.
-const GENRE_ITEM_LIMIT = 8;
-// Same idea for the two tappable Premium charts, paid once per bucket (10
-// rating scores, 6 months). Matches ITEM_PREVIEW_LIMIT rather than being
-// smaller: those rows have a "See all" that opens them into a grid, and 6
-// was visibly short of what a bucket labelled "23 titles" implies. The
-// bucket's TRUE total still ships separately (ratingCurve[i].count), so the
-// UI can say "showing 20 of 23" instead of quietly truncating.
-const BUCKET_ITEM_LIMIT = 20;
+// How many real titles (posters) each of the Recent Taste / Favorite
+// Genres / Genre Breakdown / two Premium charts' own poster grids get to
+// show, per card/genre/bucket. Every entry here is persisted on the
+// ProfileAnalysis history row forever, so it's still a real cap, not
+// "however many exist" — but raised from an earlier, smaller round of
+// values (20 for the row-based cards, 8 for Genre Breakdown specifically)
+// once the client's own poster strip became a real paginated grid
+// (AnalysisPosterRow.tsx, 4x2 per page) instead of a short horizontal
+// preview — direct ask, the old 20 cap meant some buckets (e.g. a busy
+// month in Watch Timeline) could have a TRUE count in the hundreds while
+// the grid only ever had one page's worth to page through, and Genre
+// Breakdown's old 8 happened to exactly equal one grid page, so its own
+// pagination arrows could never appear at all. One shared value now
+// (previously three separate ones) since the same reasoning applies
+// uniformly across every poster grid in this analysis. The bucket/genre's
+// TRUE total still ships separately where relevant (e.g.
+// ratingCurve[i].count), so the UI can always say "showing 40 of 230"
+// rather than silently implying the cap is the whole truth.
+const ITEM_PREVIEW_LIMIT = 40;
+const GENRE_ITEM_LIMIT = 40;
+const BUCKET_ITEM_LIMIT = 40;
 
 // @desc    Get profile statistics and analysis for current user
 // @route   GET /api/users/profile-analysis

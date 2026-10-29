@@ -91,6 +91,21 @@ test("consecutive messages from one sender form a run; a new sender or a long ga
   assert.deepEqual(messageRuns([]), []);
 });
 
+// Regression: a message from a since-deleted account comes back with
+// `sender: null` (the server still returns the message, Mongoose just
+// can't resolve a ref that no longer exists) — this used to throw
+// ("Cannot read property '_id' of null") the instant a chat containing one
+// was opened, since messageRuns' own run-grouping compared `.sender._id`
+// with no null check.
+test("a message with a null sender (deleted account) never crashes and always starts its own run", () => {
+  const list = [message("a", 1), message("b", 2, { sender: null }), message("c", 3)];
+  assert.deepEqual(messageRuns(list), [
+    { first: true, last: true },
+    { first: true, last: true },
+    { first: true, last: true },
+  ]);
+});
+
 function at(id: string, date: Date, extra: Partial<Message> = {}): Message {
   return message(id, 0, { createdAt: date.toISOString(), ...extra });
 }

@@ -25,6 +25,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Your ticket has been resolved",
     "Your ticket has been closed": "Your ticket has been closed",
     "Support replied to your ticket": "Support replied to your ticket",
+    "Today's puzzle is ready!": "Today's puzzle is ready!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} just took the lead on today's puzzle! Can you beat them?",
   },
   tr: {
     "Starts in 30 minutes": "30 dakika içinde başlıyor",
@@ -44,6 +46,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Talebin çözüldü",
     "Your ticket has been closed": "Talebin kapatıldı",
     "Support replied to your ticket": "Destek ekibi talebini yanıtladı",
+    "Today's puzzle is ready!": "Bugünün bulmacası hazır!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} bugünün bulmacasında öne geçti! Onu yenebilir misin?",
   },
   ru: {
     "Starts in 30 minutes": "Начинается через 30 минут",
@@ -63,6 +67,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Ваше обращение решено",
     "Your ticket has been closed": "Ваше обращение закрыто",
     "Support replied to your ticket": "Поддержка ответила на ваше обращение",
+    "Today's puzzle is ready!": "Сегодняшняя головоломка готова!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} вышел в лидеры сегодняшней головоломки! Сможете их обогнать?",
   },
   ja: {
     "Starts in 30 minutes": "30分後に始まります",
@@ -82,6 +88,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "チケットが解決しました",
     "Your ticket has been closed": "チケットがクローズされました",
     "Support replied to your ticket": "サポートがチケットに返信しました",
+    "Today's puzzle is ready!": "今日のパズルが準備できました！",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}}さんが今日のパズルでトップに！あなたは勝てる？",
   },
   zh: {
     "Starts in 30 minutes": "30分钟后开始",
@@ -101,6 +109,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "你的工单已解决",
     "Your ticket has been closed": "你的工单已关闭",
     "Support replied to your ticket": "支持团队回复了你的工单",
+    "Today's puzzle is ready!": "今天的谜题已准备好！",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} 在今天的谜题中领先了！你能超越他们吗？",
   },
   fr: {
     "Starts in 30 minutes": "Commence dans 30 minutes",
@@ -120,6 +130,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Votre ticket a été résolu",
     "Your ticket has been closed": "Votre ticket a été fermé",
     "Support replied to your ticket": "L'assistance a répondu à votre ticket",
+    "Today's puzzle is ready!": "Le puzzle du jour est prêt !",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} vient de prendre la tête du puzzle du jour ! Pouvez-vous les battre ?",
   },
   ko: {
     "Starts in 30 minutes": "30분 후에 시작합니다",
@@ -139,6 +151,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "문의가 해결되었습니다",
     "Your ticket has been closed": "문의가 종료되었습니다",
     "Support replied to your ticket": "지원팀이 문의에 답변했습니다",
+    "Today's puzzle is ready!": "오늘의 퍼즐이 준비됐어요!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}}님이 오늘의 퍼즐에서 1위를 차지했어요! 이길 수 있을까요?",
   },
   ar: {
     "Starts in 30 minutes": "يبدأ بعد 30 دقيقة",
@@ -158,6 +172,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "تم حل تذكرتك",
     "Your ticket has been closed": "تم إغلاق تذكرتك",
     "Support replied to your ticket": "رد فريق الدعم على تذكرتك",
+    "Today's puzzle is ready!": "لغز اليوم جاهز!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "تصدّر {{username}} لغز اليوم! هل يمكنك التغلب عليه؟",
   },
   it: {
     "Starts in 30 minutes": "Inizia in 30 minuti",
@@ -177,6 +193,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Il tuo ticket è stato risolto",
     "Your ticket has been closed": "Il tuo ticket è stato chiuso",
     "Support replied to your ticket": "L'assistenza ha risposto al tuo ticket",
+    "Today's puzzle is ready!": "L'enigma di oggi è pronto!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} è in testa all'enigma di oggi! Riesci a batterlo?",
   },
   es: {
     "Starts in 30 minutes": "Empieza en 30 minutos",
@@ -196,6 +214,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Tu ticket se ha resuelto",
     "Your ticket has been closed": "Tu ticket se ha cerrado",
     "Support replied to your ticket": "Soporte respondió a tu ticket",
+    "Today's puzzle is ready!": "¡El acertijo de hoy está listo!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "¡{{username}} tomó la delantera en el acertijo de hoy! ¿Puedes superarlo?",
   },
   de: {
     "Starts in 30 minutes": "Beginnt in 30 Minuten",
@@ -215,6 +235,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Dein Ticket wurde gelöst",
     "Your ticket has been closed": "Dein Ticket wurde geschlossen",
     "Support replied to your ticket": "Der Support hat auf dein Ticket geantwortet",
+    "Today's puzzle is ready!": "Das heutige Rätsel ist bereit!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} führt beim heutigen Rätsel! Kannst du sie schlagen?",
   },
   pt: {
     "Starts in 30 minutes": "Começa em 30 minutos",
@@ -234,6 +256,8 @@ export const PUSH_PHRASES = {
     "Your ticket has been resolved": "Seu ticket foi resolvido",
     "Your ticket has been closed": "Seu ticket foi encerrado",
     "Support replied to your ticket": "O suporte respondeu ao seu ticket",
+    "Today's puzzle is ready!": "O desafio de hoje está pronto!",
+    "{{username}} just took the lead on today's puzzle! Can you beat them?": "{{username}} assumiu a liderança no desafio de hoje! Você consegue superá-lo?",
   },
 };
 

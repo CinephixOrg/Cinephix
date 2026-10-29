@@ -32,6 +32,37 @@ export async function addToWatchlist(
   };
 }
 
+// TC-133's onboarding wizard is the only real caller — writes to BOTH the
+// Watched List and Favorites server-side (direct product decision: a title
+// picked during onboarding, whether from the suggested grid or the user's
+// own search, counts as a favorite too), unlike the singular addToWatchlist
+// above which only ever touches the Watched List. One request for the
+// whole batch, not addToWatchlist called N times — see the backend route's
+// own comment on why (one CineGraph rebuild instead of N, and badge
+// thresholds a multi-item jump can skip clean over with N separate calls).
+export async function addToWatchlistBulk(
+  items: { itemId: string; itemType: ContentType }[]
+): Promise<{
+  watchlist: WatchlistItem[];
+  favoriteMovies: string[];
+  favoriteSeries: string[];
+  addedCount: number;
+  skippedCount: number;
+  newlyEarnedBadges: NewlyEarnedBadge[];
+  currentlyWatching: CurrentlyWatching | null;
+}> {
+  const res = await API.post(API_ROUTES.WATCHLIST.BULK_ADD, { items });
+  return {
+    watchlist: res.data.watchlist,
+    favoriteMovies: res.data.favoriteMovies ?? [],
+    favoriteSeries: res.data.favoriteSeries ?? [],
+    addedCount: res.data.addedCount ?? 0,
+    skippedCount: res.data.skippedCount ?? 0,
+    newlyEarnedBadges: res.data.newlyEarnedBadges ?? [],
+    currentlyWatching: res.data.currentlyWatching ?? null,
+  };
+}
+
 export async function removeFromWatchlist(
   itemId: string,
   itemType: ContentType

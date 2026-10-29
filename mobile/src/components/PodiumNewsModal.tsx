@@ -15,7 +15,7 @@ import type { PodiumPlacement } from "../types";
 
 // Maps the backend's own PeopleLeaderboardResult field names (what
 // GET /feed/my-podium-placements returns) onto PeoplePodium.tsx's own
-// shorter CategoryKey union (used as the `?podiumCategory=` value that
+// shorter CategoryKey union (used as the `?jumpToCategory=` value that
 // component reads to know which page to jump to) and that same category's
 // already-established translated title — kept in one place so this modal
 // and that component never drift on what a given backend key means.
@@ -26,6 +26,7 @@ const CATEGORY_INFO: Record<PodiumPlacement["category"], { key: string; titleKey
   mostLiked: { key: "liked", titleKey: "Most Liked" },
   topRecommenders: { key: "recommended", titleKey: "Top Recommenders" },
   mostBadges: { key: "badges", titleKey: "Most Decorated" },
+  mostPuzzleStreak: { key: "puzzle", titleKey: "Puzzle Streak" },
 };
 
 // The "you made the podium!" popup — checked once per app session (this
@@ -33,7 +34,7 @@ const CATEGORY_INFO: Record<PodiumPlacement["category"], { key: string; titleKey
 // itself only renders once `user` exists, and unmounts on logout, so a
 // fresh login is the only thing that re-triggers the check). Free/Plus
 // viewers get exactly the same popup as Premium — the tap target
-// (`?podiumCategory=`) always lands on the right category, real page or
+// (`?jumpToCategory=`) always lands on the right category, real page or
 // the shared ad page depending on the viewer's own tier. That ad page
 // never highlights the viewer's own entry (a self-highlight was tried and
 // reverted — see PeoplePodium.tsx's own doc comment: the ad page's whole
@@ -112,21 +113,15 @@ export default function PodiumNewsModal() {
   const categoryTitle = t(info.titleKey);
 
   const dismiss = () => setPlacement(null);
-  // router.navigate, not router.push — this modal shows right at app
-  // launch, when the Media/Home tab (and its own SharesFeedSection/
-  // PeoplePodium, already fetching or already loaded) is almost always
-  // already mounted underneath it. `push` always stacks a *new* screen
-  // instance regardless, which was a real reported bug: a second
-  // `home/index.tsx` (and everything inside it) mounted fresh and re-fetched
-  // from scratch, on top of the one already loading/loaded behind it —
-  // "arkada sayfa yüklenmişse... bir daha yüklediği için 2 yükleme
-  // gerçekleşiyor". `navigate` reuses the existing screen instance and just
-  // updates its params in place when the target is already the current
-  // screen, so home/index.tsx's own `podiumCategory` param changes without
-  // ever remounting anything underneath it.
+  // Goes straight to the dedicated podium page now (people-podium.tsx)
+  // instead of /home?podiumCategory=... — that older route forced the
+  // Paylaşımlar tab and drilled the category down through
+  // SharesFeedSection into an inline PeoplePodium; now that the podium
+  // lives on its own page, there's no shared screen instance to worry
+  // about reusing, so a plain push is enough.
   const goToPodium = () => {
     setPlacement(null);
-    router.navigate(`/home?podiumCategory=${info.key}` as any);
+    router.push(`/people-podium?jumpToCategory=${info.key}` as any);
   };
 
   return (

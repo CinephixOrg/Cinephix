@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Animated, StyleSheet, type LayoutChangeEvent } from "react-native";
+import { View, Text, Animated, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import Pressable from "./common/TapSafePressable";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme/typography";
 
 export interface TabItem {
   key: string;
   label: string;
+  // People Podium's own category tabs only — direct ask, a row of 7 text
+  // tabs either needed scrolling or crammed unreadably; icon-only fits all
+  // 7 across the bar's own full width, no scroll needed. Optional:
+  // `undefined` everywhere else keeps every other call site exactly as
+  // text, unaffected.
+  icon?: keyof typeof Ionicons.glyphMap;
+  // People Podium's own category tabs only (free-tier gating) — dims the
+  // tab's own icon/text rather than adding a second glyph next to it
+  // (crowded in an icon-only slot this narrow). Optional, `undefined`
+  // everywhere else, so this doesn't change any other call site's look.
+  locked?: boolean;
 }
 
 interface Props {
@@ -22,6 +34,15 @@ interface Props {
   // tracks for its own sliding underline, rather than a second measurement
   // pass.
   highlightKeys?: string[];
+  // People Podium's own 7-category row, direct ask ("profesyonel, sade")
+  // after the old filled-pill-chip row read as "cheap" — reuses this
+  // bar's already-established text+sliding-underline look instead of a
+  // new component. Default false (every existing call site: Search's own
+  // filter, Content Detail's Reviews filter) keeps tabs flex-dividing the
+  // bar's full width exactly as before; true renders each tab at its own
+  // intrinsic width inside a horizontal ScrollView instead, since a fixed
+  // 7-way flex split would cram longer category names unreadably.
+  scrollable?: boolean;
 }
 
 const ANIM_MS = 220;
@@ -36,7 +57,7 @@ const PULSE_MS = 600;
 // Layout-driven (left/width aren't native-driver-eligible props), but this
 // only ever animates on a deliberate tap, never a scroll — fine to run on
 // the JS thread.
-export default function SlidingUnderlineTabs({ tabs, activeKey, onChange, highlightKeys }: Props) {
+export default function SlidingUnderlineTabs({ tabs, activeKey, onChange, highlightKeys, scrollable }: Props) {
   const { colors } = useTheme();
   const layoutsRef = useRef<Record<string, { x: number; width: number }>>({});
   const underlineX = useRef(new Animated.Value(0)).current;
@@ -105,27 +126,38 @@ export default function SlidingUnderlineTabs({ tabs, activeKey, onChange, highli
     () =>
       StyleSheet.create({
         bar: {
-          flexDirection: "row",
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
           backgroundColor: colors.base300,
         },
-        button: { flex: 1, alignItems: "center", paddingVertical: 12 },
+        barRow: { flexDirection: "row" },
+        button: scrollable ? { alignItems: "center", paddingVertical: 12, paddingHorizontal: 16 } : { flex: 1, alignItems: "center", paddingVertical: 12 },
+        labelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
         text: { fontFamily: fonts.medium, fontSize: 13, color: colors.placeholder },
         textActive: { color: colors.primary, fontFamily: fonts.bold },
         underline: { position: "absolute", bottom: 0, height: 2, backgroundColor: colors.primary },
         highlight: { position: "absolute", top: 4, bottom: 4, borderWidth: 2, borderColor: colors.primary, borderRadius: 8 },
       }),
-    [colors]
+    [colors, scrollable]
   );
 
-  return (
-    <View style={styles.bar}>
-      {tabs.map((tab) => (
-        <Pressable key={tab.key} style={styles.button} onLayout={onTabLayout(tab.key)} onPress={() => onChange(tab.key)}>
-          <Text style={[styles.text, activeKey === tab.key && styles.textActive]}>{tab.label}</Text>
-        </Pressable>
-      ))}
+  const content = (
+    <>
+      {tabs.map((tab) => {
+        const active = activeKey === tab.key;
+        return (
+          <Pressable key={tab.key} style={styles.button} onLayout={onTabLayout(tab.key)} onPress={() => onChange(tab.key)}>
+            {tab.icon ? (
+              <Ionicons name={tab.icon} size={18} color={active ? colors.primary : tab.locked ? colors.placeholder + "80" : colors.placeholder} />
+            ) : (
+              <View style={styles.labelRow}>
+                <Text style={[styles.text, active && styles.textActive]}>{tab.label}</Text>
+                {tab.locked && <Ionicons name="lock-closed" size={10} color={active ? colors.primary : colors.placeholder} />}
+              </View>
+            )}
+          </Pressable>
+        );
+      })}
       <Animated.View style={[styles.underline, { transform: [{ translateX: underlineX }], width: underlineWidth }]} />
       {hasHighlight &&
         highlightKeys!.map((key) => {
@@ -139,6 +171,16 @@ export default function SlidingUnderlineTabs({ tabs, activeKey, onChange, highli
             />
           );
         })}
-    </View>
+    </>
   );
+
+  if (scrollable) {
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bar} contentContainerStyle={styles.barRow}>
+        {content}
+      </ScrollView>
+    );
+  }
+
+  return <View style={[styles.bar, styles.barRow]}>{content}</View>;
 }

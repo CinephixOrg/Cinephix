@@ -11,7 +11,7 @@ import GroupAnnouncement from "../models/GroupAnnouncement.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { sendSuccess } from "../utils/response.js";
 import { MOVIE_GENRE_MAP, SERIES_GENRE_MAP } from "../utils/genreConstants.js";
-import { computeAllUsersBadgeCounts, tierForCount } from "./badgeController.js";
+import { computeAllUsersBadgeCounts, tierForCount, decayedStreakCount } from "./badgeController.js";
 
 // ── helpers ──────────────────────────────────────────────────────
 const getMovie = () => mongoose.connection.model("Movie");
@@ -462,6 +462,10 @@ async function hydrateLeaderboardEntries(entries) {
         poster_path: item.poster_path,
         type: e.itemType,
       },
+      // 1-based, off this already-sorted array's own final (post-filter)
+      // order — same fix hydratePeopleEntries already needed for the
+      // people podium's own ranked list.
+      rank: acc.length + 1,
     });
     return acc;
   }, []);
@@ -472,6 +476,13 @@ async function hydrateLeaderboardEntries(entries) {
 // requires at least this many Cinephix ratings to qualify.
 const LEADERBOARD_MIN_RATING_COUNT = 3;
 const LEADERBOARD_SIZE = 3;
+// Both podiums' own dedicated pages show a real ranked list below their
+// top-3 steps, direct ask ("liste ilk 10 ya da 15 kişiyi gösterir") — kept
+// as two separate constants (not shared with LEADERBOARD_SIZE above) since
+// each podium's own list depth is an independent design choice, not one
+// shared number — even though both currently happen to be 15.
+const PEOPLE_LEADERBOARD_SIZE = 15;
+const CONTENT_LEADERBOARD_SIZE = 15;
 
 // @route GET /api/feed/leaderboard
 // Discover's 5-category content podium — all-time, content-only signals
@@ -497,6 +508,13 @@ const LEADERBOARD_SIZE = 3;
 // exact same ranking data (not a second, potentially-drifting copy) — same
 // reasoning getPeopleThreePodiums below already documents for its own
 // extraction.
+// No `$limit` on any of the 4 aggregates below, and no `.slice` on
+// mostFavoritedEntries — direct ask for the Content Podium's own
+// dedicated page to show a real ranked list (not just top 3), same change
+// already made for the people side's own computePeopleThreePodiums (see
+// that function's own doc comment for the "cheap at this app's current
+// real scale" reasoning, which applies equally here). getLeaderboard
+// slices down to CONTENT_LEADERBOARD_SIZE for its own response.
 export async function computeLeaderboard(type) {
   const [movieFavStats, seriesFavStats, ratingStats, recommendStats, watchedStats, reviewedStats] = await Promise.all([
     type && type !== "movie"
@@ -518,13 +536,11 @@ export async function computeLeaderboard(type) {
       { $group: { _id: { itemId: "$contentId", itemType: "$contentType" }, avgRating: { $avg: "$value" }, ratingCount: { $sum: 1 } } },
       { $match: { ratingCount: { $gte: LEADERBOARD_MIN_RATING_COUNT } } },
       { $sort: { avgRating: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]),
     Share.aggregate([
       { $match: { type: "recommendation", ...(type ? { contentType: type } : {}) } },
       { $group: { _id: { itemId: "$contentId", itemType: "$contentType" }, recommendCount: { $sum: 1 } } },
       { $sort: { recommendCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]),
     // Same shape as getPeopleThreePodiums' own Most Watched below, just
     // grouped by content instead of by user — how many watchlists a title
@@ -534,7 +550,6 @@ export async function computeLeaderboard(type) {
       ...(type ? [{ $match: { "watchlist.itemType": type } }] : []),
       { $group: { _id: { itemId: "$watchlist.itemId", itemType: "$watchlist.itemType" }, watchedCount: { $sum: 1 } } },
       { $sort: { watchedCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]).allowDiskUse(true),
     // Content-side twin of getPeopleThreePodiums' own Most Reviewed —
     // review count per title instead of per reviewer.
@@ -542,16 +557,13 @@ export async function computeLeaderboard(type) {
       ...(type ? [{ $match: { contentType: type } }] : []),
       { $group: { _id: { itemId: "$contentId", itemType: "$contentType" }, reviewCount: { $sum: 1 } } },
       { $sort: { reviewCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]),
   ]);
 
   const mostFavoritedEntries = [
     ...movieFavStats.map((s) => ({ itemId: s._id.toString(), itemType: "movie", favoriteCount: s.favoriteCount })),
     ...seriesFavStats.map((s) => ({ itemId: s._id.toString(), itemType: "series", favoriteCount: s.favoriteCount })),
-  ]
-    .sort((a, b) => b.favoriteCount - a.favoriteCount)
-    .slice(0, LEADERBOARD_SIZE);
+  ].sort((a, b) => b.favoriteCount - a.favoriteCount);
 
   const highestRatedEntries = ratingStats.map((r) => ({
     itemId: r._id.itemId,
@@ -592,7 +604,13 @@ export async function computeLeaderboard(type) {
 export const getLeaderboard = asyncHandler(async (req, res) => {
   const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
   const result = await computeLeaderboard(type);
-  sendSuccess(res, result, "Leaderboard fetched");
+  // computeLeaderboard itself returns every qualifying entry, full ranked
+  // (needed as-is by officialContentService.js's own generateHighlight,
+  // which reads index 0 directly) — this response caps each category at
+  // CONTENT_LEADERBOARD_SIZE, same slicing getPeopleLeaderboard already
+  // does for its own response.
+  const shaped = Object.fromEntries(Object.entries(result).map(([key, list]) => [key, list.slice(0, CONTENT_LEADERBOARD_SIZE)]));
+  sendSuccess(res, shaped, "Leaderboard fetched");
 });
 
 // A raw {_id, <metricKey>} aggregate result (Review/Share group-by-user
@@ -608,11 +626,16 @@ async function hydratePeopleEntries(raw, metricKey) {
   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
   return raw
     .filter((r) => userMap.has(r._id.toString()))
-    .map((r) => {
+    .map((r, i) => {
       const u = userMap.get(r._id.toString());
       return {
         user: { id: u._id.toString(), username: u.username, profile_pic_url: u.profile_pic_url, accountTier: u.accountTier },
         [metricKey]: r[metricKey],
+        // 1-based, off this already-sorted array's own final (post-filter)
+        // order — see computePeopleThreePodiums's own doc comment on why
+        // every category now carries an explicit rank instead of relying
+        // on array position/length downstream.
+        rank: i + 1,
       };
     });
 }
@@ -727,19 +750,27 @@ async function computePeopleThreePodiums(type) {
   const [officialUser, badgeUsersRaw] = await Promise.all([
     User.findOne({ isOfficial: true }).select("_id").lean(),
     User.find({ isOfficial: { $ne: true } })
-      .select("username profile_pic_url accountTier watchlist followers createdAt currentStreak lastStreakDate")
+      .select("username profile_pic_url accountTier watchlist followers createdAt currentStreak lastStreakDate puzzleStreak lastPuzzleStreakDate")
       .lean(),
   ]);
   const officialUserId = officialUser?._id;
   const excludeOfficialAuthor = officialUserId ? [{ $match: { user: { $ne: officialUserId } } }] : [];
 
+  // No `$limit` on any of these 5 — direct ask for the People Podium's own
+  // dedicated page to show a real ranked list (not just top 3), so every
+  // category now returns everyone who qualifies (still bounded by each
+  // one's own `$match`, e.g. "at least 1 follower"), same "cheap at this
+  // app's current real scale" reasoning the badges/puzzle-streak rankings
+  // below already relied on even before this change. getPeopleLeaderboard
+  // slices down to PEOPLE_LEADERBOARD_SIZE for its own response; the
+  // Content Podium's own identical-shaped aggregates elsewhere in this
+  // file are untouched, still capped at LEADERBOARD_SIZE.
   const [followedRaw, watchedRaw, reviewedRaw, likedRaw, recommendersRaw] = await Promise.all([
     User.aggregate([
       { $match: { isOfficial: { $ne: true } } },
       { $project: { username: 1, profile_pic_url: 1, accountTier: 1, followerCount: { $size: { $ifNull: ["$followers", []] } } } },
       { $match: { followerCount: { $gte: 1 } } },
       { $sort: { followerCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]).allowDiskUse(true),
     User.aggregate([
       { $match: { isOfficial: { $ne: true } } },
@@ -755,27 +786,23 @@ async function computePeopleThreePodiums(type) {
       },
       { $match: { watchedCount: { $gte: 1 } } },
       { $sort: { watchedCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]).allowDiskUse(true),
     Review.aggregate([
       ...excludeOfficialAuthor,
       { $group: { _id: "$user", reviewCount: { $sum: 1 } } },
       { $sort: { reviewCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]).allowDiskUse(true),
     Share.aggregate([
       ...excludeOfficialAuthor,
       { $group: { _id: "$user", likeCount: { $sum: "$likeCount" } } },
       { $match: { likeCount: { $gte: 1 } } },
       { $sort: { likeCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]).allowDiskUse(true),
     Share.aggregate([
       { $match: { type: "recommendation" } },
       ...excludeOfficialAuthor,
       { $group: { _id: "$user", recommendCount: { $sum: 1 } } },
       { $sort: { recommendCount: -1 } },
-      { $limit: LEADERBOARD_SIZE },
     ]).allowDiskUse(true),
   ]);
 
@@ -785,13 +812,15 @@ async function computePeopleThreePodiums(type) {
     hydratePeopleEntries(recommendersRaw, "recommendCount"),
   ]);
 
-  const mostFollowed = followedRaw.map((d) => ({
+  const mostFollowed = followedRaw.map((d, i) => ({
     user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
     followerCount: d.followerCount,
+    rank: i + 1,
   }));
-  const mostWatched = watchedRaw.map((d) => ({
+  const mostWatched = watchedRaw.map((d, i) => ({
     user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
     watchedCount: d.watchedCount,
+    rank: i + 1,
   }));
 
   // Most Badges — no $sort-able field to aggregate on (a badge count is
@@ -806,15 +835,46 @@ async function computePeopleThreePodiums(type) {
     }))
     .filter((e) => e.badgeCount >= 1)
     .sort((a, b) => b.badgeCount - a.badgeCount)
-    .slice(0, LEADERBOARD_SIZE);
+    .map((e, i) => ({ ...e, rank: i + 1 }));
 
-  return { mostFollowed, mostWatched, mostReviewed, mostLiked, topRecommenders, mostBadges };
+  // Most Puzzle Streak (TC-136) — same "no indexable field, rank the
+  // already-fetched set in memory" shape as mostBadges above, decayed the
+  // same way currentStreakValue (badgeController.js) decays the general
+  // engagement streak, just against puzzleStreak/lastPuzzleStreakDate.
+  const mostPuzzleStreak = badgeUsersRaw
+    .map((d) => ({
+      user: { id: d._id.toString(), username: d.username, profile_pic_url: d.profile_pic_url, accountTier: d.accountTier },
+      puzzleStreak: decayedStreakCount(d.puzzleStreak, d.lastPuzzleStreakDate),
+    }))
+    .filter((e) => e.puzzleStreak >= 1)
+    .sort((a, b) => b.puzzleStreak - a.puzzleStreak)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+
+  return { mostFollowed, mostWatched, mostReviewed, mostLiked, topRecommenders, mostBadges, mostPuzzleStreak };
 }
 
+// Shapes each category as { entries, viewerEntry } for the dedicated
+// People Podium page's own steps+list design, direct ask — `entries` is
+// the visible top PEOPLE_LEADERBOARD_SIZE, `viewerEntry` is the requesting
+// user's own full entry (with its real `rank`) only when they exist in the
+// ranking but fall outside `entries`, so the client can pin one extra row
+// at the bottom of the list without duplicating someone already shown.
+// PODIUM_CATEGORY_KEYS is declared further down this file — fine, it's
+// only read once this handler actually runs, well after module load.
 export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
   const type = ["movie", "series"].includes(req.query.type) ? req.query.type : null;
   const result = await getPeopleThreePodiums(type);
-  sendSuccess(res, result, "People leaderboard fetched");
+  const userId = req.user.id;
+
+  const shaped = {};
+  for (const key of PODIUM_CATEGORY_KEYS) {
+    const list = result[key] || [];
+    const entries = list.slice(0, PEOPLE_LEADERBOARD_SIZE);
+    const inTop = entries.some((e) => e.user.id === userId);
+    shaped[key] = { entries, viewerEntry: inTop ? null : list.find((e) => e.user.id === userId) || null };
+  }
+
+  sendSuccess(res, shaped, "People leaderboard fetched");
 });
 
 // Canonical category order for getMyPodiumPlacements below — also the
@@ -822,7 +882,7 @@ export const getPeopleLeaderboard = asyncHandler(async (req, res) => {
 // `category` string maps 1:1 onto that file's own CategoryKey type
 // (mostFollowed→"followed", mostWatched→"watched", etc.) without the
 // client needing its own separate mapping table.
-const PODIUM_CATEGORY_KEYS = ["mostFollowed", "mostWatched", "mostReviewed", "mostLiked", "topRecommenders", "mostBadges"];
+const PODIUM_CATEGORY_KEYS = ["mostFollowed", "mostWatched", "mostReviewed", "mostLiked", "topRecommenders", "mostBadges", "mostPuzzleStreak"];
 
 // @route GET /api/feed/my-podium-placements
 // Powers the "you made the podium!" popup shown once per app open (see
@@ -844,16 +904,21 @@ export const getMyPodiumPlacements = asyncHandler(async (req, res) => {
   const placements = [];
   for (const key of PODIUM_CATEGORY_KEYS) {
     const list = result[key] || [];
-    const rankIndex = list.findIndex((entry) => entry.user.id === userId);
-    if (rankIndex !== -1) placements.push({ category: key, rank: rankIndex + 1 });
+    // Each category's own array now holds everyone who qualifies, not just
+    // the top 3 (direct ask, see computePeopleThreePodiums's own doc
+    // comment) — "made the podium" still means literally top 3, so this
+    // checks the entry's own `rank` explicitly rather than trusting
+    // presence in the array.
+    const entry = list.find((e) => e.user.id === userId);
+    if (entry && entry.rank <= 3) placements.push({ category: key, rank: entry.rank });
   }
 
   sendSuccess(res, { placements }, "Podium placements fetched");
 });
 
-// "Podium" badge — how many of the people-podium's own 6 categories
-// (PODIUM_CATEGORY_KEYS, `mostBadges` included) this user CURRENTLY ranks
-// top-3 in. Lives here rather than badgeController.js because it's built
+// "Podium" badge — how many of the people-podium's own 7 categories
+// (PODIUM_CATEGORY_KEYS, `mostBadges`/`mostPuzzleStreak` included) this
+// user CURRENTLY ranks top-3 in. Lives here rather than badgeController.js because it's built
 // entirely out of this file's own getPeopleThreePodiums — reusing it (the
 // exact same ranking the podium itself shows, same reasoning
 // getMyPodiumPlacements above and activityController.js's own
@@ -883,7 +948,11 @@ export const PODIUM_TIERS = [
 
 export async function computePodiumBadge(userId) {
   const result = await getPeopleThreePodiums(null);
-  const placementCount = PODIUM_CATEGORY_KEYS.filter((key) => (result[key] || []).some((entry) => entry.user.id === userId)).length;
+  // Same `rank <= 3` guard as getMyPodiumPlacements above, same reason —
+  // each category's array is no longer top-3-only.
+  const placementCount = PODIUM_CATEGORY_KEYS.filter((key) =>
+    (result[key] || []).some((entry) => entry.user.id === userId && entry.rank <= 3)
+  ).length;
   return [{ key: "podium", count: placementCount, tier: tierForCount(placementCount, PODIUM_TIERS) }];
 }
 

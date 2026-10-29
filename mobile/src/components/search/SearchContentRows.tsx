@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState, useMemo, useRef } from "react";
-import { View, FlatList, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, FlatList, ScrollView, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
 import { SkeletonSearchResultRow } from "../Skeleton";
 import { getMovies, getSeries, type ContentFilters } from "../../api/contentService";
 import { MOVIE_GENRE_OPTIONS, SERIES_GENRE_OPTIONS } from "../../constants/contentGenreIds";
 import SearchContentRow from "./SearchContentRow";
 import FilterBottomSheet from "./FilterBottomSheet";
 import ContentFilterSheetContent from "./ContentFilterSheetContent";
+import SuggestedForYouGrid from "./SuggestedForYouGrid";
 import type { ContentType, Movie, Series } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -156,11 +156,15 @@ export default function SearchContentRows({ contentType, query, showFilters, onC
 
   if (!hasSearchCriteria) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.base100, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name={contentType === "movie" ? "film-outline" : "tv-outline"} size={40} color={colors.placeholder} />
-        <Text style={styles.empty}>
-          {contentType === "movie" ? t("Search any movie you want to find it.") : t("Search any series you want to find it.")}
-        </Text>
+      <View style={{ flex: 1, backgroundColor: colors.base100 }}>
+        {/* Direct ask: this used to be an icon + "Search any movie you want
+            to find it." hint, floating alone in an otherwise-blank screen,
+            starting well down the page. Removed in favor of just the
+            genre-weighted "Suggested for you" pick starting right at the
+            top — see SuggestedForYouGrid.tsx. */}
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <SuggestedForYouGrid contentType={contentType} />
+        </ScrollView>
         {filterSheet}
       </View>
     );

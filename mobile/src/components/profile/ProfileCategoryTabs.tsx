@@ -7,21 +7,19 @@ import ContentRail from "../ContentRail";
 import FavoriteCard from "./FavoriteCard";
 import EmptyFavoriteSlot from "./EmptyFavoriteSlot";
 import ProfileCinegraphsTab from "./ProfileCinegraphsTab";
-import ProfileAnalysesTab from "./ProfileAnalysesTab";
 import ProfileBadgesTab from "./ProfileBadgesTab";
 import ProfileSharingsTab from "./ProfileSharingsTab";
-import ProfileAnalysisModal from "../ProfileAnalysisModal";
 import CineGraphSubTabSwitcher, { type CineGraphSubTab } from "./CineGraphSubTabSwitcher";
 import AddFavoriteModal, { type FavoritePickItem } from "./AddFavoriteModal";
 import CollectionUndoBar from "../collection/CollectionUndoBar";
 import { updateFavorites } from "../../api/favoriteService";
-import type { CineGraphData, ContentType, Favorites, ProfileAnalysis } from "../../types";
+import type { CineGraphData, ContentType, Favorites } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import AdBanner from "../ads/AdBanner";
 import { AD_UNIT_IDS } from "../../constants/adUnitIds";
 
-export type Category = "sharings" | "favorites" | "cinegraph" | "analyses" | "badges";
+export type Category = "sharings" | "favorites" | "cinegraph" | "badges";
 
 // Favorites are backend-capped at 5 (updateFavorites rejects >5) — sizing
 // cards to fit exactly 5 across means the rail never needs to scroll, not
@@ -79,7 +77,6 @@ const CATEGORY_ICON: Record<Category, { active: keyof typeof Ionicons.glyphMap; 
   sharings: { active: "grid", inactive: "grid-outline" },
   favorites: { active: "heart", inactive: "heart-outline" },
   cinegraph: { active: "pie-chart", inactive: "pie-chart-outline" },
-  analyses: { active: "document-text", inactive: "document-text-outline" },
   badges: { active: "ribbon", inactive: "ribbon-outline" },
 };
 
@@ -342,16 +339,6 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
     return list.map((i) => i._id);
   }, [addingType, localFavorites]);
 
-  const [analysisData, setAnalysisData] = useState<ProfileAnalysis | null>(null);
-  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
-
-  // Stable identity: the Analyses tab now stays mounted, so an inline arrow
-  // here would hand it a new prop on every render of this component.
-  const handleViewAnalysis = useCallback((data: ProfileAnalysis) => {
-    setAnalysisData(data);
-    setAnalysisModalVisible(true);
-  }, []);
-
   return (
     <>
       <View style={styles.tabRow}>
@@ -497,12 +484,6 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
           </View>
         )}
 
-        {hasVisited("analyses") && (
-          <View style={visibility("analyses")}>
-            <ProfileAnalysesTab onViewAnalysis={handleViewAnalysis} />
-          </View>
-        )}
-
         {hasVisited("badges") && (
           <View style={visibility("badges")}>
             <ProfileBadgesTab active={category === "badges"} screenFocused={screenFocused} />
@@ -523,19 +504,6 @@ export default function ProfileCategoryTabs({ favorites, cineGraph, category, on
         message={t("Removed from favorites")}
         durationMs={REMOVE_UNDO_MS}
         onUndo={handleUndoRemoveFavorite}
-      />
-
-      {/* Same screenFocused gate as AddFavoriteModal above, and for the same
-          reason — tapping a title inside the analysis pushes its detail page,
-          which would otherwise render behind this still-open Modal. Hiding
-          (rather than closing) keeps `analysisModalVisible` true, so coming
-          back re-shows the deck exactly where it was left. */}
-      <ProfileAnalysisModal
-        visible={analysisModalVisible && screenFocused}
-        onClose={() => setAnalysisModalVisible(false)}
-        data={analysisData}
-        shareable
-        navigable
       />
     </>
   );

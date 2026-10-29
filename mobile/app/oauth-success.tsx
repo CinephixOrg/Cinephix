@@ -13,7 +13,7 @@ import type { User } from "../src/types";
 // screen.
 export default function OAuthSuccessScreen() {
   const { data } = useLocalSearchParams<{ data?: string }>();
-  const { user, completeOAuthLogin } = useAuth();
+  const { user, needsProfileSetup, completeOAuthLogin } = useAuth();
   const { colors } = useTheme();
   const handled = useRef(false);
 
@@ -28,7 +28,11 @@ export default function OAuthSuccessScreen() {
   }, [data]);
 
   if (user) {
-    return <Redirect href="/home" />;
+    // A brand-new Google account has never run the onboarding wizard
+    // (TC-133) either — this fallback route sits outside (auth)/_layout's
+    // own needsProfileSetup check (it's not nested under (auth)/), so it
+    // has to make the same call itself instead of hardcoding /home.
+    return <Redirect href={needsProfileSetup ? "/setup-profile" : "/home"} />;
   }
 
   return (

@@ -8,7 +8,7 @@ import { getShareFeed, toggleShareLike } from "../../api/shareService";
 import { getSuggestions } from "../../api/userService";
 import ShareCard from "../ShareCard";
 import OnlineFriendsBar from "./OnlineFriendsBar";
-import PeoplePodium from "../PeoplePodium";
+import DailyGameCard from "./DailyGameCard";
 import CurrentlyWatchingSection from "./CurrentlyWatchingSection";
 import SuggestedUsersBox from "../SuggestedUsersBox";
 import PostComposeMenu from "./PostComposeMenu";
@@ -72,21 +72,13 @@ const PAGE_LIMIT = 20;
 // smooth (its pill position isn't native-driven — see CapsuleTabSwitcher's
 // own dragOffsetX plumbing in home/index.tsx).
 interface Props {
-  // Set only by home/index.tsx when arriving from PodiumNewsModal.tsx's own
-  // "you made the podium!" popup — threaded straight through to
-  // PeoplePodium, which is the one that actually knows how to turn this
-  // into a page jump. Optional, `undefined` at every other call site
-  // (there's only ever the one), so this doesn't disturb this component's
-  // own memo() re-render guard in the common case.
-  jumpToPodiumCategory?: string;
   // Set only by home/index.tsx's own `?scope=following` param (an
   // official-account tip's "Friends tab" link uses this) — just the
-  // initial value for the existing `scope` state below, same one-shot-seed
-  // idea as jumpToPodiumCategory itself.
+  // initial value for the existing `scope` state below.
   initialScope?: "all" | "following";
 }
 
-function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
+function SharesFeedSection({ initialScope }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
 
@@ -94,28 +86,33 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
     () =>
       StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.base100 },
-        list: { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 12 },
+        // No `paddingTop` — direct ask: DailyGameCard should sit flush
+        // against the header's own bottom edge, with no gap at all. Every
+        // other section still gets its own breathing room via its own
+        // *Inset style's `marginBottom` below, so this only removes space
+        // that used to sit above the very first item.
+        list: { paddingHorizontal: 16, paddingBottom: 24 },
         empty: { textAlign: "center", color: colors.placeholder, marginTop: 40 },
         error: { color: colors.error, textAlign: "center", marginTop: 8 },
         // `marginHorizontal: -16` cancels this FlatList's own `list`
-        // paddingHorizontal:16, same reasoning as `podiumInset` below —
-        // OnlineFriendsBar's own internal `paddingHorizontal:16` (its
-        // label and scroll content) was stacking ON TOP of the list's
-        // padding, landing its "ONLINE FRIENDS" label a full 32px from the
-        // screen edge instead of 16px, visibly further right than the
-        // podium's and "Shares"' own titles — a direct ask to fix.
+        // paddingHorizontal:16 — both DailyGameCard and OnlineFriendsBar
+        // are now full-bleed bands (direct ask for the former: "satırın
+        // başından sonuna kadar gitsin"), so each needs this to actually
+        // reach both screen edges instead of sitting 16px in from them.
+        dailyGameInset: { marginHorizontal: -16, marginBottom: 14 },
         onlineFriendsInset: { marginHorizontal: -16, marginBottom: 14 },
-        // PeoplePodium's own internal horizontal ScrollView pages are
-        // sized to the full screen width (useWindowDimensions), so they
-        // need to cancel this FlatList's own `list` paddingHorizontal:16
-        // or the pages render 16px too narrow on each side and the whole
-        // podium reads as shifted off-center.
-        podiumInset: { marginHorizontal: -16, marginBottom: 4 },
+        // Same double-padding bug as OnlineFriendsBar's own fix above —
+        // ContentRail already applies its own `paddingHorizontal:16` to
+        // its title row internally, which was stacking ON TOP of this
+        // FlatList's own `list` padding, landing "Currently Watching" a
+        // full 32px from the screen edge instead of 16px, visibly out of
+        // line with "Shares"' own title right below it. Direct report.
+        currentlyWatchingInset: { marginHorizontal: -16 },
         // A section title right above the actual posts, styled to match
-        // the podium's own title text — jumping straight from the podium
-        // into the post list with no label of its own read as confusing
-        // (the user's own words), since the podium doesn't visually
-        // announce "here's where it ends and the feed begins." The toggle
+        // the podium's own title text (now PodiumHeaderIcon's destination,
+        // not inline on this page) — jumping straight from Currently
+        // Watching into the post list with no label of its own read as
+        // confusing (the user's own words). The toggle
         // sits directly after the title text ends (gap, not
         // space-between) per direct ask — it used to be pushed all the way
         // to the row's far edge.
@@ -397,18 +394,22 @@ function SharesFeedSection({ jumpToPodiumCategory, initialScope }: Props) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
           ListHeaderComponent={
             <>
+              {/* TC-136's daily guessing game — the single highest-
+                  visibility spot on the page, deliberately above even
+                  Online Friends, since the whole point is daily-return
+                  engagement (see that component's own doc comment). */}
+              <View style={styles.dailyGameInset}>
+                <DailyGameCard />
+              </View>
               <View style={styles.onlineFriendsInset}>
                 <OnlineFriendsBar />
               </View>
-              <View style={styles.podiumInset}>
-                <PeoplePodium jumpToCategory={jumpToPodiumCategory} />
-              </View>
               {/* Moved from Discover, direct ask — a live status roster
                   belongs next to OnlineFriendsBar's own kind of content, not
-                  the catalog-browse rails Discover otherwise holds. Placed
-                  after the podium, not before it ("podyum başta olmalı her
-                  zaman"). */}
-              <CurrentlyWatchingSection basePath="/home" />
+                  the catalog-browse rails Discover otherwise holds. */}
+              <View style={styles.currentlyWatchingInset}>
+                <CurrentlyWatchingSection basePath="/home" />
+              </View>
               <View style={styles.titleDivider} />
               {/* Title row always renders (not gated behind `loading` like
                   the spinner/error below it used to be entirely) so the

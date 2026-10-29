@@ -18,6 +18,9 @@ import { syncTMDBTrending } from "./services/tmdbSyncService.js";
 import { postOfficialContent } from "./services/officialContentService.js";
 import { checkWatchPartyReminders } from "./services/watchPartyReminders.js";
 import { postWeeklyLeaderboardAnnouncements } from "./services/weeklyLeaderboardAnnouncer.js";
+import { pickTodaysPuzzle } from "./services/dailyPuzzleService.js";
+import { notifyDailyPuzzleReady } from "./services/dailyPuzzleNotifier.js";
+import { notifyIfLeaderChanged } from "./services/dailyLeaderboardNotifier.js";
 
 dotenv.config();
 const app = express();
@@ -84,6 +87,7 @@ import { hideBlockedContent } from "./middleware/blockFilter.js";
 import reportRoute from "./routes/reportRoute.js";
 import ticketRoute from "./routes/ticketRoute.js";
 import adminRoute from "./routes/adminRoute.js";
+import dailyGameRoute from "./routes/dailyGameRoute.js";
 
 const MONGO_URI = process.env.MONGO_URI;
 const PORT = process.env.PORT || 5000;
@@ -106,6 +110,7 @@ app.use("/api/waitlist", waitlistRoute);
 app.use("/api/reports", reportRoute);
 app.use("/api/tickets", ticketRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/daily-game", dailyGameRoute);
 
 // Create HTTP server so Socket.io can share the same port
 const httpServer = http.createServer(app);
@@ -193,6 +198,27 @@ async function start() {
     cron.schedule("0 9 * * 1", () => {
       logger.info("Posting weekly leaderboard announcements...");
       postWeeklyLeaderboardAnnouncements().catch(err => logger.error(`Weekly leaderboard announcement error: ${err.message}`));
+    });
+
+    // TC-136 daily guessing game — one deterministic pick for everyone,
+    // written once at UTC midnight (getOrCreateTodaysPuzzle also
+    // self-heals lazily on first real request if this tick is ever
+    // missed, so the feature never hard-fails over a cron hiccup). The
+    // push fires 5 minutes later so the pick is always already written by
+    // the time any notified user opens the app.
+    cron.schedule("0 0 * * *", () => {
+      logger.info("Picking today's daily-guessing-game puzzle...");
+      pickTodaysPuzzle().catch(err => logger.error(`Daily puzzle pick error: ${err.message}`));
+    });
+    cron.schedule("5 0 * * *", () => {
+      logger.info("Sending daily-puzzle-ready push notifications...");
+      notifyDailyPuzzleReady().catch(err => logger.error(`Daily puzzle notify error: ${err.message}`));
+    });
+    // Every 4 hours (splitting the discussed 3-6h window) — a no-op most
+    // ticks, since notifyIfLeaderChanged itself only actually sends
+    // anything once the real leader has changed since the last time it did.
+    cron.schedule("0 */4 * * *", () => {
+      notifyIfLeaderChanged().catch(err => logger.error(`Daily leaderboard notify error: ${err.message}`));
     });
 
     // Attach Socket.io chat handler

@@ -19,7 +19,7 @@ interface AuthContextValue {
   verifyEmail: (email: string, code: string) => Promise<void>;
   completeOAuthLogin: (user: User) => Promise<void>;
   updateUser: (fields: Partial<User>) => Promise<void>;
-  clearNeedsProfileSetup: () => void;
+  clearNeedsProfileSetup: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -34,9 +34,11 @@ async function persistUser(user: User) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  // Transient (not persisted) — only ever set true by a fresh verifyEmail,
-  // so a plain login or app relaunch never routes through setup-profile.
-  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
+  // Derived from the user's own persisted onboardingCompletedAt (TC-133),
+  // not a separate in-memory flag — a killed/backgrounded app relaunching
+  // mid-wizard sees the same real field login/verifyEmail/app-boot already
+  // loaded it from, and resumes the wizard instead of silently skipping it.
+  const needsProfileSetup = !!user && !user.onboardingCompletedAt;
   // Why the session ended, when it ended for a reason worth showing.
   const [signedOutReason, setSignedOutReason] = useState<string | null>(null);
 
@@ -68,10 +70,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const verifiedUser = await authService.verifyEmail(email, code);
     await persistUser(verifiedUser);
     setUser(verifiedUser);
-    setNeedsProfileSetup(true);
   };
 
-  const clearNeedsProfileSetup = () => setNeedsProfileSetup(false);
+  // Called once the onboarding wizard's own PATCH /onboarding-progress
+  // {completed:true} call has succeeded server-side — mirrors that into
+  // local/persisted state so needsProfileSetup flips immediately without
+  // waiting on a full profile refetch.
+  const clearNeedsProfileSetup = async () => {
+    if (!user) return;
+    const next = { ...user, onboardingCompletedAt: new Date().toISOString() };
+    await persistUser(next);
+    setUser(next);
+  };
 
   // Used after the Google OAuth in-app-browser flow hands back a
   // { ...userFields, token } blob in the redirect URL, same shape as

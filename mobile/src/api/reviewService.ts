@@ -36,10 +36,24 @@ export async function getPopularReviews(
   q?: string,
   sort?: ReviewSort,
   minRating?: number | null,
-  maxRating?: number | null
+  maxRating?: number | null,
+  // Search's Reviews tab empty state — popular reviews restricted to
+  // titles already on the viewer's own watched list (watchedOnly=true
+  // short-circuits past the `q` text-search branch server-side, so q is
+  // never meaningfully combined with this in practice).
+  watchedOnly?: boolean
 ): Promise<ReviewsFeedResult> {
   const res = await API.get(API_ROUTES.REVIEWS.GET_POPULAR, {
-    params: { page, limit, type, q, sort, minRating: minRating ?? undefined, maxRating: maxRating ?? undefined },
+    params: {
+      page,
+      limit,
+      type,
+      q,
+      sort,
+      minRating: minRating ?? undefined,
+      maxRating: maxRating ?? undefined,
+      watchedOnly: watchedOnly ?? undefined,
+    },
   });
   return res.data;
 }

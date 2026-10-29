@@ -41,7 +41,6 @@ import StackedAvatars from "./StackedAvatars";
 import { CASCADE_POSTER_RADIUS } from "./PosterCascade";
 import StarRatingDisplay from "./StarRatingDisplay";
 import FollowButton from "./FollowButton";
-import ProfileAnalysisModal from "./ProfileAnalysisModal";
 import MatchGradientTitle from "./match/MatchGradientTitle";
 import { GENRE_BADGE_DEFINITIONS } from "../data/genreBadgeDefinitions";
 import { VOLUME_BADGE_DEFINITIONS } from "../data/volumeBadgeDefinitions";
@@ -54,6 +53,7 @@ import { SPECIAL_BADGE_DEFINITIONS } from "../data/specialBadgeDefinitions";
 import { registerShareView, voteOnPoll } from "../api/shareService";
 import { addToToWatchList } from "../api/toWatchService";
 import { toWatchCache } from "../api/collectionCache";
+import { setPendingProfileAnalysis } from "../utils/pendingProfileAnalysis";
 import type { ActivityTier, OfficialContentCategory, PollOption, ProfileAnalysis, Share, StreakTier, VolumeTier } from "../types";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
@@ -353,14 +353,17 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
   const watchlistGraph = useWatchlistGraph();
   const { height: screenHeight } = useWindowDimensions();
 
-  // Opens the exact same full-size card deck the owner sees on their own
-  // Profile (ProfileAnalysisModal), same as ChatRoom.tsx's own analysis-
-  // share bubble — neither `shareable` nor `navigable` passed, matching
-  // that precedent exactly: viewing someone else's shared analysis here
-  // isn't a re-share decision, and a poster tap inside the deck has no
-  // sensible destination from this basePath (ProfileAnalysisModal's own
-  // onOpenItem is hardcoded to the `/profile` stack).
-  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
+  // Opens the same full-screen analysis story the owner sees on their own
+  // Profile (AnalyzeStoryScreen), same as ChatRoom.tsx's own analysis-share
+  // bubble — staged with origin "shared" so it shows an ownership header
+  // instead of a Share CTA (viewing someone else's shared analysis isn't a
+  // re-share decision), and pushed under this card's own basePath so a
+  // poster tap inside it resolves to the correct tab's stack.
+  const openSharedAnalysis = () => {
+    if (!share.analysisData) return;
+    setPendingProfileAnalysis(share.analysisData as ProfileAnalysis, "shared");
+    router.push(`${basePath}/analyze-story` as never);
+  };
 
   const styles = useMemo(
     () =>
@@ -428,11 +431,12 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
           borderRadius: 8,
         },
         typeChipText: { fontFamily: fonts.bold, fontSize: 10, color: "#fff", letterSpacing: 0.3 },
-        // A cover, not the full deck — tapping it opens the exact same
-        // ProfileAnalysisCardDeck full-size in a Modal (ProfileAnalysisModal,
-        // rendered below) instead of embedding it inline, same "compact
-        // preview, full thing behind a tap" shape shareBox/listBox already
-        // use. `overflow:"hidden"` clips the gradient-fill Svg background
+        // A cover, not the full deck — tapping it opens the same full-screen
+        // analysis story the owner sees on their own Profile
+        // (AnalyzeStoryScreen, see openSharedAnalysis below) instead of
+        // embedding it inline, same "compact preview, full thing behind a
+        // tap" shape shareBox/listBox already use. `overflow:"hidden"` clips
+        // the gradient-fill Svg background
         // and the watermark icon to the box's own rounded corners; no
         // separate background/border here since the Svg IS the fill (see
         // analysisCoverBg below) — this file's own established technique
@@ -1543,8 +1547,8 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
 
       {share.type === "analysis" && share.analysisData && (
         // A poster-style cover, not the full deck inline — tapping it opens
-        // the exact same ProfileAnalysisCardDeck the owner sees on their own
-        // Profile, full-size, in a Modal (ProfileAnalysisModal below). The
+        // the same full-screen analysis story the owner sees on their own
+        // Profile (see openSharedAnalysis above). The
         // "shared their profile analysis" meaning that used to sit in its
         // own line above this box is carried by the header's own "ANALYSIS"
         // type chip instead — no eyebrow label, no tasteCategory subtitle,
@@ -1554,7 +1558,7 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         // above) — a wordless, self-animating teaser of everything actually
         // inside, rather than a sentence that only ever repeats what the
         // headline+chip already said.
-        <Pressable style={styles.analysisCover} onPress={() => setAnalysisModalVisible(true)}>
+        <Pressable style={styles.analysisCover} onPress={openSharedAnalysis}>
           <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
             <Defs>
               <LinearGradient id={`analysisCoverBg-${share._id}`} x1="0" y1="0" x2="1" y2="1">
@@ -2060,13 +2064,6 @@ function ShareCard({ share, onToggleLike, basePath }: Props) {
         </Modal>
       )}
 
-      {share.type === "analysis" && share.analysisData && (
-        <ProfileAnalysisModal
-          visible={analysisModalVisible}
-          onClose={() => setAnalysisModalVisible(false)}
-          data={share.analysisData as ProfileAnalysis}
-        />
-      )}
     </View>
   );
 }
